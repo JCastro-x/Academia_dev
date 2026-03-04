@@ -1,8 +1,8 @@
 // ── STREAK SYSTEM ────────────────────────────────────────────
 function _getStreakData() {
-  return JSON.parse(localStorage.getItem('edutrack_streak') || '{"count":0,"lastDate":""}');
+  return JSON.parse(localStorage.getItem('academia_streak') || '{"count":0,"lastDate":""}');
 }
-function _saveStreakData(d) { localStorage.setItem('edutrack_streak', JSON.stringify(d)); }
+function _saveStreakData(d) { localStorage.setItem('academia_streak', JSON.stringify(d)); }
 function _updateStreak() {
   const today = new Date().toDateString();
   const sd = _getStreakData();

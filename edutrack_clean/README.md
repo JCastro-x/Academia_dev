@@ -1,4 +1,4 @@
-# 🎓 EduTrack — Dashboard Académico
+# 🎓 Academia — Dashboard Académico
 
 Dashboard académico para estudiantes universitarios. Organiza tus materias, tareas, calificaciones, notas, horario y más, todo en un solo lugar.
 
@@ -27,7 +27,7 @@ Dashboard académico para estudiantes universitarios. Organiza tus materias, tar
 
 1. Clona el repositorio
 2. Abre `index.html` en tu navegador
-3. O visita la versión en vivo: **[tu-url.netlify.app]()**
+3. O visita la versión en vivo: **[academia-dev.netlify.app]()**
 
 No requiere instalación ni servidor.
 

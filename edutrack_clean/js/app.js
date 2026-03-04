@@ -19,10 +19,10 @@ function _schedRender(fn) {
 }
 
 const DB_KEYS = {
-  SEMESTRES: 'edutrack_v4_semestres',
-  POM_TODAY: 'edutrack_v3_pom_today',
-  POM_DATE:  'edutrack_v3_pom_date',
-  SETTINGS:  'edutrack_v3_settings',
+  SEMESTRES: 'academia_v4_semestres',
+  POM_TODAY: 'academia_v3_pom_today',
+  POM_DATE:  'academia_v3_pom_date',
+  SETTINGS:  'academia_v3_settings',
 };
 
 // ─── IndexedDB for large image data ────────────────────────────
@@ -82,10 +82,10 @@ function dbSet(key, value) {
 
 (function _stripDemoCourses() {
   const DEMO_IDS = new Set(['mat1','mat2','mat3','mat4','mat5','mat6']);
-  const MIGRATION_KEY = 'edutrack_v84_demo_stripped';
+  const MIGRATION_KEY = 'academia_v84_demo_stripped';
   if (localStorage.getItem(MIGRATION_KEY)) return;
   try {
-    const raw = localStorage.getItem('edutrack_v4_semestres');
+    const raw = localStorage.getItem('academia_v4_semestres');
     if (!raw) { localStorage.setItem(MIGRATION_KEY,'1'); return; }
     const sems = JSON.parse(raw);
     let changed = false;
@@ -97,7 +97,7 @@ function dbSet(key, value) {
       if (s.tasks)  s.tasks = s.tasks.filter(t => !DEMO_IDS.has(t.matId));
       if ((s.materias||[]).length !== before) changed = true;
     });
-    if (changed) localStorage.setItem('edutrack_v4_semestres', JSON.stringify(sems));
+    if (changed) localStorage.setItem('academia_v4_semestres', JSON.stringify(sems));
     localStorage.setItem(MIGRATION_KEY, '1');
   } catch(e) { console.warn('Demo strip failed', e); }
 })();
@@ -123,13 +123,13 @@ function _buildDefaultSemester(id, nombre) {
 
 function _migrateLegacyData() {
 
-  const oldMats = dbGet('edutrack_v3_materias', null);
+  const oldMats = dbGet('academia_v3_materias', null);
   const sem = _buildDefaultSemester('sem_' + Date.now(), '1er Año · 2do Sem');
   sem.materias = oldMats || DEFAULT_MATERIAS;
-  sem.grades   = dbGet('edutrack_v3_grades',  {});
-  sem.tasks    = dbGet('edutrack_v3_tasks',   []);
-  sem.events   = dbGet('edutrack_v3_events',  []);
-  sem.topics   = dbGet('edutrack_v3_topics',  []);
+  sem.grades   = dbGet('academia_v3_grades',  {});
+  sem.tasks    = dbGet('academia_v3_tasks',   []);
+  sem.events   = dbGet('academia_v3_events',  []);
+  sem.topics   = dbGet('academia_v3_topics',  []);
   return [sem];
 }
 
@@ -420,7 +420,7 @@ function exportPDF() {
   <thead><tr><th>Materia</th><th style="text-align:center;">Promedio</th><th style="text-align:center;">Créditos</th><th>Catedrático / Sección</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
-<div class="footer">EduTrack · academia.app</div>
+<div class="footer">Academia · academia.app</div>
 <script>window.onload=()=>{window.print();}<\/script>
 </body></html>`;
 

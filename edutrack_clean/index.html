@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="EduTrack — Organiza tu semestre universitario">
+<meta name="description" content="Academia — Organiza tu semestre universitario">
 <title>Academia — Dashboard Académico</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1878,6 +1878,17 @@
 
 <!-- Mobile sidebar overlay -->
 <div id="mobile-sidebar-overlay" onclick="closeMobileSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149;backdrop-filter:blur(2px);"></div>
+
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('Academia PWA ready ✅'))
+          .catch(e => console.log('SW error:', e));
+      });
+    }
+  </script>
 
 </body>
 </html>
