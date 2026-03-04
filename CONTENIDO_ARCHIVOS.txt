@@ -1,0 +1,366 @@
+📦 CONTENIDO DE CADA ARCHIVO
+============================
+
+ARCHIVOS PRINCIPALES
+====================
+
+📄 index.html (8.2 KB)
+├─ Descripción: Archivo HTML principal, punto de entrada de la aplicación
+├─ Contiene: Estructura HTML, cabeceras, referencias a CSS y JS
+├─ Debe estar en: Academia_dev/
+└─ Qué hacer: Abre este archivo en el navegador para iniciar la app
+
+📚 README.md (5.4 KB)
+├─ Descripción: Documentación completa del proyecto
+├─ Contiene: Guía de instalación, características, solución de problemas
+├─ Debe estar en: Academia_dev/
+└─ Qué hacer: Léelo para entender cómo usar la aplicación
+
+📋 INSTRUCCIONES.txt (Este archivo)
+├─ Descripción: Guía rápida para Windows
+├─ Contiene: Pasos específicos para Windows, configuración básica
+├─ Debe estar en: Academia_dev/
+└─ Qué hacer: Síguelo para instalar rápidamente
+
+
+CARPETA: CSS/ (Estilos)
+=======================
+
+🎨 styles.css (58.3 KB)
+├─ Descripción: Hoja de estilos principal
+├─ Contiene:
+│  ├─ Variables de tema (colores, sombras, espaciados)
+│  ├─ Estilos del sidebar y navegación
+│  ├─ Estilos de tarjetas, modales y formularios
+│  ├─ Estilos de tabla y calendarios
+│  ├─ Estilos de tareas y pomodoro
+│  ├─ Respuestas para móviles
+│  └─ Animaciones y efectos
+├─ Debe estar en: Academia_dev/css/
+└─ Edita aquí si quieres cambiar colores, fuentes o layout
+
+🎨 pdf-viewer.css (8.9 KB)
+├─ Descripción: Estilos específicos para visualizador de PDF
+├─ Contiene:
+│  ├─ Estilos del modal de PDF
+│  ├─ Estilos de controles de zoom
+│  ├─ Estilos de área de carga de PDF
+│  ├─ Estilos de adjuntos en notas
+│  ├─ Estilos de formularios (inputs, botones)
+│  └─ Estilos responsivos para móvil
+├─ Debe estar en: Academia_dev/css/
+└─ Edita aquí para cambiar la apariencia del visualizador de PDF
+
+
+CARPETA: JS/ (JavaScript - Lógica)
+===================================
+
+⚙️ app.js (16.7 KB) ⭐ MÁS IMPORTANTE
+├─ Descripción: Lógica principal de la aplicación
+├─ Contiene:
+│  ├─ Inicialización de la app (DOMContentLoaded)
+│  ├─ Manejo de temas (claro/oscuro)
+│  ├─ Carga y guardado de datos en localStorage
+│  ├─ Funciones de navegación entre páginas
+│  ├─ Estructura HTML de todas las páginas:
+│  │  ├─ Resumen (overview)
+│  │  ├─ Notas (con soporte de PDF)
+│  │  ├─ Tareas
+│  │  ├─ Calendario
+│  │  ├─ Materias
+│  │  ├─ Horario
+│  │  ├─ Pomodoro
+│  │  ├─ General
+│  │  ├─ Semestres
+│  │  └─ Perfil
+│  ├─ Funciones de notas (crear, guardar, cargar)
+│  └─ Funciones auxiliares (sonidos, fechas)
+├─ Debe estar en: Academia_dev/js/
+└─ Edita aquí para:
+   - Cambiar el contenido de las páginas
+   - Agregar nuevas funciones
+   - Modificar cómo se guardan los datos
+
+📎 pdf-handler.js (8.9 KB) ⭐ NUEVO - VISUALIZADOR DE PDF
+├─ Descripción: Manejo completo de PDFs en notas
+├─ Contiene:
+│  ├─ loadPdfFile(): Carga un archivo PDF
+│  ├─ openPdfViewer(): Abre el modal visualizador
+│  ├─ closePdfViewer(): Cierra el visualizador
+│  ├─ renderAllPdfPages(): Renderiza todas las páginas
+│  ├─ pdfZoomIn() / pdfZoomOut(): Control de zoom
+│  ├─ updatePdfDisplay(): Actualiza la visualización
+│  ├─ addPdfToNote(): Agrega PDF como adjunto a una nota
+│  ├─ displayNoteAttachment(): Muestra adjunto en la nota
+│  ├─ viewPdfAttachment(): Abre un PDF guardado en una nota
+│  └─ Funciones de almacenamiento de adjuntos
+├─ Debe estar en: Academia_dev/js/
+├─ No edites a menos que quieras cambiar:
+│  - Tamaño mínimo/máximo de zoom
+│  - Cómo se procesan los PDFs
+│  - Cómo se almacenan los adjuntos
+└─ Características principales:
+   ✓ Carga PDFs completos (no parcial)
+   ✓ Zoom 50% a 300%
+   ✓ Renderiza todas las páginas
+   ✓ Drag & drop de archivos
+   ✓ Guardado en localStorage
+
+🔧 all-scripts.js (310 KB) - Scripts Originales
+├─ Descripción: Todos los scripts originales de la aplicación
+├─ Contiene:
+│  ├─ Sistema de caché DOM (_DOM, _el)
+│  ├─ Renderización con requestAnimationFrame
+│  ├─ IndexedDB para imágenes grandes
+│  ├─ Gestión de semestres y materias
+│  ├─ Sistema de notas completo
+│  ├─ Manejo de tareas y deadlines
+│  ├─ Calendario de eventos
+│  ├─ Sistema de Pomodoro
+│  ├─ OCR con Tesseract.js
+│  ├─ Procesamiento de PDFs (PDF.js)
+│  ├─ Modal dialogs y formularios
+│  ├─ Búsqueda global
+│  ├─ Importación/exportación de datos
+│  └─ Muchísimas otras funciones
+├─ Debe estar en: Academia_dev/js/
+└─ No edites directamente
+   - Este archivo es de referencia
+   - Contiene toda la lógica compleja original
+
+
+ESTRUCTURA COMPLETA
+===================
+
+Academia_dev/
+│
+├── 📄 index.html                  ← ABRE ESTE en el navegador
+├── 📋 README.md                   ← Lee esto para entender todo
+├── 📋 INSTRUCCIONES.txt           ← Pasos rápidos para Windows
+│
+├── css/
+│   ├── 🎨 styles.css              ← Estilos principales (PUEDES EDITAR)
+│   └── 🎨 pdf-viewer.css          ← Estilos del PDF (PUEDES EDITAR)
+│
+└── js/
+    ├── ⚙️ app.js                  ← Lógica principal (PUEDES EDITAR)
+    ├── 📎 pdf-handler.js          ← Manejo de PDF (EDITAR CON CUIDADO)
+    └── 🔧 all-scripts.js          ← Scripts originales (REFERENCIA)
+
+
+DÓNDE EDITAR SEGÚN TU NECESIDAD
+================================
+
+Quiero cambiar...              → Edita este archivo
+─────────────────────────────────────────────────────────
+Los colores                     → css/styles.css (línea 3-41, :root)
+Las fuentes                     → css/styles.css (--app-font)
+El layout (tamaño, forma)       → css/styles.css (todo)
+La apariencia del PDF viewer    → css/pdf-viewer.css
+El contenido de páginas         → js/app.js (getOverviewPage, getNotasPage, etc)
+Cómo se guardan datos           → js/app.js (saveNote, loadAllData, etc)
+Cómo funcionan los PDFs         → js/pdf-handler.js (CUIDADO)
+Agregar nuevas funciones        → js/app.js (agregar funciones)
+El comportamiento del Pomodoro  → js/all-scripts.js (busca _pomodoro_)
+
+
+FLUJO DE CARGA DE LA APLICACIÓN
+================================
+
+1. Navegador carga index.html
+   ↓
+2. index.html carga:
+   - CSS: styles.css y pdf-viewer.css
+   - JS: app.js, pdf-handler.js, all-scripts.js
+   ↓
+3. Se ejecuta DOMContentLoaded en app.js
+   - Carga tema guardado
+   - Carga datos de localStorage
+   - Genera estructura de páginas
+   - Inicializa componentes
+   ↓
+4. Usuario interactúa con la app
+   - Navega por páginas
+   - Crea notas
+   - Carga PDFs
+   - Los datos se guardan en localStorage
+   ↓
+5. Todo se procesa localmente (sin servidor)
+
+
+TAMAÑOS DE ARCHIVOS
+===================
+
+HTML:          8.2 KB  (pequeño)
+CSS Total:    67.2 KB  (estilos)
+  - styles.css      58.3 KB
+  - pdf-viewer.css   8.9 KB
+JS Total:     335.8 KB (lógica)
+  - app.js          16.7 KB
+  - pdf-handler.js   8.9 KB
+  - all-scripts.js  310 KB
+Documentación: 14.3 KB (este archivo + README + INSTRUCCIONES)
+
+TOTAL: ~426 KB (muy ligero)
+
+
+DEPENDENCIAS EXTERNAS
+=====================
+
+Google Fonts:
+- Space Mono (monoespaciada)
+- Syne (títulos)
+- Inter (textos)
+- JetBrains Mono (código)
+- Playfair Display (destacados)
+
+Librerías CDN:
+- PDF.js 3.11.174 (renderizar PDFs)
+- Tesseract.js 5.0.4 (OCR)
+
+⚠️ Nota: Necesita internet la PRIMERA vez para descargar las fuentes y librerías.
+Después funciona completamente offline.
+
+
+CÓMO FUNCIONAN LAS NOTAS CON PDF
+=================================
+
+Flujo paso a paso:
+
+Usuario crea nota:
+    app.js: openCreateNoteModal() 
+         ↓
+         Abre modal con:
+         - Input de título
+         - Textarea de contenido
+         - Área de carga de PDF
+         ↓
+Usuario carga PDF:
+    pdf-handler.js: initPdfUpload()
+                  → handlePdfDrop() O openPdfFilePicker()
+                  → loadPdfFile()
+                  → loadPdfFromArrayBuffer()
+                  → openPdfViewer()
+                  → renderAllPdfPages()
+         ↓
+         El PDF se visualiza en el modal
+         Usuario puede hacer zoom
+         ↓
+Usuario guarda nota:
+    app.js: saveNote()
+         ↓
+         pdf-handler.js: addPdfToNote()
+                      → saveNoteAttachment()
+         ↓
+         Los datos se guardan en localStorage
+         ↓
+Próxima vez que abre nota:
+    app.js: loadNotesUI()
+         ↓
+         pdf-handler.js: displayNoteAttachment()
+         ↓
+         El adjunto PDF aparece como botón
+         ↓
+Usuario hace click en adjunto:
+    pdf-handler.js: viewPdfAttachment()
+                  → openPdfViewer()
+                  → loadPdfFromArrayBuffer()
+         ↓
+         PDF se abre nuevamente para ver
+
+
+VARIABLES Y DATOS GUARDADOS
+============================
+
+En localStorage se guarda:
+
+academia_theme
+  → Valor: "dark" o "light"
+  → Uso: Recordar preferencia de tema
+
+academia_sounds  
+  → Valor: "true" o "false"
+  → Uso: Recordar si está activado sonido
+
+academia_notes
+  → Estructura: { noteId: { id, title, content, attachments } }
+  → Uso: Almacenar todas las notas creadas
+
+academia_semestres
+  → Estructura: [{ id, nombre, inicio, fin, credits }]
+  → Uso: Guardar semestres
+
+academia_materias
+  → Estructura: [{ id, nombre, profesor, creditos, calificacion }]
+  → Uso: Guardar materias registradas
+
+academia_tareas
+  → Estructura: [{ id, titulo, fecha, prioridad, completada }]
+  → Uso: Guardar tareas
+
+En IndexedDB se guarda:
+
+academia_images
+  → Almacena imágenes grandes en base64
+  → Uso: No cargar imágenes en localStorage que es limitado
+
+
+SEGURIDAD Y PRIVACIDAD
+======================
+
+✅ Ventajas de almacenamiento local:
+   - No se envía a servidores
+   - Totalmente privado
+   - Funciona sin internet (después de cargar)
+   - Velocidad (no hay latencia de red)
+
+⚠️ Limitaciones:
+   - localStorage: 5-10 MB por dominio
+   - IndexedDB: 50+ MB (depende del navegador)
+   - Si limpias caché → Pierdes datos
+   - No sincroniza entre dispositivos
+   - No se guarda backup automáticamente
+
+💡 Recomendaciones:
+   - Haz backup de tus notas regularmente
+   - No uses navegación privada
+   - Usa siempre el mismo navegador
+   - Considera exportar datos importantes
+
+
+VERSIÓN Y CAMBIOS
+==================
+
+v4.0.0 (Actual)
+├─ Archivos separados por primera vez ✓
+├─ Sistema de PDF completo ✓
+├─ Zoom ajustable (50%-300%) ✓
+├─ Drag & drop de PDFs ✓
+├─ Visualización en navegador ✓
+├─ Tema claro/oscuro mejorado ✓
+├─ Mejor organización del código ✓
+└─ Documentación completa ✓
+
+v3.1 (Anterior)
+├─ Todo en un archivo HTML gigante
+├─ PDFs parciales
+└─ Sin drag & drop
+
+
+PRÓXIMOS PASOS RECOMENDADOS
+============================
+
+1. Abre index.html en tu navegador
+2. Lee el README.md completamente
+3. Prueba crear una nota con un PDF
+4. Prueba el zoom del visualizador
+5. Explora todas las páginas
+6. Personaliza los colores si quieres
+7. ¡Disfruta! 🎓
+
+
+═══════════════════════════════════════════
+Última actualización: Marzo 2024
+Academia Dashboard v4.0
+Made with ❤️ para estudiantes
+═══════════════════════════════════════════

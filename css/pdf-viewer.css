@@ -1,0 +1,435 @@
+/**
+ * PDF Viewer Styles
+ * Estilos específicos para la visualización de PDFs en las notas
+ */
+
+.pdf-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  animation: fadeInModal 0.3s ease-out;
+  backdrop-filter: blur(2px);
+}
+
+@keyframes fadeInModal {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(2px);
+  }
+}
+
+.pdf-modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 95%;
+  height: 90vh;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.pdf-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pdf-modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+  flex: 1;
+}
+
+.pdf-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.pdf-controls button {
+  padding: 6px 10px;
+  border: none;
+  background: var(--surface);
+  color: var(--text2);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.pdf-controls button:hover {
+  background: var(--surface3);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+#pdf-scale-display {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  min-width: 50px;
+  text-align: center;
+  padding: 0 8px;
+}
+
+.pdf-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: var(--bg);
+}
+
+.pdf-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.pdf-container::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+.pdf-container::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 4px;
+}
+
+.pdf-container::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
+}
+
+.pdf-page-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.pdf-container canvas {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  background: white;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .pdf-modal-content {
+    width: 98%;
+    height: 95vh;
+  }
+
+  .pdf-modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pdf-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .pdf-container {
+    padding: 12px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   ATTACHMENTS IN NOTES
+   ═══════════════════════════════════════════ */
+
+.note-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.note-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  user-select: none;
+}
+
+.note-attachment:hover {
+  background: var(--surface3);
+  border-color: var(--accent);
+  color: var(--accent2);
+  box-shadow: 0 2px 8px rgba(124, 106, 255, 0.2);
+}
+
+.note-attachment-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.note-attachment-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-attachment-remove {
+  margin-left: auto;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.note-attachment-remove:hover {
+  opacity: 1;
+  color: var(--red);
+  transform: scale(1.1);
+}
+
+/* ═══════════════════════════════════════════
+   PDF UPLOAD AREA
+   ═══════════════════════════════════════════ */
+
+.pdf-upload-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  border: 2px dashed var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(124, 106, 255, 0.05);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  text-align: center;
+}
+
+.pdf-upload-area:hover {
+  background: rgba(124, 106, 255, 0.1);
+  border-color: var(--accent2);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(124, 106, 255, 0.15);
+}
+
+.pdf-upload-area.dragover {
+  background: rgba(124, 106, 255, 0.15);
+  border-color: var(--accent2);
+  color: var(--accent2);
+  transform: scale(1.01);
+  box-shadow: 0 4px 16px rgba(124, 106, 255, 0.25);
+}
+
+.pdf-upload-area.error {
+  border-color: var(--red);
+  background: rgba(248, 113, 113, 0.05);
+  color: var(--red);
+}
+
+.pdf-loading {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(124, 106, 255, 0.3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   FORM STYLES (si no existen)
+   ═══════════════════════════════════════════ */
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface3);
+  box-shadow: 0 0 0 3px rgba(124, 106, 255, 0.1);
+}
+
+/* ═══════════════════════════════════════════
+   MODAL STYLES (si no existen)
+   ═══════════════════════════════════════════ */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4000;
+}
+
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: var(--red);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+/* ═══════════════════════════════════════════
+   BUTTON STYLES (si no existen)
+   ═══════════════════════════════════════════ */
+
+.btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--surface3);
+  border-color: var(--border2);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  box-shadow: 0 0 20px rgba(124, 106, 255, 0.3);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text2);
+}
+
+.btn-ghost:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 11px;
+}
