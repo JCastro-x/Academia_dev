@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Academia Dashboard — Organiza tu semestre universitario">
+<meta name="description" content="EduTrack — Organiza tu semestre universitario">
 <title>Academia — Dashboard Académico</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -258,17 +258,17 @@
               </div>
               <div class="form-group">
                 <label class="form-label">Carrera</label>
-                <input type="text" class="form-input" id="profile-carrera" placeholder="Ej: Ingeniería en Ciencias y Sistemas">
+                <input type="text" class="form-input" id="profile-carrera" placeholder="Ej: Ingeniería en Sistemas">
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Registro Estudiantil</label>
-                <input type="text" class="form-input" id="profile-registro" placeholder="Ej: 201900001">
+                <input type="text" class="form-input" id="profile-registro" placeholder="Ej: 20230001">
               </div>
               <div class="form-group">
                 <label class="form-label">Facultad / Escuela</label>
-                <input type="text" class="form-input" id="profile-facultad" placeholder="Ej: Ingeniería · USAC">
+                <input type="text" class="form-input" id="profile-facultad" placeholder="Ej: Facultad de Ingeniería">
               </div>
             </div>
           </div>
@@ -474,7 +474,7 @@
             <span style="font-size:16px;font-weight:700;">🎯 Calificaciones</span>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;">
-                🎓 USAC: <span style="color:#f87171;">36pts=zona mín</span> · <span style="color:#4ade80;">61pts=ganada</span>
+                🎓 Zona mín: <span style="color:#f87171;">configurable</span> · <span style="color:#4ade80;">zona ganada</span>
               </div>
               <span style="font-size:12px;color:var(--text3);">Mín.:</span>
               <input type="number" id="min-grade" value="70" min="0" max="100" class="grade-input" style="width:52px;" oninput="renderGrades()">
@@ -1349,9 +1349,9 @@
       </div>
     </div>
 
-    <!-- USAC Cátedra fields -->
+    <!-- Datos del curso -->
     <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏛️ Datos de Cátedra (USAC)</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏛️ Datos del Curso</div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Sección</label>
           <input type="text" class="form-input" id="nc-seccion" placeholder="Ej: A, B, N+"></div>
@@ -1396,9 +1396,9 @@
       </div>
     </div>
 
-    <!-- USAC Smart Zones Builder -->
+    <!-- Configurador de zonas -->
     <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px;">⚡ Configuración Rápida USAC</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px;">⚡ Configuración Rápida de Zonas</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Activa las zonas que aplican y ajusta los puntos. El total debe sumar 100.</div>
 
       <!-- Row: Taller / Laboratorio -->
@@ -1625,9 +1625,9 @@
         <div class="color-opt" data-color="#34d399" style="background:#34d399;" onclick="ecSelectColor(this)"></div>
       </div>
     </div>
-    <!-- USAC Cátedra fields -->
+    <!-- Datos del curso -->
     <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏛️ Datos de Cátedra (USAC)</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏛️ Datos del Curso</div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Sección</label>
           <input type="text" class="form-input" id="ec-seccion" placeholder="Ej: A, B, N+"></div>
@@ -1875,6 +1875,9 @@
   <script src="js/notes.js"></script>
   <script src="js/chrono.js"></script>
 
+
+<!-- Mobile sidebar overlay -->
+<div id="mobile-sidebar-overlay" onclick="closeMobileSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149;backdrop-filter:blur(2px);"></div>
 
 </body>
 </html>

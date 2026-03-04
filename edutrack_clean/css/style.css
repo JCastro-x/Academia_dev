@@ -1,5 +1,4 @@
 
-
 :root {
   --bg:       #0a0a0f; --surface: #111118; --surface2: #18181f; --surface3: #1e1e28;
   --border:   #2a2a38; --border2: #363648;
@@ -745,179 +744,144 @@ body::before {
 .focus-exit-btn { position:absolute; top:28px; right:28px; padding:10px 16px; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text2); cursor:pointer; font-size:12px; font-weight:700; z-index:10001; transition:all .2s; }
 .focus-exit-btn:hover { border-color:var(--accent); color:var(--accent); }
 
-.quizziz-card { background:linear-gradient(135deg,rgba(124,106,255,.08) 0%,rgba(96,165,250,.08) 100%); border:1.5px solid var(--accent); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
-.quizziz-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
-.quizziz-icon { font-size:28px; }
-.quizziz-title { font-size:16px; font-weight:700; }
-.quizziz-subtitle { font-size:11px; color:var(--text2); margin-top:2px; }
-.quizziz-upload { display:flex; align-items:center; gap:8px; padding:12px 14px; background:var(--surface); border:2px dashed var(--accent); border-radius:var(--radius-sm); cursor:pointer; transition:all .2s; margin-bottom:12px; font-size:13px; font-weight:600; }
-.quizziz-upload:hover { background:var(--surface2); border-color:var(--accent2); }
-.quizziz-preview { display:none; padding:12px 14px; background:var(--surface2); border-left:3px solid var(--green); border-radius:var(--radius-sm); margin-bottom:12px; font-size:12px; }
-.quizziz-preview.visible { display:block; }
-.quizziz-generate-btn { width:100%; padding:10px 14px; background:var(--accent); color:#fff; border:none; border-radius:var(--radius-sm); cursor:pointer; font-weight:700; transition:all .2s; }
-.quizziz-generate-btn:hover { background:var(--accent2); box-shadow:0 0 20px rgba(124,106,255,.3); }
+/* quizziz removed */
 
 
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE MÓVIL — EduTrack
+   ═══════════════════════════════════════════════════════ */
 
-
-/* ═══════════════════════════════════════════════
-   PDF VIEWER STYLES (Nuevo)
-   ═══════════════════════════════════════════════ */
-
-.pdf-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 5000;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.pdf-modal-content {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  width: 90%;
-  max-width: 1000px;
-  height: 85vh;
-  display: flex;
+/* ── Hamburger button ── */
+.hamburger-btn {
+  display: none;
   flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-}
-
-.pdf-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.pdf-modal-header h3 {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.pdf-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-#pdf-scale-display {
-  font-family: 'Space Mono', monospace;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text2);
-  min-width: 45px;
-  text-align: center;
-}
-
-.pdf-container {
-  flex: 1;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  background: var(--bg);
-}
-
-.pdf-container canvas {
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-}
-
-.pdf-page-wrapper {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
-  width: 100%;
-}
-
-/* Attachments in notes */
-.note-attachment {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
   background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 8px;
-  margin-right: 8px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.note-attachment:hover {
-  background: var(--surface3);
-  border-color: var(--accent);
-  color: var(--accent2);
-}
-
-.note-attachment-icon {
-  font-size: 14px;
-}
-
-.note-attachment-name {
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.note-attachment-remove {
-  margin-left: auto;
-  cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.note-attachment-remove:hover {
-  opacity: 1;
-  color: var(--red);
-}
-
-.pdf-upload-area {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 2px dashed var(--accent);
+  border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-  background: rgba(124,106,255,0.05);
-  font-size: 12px;
-  font-weight: 600;
+  padding: 7px;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.hamburger-btn:hover { background: var(--surface3); }
+.hamburger-btn span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--text2);
+  border-radius: 2px;
+  transition: all .25s;
+}
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Sidebar mobile slide ── */
+.sidebar.mobile-open {
+  transform: translateX(0) !important;
 }
 
-.pdf-upload-area:hover {
-  background: rgba(124,106,255,0.1);
-  border-color: var(--accent2);
-  color: var(--accent2);
+@media (max-width: 768px) {
+  /* Show hamburger */
+  .hamburger-btn { display: flex !important; }
+
+  /* Sidebar slides in from left */
+  .sidebar {
+    position: fixed !important;
+    left: 0; top: 0; bottom: 0;
+    z-index: 150;
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    display: flex !important;
+    width: 240px !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,.5);
+  }
+
+  /* Main takes full width */
+  .main { margin-left: 0 !important; }
+  .content { padding: 14px 12px 80px !important; }
+
+  /* Topbar */
+  .topbar {
+    padding: 10px 12px !important;
+    gap: 8px;
+  }
+  .topbar-right { gap: 6px; }
+  #page-title { font-size: 15px !important; flex: 1; }
+  .search-input-bar { width: 130px !important; }
+  .search-input-bar:focus { width: 170px !important; }
+
+  /* Grid layouts → single column */
+  .stats-row { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .grid-auto { grid-template-columns: 1fr !important; }
+  .form-row  { grid-template-columns: 1fr !important; }
+
+  /* Cards */
+  .card { padding: 14px !important; }
+
+  /* Grades */
+  .grade-row { grid-template-columns: 1fr 60px 60px !important; }
+  .grade-pct, .grade-bar { display: none !important; }
+
+  /* Modal */
+  .modal { padding: 14px !important; align-items: flex-end !important; }
+  .modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 90vh !important;
+  }
+
+  /* Page title */
+  .page-title { font-size: 16px !important; }
+
+  /* Notes layout */
+  .notes-pro-layout {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 200px 1fr !important;
+    height: auto !important;
+    min-height: 600px !important;
+  }
+  .notes-pro-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  /* Pomodoro */
+  .pom-timer-display { font-size: 52px !important; }
+
+  /* Overview chips */
+  .mc-chips { gap: 5px !important; }
+  .mc-chip  { font-size: 10px !important; padding: 3px 8px !important; }
+
+  /* Tables scroll horizontally */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Buttons — bigger touch targets */
+  .btn-sm { padding: 7px 11px !important; font-size: 12px !important; }
+
+  /* Calendar */
+  .cal-cell { min-height: 52px !important; padding: 4px 3px !important; }
+  .cal-event { display: none !important; } /* hide event chips on mobile, dots instead */
+  .cal-num { font-size: 13px !important; }
+
+  /* Bottom padding so content clears the mobile nav */
+  .page.active { padding-bottom: 72px !important; }
 }
 
-.pdf-upload-area.dragover {
-  background: rgba(124,106,255,0.15);
-  border-color: var(--accent2);
-  color: var(--accent2);
+/* ── Tablet (769–1024px) ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+  .content { padding: 18px 16px !important; }
 }
 
+/* ── Very small screens ── */
+@media (max-width: 380px) {
+  .stats-row { grid-template-columns: 1fr !important; }
+  .topbar-right .btn-ghost { display: none; }
+  .search-input-bar { width: 110px !important; }
+}
