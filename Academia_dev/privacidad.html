@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#7c6aff">
+  <title>Política de Privacidad — Academia Dev</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #0a0a0f;
+      color: #e8e8f0;
+      font-family: 'Syne', sans-serif;
+      line-height: 1.8;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #a78bfa, #7c6aff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: #9090a8;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-top: 30px;
+      margin-bottom: 12px;
+      color: #a78bfa;
+    }
+
+    p {
+      margin-bottom: 12px;
+      color: #e8e8f0;
+    }
+
+    ul {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 10px 16px;
+      background: #7c6aff;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .back-link:hover {
+      opacity: 0.8;
+    }
+
+    .updated {
+      color: #9090a8;
+      font-size: 12px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #2a2a38;
+    }
+
+    code {
+      background: #111118;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Política de Privacidad</h1>
+    <p class="subtitle">Última actualización: 5 de marzo de 2026</p>
+
+    <h2>1. Introducción</h2>
+    <p>Academia Dev ("nosotros", "nuestro" o "Plataforma") está comprometida con la protección de tu privacidad. Esta Política de Privacidad explica cómo recopilamos, usamos, divulgamos y protegemos tu información.</p>
+
+    <h2>2. Información que Recopilamos</h2>
+    <p>Recopilamos información que proporcionas directamente:</p>
+    <ul>
+      <li><strong>Información de Cuenta:</strong> nombre, email, fotografía de perfil (si usas Google)</li>
+      <li><strong>Datos Académicos:</strong> calificaciones, tareas, notas, eventos</li>
+      <li><strong>Datos de Uso:</strong> cómo usas la Plataforma, dispositivo, ubicación aproximada</li>
+      <li><strong>Cookies:</strong> para mejorar tu experiencia</li>
+    </ul>
+
+    <h2>3. Cómo Usamos tu Información</h2>
+    <p>Usamos tu información para:</p>
+    <ul>
+      <li>Proporcionar y mejorar el servicio</li>
+      <li>Autenticarte y proteger tu cuenta</li>
+      <li>Sincronizar datos entre tus dispositivos</li>
+      <li>Enviar notificaciones importantes</li>
+      <li>Analizar tendencias y mejorar la Plataforma</li>
+      <li>Cumplir con obligaciones legales</li>
+    </ul>
+
+    <h2>4. Almacenamiento de Datos</h2>
+    <p>Tus datos se almacenan en <strong>Supabase</strong>, una plataforma de base de datos segura basada en PostgreSQL. Supabase cumple con:</p>
+    <ul>
+      <li>Encriptación de datos en tránsito (SSL/TLS)</li>
+      <li>Encriptación de datos en reposo</li>
+      <li>Backups automáticos diarios</li>
+      <li>Row Level Security (RLS) para privacidad</li>
+      <li>Cumplimiento con GDPR</li>
+    </ul>
+
+    <h2>5. Compartir Información</h2>
+    <p><strong>No vendemos tu información.</strong> Solo compartimos datos cuando es necesario para:</p>
+    <ul>
+      <li>Proporcionar el servicio (Supabase, Google OAuth)</li>
+      <li>Cumplir con requisitos legales</li>
+      <li>Proteger derechos y seguridad</li>
+    </ul>
+
+    <h2>6. Seguridad</h2>
+    <p>Implementamos medidas de seguridad para proteger tu información:</p>
+    <ul>
+      <li>Autenticación con Google OAuth (segura)</li>
+      <li>Contraseñas hasheadas (nunca almacenamos en texto plano)</li>
+      <li>Rate limiting para prevenir ataques</li>
+      <li>CORS configurado correctamente</li>
+      <li>Validación y sanitización de inputs</li>
+    </ul>
+
+    <h2>7. Retención de Datos</h2>
+    <p>Retenemos tu información mientras tengas una cuenta activa. Puedes solicitar la eliminación de tu cuenta en cualquier momento, lo que eliminará todos tus datos en 30 días.</p>
+
+    <h2>8. Cookies</h2>
+    <p>Usamos cookies para:</p>
+    <ul>
+      <li>Mantener sesión activa</li>
+      <li>Recordar preferencias</li>
+      <li>Analytics anónimos</li>
+    </ul>
+    <p>Puedes controlar cookies en la configuración de tu navegador.</p>
+
+    <h2>9. Derechos del Usuario (GDPR)</h2>
+    <p>Si vives en la UE o un país con leyes similares, tienes derecho a:</p>
+    <ul>
+      <li><strong>Acceso:</strong> solicitar copia de tus datos</li>
+      <li><strong>Rectificación:</strong> corregir datos incorrectos</li>
+      <li><strong>Eliminación:</strong> solicitar borrado de datos ("derecho al olvido")</li>
+      <li><strong>Portabilidad:</strong> obtener datos en formato transferible</li>
+      <li><strong>Restricción:</strong> limitar cómo se usan tus datos</li>
+    </ul>
+
+    <h2>10. Terceros</h2>
+    <p>Usamos servicios de terceros:</p>
+    <ul>
+      <li><strong>Supabase:</strong> base de datos y autenticación</li>
+      <li><strong>Google:</strong> para OAuth login</li>
+      <li><strong>Netlify:</strong> hosting de la Plataforma</li>
+    </ul>
+    <p>Consulta sus políticas de privacidad en sus sitios web.</p>
+
+    <h2>11. Cambios en esta Política</h2>
+    <p>Podemos actualizar esta política en cualquier momento. Te notificaremos de cambios significativos por email o en la Plataforma.</p>
+
+    <h2>12. Contacto</h2>
+    <p>Si tienes preguntas sobre tu privacidad o deseas ejercer tus derechos, contáctanos:</p>
+    <ul>
+      <li><strong>Email:</strong> privacy@academia-dev.com</li>
+      <li><strong>GitHub:</strong> github.com/josueeliucastrososa-cmyk/Academia_dev</li>
+    </ul>
+
+    <a href="/auth-page.html" class="back-link">← Volver al Login</a>
+
+    <div class="updated">
+      <strong>Última actualización:</strong> 5 de marzo de 2026
+    </div>
+  </div>
+</body>
+</html>

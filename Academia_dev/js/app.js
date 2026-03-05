@@ -2350,10 +2350,11 @@ function openQuickAdd() { _uiClick('modal-open'); document.getElementById('modal
 function closeModal(id) { _uiClick('modal-close'); document.getElementById(id)?.classList.remove('open'); }
 
 function _getGreeting() {
-  const h     = new Date().getHours();
-  const name  = State.settings?.profile?.name?.split(' ')[0] || 'Ingeniero';
+  const h = new Date().getHours();
+  // Obtener nombre del usuario autenticado (Google) o fallback
+  const userName = window._currentUserName || State.settings?.profile?.name?.split(' ')[0] || 'Ingeniero';
   const salud = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
-  return `${salud}, ${name} 👋`;
+  return `${salud}, ${userName} 👋`;
 }
 
 function init() {
@@ -2384,6 +2385,20 @@ function init() {
   _updateOvClock();
   setInterval(_updateOvClock, 10000);
   const h = now.getHours();
+  
+  // Obtener nombre real del usuario autenticado (Google)
+  (async () => {
+    try {
+      const auth = await window.Auth.checkAuth();
+      if (auth && auth.name) {
+        window._currentUserName = auth.name.split(' ')[0]; // Primer nombre
+        document.getElementById('ov-greeting').textContent = _getGreeting();
+      }
+    } catch (e) {
+      console.log('No auth available for name');
+    }
+  })();
+  
   document.getElementById('ov-greeting').textContent = _getGreeting();
 
   document.documentElement.setAttribute('data-theme', State.settings.theme||'dark');
@@ -2517,3 +2532,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// ════════════════════════════════════════════════════════════
+// LOGOUT HANDLER
+// ════════════════════════════════════════════════════════════
+async function handleLogout() {
+  if (!confirm('¿Estás seguro de que quieres cerrar sesión?')) return;
+  
+  const result = await window.Auth.logoutUser();
+  if (result.success) {
+    console.log('✅ Sesión cerrada');
+    localStorage.clear();
+    window.location.href = 'auth-page.html';
+  } else {
+    alert('Error al cerrar sesión: ' + result.error);
+  }
+}
