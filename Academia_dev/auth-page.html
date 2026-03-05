@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#7c6aff">
+  <title>Academia — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: #2a2a38;
+      --text: #e8e8f0;
+      --text2: #9090a8;
+      --accent: #7c6aff;
+      --shadow: 0 2px 16px rgba(0,0,0,.4);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: var(--shadow);
+      animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .logo-text {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span {
+      background: linear-gradient(135deg, #a78bfa, #7c6aff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text2);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #a78bfa, #7c6aff);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(124, 106, 255, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      gap: 8px;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .error-msg {
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid #f87171;
+      color: #f87171;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .error-msg.show {
+      display: block;
+    }
+
+    .success-msg {
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid #4ade80;
+      color: #4ade80;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .success-msg.show {
+      display: block;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .divider {
+      text-align: center;
+      color: var(--text2);
+      font-size: 12px;
+      margin: 24px 0;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 20px;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 28px; }
+      .logo-text { font-size: 20px; }
+      .logo-icon { font-size: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="logo">
+        <div class="logo-icon">🎓</div>
+        <div class="logo-text">Academia<span>Dev</span></div>
+        <div class="subtitle">Dashboard Académico</div>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+      <div class="success-msg" id="successMsg"></div>
+
+      <button class="btn btn-secondary" onclick="handleGoogleLogin()">
+        <span style="font-size: 18px;">🔐</span>
+        <span>Ingresar con Google</span>
+      </button>
+
+      <div class="divider">— O —</div>
+
+      <button class="btn btn-secondary" onclick="alert('Email/Password pronto')">
+        <span style="font-size: 16px;">📧</span>
+        <span>Email (Próximamente)</span>
+      </button>
+
+      <div class="footer">
+        Al continuar aceptas nuestros Términos y Privacidad
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Auth -->
+  <script src="js/auth.js"></script>
+
+  <script>
+    async function handleGoogleLogin() {
+      const btn = event.target.closest('.btn');
+      const errorMsg = document.getElementById('errorMsg');
+      const successMsg = document.getElementById('successMsg');
+
+      errorMsg.classList.remove('show');
+      successMsg.classList.remove('show');
+
+      btn.disabled = true;
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = '<div class="spinner"></div><span>Abriendo Google...</span>';
+
+      const result = await window.Auth.signInGoogle();
+
+      if (!result.success) {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        errorMsg.textContent = result.error;
+        errorMsg.classList.add('show');
+      }
+      // Si es exitoso, Google redirige automáticamente
+    }
+
+    // Verificar si ya está autenticado
+    window.addEventListener('load', async () => {
+      const auth = await window.Auth.checkAuth();
+      if (auth) {
+        console.log('✅ Ya autenticado, redirigiendo...');
+        window.location.href = 'index.html';
+      }
+    });
+  </script>
+</body>
+</html>

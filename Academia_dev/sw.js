@@ -2,7 +2,9 @@ const CACHE_NAME = 'academia-v1';
 const ASSETS = [
   '/',
   '/index.html',
+  '/auth-page.html',
   '/css/style.css',
+  '/js/auth.js',
   '/js/app.js',
   '/js/calificaciones.js',
   '/js/tasks.js',
