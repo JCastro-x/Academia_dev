@@ -2022,5 +2022,86 @@
   }
   </script>
 
+  <!-- Pull-to-refresh indicator -->
+  <div id="pull-to-refresh-indicator" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    background: linear-gradient(to bottom, rgba(124, 106, 255, 0.1), transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: height 0.3s ease;
+    z-index: 100;
+  ">
+    <div style="text-align: center;">
+      <div id="pull-indicator-icon" style="font-size: 24px; transition: transform 0.3s;">⬇️</div>
+      <div id="pull-indicator-text" style="font-size: 12px; color: #7c6aff; margin-top: 4px;">Desliza para actualizar</div>
+    </div>
+  </div>
+
+  <script>
+  // ════════════════════════════════════════════════════════════════
+  // PULL-TO-REFRESH HANDLER
+  // ════════════════════════════════════════════════════════════════
+  let pullStartY = 0;
+  let isPulling = false;
+  let pullDistance = 0;
+
+  const PTR_THRESHOLD = 80;
+  const indicator = document.getElementById('pull-to-refresh-indicator');
+  const indicatorIcon = document.getElementById('pull-indicator-icon');
+  const indicatorText = document.getElementById('pull-indicator-text');
+
+  document.addEventListener('touchstart', (e) => {
+    if (window.scrollY === 0) {
+      pullStartY = e.touches[0].clientY;
+      isPulling = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!isPulling) return;
+    pullDistance = e.touches[0].clientY - pullStartY;
+    if (pullDistance < 0) {
+      isPulling = false;
+      return;
+    }
+    indicator.style.height = Math.min(pullDistance, PTR_THRESHOLD) + 'px';
+    if (pullDistance >= PTR_THRESHOLD) {
+      indicatorIcon.textContent = '⬆️';
+      indicatorIcon.style.transform = 'rotate(180deg)';
+      indicatorText.textContent = '¡Suelta para actualizar!';
+    } else {
+      indicatorIcon.textContent = '⬇️';
+      indicatorIcon.style.transform = 'rotate(0deg)';
+      indicatorText.textContent = 'Desliza para actualizar';
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', async (e) => {
+    if (!isPulling) return;
+    isPulling = false;
+    if (pullDistance >= PTR_THRESHOLD) {
+      indicator.style.height = PTR_THRESHOLD + 'px';
+      indicatorIcon.textContent = '⚡';
+      indicatorText.textContent = 'Actualizando...';
+      if (window.DB && window.DB._syncFromSupabase) {
+        await window.DB._syncFromSupabase();
+      }
+      setTimeout(() => {
+        indicator.style.height = '0px';
+        pullDistance = 0;
+      }, 1000);
+    } else {
+      indicator.style.height = '0px';
+      pullDistance = 0;
+    }
+  });
+  </script>
+
 </body>
 </html>

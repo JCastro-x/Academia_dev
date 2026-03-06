@@ -1,7 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * DB.JS — Capa de base de datos Supabase
- * Reemplaza localStorage con Supabase para datos persistentes
+ * DB.JS — Capa de base de datos Supabase + Auto-Sync
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -37,18 +36,86 @@
 
   // ── Save timer (debounce) ─────────────────────────────────────
   let _saveTimer = null;
+  let _syncTimer = null;
 
   // ── Main DB object ────────────────────────────────────────────
   const DB = {
 
     _userId: null,
     _ready: false,
+    _lastSync: 0,
+    _syncThrottle: 5000, // 5 segundos
 
     // ── Inicializar con el usuario autenticado ─────────────────
     init(userId) {
       this._userId = userId;
       this._ready = true;
       console.log('✅ DB initialized for user:', userId);
+      
+      // Setup auto-sync listeners
+      this._setupSyncListeners();
+    },
+
+    // ── Setup listeners para sincronización automática ──────────
+    _setupSyncListeners() {
+      // Cuando el tab vuelve a estar visible
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          console.log('📱 Tab visible - sincronizando...');
+          this._syncFromSupabase();
+        }
+      });
+
+      // Cuando la ventana gana focus
+      window.addEventListener('focus', () => {
+        console.log('🔄 Window focused - sincronizando...');
+        this._syncFromSupabase();
+      });
+
+      // Periodicamente (cada 30 segundos)
+      setInterval(() => {
+        this._syncFromSupabase();
+      }, 30000);
+    },
+
+    // ── Sincronizar desde Supabase (throttled) ─────────────────
+    async _syncFromSupabase() {
+      if (!this._ready) return;
+      const now = Date.now();
+      if (now - this._lastSync < this._syncThrottle) return;
+      this._lastSync = now;
+
+      try {
+        const dbData = await this.load();
+        if (!dbData) return;
+
+        const localSem = State.semestres || [];
+        const localSet = State.settings || {};
+        const remSem = dbData.semestres || [];
+        const remSet = dbData.settings || {};
+
+        // Comparar si hay cambios
+        const semChanged = JSON.stringify(localSem) !== JSON.stringify(remSem);
+        const setChanged = JSON.stringify(localSet) !== JSON.stringify(remSet);
+
+        if (semChanged || setChanged) {
+          console.log('🔄 Cambios detectados, actualizando Estado...');
+          if (semChanged) State.semestres = remSem;
+          if (setChanged) State.settings = remSet;
+
+          // Re-renderizar la página actual
+          const currentPage = document.querySelector('[data-page-active]')?.getAttribute('data-page-active');
+          if (currentPage === 'overview') renderOverview();
+          else if (currentPage === 'tareas') renderTasks();
+          else if (currentPage === 'calendario') renderCalendar();
+          else if (currentPage === 'notas') renderNotes();
+          else if (currentPage === 'materias') renderMaterias();
+
+          _showSync('✓ Sincronizado', 'success');
+        }
+      } catch (err) {
+        console.error('❌ Error en sync:', err);
+      }
     },
 
     // ── Cargar datos del usuario desde Supabase ────────────────
@@ -64,7 +131,6 @@
           .single();
 
         if (error && error.code === 'PGRST116') {
-          // No existe aún — primera vez del usuario
           console.log('📦 Usuario nuevo, sin datos en DB');
           return null;
         }
