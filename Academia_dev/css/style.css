@@ -234,7 +234,6 @@ body::before {
 .grade-label { font-size:12px; color:var(--text2); font-weight:600; }
 .grade-pct   { text-align:center; font-family:'Space Mono',monospace; font-size:12px; }
 .grade-net   { text-align:center; font-family:'Space Mono',monospace; font-size:14px; font-weight:800; }
-.grade-bar   { }
 .grade-input { background:var(--surface2); border:1px solid var(--border2); border-radius:6px; padding:5px 8px; color:var(--text); font-family:'Space Mono',monospace; font-size:13px; outline:none; text-align:center; transition:border-color .15s; width:100%; }
 .grade-input:focus { border-color:var(--accent); }
 .input-tip { font-size:10px; color:var(--text3); font-family:'Space Mono',monospace; margin-bottom:10px; padding:6px 8px; background:var(--surface2); border-radius:5px; }
