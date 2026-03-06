@@ -36,88 +36,6 @@ function prioBadge(p) {
   return `<span class="priority-badge ${cls}">${prioIcon(p)} ${lbl}</span>`;
 }
 
-// ════════════════════════════════════════════════════════
-// RENDER TASKS — ORDENAR POR PRIORIDAD CORRECTAMENTE
-// ════════════════════════════════════════════════════════
-function renderTasks() {
-  _schedRender(_renderTasks);
-}
-
-function _renderTasks() {
-  const container = document.getElementById('tasks-list');
-  if (!container) return;
-
-  // Leer filtros activos
-  const searchQ  = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
-  const filterMat    = document.getElementById('tf-mat')?.value    || '';
-  const filterPrio   = document.getElementById('tf-prio')?.value   || '';
-  const filterStatus = document.getElementById('tf-status')?.value || '';
-
-  // Filtrar tareas
-  let filteredTasks = State.tasks.slice().filter(t => {
-    if (filterMat    && t.matId    !== filterMat)                          return false;
-    if (filterPrio   && t.priority !== filterPrio)                         return false;
-    if (filterStatus === 'pending' && t.done)                              return false;
-    if (filterStatus === 'done'    && !t.done)                             return false;
-    if (searchQ && !t.title.toLowerCase().includes(searchQ))               return false;
-    return true;
-  });
-
-  // Ordenar: primero NO completadas, por prioridad (high→med→low), luego por fecha
-  const sortedTasks = filteredTasks
-    .sort((a, b) => {
-      // Si uno está completado y otro no, el no completado va primero
-      if (a.done !== b.done) return a.done ? 1 : -1;
-      
-      // Ordenar por prioridad: high (0) > med (1) > low (2)
-      const prioPriority = { high: 0, med: 1, low: 2 };
-      const prioA = prioPriority[a.priority] || 1;
-      const prioB = prioPriority[b.priority] || 1;
-      if (prioA !== prioB) return prioA - prioB;
-      
-      // Si tienen igual prioridad, ordenar por fecha vencimiento
-      const dateA = a.due ? new Date(a.due).getTime() : Infinity;
-      const dateB = b.due ? new Date(b.due).getTime() : Infinity;
-      return dateA - dateB;
-    });
-
-  let html = '';
-  if (sortedTasks.length === 0) {
-    html = `<div style="text-align:center;padding:40px;color:var(--text3);">📋 Sin tareas</div>`;
-  } else {
-    html = sortedTasks.map(t => {
-      const m = getMat(t.matId);
-      const prog = subtaskProgress(t);
-      const dueStr = t.due ? `<span style="font-size:10px;color:var(--text3);">${fmtD(t.due)}</span>` : '';
-      const progBar = prog ? `
-        <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-          <div class="prog-bar" style="flex:1;height:4px;"><div class="prog-fill" style="background:#7c6aff;width:${prog.pct}%;"></div></div>
-          <span style="font-size:9px;color:var(--text3);">${prog.done}/${prog.total}</span>
-        </div>
-      ` : '';
-
-      return `
-        <div class="task-item${t.done ? ' done' : ''}" onclick="openTaskDetail('${t.id}')">
-          <div class="task-check ${t.done ? 'checked' : ''}" onclick="event.stopPropagation();toggleTask('${t.id}')"></div>
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-              <span style="font-size:13px;font-weight:600;${t.done ? 'text-decoration:line-through;opacity:0.5' : ''}">${t.title}</span>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:10px;color:var(--text3);">
-              <span style="background:${m.color || '#7c6aff'}22;color:${m.color || '#7c6aff'};padding:2px 6px;border-radius:4px;">${m.icon || '📚'} ${m.code || m.name || ''}</span>
-              <span class="type-badge ${getTypeBadgeClass(t.type)}">${t.type || 'Tarea'}</span>
-              ${dueStr}
-            </div>
-            ${progBar}
-          </div>
-          ${prioBadge(t.priority)}
-        </div>
-      `;
-    }).join('');
-  }
-  container.innerHTML = html;
-}
-
 function renderSubtasksEditor(list) {
   _editSubtasks = Array.isArray(list) ? list : [];
   const c = document.getElementById('subtasks-editor');
@@ -209,133 +127,260 @@ function openTaskModal(id) {
     if (document.getElementById('t-tags')) document.getElementById('t-tags').value = '';
   }
 
+  document.querySelectorAll('#modal-task .modal-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  document.querySelectorAll('#modal-task .modal-tab-panel').forEach((p, i) => p.classList.toggle('active', i === 0));
+
   renderSubtasksEditor(_editSubtasks);
   renderAttachmentsEditor(_editAttachments);
   renderCommentsEditor(_editComments);
   document.getElementById('modal-task').classList.add('open');
 }
 
-function saveTask() {
-  const title    = document.getElementById('t-title').value.trim();
-  const matId    = document.getElementById('t-mat').value;
-  const priority = document.getElementById('t-prio').value;
-  const due      = document.getElementById('t-due').value;
-  const type     = document.getElementById('t-type').value;
-  const notes    = document.getElementById('t-notes').value;
-  const timeEst  = document.getElementById('t-time-est')?.value || '';
-  const tags     = document.getElementById('t-tags')?.value ? document.getElementById('t-tags').value.split(',').map(t => t.trim()) : [];
+function switchTaskTab(tab, el) {
+  document.querySelectorAll('#modal-task .modal-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#modal-task .modal-tab-panel').forEach(p => p.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const panel = document.getElementById('ttab-' + tab);
+  if (panel) panel.classList.add('active');
+  if (tab === 'subtasks')    renderSubtasksEditor(_editSubtasks);
+  if (tab === 'attachments') renderAttachmentsEditor(_editAttachments);
+  if (tab === 'comments')    renderCommentsEditor(_editComments);
+}
 
-  if (!title || !matId) {
-    alert('Título y materia son obligatorios');
+function saveTask() {
+  const title = document.getElementById('t-title').value.trim();
+  if (!title) {
+    document.getElementById('t-title').style.borderColor = 'var(--red)';
+    document.getElementById('t-title').focus();
     return;
   }
+  document.getElementById('t-title').style.borderColor = '';
+
+  document.querySelectorAll('#subtasks-editor input[type="text"]').forEach((inp, i) => {
+    if (_editSubtasks[i]) _editSubtasks[i].text = inp.value;
+  });
+  document.querySelectorAll('#comments-editor textarea').forEach((ta, i) => {
+    if (_editComments[i]) _editComments[i].text = ta.value;
+  });
+
+  const existing = editTaskId ? State.tasks.find(t => t.id === editTaskId) : null;
+  const task = {
+    id:          editTaskId || Date.now().toString(),
+    title,
+    matId:       document.getElementById('t-mat').value,
+    priority:    document.getElementById('t-prio').value,
+    datePlanned: document.getElementById('t-date-planned').value,
+    due:         document.getElementById('t-due').value,
+    type:        document.getElementById('t-type').value,
+    notes:       document.getElementById('t-notes').value,
+    timeEst:     parseInt(document.getElementById('t-time-est')?.value) || 0,
+    tags:        (document.getElementById('t-tags')?.value || '').split(',').map(t=>t.trim()).filter(Boolean),
+    kanbanCol:   existing?.kanbanCol || 'todo',
+    done:        existing ? existing.done : false,
+    createdAt:   existing ? existing.createdAt : Date.now(),
+    subtasks:    _editSubtasks.filter(s => s.text.trim()),
+    attachments: _editAttachments,
+    comments:    _editComments.filter(c => c.text.trim()),
+  };
 
   if (editTaskId) {
-    const t = State.tasks.find(x => x.id === editTaskId);
-    if (t) {
-      t.title      = title;
-      t.matId      = matId;
-      t.priority   = priority;
-      t.due        = due;
-      t.type       = type;
-      t.notes      = notes;
-      t.timeEst    = timeEst ? parseInt(timeEst) : 0;
-      t.tags       = tags;
-      t.subtasks   = _editSubtasks;
-      t.attachments= _editAttachments;
-      t.comments   = _editComments;
-    }
+    const idx = State.tasks.findIndex(t => t.id === editTaskId);
+    if (idx >= 0) State.tasks[idx] = task;
   } else {
-    State.tasks.push({
-      id:           Date.now().toString(),
-      title:        title,
-      matId:        matId,
-      priority:     priority,
-      due:          due,
-      type:         type,
-      notes:        notes,
-      done:         false,
-      timeEst:      timeEst ? parseInt(timeEst) : 0,
-      tags:         tags,
-      subtasks:     _editSubtasks,
-      attachments:  _editAttachments,
-      comments:     _editComments,
-      datePlanned:  document.getElementById('t-date-planned')?.value || '',
-    });
+    State.tasks.unshift(task);
   }
 
   saveState(['tasks']);
   closeModal('modal-task');
   renderTasks();
+  updateBadge();
   renderOverview();
+  renderCalendar();
 }
 
 function toggleTask(id) {
   const t = State.tasks.find(x => x.id === id);
-  if (t) {
-    t.done = !t.done;
-    saveState(['tasks']);
-    renderTasks();
-    updateBadge();
-    renderOverview();
-  }
+  if (!t) return;
+  const wasDone = t.done;
+  t.done = !t.done;
+  _uiClick(wasDone ? 'task-undone' : 'task-done');
+  if (!wasDone) { _updateStreak(); }
+  saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
 }
-
-function deleteTask(id) {
-  if (!confirm('¿Eliminar esta tarea?')) return;
-  State.tasks = State.tasks.filter(x => x.id !== id);
-  saveState(['tasks']);
-  renderTasks();
-  updateBadge();
-  renderOverview();
-}
-
-function toggleSubtask(taskId, subtaskIdx) {
+function toggleSubtask(taskId, idx) {
   const t = State.tasks.find(x => x.id === taskId);
-  if (t && t.subtasks && t.subtasks[subtaskIdx]) {
-    t.subtasks[subtaskIdx].done = !t.subtasks[subtaskIdx].done;
-    saveState(['tasks']);
-    renderTasks();
-    renderOverview();
-  }
+  if (!t?.subtasks?.[idx]) return;
+  t.subtasks[idx].done = !t.subtasks[idx].done;
+  if (t.subtasks.every(s => s.done)) t.done = true;
+  saveState(['tasks']); renderTasks(); updateBadge(); renderCalendar();
+}
+function deleteTask(id) {
+  State.tasks = State.tasks.filter(t => t.id !== id);
+  saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
+}
+function toggleDesc(id) {
+  const el  = document.getElementById('desc-' + id);
+  const btn = document.getElementById('descbtn-' + id);
+  if (!el) return;
+  const shown = el.style.display !== 'none';
+  el.style.display = shown ? 'none' : 'block';
+  if (btn) btn.textContent = (shown ? '▸' : '▾') + ' Ver descripción';
+}
+function updateBadge() {
+  const count = State.tasks.filter(t => !t.done).length;
+  const b1 = document.getElementById('badge-tasks');
+  const b2 = document.getElementById('badge-tasks-m');
+  if (b1) b1.textContent = count;
+  if (b2) b2.textContent = count;
+  // Update hoy badge
+  const today = new Date().toISOString().split('T')[0];
+  const urgent = State.tasks.filter(t => !t.done && t.due && t.due <= today).length;
+  const badge = document.getElementById('badge-hoy');
+  if (badge) { badge.style.display = urgent > 0 ? 'inline' : 'none'; badge.textContent = urgent; }
 }
 
+function renderTasks() { _schedRender(_renderTasks); }
+function _renderTasks() {
+  const list = _el('tasks-list');
+  if (!list) return;
+
+  const mf = document.getElementById('tf-mat')?.value    || '';
+  const sf = document.getElementById('tf-status')?.value || '';
+  const pf = document.getElementById('tf-prio')?.value   || '';
+  const qf = (document.getElementById('search-input')?.value || '').toLowerCase();
+
+  let filtered = State.tasks.filter(t =>
+    (!mf || t.matId === mf) &&
+    (!sf || (sf === 'pending' ? !t.done : t.done)) &&
+    (!pf || t.priority === pf) &&
+    (!qf || t.title.toLowerCase().includes(qf) || (t.notes || '').toLowerCase().includes(qf))
+  );
+
+  filtered.sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    const pd = { high:0, med:1, low:2 };
+    return (pd[a.priority] ?? 1) - (pd[b.priority] ?? 1);
+  });
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3);">
+      <div style="font-size:36px;margin-bottom:10px;">✅</div>
+      <div style="font-size:14px;">No hay tareas aquí</div></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => {
+    const m       = getMat(t.matId);
+    const dc      = dueClass(t.due);
+    const prog    = subtaskProgress(t);
+    const pStripe = t.priority === 'high' ? 'p-high-stripe' : t.priority === 'low' ? 'p-low-stripe' : 'p-med-stripe';
+    const tBadge  = getTypeBadgeClass(t.type);
+    const highGlowClass = t.priority === 'high' && !t.done ? ' prio-high-glow' : '';
+
+    const subtasksHtml = prog ? `
+      <div style="margin-top:7px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <div class="prog-bar" style="flex:1;height:4px;">
+            <div class="prog-fill" style="background:${prog.pct===100?'#4ade80':'#7c6aff'};width:${prog.pct}%;"></div>
+          </div>
+          <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;white-space:nowrap;">${prog.done}/${prog.total}</span>
+        </div>
+        ${t.subtasks.map((s, i) => `
+          <div onclick="toggleSubtask('${t.id}',${i})"
+            style="display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;${s.done?'opacity:.5;':''}">
+            <div style="width:14px;height:14px;border-radius:3px;flex-shrink:0;
+              border:2px solid ${s.done?'var(--accent)':'var(--border2)'};
+              background:${s.done?'var(--accent)':'transparent'};
+              display:flex;align-items:center;justify-content:center;">
+              ${s.done ? '<span style="font-size:9px;color:#fff;">✓</span>' : ''}
+            </div>
+            <span style="font-size:12px;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${s.text}</span>
+          </div>`).join('')}
+      </div>` : '';
+
+    const attachHtml = t.attachments?.length ? `
+      <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;">
+        ${t.attachments.map((a, i) => `
+          <button onclick="previewTaskAttachment('${t.id}',${i})"
+            class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px;">
+            ${a.type === 'pdf' ? '📄' : '🖼️'} ${a.name.length > 18 ? a.name.slice(0,16)+'…' : a.name}
+          </button>`).join('')}
+      </div>` : '';
+
+    const descHtml = t.notes ? `
+      <div id="desc-${t.id}" style="display:none;font-size:12px;color:var(--text2);margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;white-space:pre-wrap;">${t.notes.replace(/</g,'&lt;')}</div>
+      <button id="descbtn-${t.id}" onclick="toggleDesc('${t.id}')"
+        style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;margin-top:4px;padding:0;">▸ Ver descripción</button>` : '';
+
+    const commBadge = t.comments?.length
+      ? `<span style="font-size:11px;color:var(--text3);">💬 ${t.comments.length}</span>` : '';
+
+    return `<div class="task-item${t.done ? ' done' : ''}${highGlowClass}" draggable="true" 
+      data-id="${t.id}"
+      ondragstart="taskDragStart(event,'${t.id}')"
+      ondragover="taskDragOver(event)"
+      ondrop="taskDrop(event,'${t.id}')"
+      ondragleave="taskDragLeave(event)">
+      <div class="task-drag-handle" title="Arrastrar">⠿</div>
+      <div class="priority-stripe ${pStripe}"></div>
+      <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask('${t.id}')"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">
+          <span class="task-subject" style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;">${m.icon||'📚'} ${m.code||'?'}</span>
+          <span class="type-badge ${tBadge}">${t.type || 'Tarea'}</span>
+          ${prioBadge(t.priority)}
+          ${t.due ? `<span class="task-due ${dc}">📅 ${fmtD(t.due)}</span>` : ''}
+          ${t.timeEst ? `<span style="font-size:10px;color:var(--text3);">⏱ ${t.timeEst>=60?(t.timeEst/60)+'h':t.timeEst+'min'}</span>` : ''}
+          ${(t.tags||[]).map(tg=>`<span class="tag-chip">#${tg}</span>`).join('')}
+          ${commBadge}
+        </div>
+        ${subtasksHtml}
+        ${attachHtml}
+        ${descHtml}
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0;">
+        <button class="btn btn-ghost btn-sm" onclick="openTaskDetail('${t.id}')" title="Ver detalles">👁</button>
+        <button class="btn btn-ghost btn-sm" onclick="openTaskModal('${t.id}')" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// ATTACHMENT UPLOAD
+// ═══════════════════════════════════════════════════════
 function handleAttachmentUpload(input) {
   const file = input.files[0];
   if (!file) return;
-
+  if (file.size > 5 * 1024 * 1024) { alert('Máximo 5MB por archivo.'); input.value=''; return; }
   const reader = new FileReader();
   reader.onload = function(e) {
-    const isImage = file.type.startsWith('image/');
     _editAttachments.push({
-      name:  file.name,
-      type:  isImage ? 'image' : 'pdf',
-      size:  file.size,
-      date:  new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
-      data:  e.target.result,
+      name: file.name,
+      type: file.type === 'application/pdf' ? 'pdf' : file.type.startsWith('image/') ? 'image' : 'file',
+      size: file.size,
+      data: e.target.result,
+      date: new Date().toLocaleDateString('es-ES')
     });
     renderAttachmentsEditor(_editAttachments);
-    input.value = '';
   };
   reader.readAsDataURL(file);
+  input.value = '';
 }
-
-function previewAttachment(idx) {
-  if (_editAttachments[idx]) _openAttachmentPreview(_editAttachments[idx]);
-}
-
-function removeAttachment(idx) {
-  _editAttachments.splice(idx, 1);
+function removeAttachment(i) {
+  _editAttachments.splice(i, 1);
   renderAttachmentsEditor(_editAttachments);
 }
-
-function previewTaskAttachment(taskId, idx) {
-  const t = State.tasks.find(x => x.id === taskId);
-  if (t && t.attachments && t.attachments[idx]) {
-    _openAttachmentPreview(t.attachments[idx]);
-  }
+function previewAttachment(i) {
+  const a = _editAttachments[i];
+  if (a) _openAttachmentPreview(a);
 }
-
+function previewTaskAttachment(taskId, i) {
+  const t = State.tasks.find(x => x.id === taskId);
+  if (t?.attachments?.[i]) _openAttachmentPreview(t.attachments[i]);
+}
 function _openAttachmentPreview(a) {
   if (!a?.data) { alert('Sin datos para previsualizar.'); return; }
   if (a.type === 'image') {
