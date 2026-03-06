@@ -2565,8 +2565,59 @@ function continueInit(auth) {
   });
 
   document.querySelectorAll('.modal-overlay').forEach(o =>
-    o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })
+    o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })\
   );
+
+  // ── Auto-sync cuando el usuario vuelve a la pestaña o app ──────
+  let _lastSync = Date.now();
+  async function _syncFromSupabase() {
+    if (!window.DB || !window.DB._ready) return;
+    const now = Date.now();
+    if (now - _lastSync < 5000) return; // no sync si fue hace menos de 5s
+    _lastSync = now;
+    const dbData = await window.DB.load();
+    if (!dbData) return;
+    let changed = false;
+    if (dbData.semestres && dbData.semestres.length) {
+      const localJson = localStorage.getItem('academia_v4_semestres');
+      const dbJson = JSON.stringify(dbData.semestres);
+      if (localJson !== dbJson) {
+        localStorage.setItem('academia_v4_semestres', dbJson);
+        changed = true;
+      }
+    }
+    if (dbData.settings && Object.keys(dbData.settings).length) {
+      const localJson = localStorage.getItem('academia_v3_settings');
+      const dbJson = JSON.stringify(dbData.settings);
+      if (localJson !== dbJson) {
+        localStorage.setItem('academia_v3_settings', dbJson);
+        changed = true;
+      }
+    }
+    if (changed) {
+      console.log('🔄 Datos actualizados desde Supabase — recargando UI...');
+      // Recargar State con datos nuevos
+      const newSems = JSON.parse(localStorage.getItem('academia_v4_semestres') || '[]');
+      if (newSems.length) {
+        State.semestres.length = 0;
+        newSems.forEach(s => State.semestres.push(s));
+        getMat.bust();
+      }
+      const newSettings = JSON.parse(localStorage.getItem('academia_v3_settings') || '{}');
+      Object.assign(State.settings, newSettings);
+      // Re-renderizar
+      renderTasks && renderTasks();
+      renderOverview && renderOverview();
+      renderCalendar && renderCalendar();
+    }
+  }
+
+  // Sync al volver al tab/app
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') _syncFromSupabase();
+  });
+  window.addEventListener('focus', () => _syncFromSupabase());
+
 } // FIN continueInit()
 
 
