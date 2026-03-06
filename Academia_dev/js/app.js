@@ -186,7 +186,6 @@ function _flushSave() {
   const keys = [..._pendingKeys]; _pendingKeys.clear(); _saveTimer = null;
   const all = keys.includes('all');
   if (all || keys.includes('materias')) getMat.bust();
-  // Guardar en localStorage como caché local
   dbSet(DB_KEYS.SEMESTRES, State.semestres);
   if (all || keys.includes('settings')) dbSet(DB_KEYS.SETTINGS, State.settings);
   // Guardar en Supabase
@@ -198,7 +197,6 @@ function saveStateNow(keys = ['all']) {
   clearTimeout(_saveTimer); _pendingKeys.clear();
   const all = keys.includes('all');
   if (all || keys.includes('materias')) getMat.bust();
-  // Guardar en localStorage como caché local
   dbSet(DB_KEYS.SEMESTRES, State.semestres);
   if (all || keys.includes('settings')) dbSet(DB_KEYS.SETTINGS, State.settings);
   // Guardar en Supabase inmediatamente
@@ -2405,7 +2403,7 @@ function init() {
 
       console.log('✅ AUTENTICADO:', auth.email);
 
-      // Si el usuario cambió, limpiar localStorage del anterior
+      // Si el usuario cambió, limpiar datos del anterior
       const lastUser = localStorage.getItem('_academia_last_user');
       if (lastUser && lastUser !== auth.id) {
         console.log('🔄 Usuario diferente, limpiando datos anteriores...');
@@ -2414,14 +2412,12 @@ function init() {
       }
       localStorage.setItem('_academia_last_user', auth.id);
 
-      // Inicializar DB con el usuario
+      // Inicializar DB y cargar desde Supabase
       if (window.DB) {
         window.DB.init(auth.id);
-
-        // Cargar datos desde Supabase
         const dbData = await window.DB.load();
         if (dbData) {
-          // Datos en Supabase — sincronizar a localStorage como caché
+          // Sobrescribir localStorage con datos de Supabase (fuente de verdad)
           if (dbData.semestres && dbData.semestres.length) {
             localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
           }
@@ -2430,7 +2426,7 @@ function init() {
           }
           console.log('✅ Datos sincronizados desde Supabase');
         } else {
-          // Usuario nuevo — migrar localStorage a Supabase si existe
+          // Usuario nuevo — migrar localStorage a Supabase
           const localSems = localStorage.getItem('academia_v4_semestres');
           const localSettings = localStorage.getItem('academia_v3_settings');
           if (localSems || localSettings) {
@@ -2510,41 +2506,18 @@ function continueInit(auth) {
   const mgEl = document.getElementById('min-grade');
   if (mgEl) mgEl.value = State.settings.minGrade;
 
-  // ── Precargar perfil de FIUSAC (solo si no hay datos guardados) ──────────
-  const _fiusacCourses = [
-    { name: "TECNICAS DE ESTUDIO E INVESTIGACION", code: "0005", credits: 3, grade: 77.00, semester: "2024-05" },
-    { name: "IDIOMA TECNICO 1",                    code: "0006", credits: 3, grade: 0,     semester: "2024-05", obs: "Equivalencia por examen de ubicación" },
-    { name: "IDIOMA TECNICO 2",                    code: "0008", credits: 3, grade: 0,     semester: "2024-05", obs: "Equivalencia por examen de ubicación" },
-    { name: "AREA SOCIAL HUMANISTICA 1",           code: "0017", credits: 3, grade: 64.00, semester: "2024-05" },
-    { name: "DEPORTES 1",                          code: "0039", credits: 2, grade: 83.00, semester: "2024-05" },
-    { name: "AREA MATEMATICA BASICA 1",            code: "0101", credits: 9, grade: 75.00, semester: "2024-07" },
-    { name: "IDIOMA TECNICO 3",                    code: "0009", credits: 3, grade: 75.00, semester: "2024-11" },
-    { name: "AREA SOCIAL HUMANISTICA 2",           code: "0019", credits: 3, grade: 73.00, semester: "2024-11" },
-    { name: "DEPORTES 2",                          code: "0040", credits: 2, grade: 81.00, semester: "2024-11" },
-    { name: "MATEMATICA PARA COMPUTACION 1",       code: "0960", credits: 5, grade: 68.00, semester: "2024-11" },
-    { name: "ETICA PROFESIONAL",                   code: "0001", credits: 2, grade: 68.00, semester: "2025-05" },
-    { name: "IDIOMA TECNICO 4",                    code: "0011", credits: 3, grade: 70.00, semester: "2025-05" },
-    { name: "FILOSOFIA DE LA CIENCIA",             code: "0018", credits: 1, grade: 65.00, semester: "2025-05" },
-    { name: "FISICA BASICA",                       code: "0147", credits: 5, grade: 64.00, semester: "2025-06" },
-    { name: "AREA MATEMATICA BASICA 2",            code: "0103", credits: 9, grade: 64.00, semester: "2025-07" },
-    { name: "LOGICA DE SISTEMAS",                  code: "0795", credits: 3, grade: 85.00, semester: "2025-11" },
-    { name: "MATEMATICA PARA COMPUTACION 2",       code: "0962", credits: 5, grade: 61.00, semester: "2025-11" },
-    { name: "LOGICA",                              code: "0010", credits: 1, grade: 63.00, semester: "2025-12" },
-    { name: "INTRODUCCION A LA PROGRAMACION Y COMPUTACION 1", code: "0770", credits: 6, grade: 76.00, semester: "2026-01" },
-  ];
-  // Cursos con "Aprobado" (equivalencias) — grade 0 los tratamos como aprobados sin nota numérica
-  // Para el cálculo de promedio, solo usamos los que tienen nota numérica > 0
-  const _fiusacProfile = {
-    name: "JOSUE ELIU CASTRO SOSA",
-    carrera: "Ingeniería en Ciencias y Sistemas",
-    registro: "202405110",
-    facultad: "Facultad de Ingeniería · USAC",
-    totalCredCarrera: 215
-  };
+  // ── Perfil: usar datos del usuario de Google ──────────────────
   if (!State.settings.profile || !State.settings.profile.name) {
-    State.settings.profile = _fiusacProfile;
-    State.settings.approvedCourses = _fiusacCourses;
-    saveState(['all']);
+    const googleName = auth?.name || auth?.email?.split('@')[0] || '';
+    State.settings.profile = {
+      name: googleName,
+      carrera: '',
+      registro: '',
+      facultad: '',
+      totalCredCarrera: 215
+    };
+    State.settings.approvedCourses = [];
+    saveState(['settings']);
   }
   // Update greeting with real name
   const firstName = (State.settings.profile?.name || '').split(' ')[0];
