@@ -44,12 +44,27 @@ function renderTasks() {
 }
 
 function _renderTasks() {
-  const container = document.getElementById('tasks-container');
+  const container = document.getElementById('tasks-list');
   if (!container) return;
 
-  // Ordenar tareas: primero NO completadas, por prioridad (high→med→low), luego por fecha
-  const sortedTasks = State.tasks
-    .slice()
+  // Leer filtros activos
+  const searchQ  = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+  const filterMat    = document.getElementById('tf-mat')?.value    || '';
+  const filterPrio   = document.getElementById('tf-prio')?.value   || '';
+  const filterStatus = document.getElementById('tf-status')?.value || '';
+
+  // Filtrar tareas
+  let filteredTasks = State.tasks.slice().filter(t => {
+    if (filterMat    && t.matId    !== filterMat)                          return false;
+    if (filterPrio   && t.priority !== filterPrio)                         return false;
+    if (filterStatus === 'pending' && t.done)                              return false;
+    if (filterStatus === 'done'    && !t.done)                             return false;
+    if (searchQ && !t.title.toLowerCase().includes(searchQ))               return false;
+    return true;
+  });
+
+  // Ordenar: primero NO completadas, por prioridad (high→med→low), luego por fecha
+  const sortedTasks = filteredTasks
     .sort((a, b) => {
       // Si uno está completado y otro no, el no completado va primero
       if (a.done !== b.done) return a.done ? 1 : -1;

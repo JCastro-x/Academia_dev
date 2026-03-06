@@ -44,7 +44,7 @@
     _userId: null,
     _ready: false,
     _lastSync: 0,
-    _syncThrottle: 5000, // 5 segundos
+    _syncThrottle: 10000, // 10 segundos mínimo entre syncs
 
     // ── Inicializar con el usuario autenticado ─────────────────
     init(userId) {
@@ -58,24 +58,22 @@
 
     // ── Setup listeners para sincronización automática ──────────
     _setupSyncListeners() {
-      // Cuando el tab vuelve a estar visible
+      // Solo cuando el tab vuelve a estar visible (NO en focus, evita doble-trigger en mobile)
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-          console.log('📱 Tab visible - sincronizando...');
-          this._syncFromSupabase();
+          // Debounce para evitar múltiples disparos rápidos en mobile
+          clearTimeout(_syncTimer);
+          _syncTimer = setTimeout(() => {
+            console.log('📱 Tab visible - sincronizando...');
+            this._syncFromSupabase();
+          }, 1500);
         }
       });
 
-      // Cuando la ventana gana focus
-      window.addEventListener('focus', () => {
-        console.log('🔄 Window focused - sincronizando...');
-        this._syncFromSupabase();
-      });
-
-      // Periodicamente (cada 30 segundos)
+      // Periodicamente (cada 60 segundos, no 30 para reducir carga)
       setInterval(() => {
         this._syncFromSupabase();
-      }, 30000);
+      }, 60000);
     },
 
     // ── Sincronizar desde Supabase (throttled) ─────────────────
@@ -89,27 +87,38 @@
         const dbData = await this.load();
         if (!dbData) return;
 
-        const localSem = State.semestres || [];
-        const localSet = State.settings || {};
         const remSem = dbData.semestres || [];
         const remSet = dbData.settings || {};
 
-        // Comparar si hay cambios
-        const semChanged = JSON.stringify(localSem) !== JSON.stringify(remSem);
-        const setChanged = JSON.stringify(localSet) !== JSON.stringify(remSet);
+        // Comparar contra el State en memoria (fuente de verdad actual)
+        const localSemStr = JSON.stringify(State.semestres || []);
+        const localSetStr = JSON.stringify(State.settings || {});
+        const remSemStr   = JSON.stringify(remSem);
+        const remSetStr   = JSON.stringify(remSet);
+
+        const semChanged = localSemStr !== remSemStr;
+        const setChanged = localSetStr !== remSetStr;
 
         if (semChanged || setChanged) {
-          console.log('🔄 Cambios detectados, actualizando Estado...');
-          if (semChanged) State.semestres = remSem;
-          if (setChanged) State.settings = remSet;
+          console.log('🔄 Cambios del servidor detectados, actualizando...');
 
-          // Re-renderizar la página actual
-          const currentPage = document.querySelector('[data-page-active]')?.getAttribute('data-page-active');
-          if (currentPage === 'overview') renderOverview();
-          else if (currentPage === 'tareas') renderTasks();
-          else if (currentPage === 'calendario') renderCalendar();
-          else if (currentPage === 'notas') renderNotes();
-          else if (currentPage === 'materias') renderMaterias();
+          // Solo actualizar lo que cambió
+          if (semChanged) {
+            State.semestres = remSem;
+            try { localStorage.setItem('academia_v4_semestres', remSemStr); } catch(e) {}
+          }
+          if (setChanged) {
+            Object.assign(State.settings, remSet);
+            try { localStorage.setItem('academia_v3_settings', remSetStr); } catch(e) {}
+          }
+
+          // Re-renderizar solo la página activa
+          const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
+          if      (activePage === 'overview')     { typeof renderOverview   === 'function' && renderOverview(); }
+          else if (activePage === 'tareas')       { typeof renderTasks      === 'function' && renderTasks(); }
+          else if (activePage === 'calendario')   { typeof renderCalendar   === 'function' && renderCalendar(); }
+          else if (activePage === 'notas')        { typeof renderNotes      === 'function' && renderNotes(); }
+          else if (activePage === 'materias')     { typeof renderMaterias   === 'function' && renderMaterias(); }
 
           _showSync('✓ Sincronizado', 'success');
         }
