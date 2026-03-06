@@ -2565,7 +2565,7 @@ function continueInit(auth) {
   });
 
   document.querySelectorAll('.modal-overlay').forEach(o =>
-    o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })\
+    o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })
   );
 
   // ── Auto-sync cuando el usuario vuelve a la pestaña o app ──────
