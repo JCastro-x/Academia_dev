@@ -512,7 +512,7 @@ html, body {
    TAREAS GRUPALES
    ═══════════════════════════════════════════════════════════════ */
 
-.tasks-page { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.tasks-page { flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .tasks-header {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
@@ -577,7 +577,7 @@ html, body {
    ARCHIVOS
    ═══════════════════════════════════════════════════════════════ */
 
-.files-page { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.files-page { flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .files-header {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
@@ -637,7 +637,7 @@ html, body {
    HISTORIAL DE NOTAS
    ═══════════════════════════════════════════════════════════════ */
 
-.history-page { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.history-page { flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .history-header {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
