@@ -1095,44 +1095,109 @@ function _renderPDFStrip(note) {
     </div>`).join('');
 }
 
+// ── PDF Viewer con PDF.js (funciona en móvil y desktop) ──────
+let _pdfDoc      = null;
+let _pdfPage     = 1;
+let _pdfRendering = false;
+let _pdfBlobUrl  = null;
+
 function openPDFModal(name, idx) {
   const note = _getNotesArray().find(n => n.id === _currentNoteId);
   if (!note || !note.pdfAttachments) return;
-  const pdf  = note.pdfAttachments[idx];
+  const pdf = note.pdfAttachments[idx];
   if (!pdf) return;
 
-  // Convertir base64 → Blob → object URL para que el iframe lo abra nativamente
-  const byteString = atob(pdf.data.split(',')[1]);
-  const ab   = new ArrayBuffer(byteString.length);
-  const ia   = new Uint8Array(ab);
-  for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-  const blob = new Blob([ab], { type: 'application/pdf' });
-  const url  = URL.createObjectURL(blob);
-
-  // En móvil, los iframes no renderizan PDFs — abrir en nueva pestaña
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  if (isMobile) {
-    const a = document.createElement('a');
-    a.href   = url;
-    a.target = '_blank';
-    a.rel    = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-    return;
-  }
-
-  // Desktop: usar iframe normal
-  const frame = document.getElementById('pdf-modal-frame');
-  if (frame._blobUrl) URL.revokeObjectURL(frame._blobUrl);
-  frame._blobUrl = url;
-  frame.src      = url;
+  // Convertir base64 → Uint8Array
+  const base64 = pdf.data.split(',')[1];
+  const binary = atob(base64);
+  const bytes  = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
   document.getElementById('pdf-modal-name').textContent = name;
   const modal = document.getElementById('modal-pdf-view');
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+
+  // Mostrar loading
+  const container = document.getElementById('pdf-canvas-container');
+  if (container) container.innerHTML = '<div style="color:#9090a8;text-align:center;padding:40px;font-size:13px;">⏳ Cargando PDF...</div>';
+
+  // Cargar PDF.js si no está cargado
+  _loadPdfJs(() => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    pdfjsLib.getDocument({ data: bytes }).promise.then(doc => {
+      _pdfDoc  = doc;
+      _pdfPage = 1;
+      _renderPdfPage(_pdfPage);
+      // Actualizar contador de páginas
+      const total = document.getElementById('pdf-page-total');
+      if (total) total.textContent = doc.numPages;
+      const curr = document.getElementById('pdf-page-current');
+      if (curr) curr.textContent = '1';
+      // Mostrar/ocultar navegación
+      const nav = document.getElementById('pdf-page-nav');
+      if (nav) nav.style.display = doc.numPages > 1 ? 'flex' : 'none';
+    }).catch(err => {
+      console.error('Error cargando PDF:', err);
+      if (container) container.innerHTML = '<div style="color:#f87171;text-align:center;padding:40px;">❌ No se pudo cargar el PDF</div>';
+    });
+  });
+}
+
+function _loadPdfJs(cb) {
+  if (typeof pdfjsLib !== 'undefined') { cb(); return; }
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+  script.onload = cb;
+  document.head.appendChild(script);
+}
+
+function _renderPdfPage(pageNum) {
+  if (!_pdfDoc || _pdfRendering) return;
+  _pdfRendering = true;
+
+  _pdfDoc.getPage(pageNum).then(page => {
+    const container = document.getElementById('pdf-canvas-container');
+    if (!container) return;
+
+    // Escalar al ancho del contenedor
+    const containerWidth = container.clientWidth || window.innerWidth - 40;
+    const viewport0 = page.getViewport({ scale: 1 });
+    const scale     = containerWidth / viewport0.width;
+    const viewport  = page.getViewport({ scale });
+
+    // Crear o reusar canvas
+    let canvas = container.querySelector('canvas');
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.style.cssText = 'display:block;max-width:100%;margin:0 auto;border-radius:4px;';
+      container.innerHTML = '';
+      container.appendChild(canvas);
+    }
+    const ctx = canvas.getContext('2d');
+    canvas.width  = viewport.width;
+    canvas.height = viewport.height;
+
+    page.render({ canvasContext: ctx, viewport }).promise.then(() => {
+      _pdfRendering = false;
+      const curr = document.getElementById('pdf-page-current');
+      if (curr) curr.textContent = pageNum;
+    });
+  });
+}
+
+function pdfPrevPage() {
+  if (!_pdfDoc || _pdfPage <= 1) return;
+  _pdfPage--;
+  _renderPdfPage(_pdfPage);
+}
+
+function pdfNextPage() {
+  if (!_pdfDoc || _pdfPage >= _pdfDoc.numPages) return;
+  _pdfPage++;
+  _renderPdfPage(_pdfPage);
 }
 
 function closePDFModal() {

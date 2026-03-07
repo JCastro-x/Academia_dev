@@ -1065,3 +1065,142 @@ html {
   .stats-row { grid-template-columns: 1fr !important; }
   .mm-grid { grid-template-columns: repeat(3, 1fr) !important; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   TAREAS MOBILE — Layout horizontal compacto
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Header de tareas — filtros en 2 filas */
+  #page-tareas .card-header,
+  #page-tareas .page-header {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Fila de filtros: wrap en 2 columnas */
+  #page-tareas .card-header > div,
+  .tasks-filters {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  /* Selectores de filtro — mitad del ancho */
+  #tf-mat, #tf-prio, #tf-status {
+    flex: 1 1 calc(50% - 6px) !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+    padding: 6px 8px !important;
+  }
+
+  /* Botones Nueva Tarea y Borrar completadas — full width */
+  #page-tareas .btn-primary,
+  #page-tareas .btn-ghost {
+    flex: 1 1 calc(50% - 6px) !important;
+    justify-content: center !important;
+    font-size: 11px !important;
+    padding: 7px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Task item — layout horizontal compacto */
+  .task-item {
+    padding: 10px 6px !important;
+    gap: 8px !important;
+    align-items: center !important;
+  }
+
+  /* Ocultar drag handle en mobile */
+  .task-drag-handle { display: none !important; }
+
+  /* Contenido principal de la tarea */
+  .task-item > div[style*="flex:1"] {
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  /* Título compacto */
+  .task-title {
+    font-size: 13px !important;
+    margin-bottom: 3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Meta — más compacta */
+  .task-meta {
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+  }
+  .task-meta > span { font-size: 10px !important; }
+
+  /* Badges de materia más pequeños */
+  .task-subject {
+    font-size: 9px !important;
+    padding: 1px 5px !important;
+    max-width: 70px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  /* Botones de acción — icono solo, sin texto */
+  .task-item > div[style*="display:flex"][style*="gap:5px"] {
+    flex-direction: column !important;
+    gap: 3px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Botones de acción compactos */
+  .task-item .btn-sm {
+    padding: 5px 7px !important;
+    font-size: 13px !important;
+    min-width: 30px !important;
+    justify-content: center !important;
+  }
+
+  /* Subtareas colapsadas en mobile */
+  .task-item .prog-bar { display: none !important; }
+
+  /* Stripe de prioridad */
+  .priority-stripe {
+    width: 3px !important;
+    min-height: 30px !important;
+    border-radius: 3px !important;
+  }
+
+  /* Search bar de tareas full width */
+  #search-input {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Search full width en tareas */
+  .tasks-search {
+    width: 100% !important;
+    min-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* Filtros wrap en 2 columnas */
+  #tf-mat, #tf-prio, #tf-status {
+    flex: 1 1 calc(50% - 4px) !important;
+    max-width: calc(50% - 4px) !important;
+    font-size: 12px !important;
+  }
+
+  /* Botones al mismo nivel, mitad cada uno */
+  .tasks-btn-delete, .tasks-btn-new {
+    flex: 1 1 calc(50% - 4px) !important;
+    max-width: calc(50% - 4px) !important;
+    justify-content: center !important;
+    font-size: 11px !important;
+    padding: 7px 4px !important;
+  }
+  .tasks-btn-delete { font-size: 10px !important; }
+}

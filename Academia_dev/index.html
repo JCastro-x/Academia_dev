@@ -1918,13 +1918,25 @@
 ══════════════════════════════════════════════════════════════ -->
 
 <!-- ═══ MODAL: VISOR PDF ═══ -->
-<div id="modal-pdf-view" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);flex-direction:column;">
+<div id="modal-pdf-view" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);flex-direction:column;">
+  <!-- Header -->
   <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;">
     <span style="font-size:13px;font-weight:700;font-family:'Space Mono',monospace;color:var(--accent2);">📑</span>
     <span id="pdf-modal-name" style="font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</span>
     <button onclick="closePDFModal()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:5px 12px;color:var(--text2);cursor:pointer;font-size:12px;font-weight:700;">✕ Cerrar</button>
   </div>
-  <iframe id="pdf-modal-frame" src="" style="flex:1;width:100%;border:none;background:#525659;"></iframe>
+  <!-- Canvas container — PDF.js renderiza aquí -->
+  <div style="flex:1;overflow-y:auto;overflow-x:hidden;background:#525659;padding:12px;">
+    <div id="pdf-canvas-container" style="width:100%;min-height:200px;"></div>
+  </div>
+  <!-- Navegación de páginas -->
+  <div id="pdf-page-nav" style="display:none;align-items:center;justify-content:center;gap:12px;padding:10px 16px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;">
+    <button onclick="pdfPrevPage()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:6px 14px;color:var(--text);cursor:pointer;font-size:13px;">◀ Anterior</button>
+    <span style="font-size:12px;color:var(--text2);font-family:'Space Mono',monospace;">
+      Página <span id="pdf-page-current">1</span> / <span id="pdf-page-total">1</span>
+    </span>
+    <button onclick="pdfNextPage()" style="background:var(--surface2);border:1px solid var(--border2);border-radius:7px;padding:6px 14px;color:var(--text);cursor:pointer;font-size:13px;">Siguiente ▶</button>
+  </div>
 </div>
 
   <!-- ═══ APP SCRIPTS ═══ -->
