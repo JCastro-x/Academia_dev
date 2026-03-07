@@ -1,6 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- * DB.JS — Capa de base de datos Supabase + Auto-Sync
+ * DB.JS — Capa de base de datos Supabase v2
+ * Tablas: user_semestres, user_settings, user_history
  * ═══════════════════════════════════════════════════════════════
  */
 
@@ -34,7 +35,7 @@
     }
   }
 
-  // ── Save timer (debounce) ─────────────────────────────────────
+  // ── Timers ────────────────────────────────────────────────────
   let _saveTimer = null;
   let _syncTimer = null;
 
@@ -42,26 +43,20 @@
   const DB = {
 
     _userId: null,
-    _ready: false,
-    _lastSync: 0,
-    _syncThrottle: 10000, // 10 segundos mínimo entre syncs
+    _ready:  false,
+    _lastSync:     0,
+    _syncThrottle: 10000,
 
-    // ── Inicializar con el usuario autenticado ─────────────────
     init(userId) {
       this._userId = userId;
-      this._ready = true;
+      this._ready  = true;
       console.log('✅ DB initialized for user:', userId);
-      
-      // Setup auto-sync listeners
       this._setupSyncListeners();
     },
 
-    // ── Setup listeners para sincronización automática ──────────
     _setupSyncListeners() {
-      // Solo cuando el tab vuelve a estar visible (NO en focus, evita doble-trigger en mobile)
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
-          // Debounce para evitar múltiples disparos rápidos en mobile
           clearTimeout(_syncTimer);
           _syncTimer = setTimeout(() => {
             console.log('📱 Tab visible - sincronizando...');
@@ -69,14 +64,9 @@
           }, 1500);
         }
       });
-
-      // Periodicamente (cada 60 segundos, no 30 para reducir carga)
-      setInterval(() => {
-        this._syncFromSupabase();
-      }, 60000);
+      setInterval(() => { this._syncFromSupabase(); }, 60000);
     },
 
-    // ── Sincronizar desde Supabase (throttled) ─────────────────
     async _syncFromSupabase() {
       if (!this._ready) return;
       const now = Date.now();
@@ -88,37 +78,28 @@
         if (!dbData) return;
 
         const remSem = dbData.semestres || [];
-        const remSet = dbData.settings || {};
+        const remSet = dbData.settings  || {};
 
-        // Comparar contra el State en memoria (fuente de verdad actual)
-        const localSemStr = JSON.stringify(State.semestres || []);
-        const localSetStr = JSON.stringify(State.settings || {});
-        const remSemStr   = JSON.stringify(remSem);
-        const remSetStr   = JSON.stringify(remSet);
-
-        const semChanged = localSemStr !== remSemStr;
-        const setChanged = localSetStr !== remSetStr;
+        const semChanged = JSON.stringify(State.semestres || []) !== JSON.stringify(remSem);
+        const setChanged = JSON.stringify(State.settings  || {}) !== JSON.stringify(remSet);
 
         if (semChanged || setChanged) {
           console.log('🔄 Cambios del servidor detectados, actualizando...');
-
-          // Solo actualizar lo que cambió
           if (semChanged) {
             State.semestres = remSem;
-            try { localStorage.setItem('academia_v4_semestres', remSemStr); } catch(e) {}
+            try { localStorage.setItem('academia_v4_semestres', JSON.stringify(remSem)); } catch(e) {}
           }
           if (setChanged) {
             Object.assign(State.settings, remSet);
-            try { localStorage.setItem('academia_v3_settings', remSetStr); } catch(e) {}
+            try { localStorage.setItem('academia_v3_settings', JSON.stringify(remSet)); } catch(e) {}
           }
 
-          // Re-renderizar solo la página activa
           const activePage = document.querySelector('.page.active')?.id?.replace('page-','');
-          if      (activePage === 'overview')     { typeof renderOverview   === 'function' && renderOverview(); }
-          else if (activePage === 'tareas')       { typeof renderTasks      === 'function' && renderTasks(); }
-          else if (activePage === 'calendario')   { typeof renderCalendar   === 'function' && renderCalendar(); }
-          else if (activePage === 'notas')        { typeof renderNotes      === 'function' && renderNotes(); }
-          else if (activePage === 'materias')     { typeof renderMaterias   === 'function' && renderMaterias(); }
+          if      (activePage === 'overview')   { typeof renderOverview  === 'function' && renderOverview(); }
+          else if (activePage === 'tareas')     { typeof renderTasks     === 'function' && renderTasks(); }
+          else if (activePage === 'calendario') { typeof renderCalendar  === 'function' && renderCalendar(); }
+          else if (activePage === 'notas')      { typeof renderNotes     === 'function' && renderNotes(); }
+          else if (activePage === 'materias')   { typeof renderMaterias  === 'function' && renderMaterias(); }
 
           _showSync('✓ Sincronizado', 'success');
         }
@@ -127,35 +108,30 @@
       }
     },
 
-    // ── Cargar datos del usuario desde Supabase ────────────────
     async load() {
       if (!this._ready) return null;
-
       try {
         const client = window.Auth.getClient();
-        const { data, error } = await client
-          .from('user_data')
-          .select('semestres, settings')
-          .eq('user_id', this._userId)
-          .single();
 
-        if (error && error.code === 'PGRST116') {
-          console.log('📦 Usuario nuevo, sin datos en DB');
-          return null;
-        }
+        const [semRes, setRes] = await Promise.all([
+          client.from('user_semestres').select('data').eq('user_id', this._userId).single(),
+          client.from('user_settings').select('data').eq('user_id', this._userId).single(),
+        ]);
 
-        if (error) throw error;
+        if (semRes.error && semRes.error.code !== 'PGRST116') throw semRes.error;
+        if (setRes.error && setRes.error.code !== 'PGRST116') throw setRes.error;
 
         console.log('✅ Datos cargados desde Supabase');
-        return data;
-
+        return {
+          semestres: semRes.data?.data || [],
+          settings:  setRes.data?.data || {},
+        };
       } catch (err) {
         console.error('❌ Error cargando datos:', err);
         return null;
       }
     },
 
-    // ── Guardar datos (debounced 800ms) ────────────────────────
     save(semestres, settings) {
       if (!this._ready) return;
       clearTimeout(_saveTimer);
@@ -163,26 +139,23 @@
       _saveTimer = setTimeout(() => this._doSave(semestres, settings), 800);
     },
 
-    // ── Guardar inmediatamente ─────────────────────────────────
     async saveNow(semestres, settings) {
       if (!this._ready) return;
       clearTimeout(_saveTimer);
       await this._doSave(semestres, settings);
     },
 
-    // ── Lógica real de guardado ────────────────────────────────
     async _doSave(semestres, settings) {
       try {
         const client = window.Auth.getClient();
-        const { error } = await client
-          .from('user_data')
-          .upsert({
-            user_id:   this._userId,
-            semestres: semestres,
-            settings:  settings,
-          }, { onConflict: 'user_id' });
 
-        if (error) throw error;
+        const [semRes, setRes] = await Promise.all([
+          client.from('user_semestres').upsert({ user_id: this._userId, data: semestres }, { onConflict: 'user_id' }),
+          client.from('user_settings').upsert({ user_id: this._userId, data: settings  }, { onConflict: 'user_id' }),
+        ]);
+
+        if (semRes.error) throw semRes.error;
+        if (setRes.error) throw setRes.error;
 
         _showSync('✓ Guardado', 'success');
         console.log('✅ Datos guardados en Supabase');
@@ -190,18 +163,75 @@
       } catch (err) {
         console.error('❌ Error guardando:', err);
         _showSync('Error al guardar', 'error');
-
-        // Fallback a localStorage si falla Supabase
         try {
           localStorage.setItem('academia_v4_semestres', JSON.stringify(semestres));
-          localStorage.setItem('academia_v3_settings', JSON.stringify(settings));
+          localStorage.setItem('academia_v3_settings',  JSON.stringify(settings));
           console.warn('⚠️ Guardado en localStorage como fallback');
         } catch (e) {}
+      }
+    },
+
+    // ── Historial (deshacer cambios) ───────────────────────────
+    async saveHistory(description = 'Cambio manual') {
+      if (!this._ready) return;
+      try {
+        const client = window.Auth.getClient();
+        await client.from('user_history').insert({
+          user_id:     this._userId,
+          snapshot:    { semestres: State.semestres || [], settings: State.settings || {}, savedAt: new Date().toISOString() },
+          description,
+        });
+        console.log('📸 Snapshot guardado en historial');
+      } catch (err) {
+        console.warn('⚠️ No se pudo guardar historial:', err);
+      }
+    },
+
+    async getHistory() {
+      if (!this._ready) return [];
+      try {
+        const client = window.Auth.getClient();
+        const { data, error } = await client
+          .from('user_history')
+          .select('id, description, created_at, snapshot')
+          .eq('user_id', this._userId)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.error('❌ Error cargando historial:', err);
+        return [];
+      }
+    },
+
+    async restoreFromHistory(historyId) {
+      if (!this._ready) return false;
+      try {
+        const client = window.Auth.getClient();
+        const { data, error } = await client
+          .from('user_history')
+          .select('snapshot')
+          .eq('id', historyId)
+          .eq('user_id', this._userId)
+          .single();
+        if (error) throw error;
+        if (!data?.snapshot) return false;
+
+        await this.saveHistory('Antes de restaurar');
+        await this._doSave(data.snapshot.semestres || [], data.snapshot.settings || {});
+        State.semestres = data.snapshot.semestres || [];
+        Object.assign(State.settings, data.snapshot.settings || {});
+        console.log('✅ Datos restaurados desde historial');
+        return true;
+      } catch (err) {
+        console.error('❌ Error restaurando:', err);
+        return false;
       }
     },
   };
 
   window.DB = DB;
-  console.log('📦 DB module loaded - window.DB ready');
+  console.log('📦 DB module loaded - window.DB ready (v2)');
 
 })();

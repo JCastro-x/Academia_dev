@@ -842,7 +842,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════════════════════════════════════
 var chronoR        = false;    // cronómetro activo (total siempre corre)
 var chronoPhase    = 'work';   // 'work' | 'break'
-var chronoPomLive  = false;    // true solo cuando pomodoro está running
+var chronoPomLive  = false;    // true solo cuando pomodoro está corriendo (no pausado)
+var chronoPomLinked = false;   // true cuando el cronómetro está vinculado al pom (aunque esté pausado)
 var chronoWorkSec  = 0;
 var chronoBreakSec = 0;
 var chronoTotalSec = 0;        // tiempo real (no para con pausa del pom)
@@ -859,12 +860,17 @@ function _chronoTickStart() {
     if (!chronoR) return;
     // Total siempre corre
     chronoTotalSec++;
-    // Trabajo: solo si pom está vivo Y fase es trabajo
-    if (chronoPomLive && chronoPhase === 'work') chronoWorkSec++;
-    // Descanso: si fase es descanso (independiente de pausa)
-    else if (chronoPhase === 'break') chronoBreakSec++;
-    // Si es independiente (sin pom): ambos work/break cuentan normalmente
-    else if (!chronoPomLive && chronoPhase === 'work') chronoWorkSec++;
+    if (chronoPomLinked) {
+      // Modo pomodoro: trabajo solo si el pom está activamente corriendo (no pausado)
+      if (chronoPomLive && chronoPhase === 'work') chronoWorkSec++;
+      // Descanso: si fase es break y pom corre
+      else if (chronoPomLive && chronoPhase === 'break') chronoBreakSec++;
+      // Si pom está pausado (chronoPomLive=false pero linked=true): NO contar nada
+    } else {
+      // Modo independiente: contar según la fase
+      if (chronoPhase === 'work') chronoWorkSec++;
+      else chronoBreakSec++;
+    }
     _chronoUpdateUI();
   }, 1000);
 }
@@ -906,8 +912,9 @@ function _chronoUpdateUI() {
   if (stEl) {
     if (!chronoR && chronoTotalSec === 0) stEl.textContent = '⏹ Detenido — presiona Iniciar';
     else if (!chronoR) stEl.textContent = '⏸ Pausado (tiempo real también detenido)';
-    else if (chronoPomLive && chronoPhase === 'work')  stEl.textContent = '📚 Pomodoro corriendo — tiempo efectivo acumulando';
-    else if (!chronoPomLive && chronoPhase === 'work') stEl.textContent = '📚 Modo independiente — estudiando';
+    else if (chronoPomLinked && chronoPomLive && chronoPhase === 'work')  stEl.textContent = '📚 Pomodoro corriendo — tiempo efectivo acumulando';
+    else if (chronoPomLinked && !chronoPomLive) stEl.textContent = '⏸ Pomodoro pausado — tiempo efectivo detenido';
+    else if (!chronoPomLinked && chronoPhase === 'work') stEl.textContent = '📚 Modo independiente — estudiando';
     else stEl.textContent = '☕ Descansando — tiempo real sigue corriendo';
   }
 
@@ -942,7 +949,8 @@ function chronoToggle() {
       chronoPomLive = !pomB; // pomR is true means pom interval is running
       document.getElementById('chrono-mode-badge').textContent = 'POMODORO';
     } else {
-      chronoPomLive = false;
+      chronoPomLive   = false;
+      chronoPomLinked = false;
       document.getElementById('chrono-mode-badge').textContent = 'INDEPENDIENTE';
     }
     if (btn) btn.textContent = '⏸ Pausar';
@@ -954,13 +962,16 @@ function chronoToggle() {
 
 // Called from pomToggle when pom starts/pauses
 function _chronoNotifyPomState(running, phase) {
-  chronoPomLive = running;
+  chronoPomLive   = running;
+  chronoPomLinked = true; // el cronómetro queda vinculado al pom desde que arranca
   if (phase) chronoPhase = phase;
   if (running && !chronoR) {
-    // Auto-start chrono when pom starts
+    // Auto-start chrono cuando el pom arranca
     chronoR = true;
-    document.getElementById('chrono-mode-badge').textContent = 'POMODORO';
-    document.getElementById('chrono-btn').textContent = '⏸ Pausar';
+    const badge = document.getElementById('chrono-mode-badge');
+    const btn   = document.getElementById('chrono-btn');
+    if (badge) badge.textContent = 'POMODORO';
+    if (btn)   btn.textContent   = '⏸ Pausar';
     if (!chronoI) _chronoTickStart();
   }
   _chronoUpdateUI();
@@ -977,7 +988,7 @@ function chronoReset() {
   if (chronoTotalSec > 0) {
     if (!confirm('¿Reiniciar el cronómetro? Se perderá el tiempo acumulado.')) return;
   }
-  chronoR = false; chronoPhase = 'work'; chronoPomLive = false;
+  chronoR = false; chronoPhase = 'work'; chronoPomLive = false; chronoPomLinked = false;
   chronoWorkSec = 0; chronoBreakSec = 0; chronoTotalSec = 0;
   if (chronoI) { clearInterval(chronoI); chronoI = null; }
   const btn   = document.getElementById('chrono-btn');
