@@ -825,22 +825,18 @@ html, body {
   .topbar { padding: 0 12px; }
 
   /* En mobile las páginas hacen scroll normalmente */
-  .pages { overflow-y: auto; flex:1; }
-  .page  { display:none; flex-direction:column; min-height:calc(100vh - var(--topbar-h)); }
-  .page.active { display:flex; }
+  .pages { overflow-y: auto; flex:1; display:block; }
+  .page  { display:none; }
+  .page.active { display:flex; flex-direction:column; min-height:calc(100vh - var(--topbar-h)); }
 
   /* Chat en mobile: input fijo abajo */
-  .chat-layout { position:relative; min-height:calc(100vh - var(--topbar-h)); }
-  .chat-messages { flex:1; overflow-y:auto; padding-bottom: 70px; }
-  .chat-input-wrap { position:fixed; bottom:0; left:0; right:0; z-index:50; }
+  .page.active.chat-layout .chat-messages { flex:1; overflow-y:auto; padding-bottom: 70px; }
+  .page.active.chat-layout .chat-input-wrap { position:fixed; bottom:0; left:0; right:0; z-index:50; }
 
   /* Tareas, archivos, historial scroll en mobile */
-  .tasks-page, .files-page, .history-page { min-height:calc(100vh - var(--topbar-h)); height:auto; }
-  .tasks-list, .history-list { overflow-y:visible; }
-  .files-grid { overflow-y:visible; }
+  .tasks-list, .history-list, .files-grid { overflow-y:visible; }
 
   /* Notas en mobile */
-  .page#page-notes { min-height:calc(100vh - var(--topbar-h)); }
   .note-editor { min-height: 400px; }
 }
 
