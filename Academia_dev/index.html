@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
   <!-- ═══ FAVICON & PWA ═══ -->
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
-  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#7c6aff">
   <meta name="mobile-web-app-capable" content="yes">
@@ -85,6 +85,20 @@
           <span class="sem-mini-chip" style="background:rgba(74,222,128,.15);color:#4ade80;" id="sidebar-sem-cred">🪙 —</span>
         </div>
       </div>
+    </div>
+
+    <!-- Botón tutorial -->
+    <div style="padding:8px 12px;border-top:1px solid var(--border);">
+      <button onclick="showTutorial()" style="
+        width:100%;padding:8px 12px;background:none;
+        border:1px solid var(--border);border-radius:8px;
+        color:var(--text3);cursor:pointer;font-size:12px;
+        display:flex;align-items:center;gap:8px;
+        transition:border-color .15s,color .15s;
+      " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">
+        ❓ <span>Ver tutorial</span>
+      </button>
     </div>
   </aside>
 
@@ -394,6 +408,7 @@
             <select id="tf-status" class="form-select" style="width:auto;padding:6px 10px;font-size:12px;" onchange="renderTasks()">
               <option value="">Todos</option><option value="pending">Pendientes</option><option value="done">Completadas</option>
             </select>
+            <button class="btn btn-ghost btn-sm" onclick="deleteCompletedTasks()" title="Borrar tareas completadas" style="color:var(--text3);">🗑️ Borrar completadas</button>
             <button class="btn btn-primary btn-sm" onclick="openTaskModal()">+ Nueva Tarea</button>
           </div>
         </div>
@@ -629,7 +644,7 @@
                 </label>
                 <label class="btn btn-ghost btn-sm" title="Ver PDF completo en notas" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
                   📑 Ver PDF
-                  <input type="file" accept=".pdf" multiple style="display:none;" onchange="loadPDFIntoNotes(this.files);this.value=''">
+                  <input type="file" accept=".pdf" style="display:none;" onchange="loadPDFIntoNotes(this.files[0]);this.value=''">
                 </label>
                 <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()">🗑️</button>
               </div>
@@ -1194,6 +1209,31 @@
       </div>
       <div class="form-group"><label class="form-label">Descripción / Notas</label>
         <textarea class="form-textarea" id="t-notes" rows="3" placeholder="Detalles adicionales, instrucciones..."></textarea></div>
+
+      <!-- Repetición -->
+      <div class="form-group">
+        <label class="form-label">🔁 Repetir tarea</label>
+        <select class="form-select" id="t-repeat" onchange="_toggleRepeatFields()">
+          <option value="none">No repetir</option>
+          <option value="daily">Cada día</option>
+          <option value="weekly">Cada semana</option>
+          <option value="biweekly">Cada 2 semanas</option>
+          <option value="monthly">Cada mes</option>
+        </select>
+      </div>
+      <div id="t-repeat-until-wrap" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group">
+            <label class="form-label">📅 Repetir hasta</label>
+            <input type="date" class="form-input" id="t-repeat-until">
+          </div>
+          <div class="form-group" id="t-repeat-count-wrap">
+            <label class="form-label">🔢 O número de veces</label>
+            <input type="number" class="form-input" id="t-repeat-count" min="1" max="100" placeholder="ej: 4">
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:-6px;">Si pones ambos, se usa el que se cumpla primero.</div>
+      </div>
     </div>
 
     <!-- Tab: Subtareas -->

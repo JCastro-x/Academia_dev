@@ -112,6 +112,10 @@ function openTaskModal(id) {
     document.getElementById('t-notes').value = existing.notes || '';
     if (document.getElementById('t-time-est')) document.getElementById('t-time-est').value = existing.timeEst || '';
     if (document.getElementById('t-tags')) document.getElementById('t-tags').value = (existing.tags||[]).join(', ');
+    if (document.getElementById('t-repeat'))       document.getElementById('t-repeat').value       = existing.repeat      || 'none';
+    if (document.getElementById('t-repeat-until')) document.getElementById('t-repeat-until').value = existing.repeatUntil || '';
+    if (document.getElementById('t-repeat-count')) document.getElementById('t-repeat-count').value = existing.repeatCount || '';
+    _toggleRepeatFields();
     _editSubtasks    = JSON.parse(JSON.stringify(existing.subtasks    || []));
     _editAttachments = JSON.parse(JSON.stringify(existing.attachments || []));
     _editComments    = JSON.parse(JSON.stringify(existing.comments    || []));
@@ -125,6 +129,10 @@ function openTaskModal(id) {
     document.getElementById('t-type').value  = 'Tarea';
     if (document.getElementById('t-time-est')) document.getElementById('t-time-est').value = '';
     if (document.getElementById('t-tags')) document.getElementById('t-tags').value = '';
+    if (document.getElementById('t-repeat'))       document.getElementById('t-repeat').value       = 'none';
+    if (document.getElementById('t-repeat-until')) document.getElementById('t-repeat-until').value = '';
+    if (document.getElementById('t-repeat-count')) document.getElementById('t-repeat-count').value = '';
+    _toggleRepeatFields();
   }
 
   document.querySelectorAll('#modal-task .modal-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
@@ -181,7 +189,20 @@ function saveTask() {
     subtasks:    _editSubtasks.filter(s => s.text.trim()),
     attachments: _editAttachments,
     comments:    _editComments.filter(c => c.text.trim()),
+    // Repetición
+    repeat:      document.getElementById('t-repeat')?.value || 'none',
+    repeatUntil: document.getElementById('t-repeat-until')?.value || '',
+    repeatCount: parseInt(document.getElementById('t-repeat-count')?.value) || 0,
+    repeatDone:  existing ? (existing.repeatDone || 0) : 0,
   };
+
+  // Si tiene repetición y se está creando: generar las instancias
+  if (!editTaskId && task.repeat !== 'none') {
+    _generateRepeatTasks(task);
+    saveState(['tasks']); closeModal('modal-task');
+    renderTasks(); updateBadge(); renderOverview(); renderCalendar();
+    return;
+  }
 
   if (editTaskId) {
     const idx = State.tasks.findIndex(t => t.id === editTaskId);
@@ -218,6 +239,67 @@ function deleteTask(id) {
   State.tasks = State.tasks.filter(t => t.id !== id);
   saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
 }
+// ── Tareas repetitivas ───────────────────────────────────────
+function _generateRepeatTasks(baseTask) {
+  const repeat = baseTask.repeat;
+  const until  = baseTask.repeatUntil;
+  const count  = baseTask.repeatCount;
+
+  if (repeat === 'none') {
+    State.tasks.unshift({ ...baseTask, repeat: 'none' });
+    return;
+  }
+
+  const dueDate = baseTask.due ? new Date(baseTask.due + 'T12:00:00') : new Date();
+  const tasks   = [];
+  let   current = new Date(dueDate);
+  let   i       = 0;
+  const maxIter = 365; // límite de seguridad
+
+  while (i < maxIter) {
+    // Condición de parada
+    if (count > 0 && tasks.length >= count) break;
+    if (until && current > new Date(until + 'T23:59:59')) break;
+    if (!count && !until) { // sin límite definido: solo 1 instancia
+      tasks.push({ ...baseTask, id: Date.now().toString() + '_' + i, due: _dateFmt(current), repeatDone: i });
+      break;
+    }
+
+    tasks.push({
+      ...baseTask,
+      id:         Date.now().toString() + '_' + i,
+      due:        _dateFmt(current),
+      repeatDone: i,
+      done:       false,
+    });
+
+    // Avanzar fecha según tipo de repetición
+    const next = new Date(current);
+    if      (repeat === 'daily')   next.setDate(next.getDate() + 1);
+    else if (repeat === 'weekly')  next.setDate(next.getDate() + 7);
+    else if (repeat === 'biweekly')next.setDate(next.getDate() + 14);
+    else if (repeat === 'monthly') next.setMonth(next.getMonth() + 1);
+    current = next;
+    i++;
+  }
+
+  // Agregar en orden cronológico al inicio
+  tasks.reverse().forEach(t => State.tasks.unshift(t));
+}
+
+function _dateFmt(d) {
+  return d.toISOString().split('T')[0];
+}
+
+// ── Borrar tareas completadas (bulk) ─────────────────────────
+function deleteCompletedTasks() {
+  const count = State.tasks.filter(t => t.done).length;
+  if (!count) { alert('No hay tareas completadas.'); return; }
+  if (!confirm(`¿Eliminar ${count} tarea${count > 1 ? 's' : ''} completada${count > 1 ? 's' : ''}?`)) return;
+  State.tasks = State.tasks.filter(t => !t.done);
+  saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
+}
+
 function toggleDesc(id) {
   const el  = document.getElementById('desc-' + id);
   const btn = document.getElementById('descbtn-' + id);
@@ -500,6 +582,17 @@ function openTaskDetail(id) {
     document.head.appendChild(s);
   }
   modal.style.display = 'flex';
+}
+
+// Mostrar/ocultar campos según tipo de repetición
+function _toggleRepeatFields() {
+  const val     = document.getElementById('t-repeat')?.value || 'none';
+  const untilEl = document.getElementById('t-repeat-until-wrap');
+  const countEl = document.getElementById('t-repeat-count-wrap');
+  if (!untilEl || !countEl) return;
+  const show = val !== 'none';
+  untilEl.style.display = show ? '' : 'none';
+  countEl.style.display = show ? '' : 'none';
 }
 
 function closeTaskDetail() {

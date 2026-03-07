@@ -2,11 +2,11 @@
 // SERVICE WORKER — Network First
 // Siempre intenta red primero, caché como fallback
 // ═══════════════════════════════════════════════
-const CACHE_NAME = 'academia-v4';
+const CACHE_NAME = 'academia-v8';
 
 const STATIC_ASSETS = [
-  '/icon-192.png',
-  '/icon-512.png',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png',
 ];
 
 self.addEventListener('install', e => {
