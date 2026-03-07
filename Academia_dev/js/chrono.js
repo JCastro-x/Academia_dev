@@ -840,13 +840,15 @@ document.addEventListener('DOMContentLoaded', () => {
 //   chronoBreakSec = cuenta en fase descanso (pom corriendo o manual)
 //   chronoTotalSec = siempre cuenta desde que se inicia (tiempo real)
 // ══════════════════════════════════════════════════════════════
-var chronoR        = false;    // cronómetro activo (total siempre corre)
-var chronoPhase    = 'work';   // 'work' | 'break'
-var chronoPomLive  = false;    // true solo cuando pomodoro está running
+var chronoR          = false;    // cronómetro activo (total siempre corre)
+var chronoPhase      = 'work';   // 'work' | 'break'
+var chronoPomLive    = false;    // true solo cuando pomodoro está running
+var chronoLinkedToPom = false;   // true si alguna vez se vinculó a un pom (evita modo independiente mientras pom pausado)
 var chronoWorkSec  = 0;
 var chronoBreakSec = 0;
 var chronoTotalSec = 0;        // tiempo real (no para con pausa del pom)
 var chronoI        = null;
+var _focusSyncInterval = null; // interval para sincronizar focus mode con pom real
 
 function _chronoFmt(s) {
   const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
@@ -863,8 +865,8 @@ function _chronoTickStart() {
     if (chronoPomLive && chronoPhase === 'work') chronoWorkSec++;
     // Descanso: si fase es descanso (independiente de pausa)
     else if (chronoPhase === 'break') chronoBreakSec++;
-    // Si es independiente (sin pom): ambos work/break cuentan normalmente
-    else if (!chronoPomLive && chronoPhase === 'work') chronoWorkSec++;
+    // Si es independiente REAL (nunca se vinculó a un pom): cuenta normalmente
+    else if (!chronoLinkedToPom && chronoPhase === 'work') chronoWorkSec++;
     _chronoUpdateUI();
   }, 1000);
 }
@@ -938,11 +940,13 @@ function chronoToggle() {
     chronoR = true;
     // Sync phase with pom if running
     if (typeof pomR !== 'undefined' && pomR) {
-      chronoPhase   = pomB ? 'break' : 'work';
-      chronoPomLive = !pomB; // pomR is true means pom interval is running
+      chronoPhase      = pomB ? 'break' : 'work';
+      chronoPomLive    = !pomB;
+      chronoLinkedToPom = true;
       document.getElementById('chrono-mode-badge').textContent = 'POMODORO';
     } else {
-      chronoPomLive = false;
+      chronoPomLive     = false;
+      chronoLinkedToPom = false;
       document.getElementById('chrono-mode-badge').textContent = 'INDEPENDIENTE';
     }
     if (btn) btn.textContent = '⏸ Pausar';
@@ -954,6 +958,7 @@ function chronoToggle() {
 
 // Called from pomToggle when pom starts/pauses
 function _chronoNotifyPomState(running, phase) {
+  if (running) chronoLinkedToPom = true; // una vez vinculado al pom, no volver a modo independiente
   chronoPomLive = running;
   if (phase) chronoPhase = phase;
   if (running && !chronoR) {
@@ -978,6 +983,7 @@ function chronoReset() {
     if (!confirm('¿Reiniciar el cronómetro? Se perderá el tiempo acumulado.')) return;
   }
   chronoR = false; chronoPhase = 'work'; chronoPomLive = false;
+  chronoLinkedToPom = false;
   chronoWorkSec = 0; chronoBreakSec = 0; chronoTotalSec = 0;
   if (chronoI) { clearInterval(chronoI); chronoI = null; }
   const btn   = document.getElementById('chrono-btn');
@@ -1024,26 +1030,34 @@ function chronoSave() {
 // ═══ PDF ADJUNTO EN NOTAS — chip + visor iframe ═══
 // Los PDFs se guardan como base64 en note.pdfAttachments = [{name, data}]
 
-function loadPDFIntoNotes(file) {
-  if (!file) return;
+function loadPDFIntoNotes(fileOrFiles) {
+  if (!fileOrFiles) return;
   if (!_currentNoteId) { alert('Selecciona o crea una nota primero.'); return; }
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const base64 = e.target.result; // data:application/pdf;base64,...
-    const note   = _getNotesArray().find(n => n.id === _currentNoteId);
-    if (!note) return;
+  // Acepta File individual, FileList o Array
+  const files = (fileOrFiles instanceof FileList || Array.isArray(fileOrFiles))
+    ? Array.from(fileOrFiles)
+    : [fileOrFiles];
 
-    if (!note.pdfAttachments) note.pdfAttachments = [];
-    // Evitar duplicados por nombre
-    if (!note.pdfAttachments.some(p => p.name === file.name)) {
-      note.pdfAttachments.push({ name: file.name, data: base64 });
-    }
-    note.updatedAt = Date.now();
-    saveState(['all']);
-    _renderPDFStrip(note);
-  };
-  reader.readAsDataURL(file);
+  files.forEach(file => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64 = e.target.result; // data:application/pdf;base64,...
+      const note   = _getNotesArray().find(n => n.id === _currentNoteId);
+      if (!note) return;
+
+      if (!note.pdfAttachments) note.pdfAttachments = [];
+      // Evitar duplicados por nombre
+      if (!note.pdfAttachments.some(p => p.name === file.name)) {
+        note.pdfAttachments.push({ name: file.name, data: base64 });
+      }
+      note.updatedAt = Date.now();
+      saveState(['all']);
+      _renderPDFStrip(note);
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function _renderPDFStrip(note) {
@@ -1132,92 +1146,65 @@ document.addEventListener('keydown', function(e) {
 
 // ═══ FOCUS MODE ═══
 function enterFocusMode() {
-  // Crear overlay focus mode
+  // Limpiar overlay anterior si existe
+  const old = document.getElementById('focus-mode-overlay');
+  if (old) old.remove();
+  if (_focusSyncInterval) { clearInterval(_focusSyncInterval); _focusSyncInterval = null; }
+
   const focusOverlay = document.createElement('div');
   focusOverlay.id = 'focus-mode-overlay';
   focusOverlay.className = 'focus-mode-container';
-  
-  // Obtener tiempo actual del pomodoro
+
+  // Leer tiempo actual del pomodoro real
   const pomTimeEl = document.getElementById('pom-time');
   const currentTime = pomTimeEl ? pomTimeEl.textContent : '25:00';
-  
+
   focusOverlay.innerHTML = `
     <button class="focus-exit-btn" onclick="exitFocusMode()">✕ Salir Focus</button>
-    
     <div style="display:flex;flex-direction:column;align-items:center;gap:40px;">
       <div class="focus-timer" id="focus-timer">${currentTime}</div>
-      
       <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
         <button onclick="focusTogglePom()" style="padding:12px 24px;font-size:14px;background:var(--accent);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;transition:all .2s;" id="focus-pom-btn">▶ Iniciar</button>
         <button onclick="focusResetPom()" style="padding:12px 24px;font-size:14px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-weight:700;cursor:pointer;transition:all .2s;">↻ Reiniciar</button>
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(focusOverlay);
   document.body.style.overflow = 'hidden';
-  
-  // Variables de control
-  let focusTime = 25 * 60; // 25 minutos en segundos
-  let focusRunning = false;
-  let focusInterval = null;
-  
-  // Sincronizar con el pomodoro real si está corriendo
-  if (document.getElementById('pom-btn')) {
-    const pomBtn = document.getElementById('pom-btn');
-    if (pomBtn.textContent.includes('Pausar')) {
-      focusRunning = true;
+
+  // Función para sincronizar display con pom real
+  function _syncFocusDisplay() {
+    const pTime = document.getElementById('pom-time');
+    const fTimer = document.getElementById('focus-timer');
+    if (fTimer && pTime) fTimer.textContent = pTime.textContent;
+
+    const pBtn   = document.getElementById('pom-btn');
+    const fBtn   = document.getElementById('focus-pom-btn');
+    if (fBtn && pBtn) {
+      fBtn.textContent = pBtn.textContent.includes('Pausar') ? '⏸ Pausar' : '▶ Reanudar';
     }
   }
-  
-  // Función para actualizar display
-  function updateFocusDisplay() {
-    const mins = Math.floor(focusTime / 60);
-    const secs = focusTime % 60;
-    const timerEl = document.getElementById('focus-timer');
-    if (timerEl) {
-      timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-  }
-  
-  // Funciones globales para focus
+
+  // Sync cada 500ms con el pom real
+  _focusSyncInterval = setInterval(_syncFocusDisplay, 500);
+  _syncFocusDisplay();
+
+  // Controles del focus llaman al pom real
   window.focusTogglePom = function() {
-    const btn = document.getElementById('focus-pom-btn');
-    if (focusRunning) {
-      focusRunning = false;
-      clearInterval(focusInterval);
-      btn.textContent = '▶ Reanudar';
-    } else {
-      focusRunning = true;
-      btn.textContent = '⏸ Pausar';
-      focusInterval = setInterval(() => {
-        focusTime--;
-        updateFocusDisplay();
-        if (focusTime <= 0) {
-          focusTime = 25 * 60;
-          focusRunning = false;
-          clearInterval(focusInterval);
-          btn.textContent = '▶ Iniciar';
-          alert('🎉 ¡Sesión de enfoque completada!');
-        }
-      }, 1000);
-    }
+    if (typeof pomToggle === 'function') pomToggle();
+    setTimeout(_syncFocusDisplay, 80);
   };
-  
   window.focusResetPom = function() {
-    focusRunning = false;
-    clearInterval(focusInterval);
-    focusTime = 25 * 60;
-    updateFocusDisplay();
-    document.getElementById('focus-pom-btn').textContent = '▶ Iniciar';
+    if (typeof pomReset === 'function') pomReset();
+    setTimeout(_syncFocusDisplay, 80);
   };
 }
 
 function exitFocusMode() {
+  if (_focusSyncInterval) { clearInterval(_focusSyncInterval); _focusSyncInterval = null; }
   const overlay = document.getElementById('focus-mode-overlay');
-  if (overlay) {
-    overlay.remove();
-  }
+  if (overlay) overlay.remove();
   document.body.style.overflow = 'auto';
 }
 

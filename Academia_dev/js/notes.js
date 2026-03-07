@@ -583,6 +583,7 @@ function renderNotesList() {
 // ── SELECT / LOAD NOTE — THE BUG FIX ─────────────────────────
 function selectProNote(id) {
   if (_currentNoteId && _currentNoteId !== id) _autoCommitNote();
+  clearTimeout(_noteAutoSaveTimer); // cancelar autosave pendiente de la nota anterior
   _currentNoteId = id;
   // Re-render list first (marks active)
   renderNotesList();
@@ -834,6 +835,7 @@ function addNewDrawingNote() {
 function deleteCurrentNote() {
   if (!_currentNoteId) return;
   if (!confirm('¿Eliminar esta nota?')) return;
+  clearTimeout(_noteAutoSaveTimer); // evitar que autosave pendiente reactive la nota borrada
   const sem = State._activeSem;
   if (sem.notesArray) sem.notesArray = sem.notesArray.filter(n => n.id !== _currentNoteId);
   _currentNoteId = null;
