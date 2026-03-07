@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0d0d14">
   <title>StudySpace — Colabora con tu equipo</title>
-  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="../Academia_dev/assets/icons/favicon.svg">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -35,7 +35,6 @@
       overflow-x: hidden;
     }
 
-    /* ── Background grid ── */
     body::before {
       content: '';
       position: fixed;
@@ -48,7 +47,6 @@
       z-index: 0;
     }
 
-    /* ── Glow orbs ── */
     .orb {
       position: fixed;
       border-radius: 50%;
@@ -60,7 +58,6 @@
     .orb-2 { width:400px; height:400px; background:rgba(61,220,132,.08); bottom:-80px; right:-80px; }
     .orb-3 { width:300px; height:300px; background:rgba(255,107,157,.06); top:40%; right:10%; }
 
-    /* ── Layout ── */
     .page {
       position: relative;
       z-index: 1;
@@ -69,7 +66,6 @@
       flex-direction: column;
     }
 
-    /* ── Navbar ── */
     nav {
       display: flex;
       align-items: center;
@@ -99,7 +95,6 @@
     }
     .nav-logo span { color: var(--accent2); }
 
-    /* ── Hero ── */
     .hero {
       flex: 1;
       display: flex;
@@ -151,7 +146,6 @@
       animation: fadeUp .6s .2s ease both;
     }
 
-    /* ── Login card ── */
     .login-card {
       background: var(--surface);
       border: 1px solid var(--border2);
@@ -258,29 +252,26 @@
       background: rgba(255,107,107,.12);
       border: 1px solid rgba(255,107,107,.3);
       color: #ff6b6b;
+      border-radius: 10px;
       padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 12px;
-      margin-bottom: 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
       display: none;
-      text-align: center;
     }
     .error-msg.show { display: block; }
 
     .login-footer {
-      text-align: center;
       font-size: 11px;
       color: var(--text3);
+      text-align: center;
       margin-top: 16px;
-      line-height: 1.6;
     }
     .login-footer a { color: var(--accent2); text-decoration: none; }
 
-    /* ── Features ── */
     .features {
-      padding: 60px 20px;
-      max-width: 900px;
-      margin: 0 auto;
+      padding: 60px 40px;
+      background: rgba(0,0,0,.2);
+      border-top: 1px solid var(--border);
     }
     .features-title {
       text-align: center;
@@ -289,20 +280,22 @@
       color: var(--text3);
       font-family: 'Space Mono', monospace;
       letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
     }
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 16px;
+      max-width: 700px;
+      margin: 0 auto;
     }
     .feature-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 20px;
-      transition: border-color .2s, transform .2s;
+      padding: 20px 16px;
+      text-align: center;
+      transition: all .2s;
     }
     .feature-card:hover {
       border-color: var(--border2);
@@ -312,7 +305,6 @@
     .feature-name { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
     .feature-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
 
-    /* ── Spinner ── */
     .spinner {
       width: 16px; height: 16px;
       border: 2px solid rgba(255,255,255,.3);
@@ -322,7 +314,6 @@
       flex-shrink: 0;
     }
 
-    /* ── Invite banner (cuando viene con ?invite=) ── */
     .invite-banner {
       background: linear-gradient(135deg, rgba(61,220,132,.1), rgba(108,99,255,.1));
       border: 1px solid rgba(61,220,132,.25);
@@ -336,14 +327,12 @@
     .invite-banner-title { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
     .invite-banner-desc  { font-size: 12px; color: var(--text2); }
 
-    /* ── Animations ── */
     @keyframes fadeUp {
       from { opacity:0; transform:translateY(20px); }
       to   { opacity:1; transform:translateY(0); }
     }
     @keyframes spin { to { transform:rotate(360deg); } }
 
-    /* ── Mobile ── */
     @media (max-width: 600px) {
       nav { padding: 14px 16px; }
       .hero { padding: 50px 16px 40px; }
@@ -359,7 +348,6 @@
   <div class="orb orb-3"></div>
 
   <div class="page">
-    <!-- Nav -->
     <nav>
       <div class="nav-logo">
         <div class="nav-logo-icon">📚</div>
@@ -368,7 +356,6 @@
       <div style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">by Academia Dev</div>
     </nav>
 
-    <!-- Hero -->
     <div class="hero">
       <div class="hero-inner">
         <div class="hero-badge">✦ Colaboración académica en tiempo real</div>
@@ -382,9 +369,7 @@
           Chat, notas compartidas, tareas grupales y archivos — todo en un solo lugar para tu clase o grupo de estudio.
         </p>
 
-        <!-- Login Card -->
         <div class="login-card">
-          <!-- Banner de invitación -->
           <div class="invite-banner" id="invite-banner">
             <div class="invite-banner-title">🎉 Fuiste invitado a un grupo</div>
             <div class="invite-banner-desc" id="invite-banner-desc">Inicia sesión para unirte automáticamente</div>
@@ -421,9 +406,8 @@
       </div>
     </div>
 
-    <!-- Features -->
     <div class="features">
-      <div class="features-title">¿Qué incluye?</div>
+      <div class="features-title">¿QUÉ INCLUYE?</div>
       <div class="features-grid">
         <div class="feature-card">
           <div class="feature-icon">💬</div>
@@ -452,22 +436,16 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
   <script>
-    const SUPABASE_URL = 'https://mwzezekdxrutpzqbduvh.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_O1RMAV7hbpvDwJj0ESgaCg_dd8lZur5';
-    const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'studyspace_auth' }
-    });
+    // ── FIX: usar el cliente ya inicializado en auth.js (sin redeclarar SUPABASE_URL ni SUPABASE_KEY) ──
+    const _client = window.SS.client;
 
-    // ── Detectar invite code en URL ──
     const _urlParams  = new URLSearchParams(window.location.search);
     const _inviteCode = _urlParams.get('invite') || '';
 
     window.addEventListener('load', async () => {
-      // Mostrar banner si hay código de invitación
       if (_inviteCode) {
         document.getElementById('invite-banner').classList.add('show');
         document.getElementById('invite-input').value = _inviteCode.toUpperCase();
-        // Buscar nombre del grupo
         try {
           const { data } = await _client
             .from('social_groups')
@@ -481,13 +459,9 @@
         } catch(e) {}
       }
 
-      // Si ya está autenticado, redirigir al app
       const { data: { session } } = await _client.auth.getSession();
       if (session) {
-        // Si viene con invite, unirse primero
-        if (_inviteCode) {
-          await _joinGroupByCode(_inviteCode, session.user.id);
-        }
+        if (_inviteCode) await _joinGroupByCode(_inviteCode, session.user.id);
         window.location.href = 'app.html';
       }
     });
@@ -499,7 +473,6 @@
       btn.disabled = true;
       btn.innerHTML = '<div class="spinner"></div><span>Abriendo Google...</span>';
 
-      // Guardar invite code para después del redirect
       if (_inviteCode) sessionStorage.setItem('ss_pending_invite', _inviteCode);
 
       const { error } = await _client.auth.signInWithOAuth({
@@ -522,16 +495,13 @@
 
       if (!code) { err.textContent = 'Ingresa un código de invitación'; err.classList.add('show'); return; }
 
-      // Verificar si está autenticado
       const { data: { session } } = await _client.auth.getSession();
       if (!session) {
-        // Guardar código y hacer login
         sessionStorage.setItem('ss_pending_invite', code);
         handleGoogleLogin();
         return;
       }
 
-      // Ya autenticado — unirse al grupo
       const joined = await _joinGroupByCode(code, session.user.id);
       if (joined) {
         window.location.href = 'app.html';
@@ -543,7 +513,6 @@
 
     async function _joinGroupByCode(code, userId) {
       try {
-        // Buscar el grupo
         const { data: group, error } = await _client
           .from('social_groups')
           .select('id, name')
@@ -552,12 +521,10 @@
 
         if (error || !group) return false;
 
-        // Agregar como miembro (si no lo es ya)
         await _client.from('social_members').upsert(
           { group_id: group.id, user_id: userId, role: 'member' },
           { onConflict: 'group_id,user_id' }
         );
-
         return true;
       } catch(e) {
         console.error('Error uniéndose al grupo:', e);
