@@ -53,7 +53,7 @@ function _renderMessages(messages) {
           ${showMeta ? `<div class="msg-meta">${isMine ? time : username + ' · ' + time}</div>` : ''}
           <div class="msg-bubble" ondblclick="${isMine ? `deleteMsg('${msg.id}')` : ''}"
                title="${isMine ? 'Doble clic para borrar' : ''}">
-            ${_escHtml(msg.content)}
+            ${_renderMsgContent(msg.content)}
           </div>
         </div>
         ${isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
@@ -62,9 +62,33 @@ function _renderMessages(messages) {
   container.innerHTML = html;
 }
 
-function _onNewMessage(payload) {
+// Renderiza texto normal o imagen si el contenido es [IMAGE]:data:...
+function _renderMsgContent(content) {
+  if (content && content.startsWith('[IMAGE]:')) {
+    const src = content.slice(8);
+    return `<img src="${src}" alt="imagen" style="max-width:260px;max-height:300px;border-radius:10px;display:block;cursor:pointer;" onclick="window.open('${src}','_blank')">`;
+  }
+  return _escHtml(content);
+}
+
+async function _onNewMessage(payload) {
   const msg    = payload.new;
-  const member = _members.find(m => m.id === msg.user_id);
+  // Buscar en _members local primero
+  let member = _members.find(m => m.id === msg.user_id);
+  // Si no está (p.ej. se unió recién), pedir su perfil a Supabase
+  if (!member) {
+    const { data } = await SS.client
+      .from('social_profiles')
+      .select('id, username, avatar_url')
+      .eq('id', msg.user_id)
+      .single();
+    if (data) {
+      member = data;
+      // Agregarlo a _members para futuros mensajes
+      _members.push({ ...data, role: 'member' });
+      document.getElementById('members-count').textContent = _members.length;
+    }
+  }
   if (member) msg.social_profiles = { username: member.username, avatar_url: member.avatar_url };
   _appendMessage(msg);
 }
@@ -86,7 +110,7 @@ function _appendMessage(msg) {
       <div class="msg-meta">${isMine ? time : username + ' · ' + time}</div>
       <div class="msg-bubble" ondblclick="${isMine ? `deleteMsg('${msg.id}')` : ''}"
            title="${isMine ? 'Doble clic para borrar' : ''}">
-        ${_escHtml(msg.content)}
+        ${_renderMsgContent(msg.content)}
       </div>
     </div>
     ${isMine ? `<div class="msg-avatar">${avatarHtml}</div>` : ''}
@@ -112,6 +136,44 @@ async function sendMessage() {
     showToast('Error enviando mensaje', 'error');
     input.value = content;
   }
+}
+
+// ── Subir imagen al chat ─────────────────────────────────────────
+
+function openChatImagePicker() {
+  document.getElementById('chat-image-input').click();
+}
+
+async function handleChatImageSelect(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+
+  // Validar tipo y tamaño (máx 3MB)
+  if (!file.type.startsWith('image/')) {
+    showToast('Solo se permiten imágenes', 'error'); return;
+  }
+  if (file.size > 3 * 1024 * 1024) {
+    showToast('La imagen no debe superar 3MB', 'error'); return;
+  }
+
+  showToast('Subiendo imagen...', 'info');
+  try {
+    const base64 = await _fileToBase64(file);
+    await SS.DB.sendMessage(_activeGroup.id, _user.id, '[IMAGE]:' + base64);
+  } catch(e) {
+    console.error(e);
+    showToast('Error enviando imagen', 'error');
+  }
+}
+
+function _fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function handleChatKey(e) {

@@ -119,6 +119,8 @@
           </div>
         </div>
         <div class="chat-input-wrap">
+          <input type="file" id="chat-image-input" accept="image/*" style="display:none;" onchange="handleChatImageSelect(event)">
+          <button class="chat-attach-btn" onclick="openChatImagePicker()" title="Enviar imagen">📎</button>
           <textarea
             class="chat-input"
             id="chat-input"

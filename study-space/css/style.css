@@ -394,6 +394,20 @@ html, body {
 .chat-send-btn:hover { background: #7c75ff; }
 .chat-send-btn:active { transform: scale(.95); }
 
+.chat-attach-btn {
+  width: 42px; height: 42px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  color: var(--text2);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.chat-attach-btn:hover { border-color: var(--accent); color: var(--text); }
+
 /* ═══════════════════════════════════════════════════════════════
    NOTAS COMPARTIDAS
    ═══════════════════════════════════════════════════════════════ */
@@ -1105,7 +1119,7 @@ html, body {
   gap: 10px;
 }
 
-
+.mascot-xp-wrap {}
 .mascot-xp-label {
   display: flex;
   justify-content: space-between;
