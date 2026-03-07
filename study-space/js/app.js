@@ -2,17 +2,7 @@
 // STUDYSPACE — app.js (core: init, grupos, nav, helpers)
 // ═══════════════════════════════════════════════════════════════
 
-let _user         = null;
-let _profile      = null;
-let _groups       = [];
-let _activeGroup  = null;
-let _members      = [];
-let _currentPage  = 'chat';
 
-// Realtime channels
-let _chatChannel  = null;
-let _notesChannel = null;
-let _tasksChannel = null;
 
 // ── INIT ────────────────────────────────────────────────────────
 (async () => {

@@ -328,15 +328,22 @@
 <!-- Toast container -->
 <div id="toast-container"></div>
 
-<!-- Scripts -->
+<!-- Scripts — orden importante -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/auth.js"></script>
 <script src="js/db.js"></script>
+<!-- Variables globales antes que los feature scripts -->
+<script>
+  let _user = null, _profile = null, _groups = [], _activeGroup = null,
+      _members = [], _currentPage = 'chat',
+      _chatChannel = null, _notesChannel = null, _tasksChannel = null;
+</script>
 <script src="js/chat.js"></script>
 <script src="js/notes.js"></script>
 <script src="js/tasks.js"></script>
 <script src="js/files.js"></script>
 <script src="js/pomodoro.js"></script>
+<!-- app.js al final — contiene el IIFE init y redeclara las vars -->
 <script src="js/app.js"></script>
 </body>
 </html>
