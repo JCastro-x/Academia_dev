@@ -16,7 +16,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Academia — Organiza tu semestre universitario">
 <title>Academia — Dashboard Académico</title>
- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -628,10 +627,10 @@
                   <input type="file" accept="image/*" multiple style="display:none;" onchange="attachImagesToNote(this.files);this.value=''">
                 </label>
                 <label class="btn btn-ghost btn-sm" title="Ver PDF completo en notas" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-                  📑 Ver PDF
+                  📑 PDF
                   <input type="file" accept=".pdf" style="display:none;" onchange="loadPDFIntoNotes(this.files[0]);this.value=''">
                 </label>
-                <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()">🗑️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()">🗑️ Delete</button>
               </div>
               <div style="padding:4px 0 8px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
                 <span style="font-size:10px;color:var(--text3);">🏷</span>
@@ -1110,42 +1109,24 @@
      MOBILE BOTTOM NAV
 ══════════════════════════════════════════════════ -->
 <nav class="mobile-nav" style="display:none;">
-  <div class="mobile-nav-item active" onclick="goPage('overview',this)" data-page="overview">
+  <div class="mobile-nav-item active" onclick="goPage('overview',this)">
     <div class="mn-icon">🏠</div><div>Inicio</div>
   </div>
-  <div class="mobile-nav-item" onclick="goPage('tareas',this)" data-page="tareas">
+  <div class="mobile-nav-item" onclick="goPage('tareas',this)">
     <div class="mn-icon" style="position:relative;">✅<span class="mobile-nav-badge" id="badge-tasks-m">0</span></div>
     <div>Tareas</div>
   </div>
-  <div class="mobile-nav-item mn-add-btn" onclick="openQuickAdd()">
-    <div class="mn-icon">⚡</div>
+  <div class="mobile-nav-item" onclick="openQuickAdd()">
+    <div class="mn-icon" style="font-size:26px;">⚡</div>
     <div>Agregar</div>
   </div>
-  <div class="mobile-nav-item" onclick="goPage('notas',this)" data-page="notas">
-    <div class="mn-icon">📝</div><div>Notas</div>
+  <div class="mobile-nav-item" onclick="goPage('calificaciones',this)">
+    <div class="mn-icon">🎯</div><div>Notas</div>
   </div>
-  <div class="mobile-nav-item" onclick="toggleMobileMenu()" id="mn-more-btn">
-    <div class="mn-icon">☰</div><div>Más</div>
+  <div class="mobile-nav-item" onclick="goPage('calendario',this)">
+    <div class="mn-icon">📅</div><div>Agenda</div>
   </div>
 </nav>
-
-<!-- Mobile "Más" menu -->
-<div id="mobile-more-menu" style="display:none;">
-  <div class="mm-overlay" onclick="closeMobileMenu()"></div>
-  <div class="mm-sheet">
-    <div class="mm-title">Más opciones</div>
-    <div class="mm-grid">
-      <div class="mm-item" onclick="goPageMM('calificaciones')"><span>🎯</span>Calificaciones</div>
-      <div class="mm-item" onclick="goPageMM('calendario')"><span>📅</span>Agenda</div>
-      <div class="mm-item" onclick="goPageMM('pomodoro')"><span>⏱️</span>Pomodoro</div>
-      <div class="mm-item" onclick="goPageMM('materias')"><span>📚</span>Materias</div>
-      <div class="mm-item" onclick="goPageMM('horario')"><span>🗓️</span>Horario</div>
-      <div class="mm-item" onclick="goPageMM('general')"><span>🧰</span>General</div>
-      <div class="mm-item" onclick="goPageMM('semestres')"><span>🗂️</span>Semestres</div>
-      <div class="mm-item" onclick="goPageMM('perfil')"><span>👤</span>Mi Perfil</div>
-    </div>
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════════════
      MODALS
@@ -1835,17 +1816,6 @@
         <button class="btn btn-ghost btn-sm" onclick="exportPDF()">🖨️ Exportar PDF</button>
       </div>
     </div>
-
-    <!-- LOGOUT BUTTON -->
-    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
-      <button onclick="handleLogout()" class="btn btn-danger" style="width: 100%; background: #f87171; margin-top: 16px;">
-        🚪 Cerrar Sesión
-      </button>
-      <p style="font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px;">
-        Versión 1.0 — Google OAuth + Responsive
-      </p>
-    </div>
-
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-config')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveConfigModal()">💾 Guardar</button>
@@ -1906,202 +1876,5 @@
 </div>
 
   <!-- ═══ APP SCRIPTS ═══ -->
-  <!-- Auth PRIMERO -->
-  <script src="js/auth.js"></script>
-  <!-- DB: Supabase data layer -->
-  <script src="js/db.js"></script>
-  <!-- Resto de scripts -->
-  <script src="js/app.js"></script>
-  <script src="js/calificaciones.js"></script>
-  <script src="js/tasks.js"></script>
-  <script src="js/calendar.js"></script>
-  <script src="js/notes.js"></script>
-  <script src="js/chrono.js"></script>
-
-
-<!-- Mobile sidebar overlay -->
-<div id="mobile-sidebar-overlay" onclick="closeMobileSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149;backdrop-filter:blur(2px);"></div>
-
-  <!-- PWA Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(() => console.log('Academia PWA ready ✅'))
-          .catch(e => console.log('SW error:', e));
-      });
-    }
-  </script>
-
-  <!-- CDN Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
-
-  <!-- PWA Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(() => console.log('Academia PWA ✅'))
-          .catch(e => console.log('SW (solo funciona en Netlify):', e));
-      });
-    }
-  </script>
-
-  <style>
-  /* ── Mobile More Menu ── */
-  .mm-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.6);
-    z-index: 299; backdrop-filter: blur(2px);
-  }
-  .mm-sheet {
-    position: fixed; bottom: 70px; left: 12px; right: 12px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; z-index: 300; padding: 16px;
-    box-shadow: 0 -8px 32px rgba(0,0,0,.4);
-    animation: mmSlideUp .2s ease;
-  }
-  @keyframes mmSlideUp {
-    from { opacity:0; transform: translateY(20px); }
-    to   { opacity:1; transform: translateY(0); }
-  }
-  .mm-title {
-    font-size: 11px; font-family: 'Space Mono', monospace;
-    color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-  .mm-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
-  }
-  .mm-item {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    padding: 10px 4px; border-radius: 10px; cursor: pointer;
-    background: var(--surface2); border: 1px solid var(--border);
-    font-size: 10px; font-weight: 600; color: var(--text2);
-    transition: background .15s, color .15s;
-  }
-  .mm-item:active { background: var(--accent-glow); color: var(--accent); }
-  .mm-item span { font-size: 22px; }
-
-  /* ── Mobile nav add button ── */
-  .mn-add-btn {
-    background: var(--accent) !important;
-    border-radius: 14px !important;
-    color: white !important;
-    padding: 6px 14px !important;
-    margin: 0 2px;
-  }
-  .mn-add-btn .mn-icon { color: white !important; }
-
-  /* ── Zoom fix en inputs mobile ── */
-  @media (max-width: 768px) {
-    input, select, textarea {
-      font-size: 16px !important;
-    }
-    .form-input, .form-select, .form-textarea {
-      font-size: 16px !important;
-    }
-  }
-  </style>
-
-  <script>
-  function toggleMobileMenu() {
-    const m = document.getElementById('mobile-more-menu');
-    m.style.display = m.style.display === 'none' ? 'block' : 'none';
-  }
-  function closeMobileMenu() {
-    document.getElementById('mobile-more-menu').style.display = 'none';
-  }
-  function goPageMM(page) {
-    closeMobileMenu();
-    const navItem = document.querySelector(`[data-page="${page}"]`) ||
-                    document.querySelector(`.nav-item[onclick*="${page}"]`);
-    goPage(page, navItem);
-    // Actualizar active en barra
-    document.querySelectorAll('.mobile-nav-item').forEach(i => i.classList.remove('active'));
-  }
-  </script>
-
-  <!-- Pull-to-refresh indicator -->
-  <div id="pull-to-refresh-indicator" style="
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 0;
-    background: linear-gradient(to bottom, rgba(124, 106, 255, 0.1), transparent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    transition: height 0.3s ease;
-    z-index: 100;
-  ">
-    <div style="text-align: center;">
-      <div id="pull-indicator-icon" style="font-size: 24px; transition: transform 0.3s;">⬇️</div>
-      <div id="pull-indicator-text" style="font-size: 12px; color: #7c6aff; margin-top: 4px;">Desliza para actualizar</div>
-    </div>
-  </div>
-
-  <script>
-  // ════════════════════════════════════════════════════════════════
-  // PULL-TO-REFRESH HANDLER
-  // ════════════════════════════════════════════════════════════════
-  let pullStartY = 0;
-  let isPulling = false;
-  let pullDistance = 0;
-
-  const PTR_THRESHOLD = 80;
-  const indicator = document.getElementById('pull-to-refresh-indicator');
-  const indicatorIcon = document.getElementById('pull-indicator-icon');
-  const indicatorText = document.getElementById('pull-indicator-text');
-
-  document.addEventListener('touchstart', (e) => {
-    if (window.scrollY === 0) {
-      pullStartY = e.touches[0].clientY;
-      isPulling = true;
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchmove', (e) => {
-    if (!isPulling) return;
-    pullDistance = e.touches[0].clientY - pullStartY;
-    if (pullDistance < 0) {
-      isPulling = false;
-      return;
-    }
-    indicator.style.height = Math.min(pullDistance, PTR_THRESHOLD) + 'px';
-    if (pullDistance >= PTR_THRESHOLD) {
-      indicatorIcon.textContent = '⬆️';
-      indicatorIcon.style.transform = 'rotate(180deg)';
-      indicatorText.textContent = '¡Suelta para actualizar!';
-    } else {
-      indicatorIcon.textContent = '⬇️';
-      indicatorIcon.style.transform = 'rotate(0deg)';
-      indicatorText.textContent = 'Desliza para actualizar';
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchend', async (e) => {
-    if (!isPulling) return;
-    isPulling = false;
-    if (pullDistance >= PTR_THRESHOLD) {
-      indicator.style.height = PTR_THRESHOLD + 'px';
-      indicatorIcon.textContent = '⚡';
-      indicatorText.textContent = 'Actualizando...';
-      if (window.DB && window.DB._syncFromSupabase) {
-        await window.DB._syncFromSupabase();
-      }
-      setTimeout(() => {
-        indicator.style.height = '0px';
-        pullDistance = 0;
-      }, 1000);
-    } else {
-      indicator.style.height = '0px';
-      pullDistance = 0;
-    }
-  });
-  </script>
-
-</body>
-</html>
+-->
+ SCRIPTS ═══ -->
