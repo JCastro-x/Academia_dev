@@ -2420,9 +2420,16 @@ function init() {
           // Sobrescribir localStorage con datos de Supabase (fuente de verdad)
           if (dbData.semestres && dbData.semestres.length) {
             localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
+            // FIX: también actualizar State en memoria (fue cargado ANTES de este fetch)
+            State.semestres.length = 0;
+            dbData.semestres.forEach(s => State.semestres.push(s));
+            if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
+            getMat.bust();
           }
           if (dbData.settings && Object.keys(dbData.settings).length) {
             localStorage.setItem('academia_v3_settings', JSON.stringify(dbData.settings));
+            // FIX: también actualizar State.settings en memoria
+            Object.assign(State.settings, dbData.settings);
           }
           console.log('✅ Datos sincronizados desde Supabase');
         } else {
@@ -2596,25 +2603,41 @@ function continueInit(auth) {
     }
     if (changed) {
       console.log('🔄 Datos actualizados desde Supabase — recargando UI...');
-      // Recargar State con datos nuevos
-      const newSems = JSON.parse(localStorage.getItem('academia_v4_semestres') || '[]');
-      if (newSems.length) {
+      // FIX: actualizar State directo desde dbData (no re-parsear localStorage)
+      if (dbData.semestres && dbData.semestres.length) {
         State.semestres.length = 0;
-        newSems.forEach(s => State.semestres.push(s));
+        dbData.semestres.forEach(s => State.semestres.push(s));
+        if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
         getMat.bust();
       }
-      const newSettings = JSON.parse(localStorage.getItem('academia_v3_settings') || '{}');
-      Object.assign(State.settings, newSettings);
-      // Re-renderizar
-      renderTasks && renderTasks();
-      renderOverview && renderOverview();
-      renderCalendar && renderCalendar();
+      if (dbData.settings && Object.keys(dbData.settings).length) {
+        Object.assign(State.settings, dbData.settings);
+      }
+      // FIX: re-renderizar TODO (antes faltaban materias, grades, GPA)
+      try {
+        renderOverview     && renderOverview();
+        renderMaterias     && renderMaterias();
+        renderTasks        && renderTasks();
+        renderCalendar     && renderCalendar();
+        renderGrades       && renderGrades();
+        updateGPADisplay   && updateGPADisplay();
+        renderSemestresList && renderSemestresList();
+        fillMatSels        && fillMatSels();
+      } catch(e) { console.warn('Sync re-render error', e); }
     }
   }
 
   // Sync al volver al tab/app
   document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      // FIX: flush save pendiente ANTES de que la página se oculte/cierre
+      if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
+    }
     if (document.visibilityState === 'visible') _syncFromSupabase();
+  });
+  window.addEventListener('pagehide', () => {
+    // Último recurso: flush sincrónico antes de cerrar
+    if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
   });
   window.addEventListener('focus', () => _syncFromSupabase());
 
