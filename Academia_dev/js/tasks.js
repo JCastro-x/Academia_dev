@@ -217,6 +217,9 @@ function saveTask() {
   updateBadge();
   renderOverview();
   renderCalendar();
+  // Actualizar banners y notificaciones push al guardar tarea
+  typeof renderReminderBanners === 'function' && renderReminderBanners();
+  typeof scheduleTaskReminders === 'function' && scheduleTaskReminders();
 }
 
 function toggleTask(id) {

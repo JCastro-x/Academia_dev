@@ -2644,6 +2644,9 @@ function continueInit(auth) {
   // Mostrar onboarding si es primera vez
   _maybeShowOnboarding();
 
+  // ── Recordatorios de tareas ───────────────────────────────────
+  initNotifications();
+
 } // FIN continueInit()
 
 // ═══════════════════════════════════════════════════════
@@ -2918,5 +2921,191 @@ async function handleLogout() {
     window.location.href = 'auth-page.html';
   } else {
     alert('Error al cerrar sesión: ' + result.error);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// RECORDATORIOS DE TAREAS
+// — Banner morado:  fecha de planificación = hoy
+// — Banner rojo:    fecha de entrega = hoy o ya venció
+// — Push notification via SW al abrir la app y al guardar tarea
+// ════════════════════════════════════════════════════════════════
+
+async function initNotifications() {
+  // Inyectar contenedor de banners si no existe
+  if (!document.getElementById('reminder-banners')) {
+    const wrap = document.createElement('div');
+    wrap.id = 'reminder-banners';
+    wrap.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:1200;display:flex;flex-direction:column;gap:0;pointer-events:none;';
+    document.body.appendChild(wrap);
+  }
+
+  // Pedir permiso de notificaciones (solo si no se ha dado respuesta aún)
+  if ('Notification' in window && Notification.permission === 'default') {
+    // Esperar 3s para no interrumpir el load
+    setTimeout(async () => {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        scheduleTaskReminders();
+      }
+    }, 3000);
+  } else if ('Notification' in window && Notification.permission === 'granted') {
+    scheduleTaskReminders();
+  }
+
+  // Siempre mostrar banners en pantalla sin importar el permiso push
+  renderReminderBanners();
+}
+
+function scheduleTaskReminders() {
+  if (!('serviceWorker' in navigator)) return;
+  if (Notification.permission !== 'granted') return;
+
+  const today    = new Date().toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+  const tasks = State.tasks.filter(t => !t.done);
+
+  // Agrupar por tipo de recordatorio
+  const plannedToday  = tasks.filter(t => t.datePlanned === today);
+  const dueToday      = tasks.filter(t => t.due === today);
+  const overdue       = tasks.filter(t => t.due && t.due < today);
+  const dueTomorrow   = tasks.filter(t => t.due === tomorrow);
+
+  navigator.serviceWorker.ready.then(reg => {
+    // Recordatorio de planificación (morado)
+    if (plannedToday.length) {
+      const titles = plannedToday.map(t => t.title).join(', ');
+      reg.showNotification('📋 Hoy toca trabajar', {
+        body: `Planificaste para hoy: ${titles}`,
+        icon:  '/assets/icons/icon-192.png',
+        badge: '/assets/icons/icon-32.png',
+        tag:   'reminder-planned',
+        renotify: true,
+        data:  { url: '/index.html' },
+        actions: [{ action: 'open', title: 'Ver tareas' }],
+      });
+    }
+
+    // Recordatorio de entrega hoy (rojo)
+    if (dueToday.length) {
+      const titles = dueToday.map(t => t.title).join(', ');
+      reg.showNotification('🔴 Entrega hoy', {
+        body: `Entrega hoy: ${titles}`,
+        icon:  '/assets/icons/icon-192.png',
+        badge: '/assets/icons/icon-32.png',
+        tag:   'reminder-due-today',
+        renotify: true,
+        data:  { url: '/index.html' },
+        actions: [{ action: 'open', title: 'Ver tareas' }],
+      });
+    }
+
+    // Vencidas (rojo urgente)
+    if (overdue.length) {
+      const titles = overdue.map(t => t.title).join(', ');
+      reg.showNotification('⚠️ Tareas vencidas', {
+        body: `${overdue.length} tarea${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}: ${titles}`,
+        icon:  '/assets/icons/icon-192.png',
+        badge: '/assets/icons/icon-32.png',
+        tag:   'reminder-overdue',
+        renotify: false, // no spamear si ya se mostró
+        data:  { url: '/index.html' },
+      });
+    }
+
+    // Entrega mañana (amarillo — sin vibración, solo aviso)
+    if (dueTomorrow.length) {
+      const titles = dueTomorrow.map(t => t.title).join(', ');
+      reg.showNotification('📅 Entrega mañana', {
+        body: `Recuerda: ${titles}`,
+        icon:  '/assets/icons/icon-192.png',
+        badge: '/assets/icons/icon-32.png',
+        tag:   'reminder-due-tomorrow',
+        renotify: false,
+        data:  { url: '/index.html' },
+      });
+    }
+  }).catch(() => {});
+}
+
+function renderReminderBanners() {
+  const wrap = document.getElementById('reminder-banners');
+  if (!wrap) return;
+
+  const today  = new Date().toISOString().split('T')[0];
+  const tasks  = (typeof State !== 'undefined' ? State.tasks : []) || [];
+  const active = tasks.filter(t => !t.done);
+
+  const plannedToday = active.filter(t => t.datePlanned === today);
+  const dueToday     = active.filter(t => t.due === today);
+  const overdue      = active.filter(t => t.due && t.due < today);
+
+  const banners = [];
+
+  if (overdue.length) {
+    banners.push({
+      color:   '#f87171',
+      bg:      'rgba(248,113,113,.12)',
+      border:  'rgba(248,113,113,.4)',
+      icon:    '⚠️',
+      msg:     `${overdue.length} tarea${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}: ${overdue.map(t => t.title).join(', ')}`,
+      key:     'overdue',
+    });
+  }
+
+  if (dueToday.length) {
+    banners.push({
+      color:   '#f87171',
+      bg:      'rgba(248,113,113,.12)',
+      border:  'rgba(248,113,113,.35)',
+      icon:    '🔴',
+      msg:     `Entrega hoy: ${dueToday.map(t => t.title).join(', ')}`,
+      key:     'due-today',
+    });
+  }
+
+  if (plannedToday.length) {
+    banners.push({
+      color:   '#9d97ff',
+      bg:      'rgba(108,99,255,.12)',
+      border:  'rgba(108,99,255,.4)',
+      icon:    '📋',
+      msg:     `Planificaste para hoy: ${plannedToday.map(t => t.title).join(', ')}`,
+      key:     'planned-today',
+    });
+  }
+
+  if (!banners.length) { wrap.innerHTML = ''; return; }
+
+  wrap.innerHTML = banners.map(b => `
+    <div id="rbanner-${b.key}" style="
+      pointer-events:all;
+      background:${b.bg};
+      border-bottom:2px solid ${b.border};
+      color:${b.color};
+      padding:8px 16px;
+      font-size:12px;
+      font-family:'Space Mono',monospace;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      animation:rbannerIn .3s ease;
+    ">
+      <span style="font-size:14px;">${b.icon}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.msg}</span>
+      <button onclick="document.getElementById('rbanner-${b.key}').remove()" style="
+        background:none;border:none;color:${b.color};cursor:pointer;
+        font-size:14px;opacity:.7;padding:0 4px;flex-shrink:0;
+      ">✕</button>
+    </div>
+  `).join('');
+
+  // Inyectar animación si no existe
+  if (!document.getElementById('rbanner-style')) {
+    const s = document.createElement('style');
+    s.id = 'rbanner-style';
+    s.textContent = '@keyframes rbannerIn{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:translateY(0)}}';
+    document.head.appendChild(s);
   }
 }
