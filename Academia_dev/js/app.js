@@ -488,7 +488,7 @@ function goPage(id, el) {
     case 'pomodoro':       fillPomSel(); renderPomHistory(); renderPomGoal(); break;
     case 'semestres':      renderSemestresList(); break;
     case 'horario':        renderHorario(); break;
-    case 'notas':          fillNotesSel(); if(typeof renderNotesProPage==='function') renderNotesProPage(); break;
+    case 'notas':          fillNotesSel(); renderNotesProPage(); break;
     case 'perfil':         renderProfilePage(); break;
     case 'general':        renderGeneralHub(); break;
     case 'flashcards':     renderFlashcards(); break;
@@ -572,14 +572,13 @@ function fillExamSel() {
 
 function renderOverview() { _schedRender(_renderOverview); }
 
-if (typeof _weekOffset === "undefined") var _weekOffset = 0;
+if (typeof _weekOffset === 'undefined') var _weekOffset = 0;
 
 function changeWeekOffset(delta, e) {
   if (e) e.stopPropagation();
   _weekOffset = (delta === 0) ? 0 : (_weekOffset||0) + delta;
   renderOverview();
 }
-
 function toggleLoadPanel() {
   const body = document.getElementById('load-panel-body');
   const icon = document.getElementById('load-panel-toggle');
@@ -592,7 +591,6 @@ function toggleLoadPanel() {
 function _renderOverview() {
   const pending = State.tasks.filter(t => !t.done);
   const overall = calcOverallGPA();
-
   const ovMatsEl = _el('ov-mats');
   if (ovMatsEl) ovMatsEl.textContent = State.materias.filter(m => !m.parentId).length;
   const avgEl  = _el('ov-avg');
@@ -601,7 +599,6 @@ function _renderOverview() {
   if (credEl) credEl.textContent = overall.totalCred || '0';
   const legacyPend = document.getElementById('ov-pending');
   if (legacyPend) legacyPend.textContent = pending.length;
-
   updateGPADisplay();
 
   const urgentCount = pending.filter(t => t.due && (new Date(t.due) - new Date()) / 86400000 <= 2 && (new Date(t.due) - new Date()) / 86400000 >= 0).length;
@@ -615,119 +612,86 @@ function _renderOverview() {
   const badge = _el('ov-pending-badge');
   if (badge) badge.textContent = pending.length > 0 ? `${pending.length} sin entregar` : '';
 
-  // ── Mini calendario mensual ────────────────────────────────
+  // ── Mini calendario mensual ──────────────────────────────
   const miniCalEl = _el('ov-mini-cal');
   if (miniCalEl) {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const year  = today.getFullYear();
-    const month = today.getMonth();
+    const today = new Date(); today.setHours(0,0,0,0);
+    const year = today.getFullYear(), month = today.getMonth();
     const first = new Date(year, month, 1);
-    const last  = new Date(year, month + 1, 0);
-    const startDow = (first.getDay() + 6) % 7; // lunes=0
-    const monthName = today.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-
-    // Mapa de tareas/eventos por día
+    const last  = new Date(year, month+1, 0);
+    const startDow = (first.getDay()+6) % 7;
+    const monthName = today.toLocaleDateString('es-ES', {month:'long', year:'numeric'});
     const taskMap = {};
     State.tasks.filter(t => !t.done && t.due).forEach(t => {
-      const d = t.due;
-      if (!taskMap[d]) taskMap[d] = { due: 0, urgent: false, planned: false };
-      taskMap[d].due++;
-      if (t.priority === 'high') taskMap[d].urgent = true;
+      if (!taskMap[t.due]) taskMap[t.due] = {due:0, urgent:false, planned:false};
+      taskMap[t.due].due++;
+      if (t.priority === 'high') taskMap[t.due].urgent = true;
     });
     State.tasks.filter(t => !t.done && t.datePlanned).forEach(t => {
-      const d = t.datePlanned;
-      if (!taskMap[d]) taskMap[d] = { due: 0, urgent: false, planned: false };
-      taskMap[d].planned = true;
+      if (!taskMap[t.datePlanned]) taskMap[t.datePlanned] = {due:0, urgent:false, planned:false};
+      taskMap[t.datePlanned].planned = true;
     });
     State.events.filter(e => e.date).forEach(e => {
-      const d = e.date;
-      if (!taskMap[d]) taskMap[d] = { due: 0, urgent: false, planned: false };
-      taskMap[d].due++;
+      if (!taskMap[e.date]) taskMap[e.date] = {due:0, urgent:false, planned:false};
+      taskMap[e.date].due++;
     });
-
     const dayLabels = ['L','M','X','J','V','S','D'];
-    const cellStyle = `display:flex;align-items:center;justify-content:center;position:relative;
-      height:30px;font-size:12px;border-radius:6px;cursor:default;`;
-
-    let calHtml = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    const cellS = 'display:flex;align-items:center;justify-content:center;position:relative;height:30px;font-size:12px;border-radius:6px;';
+    miniCalEl.innerHTML =
+      `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <span style="font-size:13px;font-weight:700;color:var(--text);text-transform:capitalize;">${monthName}</span>
-        <div style="display:flex;gap:10px;font-size:11px;color:var(--text3);align-items:center;">
-          <span style="display:inline-flex;align-items:center;gap:4px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;flex-shrink:0;"></span>Entrega
-          </span>
-          <span style="display:inline-flex;align-items:center;gap:4px;">
-            <span style="width:8px;height:8px;border-radius:50%;background:#9d97ff;display:inline-block;flex-shrink:0;"></span>Plan.
-          </span>
+        <div style="display:flex;gap:10px;font-size:11px;color:var(--text3);">
+          <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;"></span>Entrega</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:#9d97ff;display:inline-block;"></span>Plan.</span>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">
-        ${dayLabels.map(l =>
-          `<div style="text-align:center;font-size:10px;font-family:'Space Mono',monospace;
-            color:var(--text3);padding:4px 0;font-weight:700;">${l}</div>`
-        ).join('')}
+        ${dayLabels.map(l=>`<div style="text-align:center;font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);padding:4px 0;font-weight:700;">${l}</div>`).join('')}
         ${Array(startDow).fill('<div></div>').join('')}
-        ${Array.from({ length: last.getDate() }, (_, i) => {
-          const day  = i + 1;
-          const dStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-          const isToday   = day === today.getDate();
-          const info      = taskMap[dStr];
-          const hasDue    = info && info.due > 0;
-          const hasPlanned= info && info.planned;
-          const isUrgent  = info && info.urgent;
-
-          const dotColor  = isUrgent ? '#f87171' : hasDue ? '#fbbf24' : hasPlanned ? '#9d97ff' : null;
-          const bg        = isToday ? 'var(--accent)' : 'transparent';
-          const color     = isToday ? 'white' : (hasDue||hasPlanned) ? 'var(--text)' : 'var(--text2)';
-          const fw        = (isToday || hasDue || hasPlanned) ? '700' : '400';
-          const count     = info ? (info.due + (info.planned ? 1 : 0)) : 0;
-
-          return `<div style="${cellStyle}background:${bg};color:${color};font-weight:${fw};">
+        ${Array.from({length:last.getDate()},(_,i)=>{
+          const day=i+1, dStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          const isToday=day===today.getDate(), info=taskMap[dStr];
+          const hasDue=info&&info.due>0, hasPlan=info&&info.planned, isUrg=info&&info.urgent;
+          const dot=isUrg?'#f87171':hasDue?'#fbbf24':hasPlan?'#9d97ff':null;
+          const count=info?(info.due+(info.planned?1:0)):0;
+          return `<div style="${cellS}background:${isToday?'var(--accent)':'transparent'};color:${isToday?'white':(hasDue||hasPlan)?'var(--text)':'var(--text2)'};font-weight:${(isToday||hasDue||hasPlan)?700:400};">
             ${day}
-            ${dotColor ? `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
-              width:5px;height:5px;border-radius:50%;background:${dotColor};"></span>` : ''}
-            ${count > 1 ? `<span style="position:absolute;top:1px;right:2px;font-size:8px;
-              color:${dotColor};font-family:'Space Mono',monospace;font-weight:800;line-height:1;">${count}</span>` : ''}
+            ${dot?`<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${dot};"></span>`:''}
+            ${count>1?`<span style="position:absolute;top:1px;right:2px;font-size:8px;color:${dot};font-family:'Space Mono',monospace;font-weight:800;line-height:1;">${count}</span>`:''}
           </div>`;
         }).join('')}
       </div>`;
-    miniCalEl.innerHTML = calHtml;
   }
 
-  // ── Tareas pendientes ordenadas por urgencia ────────────────
+  // ── Tareas pendientes ────────────────────────────────────
   const tl = _el('ov-tasks-list');
   if (tl) {
-    const today2 = new Date(); today2.setHours(0, 0, 0, 0);
-    const sorted = [...pending].sort((a, b) => {
-      const da = a.due || '9999-12-31', db = b.due || '9999-12-31';
-      return da < db ? -1 : da > db ? 1 : 0;
-    });
+    const today2 = new Date(); today2.setHours(0,0,0,0);
+    const sorted = [...pending].sort((a,b) => (a.due||'9999-12-31') < (b.due||'9999-12-31') ? -1 : 1);
     tl.innerHTML = sorted.length ? sorted.map(t => {
       const m = getMat(t.matId);
-      const dueD = t.due ? new Date(t.due + 'T00:00:00') : null;
-      const daysLeft = dueD ? Math.ceil((dueD - today2) / 86400000) : null;
+      const dueD = t.due ? new Date(t.due+'T00:00:00') : null;
+      const daysLeft = dueD ? Math.ceil((dueD-today2)/86400000) : null;
       let bClass, bText;
-      if      (daysLeft === null)  { bClass = 'ub-none';     bText = 'Sin fecha'; }
-      else if (daysLeft < 0)       { bClass = 'ub-overdue';  bText = `Venció hace ${-daysLeft}d`; }
-      else if (daysLeft === 0)     { bClass = 'ub-critical'; bText = 'Vence hoy'; }
-      else if (daysLeft <= 2)      { bClass = 'ub-critical'; bText = `Faltan ${daysLeft} día${daysLeft > 1 ? 's' : ''}`; }
-      else if (daysLeft <= 5)      { bClass = 'ub-warning';  bText = `Faltan ${daysLeft} días`; }
-      else                         { bClass = 'ub-ok';       bText = `Faltan ${daysLeft} días`; }
-
-      const prog      = subtaskProgress(t);
-      const prioClass = t.priority === 'high' ? 'prio-alta' : t.priority === 'low' ? 'prio-baja' : t.priority ? 'prio-media' : 'prio-none';
-      const timeStr   = t.dueTime ? ` · 🕐 ${t.dueTime}` : '';
-      const planStr   = t.datePlanned ? ` · 📋 Plan: ${fmtD(t.datePlanned)}${t.timePlanned ? ' ' + t.timePlanned : ''}` : '';
-
+      if      (daysLeft===null)  { bClass='ub-none';     bText='Sin fecha'; }
+      else if (daysLeft<0)       { bClass='ub-overdue';  bText=`Venció hace ${-daysLeft}d`; }
+      else if (daysLeft===0)     { bClass='ub-critical'; bText='Vence hoy'; }
+      else if (daysLeft<=2)      { bClass='ub-critical'; bText=`Faltan ${daysLeft} día${daysLeft>1?'s':''}`; }
+      else if (daysLeft<=5)      { bClass='ub-warning';  bText=`Faltan ${daysLeft} días`; }
+      else                       { bClass='ub-ok';       bText=`Faltan ${daysLeft} días`; }
+      const prog = subtaskProgress(t);
+      const prioClass = t.priority==='high'?'prio-alta':t.priority==='low'?'prio-baja':t.priority?'prio-media':'prio-none';
+      const timeStr = t.dueTime ? ` · 🕐 ${t.dueTime}` : '';
+      const planStr = t.datePlanned ? ` · 📋 ${fmtD(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}` : '';
       return `<div class="mc-task-item ${prioClass}">
         <div class="mc-task-info">
           <div class="mc-task-title">${t.title}</div>
           <div class="mc-task-meta">
-            <span>${m.icon || '📚'} ${m.code || m.name || '—'}</span>
-            <span>${t.type || 'Tarea'}</span>
-            ${t.due ? `<span style="font-family:'Space Mono',monospace;">${fmtD(t.due)}${timeStr}</span>` : ''}
-            ${planStr ? `<span style="color:var(--accent2);">${planStr}</span>` : ''}
-            ${prog ? `<span>${prog.done}/${prog.total} sub.</span>` : ''}
+            <span>${m.icon||'📚'} ${m.code||m.name||'—'}</span>
+            <span>${t.type||'Tarea'}</span>
+            ${t.due?`<span style="font-family:'Space Mono',monospace;">${fmtD(t.due)}${timeStr}</span>`:''}
+            ${planStr?`<span style="color:var(--accent2);">${planStr}</span>`:''}
+            ${prog?`<span>${prog.done}/${prog.total} sub.</span>`:''}
           </div>
         </div>
         <span class="urgency-badge ${bClass}">${bText}</span>
@@ -740,70 +704,35 @@ function _renderOverview() {
       </div>`;
   }
 
-  // ── Esta Semana — timeline mejorado ─────────────────────────
+  // ── Esta Semana — timeline ───────────────────────────────
   const tlEl = _el('ov-timeline');
   if (tlEl) {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const daysFull = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(today); d.setDate(today.getDate() + i); return d;
-    });
+    const today = new Date(); today.setHours(0,0,0,0);
+    const daysFull = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const days = Array.from({length:7},(_,i)=>{ const d=new Date(today); d.setDate(today.getDate()+i); return d; });
     tlEl.innerHTML = `<div class="timeline-wrap">` + days.map(d => {
-      const dStr    = d.toISOString().slice(0, 10);
-      const isToday = d.getTime() === today.getTime();
-      const tasks   = State.tasks.filter(t => !t.done && t.due === dStr);
-      const planned = State.tasks.filter(t => !t.done && t.datePlanned === dStr && t.due !== dStr);
-      const events  = State.events.filter(e => e.date === dStr);
-      const hasItems = tasks.length > 0 || events.length > 0 || planned.length > 0;
-      const dateNum = d.getDate();
-      const monthShort = d.toLocaleDateString('es-ES', { month: 'short' });
-
+      const dStr = d.toISOString().slice(0,10), isToday = d.getTime()===today.getTime();
+      const tasks   = State.tasks.filter(t => !t.done && t.due===dStr);
+      const planned = State.tasks.filter(t => !t.done && t.datePlanned===dStr && t.due!==dStr);
+      const events  = State.events.filter(e => e.date===dStr);
+      const hasItems = tasks.length>0||events.length>0||planned.length>0;
       const items = [
-        ...events.map(e => {
-          const m = getMat(e.matId);
-          return `<div class="tl-item event">
-            <span class="tl-item-icon">📅</span>
-            <div class="tl-item-text">
-              <div class="tl-item-title">${e.title}</div>
-              <div class="tl-item-meta">${m.icon || ''} ${m.name || 'Evento'}${e.hora ? ' · ' + e.hora : ''}</div>
-            </div>
-          </div>`;
-        }),
+        ...events.map(e => { const m=getMat(e.matId); return `<div class="tl-item event"><span class="tl-item-icon">📅</span><div class="tl-item-text"><div class="tl-item-title">${e.title}</div><div class="tl-item-meta">${m.icon||''} ${m.name||'Evento'}${e.hora?' · '+e.hora:''}</div></div></div>`; }),
         ...tasks.map(t => {
-          const m = getMat(t.matId);
-          const daysLeft = Math.ceil((d - today) / 86400000);
-          const urgColor = daysLeft === 0 ? '#f87171' : daysLeft <= 2 ? '#fbbf24' : '#4ade80';
-          const urgText  = daysLeft === 0 ? 'HOY' : daysLeft === 1 ? '1 día' : `${daysLeft} días`;
-          return `<div class="tl-item" style="border-left-color:${urgColor};">
-            <span class="tl-item-icon">✅</span>
-            <div class="tl-item-text" style="flex:1;">
-              <div class="tl-item-title">${t.title}</div>
-              <div class="tl-item-meta">${m.icon || ''} ${m.code || m.name || '—'} · ${t.type || 'Tarea'}${t.dueTime ? ' · 🕐 ' + t.dueTime : ''}</div>
-            </div>
-            <span style="font-size:10px;font-family:'Space Mono',monospace;font-weight:700;color:${urgColor};flex-shrink:0;padding-left:6px;">${urgText}</span>
-          </div>`;
+          const m=getMat(t.matId), dLeft=Math.ceil((d-today)/86400000);
+          const uc=dLeft===0?'#f87171':dLeft<=2?'#fbbf24':'#4ade80';
+          const ut=dLeft===0?'HOY':dLeft===1?'1 día':`${dLeft} días`;
+          return `<div class="tl-item" style="border-left-color:${uc};"><span class="tl-item-icon">✅</span><div class="tl-item-text" style="flex:1;"><div class="tl-item-title">${t.title}</div><div class="tl-item-meta">${m.icon||''} ${m.code||m.name||'—'} · ${t.type||'Tarea'}${t.dueTime?' · 🕐 '+t.dueTime:''}</div></div><span style="font-size:10px;font-family:'Space Mono',monospace;font-weight:700;color:${uc};flex-shrink:0;padding-left:6px;">${ut}</span></div>`;
         }),
-        ...planned.map(t => {
-          const m = getMat(t.matId);
-          return `<div class="tl-item" style="border-left-color:#9d97ff;opacity:.85;">
-            <span class="tl-item-icon">📋</span>
-            <div class="tl-item-text">
-              <div class="tl-item-title" style="color:var(--accent2);">${t.title}</div>
-              <div class="tl-item-meta">${m.icon || ''} ${m.code || '—'} · Planificado${t.timePlanned ? ' · 🕐 ' + t.timePlanned : ''}</div>
-            </div>
-          </div>`;
-        }),
+        ...planned.map(t => { const m=getMat(t.matId); return `<div class="tl-item" style="border-left-color:#9d97ff;opacity:.85;"><span class="tl-item-icon">📋</span><div class="tl-item-text"><div class="tl-item-title" style="color:var(--accent2);">${t.title}</div><div class="tl-item-meta">${m.icon||''} ${m.code||'—'} · Planificado${t.timePlanned?' · 🕐 '+t.timePlanned:''}</div></div></div>`; }),
       ].join('');
-
       return `<div class="tl-day">
         <div class="tl-day-label">
-          <div class="tl-day-date" style="${isToday ? 'color:var(--accent2);' : 'color:var(--text2);'}font-weight:800;">${dateNum} ${monthShort}</div>
-          <div class="tl-day-name" style="${isToday ? 'color:var(--accent2);font-weight:800;' : ''}font-size:10px;letter-spacing:.5px;">${daysFull[d.getDay()].toUpperCase()}</div>
+          <div class="tl-day-date" style="${isToday?'color:var(--accent2);':'color:var(--text2);'}font-weight:800;">${d.getDate()} ${d.toLocaleDateString('es-ES',{month:'short'})}</div>
+          <div class="tl-day-name" style="${isToday?'color:var(--accent2);font-weight:800;':''}font-size:10px;letter-spacing:.5px;">${daysFull[d.getDay()].toUpperCase()}</div>
         </div>
-        <div class="tl-line"><div class="tl-dot ${isToday ? 'today' : hasItems ? '' : 'empty'}"></div></div>
-        <div class="tl-items">
-          ${hasItems ? items : `<div class="tl-empty-day">${isToday ? 'Sin pendientes hoy' : '—'}</div>`}
-        </div>
+        <div class="tl-line"><div class="tl-dot ${isToday?'today':hasItems?'':'empty'}"></div></div>
+        <div class="tl-items">${hasItems?items:`<div class="tl-empty-day">${isToday?'Sin pendientes hoy':'—'}</div>`}</div>
       </div>`;
     }).join('') + `</div>`;
   }
@@ -2881,7 +2810,7 @@ function continueInit(auth) {
   // Mostrar onboarding si es primera vez
   _maybeShowOnboarding();
 
-  // ── Recordatorios de tareas ───────────────────────────────────
+  // ── Recordatorios de tareas ───────────────────────────────
   initNotifications();
 
 } // FIN continueInit()
@@ -3165,199 +3094,77 @@ async function handleLogout() {
 // RECORDATORIOS DE TAREAS
 // — Banner morado:  fecha de planificación = hoy
 // — Banner rojo:    fecha de entrega = hoy o ya venció
-// — Push notification via SW al abrir la app y al guardar tarea
+// — Push via SW al abrir la app
 // ════════════════════════════════════════════════════════════════
 
 async function initNotifications() {
-  // Inyectar contenedor de banners si no existe
   if (!document.getElementById('reminder-banners')) {
     const wrap = document.createElement('div');
     wrap.id = 'reminder-banners';
     wrap.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:1200;display:flex;flex-direction:column;gap:0;pointer-events:none;';
     document.body.appendChild(wrap);
   }
-
-  // Pedir permiso de notificaciones (solo si no se ha dado respuesta aún)
   if ('Notification' in window && Notification.permission === 'default') {
-    // Esperar 3s para no interrumpir el load
     setTimeout(async () => {
       const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        scheduleTaskReminders();
-      }
+      if (perm === 'granted') scheduleTaskReminders();
     }, 3000);
   } else if ('Notification' in window && Notification.permission === 'granted') {
     scheduleTaskReminders();
   }
-
-  // Siempre mostrar banners en pantalla sin importar el permiso push
   renderReminderBanners();
 }
 
 function scheduleTaskReminders() {
   if (!('serviceWorker' in navigator)) return;
   if (Notification.permission !== 'granted') return;
-
   const today    = new Date().toISOString().split('T')[0];
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
   const now      = new Date();
   const tasks    = State.tasks.filter(t => !t.done);
-
-  // Sin hora — notificar al abrir la app
-  const plannedToday = tasks.filter(t => t.datePlanned === today && !t.timePlanned);
-  const dueToday     = tasks.filter(t => t.due === today && !t.dueTime);
-  const overdue      = tasks.filter(t => t.due && t.due < today);
-  const dueTomorrow  = tasks.filter(t => t.due === tomorrow);
-
-  // Con hora — programar con setTimeout
-  const plannedTimed = tasks.filter(t => t.datePlanned === today && t.timePlanned);
-  const dueTimed     = tasks.filter(t => t.due === today && t.dueTime);
-
+  const plannedToday = tasks.filter(t => t.datePlanned===today && !t.timePlanned);
+  const dueToday     = tasks.filter(t => t.due===today && !t.dueTime);
+  const overdue      = tasks.filter(t => t.due && t.due<today);
+  const dueTomorrow  = tasks.filter(t => t.due===tomorrow);
+  const plannedTimed = tasks.filter(t => t.datePlanned===today && t.timePlanned);
+  const dueTimed     = tasks.filter(t => t.due===today && t.dueTime);
   navigator.serviceWorker.ready.then(reg => {
-
-    if (plannedToday.length) {
-      reg.showNotification('📋 Hoy toca trabajar', {
-        body: `Planificaste para hoy: ${plannedToday.map(t => t.title).join(', ')}`,
-        icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
-        tag: 'reminder-planned', renotify: true,
-        data: { url: '/index.html' },
-        actions: [{ action: 'open', title: 'Ver tareas' }],
-      });
-    }
-    if (dueToday.length) {
-      reg.showNotification('🔴 Entrega hoy', {
-        body: `Entrega hoy: ${dueToday.map(t => t.title).join(', ')}`,
-        icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
-        tag: 'reminder-due-today', renotify: true,
-        data: { url: '/index.html' },
-        actions: [{ action: 'open', title: 'Ver tareas' }],
-      });
-    }
-    if (overdue.length) {
-      reg.showNotification('⚠️ Tareas vencidas', {
-        body: `${overdue.length} tarea${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}: ${overdue.map(t => t.title).join(', ')}`,
-        icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
-        tag: 'reminder-overdue', renotify: false,
-        data: { url: '/index.html' },
-      });
-    }
-    if (dueTomorrow.length) {
-      reg.showNotification('📅 Entrega mañana', {
-        body: `Recuerda: ${dueTomorrow.map(t => t.title).join(', ')}`,
-        icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
-        tag: 'reminder-due-tomorrow', renotify: false,
-        data: { url: '/index.html' },
-      });
-    }
-
-    // Con hora exacta — setTimeout
+    if (plannedToday.length) reg.showNotification('📋 Hoy toca trabajar', {body:`Planificaste para hoy: ${plannedToday.map(t=>t.title).join(', ')}`,icon:'/assets/icons/icon-192.png',badge:'/assets/icons/icon-32.png',tag:'reminder-planned',renotify:true,data:{url:'/index.html'},actions:[{action:'open',title:'Ver tareas'}]});
+    if (dueToday.length)    reg.showNotification('🔴 Entrega hoy',       {body:`Entrega hoy: ${dueToday.map(t=>t.title).join(', ')}`,icon:'/assets/icons/icon-192.png',badge:'/assets/icons/icon-32.png',tag:'reminder-due-today',renotify:true,data:{url:'/index.html'},actions:[{action:'open',title:'Ver tareas'}]});
+    if (overdue.length)     reg.showNotification('⚠️ Tareas vencidas',   {body:`${overdue.length} tarea${overdue.length>1?'s':''} vencida${overdue.length>1?'s':''}: ${overdue.map(t=>t.title).join(', ')}`,icon:'/assets/icons/icon-192.png',badge:'/assets/icons/icon-32.png',tag:'reminder-overdue',renotify:false,data:{url:'/index.html'}});
+    if (dueTomorrow.length) reg.showNotification('📅 Entrega mañana',    {body:`Recuerda: ${dueTomorrow.map(t=>t.title).join(', ')}`,icon:'/assets/icons/icon-192.png',badge:'/assets/icons/icon-32.png',tag:'reminder-due-tomorrow',renotify:false,data:{url:'/index.html'}});
     plannedTimed.forEach(t => {
-      const [h, m] = t.timePlanned.split(':').map(Number);
-      const fireAt = new Date(); fireAt.setHours(h, m, 0, 0);
-      const delay  = fireAt - now;
-      if (delay > 0 && delay < 86400000) {
-        setTimeout(() => {
-          reg.showNotification('📋 Hora de trabajar', {
-            body: t.title,
-            icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
-            tag: `reminder-planned-${t.id}`, renotify: true,
-            data: { url: '/index.html' },
-            actions: [{ action: 'open', title: 'Ver tarea' }],
-          });
-        }, delay);
-      }
+      const [h,m] = t.timePlanned.split(':').map(Number);
+      const fireAt = new Date(); fireAt.setHours(h,m,0,0);
+      const delay = fireAt-now;
+      if (delay>0 && delay<86400000) setTimeout(()=>reg.showNotification('📋 Hora de trabajar',{body:t.title,icon:'/assets/icons/icon-192.png',badge:'/assets/icons/icon-32.png',tag:`reminder-planned-${t.id}`,renotify:true,data:{url:'/index.html'}}), delay);
     });
-
     dueTimed.forEach(t => {
-      const [h, m] = t.dueTime.split(':').map(Number);
-      const fireAt = new Date(); fireAt.setHours(h, m, 0, 0);
-      const delay  = fireAt - now;
-      if (delay > 0 && delay < 86400000) {
-        setTimeout(() => {
-          reg.showNotification('🔴 Entrega ahora', {
-            body: t.title,
-            icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
-            tag: `reminder-due-${t.id}`, renotify: true,
-            data: { url: '/index.html' },
-            actions: [{ action: 'open', title: 'Ver tarea' }],
-          });
-        }, delay);
-      }
+      const [h,m] = t.dueTime.split(':').map(Number);
+      const fireAt = new Date(); fireAt.setHours(h,m,0,0);
+      const delay = fireAt-now;
+      if (delay>0 && delay<86400000) setTimeout(()=>reg.showNotification('🔴 Entrega ahora',{body:t.title,icon:'/assets/icons/icon-192.png',badge:'/assets/icons/icon-32.png',tag:`reminder-due-${t.id}`,renotify:true,data:{url:'/index.html'}}), delay);
     });
-
-  }).catch(() => {});
+  }).catch(()=>{});
 }
 
 function renderReminderBanners() {
   const wrap = document.getElementById('reminder-banners');
   if (!wrap) return;
-
   const today  = new Date().toISOString().split('T')[0];
-  const tasks  = (typeof State !== 'undefined' ? State.tasks : []) || [];
-  const active = tasks.filter(t => !t.done);
-
-  const plannedToday = active.filter(t => t.datePlanned === today);
-  const dueToday     = active.filter(t => t.due === today);
-  const overdue      = active.filter(t => t.due && t.due < today);
-
+  const active = (typeof State!=='undefined' ? State.tasks : []).filter(t => !t.done);
+  const plannedToday = active.filter(t => t.datePlanned===today);
+  const dueToday     = active.filter(t => t.due===today);
+  const overdue      = active.filter(t => t.due && t.due<today);
   const banners = [];
-
-  if (overdue.length) {
-    banners.push({
-      color: '#f87171', bg: 'rgba(248,113,113,.12)', border: 'rgba(248,113,113,.4)',
-      icon: '⚠️',
-      msg: `${overdue.length} tarea${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}: ${overdue.map(t => t.title).join(', ')}`,
-      key: 'overdue',
-    });
-  }
-  if (dueToday.length) {
-    const detalles = dueToday.map(t => t.dueTime ? `${t.title} (${t.dueTime})` : t.title).join(', ');
-    banners.push({
-      color: '#f87171', bg: 'rgba(248,113,113,.12)', border: 'rgba(248,113,113,.35)',
-      icon: '🔴',
-      msg: `Entrega hoy: ${detalles}`,
-      key: 'due-today',
-    });
-  }
-  if (plannedToday.length) {
-    const detalles = plannedToday.map(t => t.timePlanned ? `${t.title} (${t.timePlanned})` : t.title).join(', ');
-    banners.push({
-      color: '#9d97ff', bg: 'rgba(108,99,255,.12)', border: 'rgba(108,99,255,.4)',
-      icon: '📋',
-      msg: `Planificaste para hoy: ${detalles}`,
-      key: 'planned-today',
-    });
-  }
-
-  if (!banners.length) { wrap.innerHTML = ''; return; }
-
-  wrap.innerHTML = banners.map(b => `
-    <div id="rbanner-${b.key}" style="
-      pointer-events:all;
-      background:${b.bg};
-      border-bottom:2px solid ${b.border};
-      color:${b.color};
-      padding:8px 16px;
-      font-size:12px;
-      font-family:'Space Mono',monospace;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      animation:rbannerIn .3s ease;
-    ">
-      <span style="font-size:14px;">${b.icon}</span>
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.msg}</span>
-      <button onclick="document.getElementById('rbanner-${b.key}').remove()" style="
-        background:none;border:none;color:${b.color};cursor:pointer;
-        font-size:14px;opacity:.7;padding:0 4px;flex-shrink:0;
-      ">✕</button>
-    </div>
-  `).join('');
-
+  if (overdue.length)      banners.push({color:'#f87171',bg:'rgba(248,113,113,.12)',border:'rgba(248,113,113,.4)',icon:'⚠️',msg:`${overdue.length} tarea${overdue.length>1?'s':''} vencida${overdue.length>1?'s':''}: ${overdue.map(t=>t.title).join(', ')}`,key:'overdue'});
+  if (dueToday.length)     banners.push({color:'#f87171',bg:'rgba(248,113,113,.12)',border:'rgba(248,113,113,.35)',icon:'🔴',msg:`Entrega hoy: ${dueToday.map(t=>t.dueTime?`${t.title} (${t.dueTime})`:t.title).join(', ')}`,key:'due-today'});
+  if (plannedToday.length) banners.push({color:'#9d97ff',bg:'rgba(108,99,255,.12)',border:'rgba(108,99,255,.4)',icon:'📋',msg:`Planificaste para hoy: ${plannedToday.map(t=>t.timePlanned?`${t.title} (${t.timePlanned})`:t.title).join(', ')}`,key:'planned-today'});
+  if (!banners.length) { wrap.innerHTML=''; return; }
+  wrap.innerHTML = banners.map(b=>`<div id="rbanner-${b.key}" style="pointer-events:all;background:${b.bg};border-bottom:2px solid ${b.border};color:${b.color};padding:8px 16px;font-size:12px;font-family:'Space Mono',monospace;display:flex;align-items:center;gap:8px;animation:rbannerIn .3s ease;"><span style="font-size:14px;">${b.icon}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.msg}</span><button onclick="document.getElementById('rbanner-${b.key}').remove()" style="background:none;border:none;color:${b.color};cursor:pointer;font-size:14px;opacity:.7;padding:0 4px;flex-shrink:0;">✕</button></div>`).join('');
   if (!document.getElementById('rbanner-style')) {
-    const s = document.createElement('style');
-    s.id = 'rbanner-style';
-    s.textContent = '@keyframes rbannerIn{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:translateY(0)}}';
+    const s=document.createElement('style'); s.id='rbanner-style';
+    s.textContent='@keyframes rbannerIn{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:translateY(0)}}';
     document.head.appendChild(s);
   }
 }

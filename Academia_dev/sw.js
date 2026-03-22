@@ -211,12 +211,12 @@ self.addEventListener('sync', e => {
 
 console.log('[SW] academia-v9 cargado');
 
-// ── NOTIFICACIONES — click abre la app ──────────────────────
+// ── NOTIFICACIONES — click abre la app ───────────────────────
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = e.notification.data?.url || '/index.html';
   e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    clients.matchAll({ type:'window', includeUncontrolled:true }).then(list => {
       const existing = list.find(c => c.url.includes('/index.html') && 'focus' in c);
       if (existing) return existing.focus();
       return clients.openWindow(url);
