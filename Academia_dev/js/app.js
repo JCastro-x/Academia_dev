@@ -3124,4 +3124,3 @@ function renderReminderBanners() {
     document.head.appendChild(s);
   }
 }
-}
