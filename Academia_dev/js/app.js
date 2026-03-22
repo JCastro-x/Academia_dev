@@ -572,6 +572,230 @@ function fillExamSel() {
 
 function renderOverview() { _schedRender(_renderOverview); }
 
+let _weekOffset = 0;
+
+function changeWeekOffset(delta, e) {
+  if (e) e.stopPropagation();
+  _weekOffset = delta === 0 ? 0 : _weekOffset + delta;
+  renderOverview();
+}
+
+function toggleLoadPanel() {
+  const body = document.getElementById('load-panel-body');
+  const icon = document.getElementById('load-panel-toggle');
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (icon) icon.textContent = isOpen ? '▶' : '▼';
+}
+
+function _renderOverview() {
+  const pending = State.tasks.filter(t => !t.done);
+  const overall = calcOverallGPA();
+
+  const ovMatsEl = _el('ov-mats');
+  if (ovMatsEl) ovMatsEl.textContent = State.materias.filter(m => !m.parentId).length;
+  const avgEl  = _el('ov-avg');
+  const credEl = _el('ov-cred');
+  if (avgEl)  avgEl.textContent  = overall.overallAvg !== null ? overall.overallAvg.toFixed(1) : '—';
+  if (credEl) credEl.textContent = overall.totalCred || '0';
+  const legacyPend = document.getElementById('ov-pending');
+  if (legacyPend) legacyPend.textContent = pending.length;
+
+  updateGPADisplay();
+
+  const urgentCount = pending.filter(t => t.due && (new Date(t.due) - new Date()) / 86400000 <= 2 && (new Date(t.due) - new Date()) / 86400000 >= 0).length;
+  const profileSub  = State.settings?.profile?.carrera ? ` · ${State.settings.profile.carrera}` : '';
+  const subEl = _el('ov-sub');
+  if (subEl) subEl.textContent =
+    urgentCount > 0 ? `⚡ ${urgentCount} tarea(s) vencen en menos de 2 días`
+    : pending.length > 0 ? `${pending.length} tarea(s) pendiente(s)${profileSub}`
+    : `¡Sin pendientes! 🎉${profileSub}`;
+
+  const badge = _el('ov-pending-badge');
+  if (badge) badge.textContent = pending.length > 0 ? `${pending.length} sin entregar` : '';
+
+  // ── Mini calendario mensual ────────────────────────────────
+  const miniCalEl = _el('ov-mini-cal');
+  if (miniCalEl) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const year  = today.getFullYear();
+    const month = today.getMonth();
+    const first = new Date(year, month, 1);
+    const last  = new Date(year, month + 1, 0);
+    const startDow = (first.getDay() + 6) % 7; // lunes=0
+    const monthName = today.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+    // Construir mapa de tareas/eventos por día
+    const taskMap = {};
+    State.tasks.filter(t => !t.done && t.due).forEach(t => {
+      const d = t.due;
+      if (!taskMap[d]) taskMap[d] = { count: 0, urgent: false, planned: false };
+      taskMap[d].count++;
+      if (t.priority === 'high') taskMap[d].urgent = true;
+    });
+    State.tasks.filter(t => !t.done && t.datePlanned).forEach(t => {
+      const d = t.datePlanned;
+      if (!taskMap[d]) taskMap[d] = { count: 0, urgent: false, planned: false };
+      taskMap[d].planned = true;
+    });
+    State.events.filter(e => e.date).forEach(e => {
+      const d = e.date;
+      if (!taskMap[d]) taskMap[d] = { count: 0, urgent: false, planned: false };
+      taskMap[d].count++;
+    });
+
+    const dayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    let calHtml = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:700;color:var(--text2);text-transform:capitalize;">${monthName}</span>
+        <div style="display:flex;gap:4px;font-size:11px;color:var(--text3);">
+          <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;"></span>Entrega</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;margin-left:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#9d97ff;display:inline-block;"></span>Plan.</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">
+        ${dayLabels.map(l => `<div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);padding:2px 0;">${l}</div>`).join('')}
+        ${Array(startDow).fill('<div></div>').join('')}
+        ${Array.from({ length: last.getDate() }, (_, i) => {
+          const day   = i + 1;
+          const dStr  = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const isToday = day === today.getDate();
+          const info  = taskMap[dStr];
+          const hasDue     = info && info.count > 0;
+          const hasPlanned = info && info.planned;
+          const isUrgent   = info && info.urgent;
+
+          const dotColor = isUrgent ? '#f87171' : hasDue ? '#fbbf24' : hasPlanned ? '#9d97ff' : 'transparent';
+          const todayStyle = isToday
+            ? 'background:var(--accent);color:white;border-radius:50%;font-weight:800;'
+            : hasDue || hasPlanned ? 'color:var(--text);font-weight:700;' : 'color:var(--text2);';
+
+          return `<div style="position:relative;padding:3px 1px;font-size:11px;${todayStyle}cursor:${hasDue||hasPlanned?'pointer':'default'};">
+            ${day}
+            ${(hasDue || hasPlanned) ? `<div style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${dotColor};"></div>` : ''}
+            ${info && info.count > 1 ? `<div style="position:absolute;top:0;right:1px;font-size:8px;color:${dotColor};font-family:'Space Mono',monospace;font-weight:700;">${info.count}</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>`;
+    miniCalEl.innerHTML = calHtml;
+  }
+
+  // ── Tareas pendientes ordenadas por urgencia ────────────────
+  const tl = _el('ov-tasks-list');
+  if (tl) {
+    const today2 = new Date(); today2.setHours(0, 0, 0, 0);
+    const sorted = [...pending].sort((a, b) => {
+      const da = a.due || '9999-12-31', db = b.due || '9999-12-31';
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+    tl.innerHTML = sorted.length ? sorted.map(t => {
+      const m = getMat(t.matId);
+      const dueD = t.due ? new Date(t.due + 'T00:00:00') : null;
+      const daysLeft = dueD ? Math.ceil((dueD - today2) / 86400000) : null;
+      let bClass, bText;
+      if      (daysLeft === null)  { bClass = 'ub-none';     bText = 'Sin fecha'; }
+      else if (daysLeft < 0)       { bClass = 'ub-overdue';  bText = `Venció hace ${-daysLeft}d`; }
+      else if (daysLeft === 0)     { bClass = 'ub-critical'; bText = 'Vence hoy'; }
+      else if (daysLeft <= 2)      { bClass = 'ub-critical'; bText = `Faltan ${daysLeft} día${daysLeft > 1 ? 's' : ''}`; }
+      else if (daysLeft <= 5)      { bClass = 'ub-warning';  bText = `Faltan ${daysLeft} días`; }
+      else                         { bClass = 'ub-ok';       bText = `Faltan ${daysLeft} días`; }
+
+      const prog      = subtaskProgress(t);
+      const prioClass = t.priority === 'high' ? 'prio-alta' : t.priority === 'low' ? 'prio-baja' : t.priority ? 'prio-media' : 'prio-none';
+      const timeStr   = t.dueTime ? ` · 🕐 ${t.dueTime}` : '';
+      const planStr   = t.datePlanned ? ` · 📋 Plan: ${fmtD(t.datePlanned)}${t.timePlanned ? ' ' + t.timePlanned : ''}` : '';
+
+      return `<div class="mc-task-item ${prioClass}">
+        <div class="mc-task-info">
+          <div class="mc-task-title">${t.title}</div>
+          <div class="mc-task-meta">
+            <span>${m.icon || '📚'} ${m.code || m.name || '—'}</span>
+            <span>${t.type || 'Tarea'}</span>
+            ${t.due ? `<span style="font-family:'Space Mono',monospace;">${fmtD(t.due)}${timeStr}</span>` : ''}
+            ${planStr ? `<span style="color:var(--accent2);">${planStr}</span>` : ''}
+            ${prog ? `<span>${prog.done}/${prog.total} sub.</span>` : ''}
+          </div>
+        </div>
+        <span class="urgency-badge ${bClass}">${bText}</span>
+      </div>`;
+    }).join('')
+    : `<div style="text-align:center;padding:40px;color:var(--text3);">
+        <div style="font-size:36px;margin-bottom:8px;">✅</div>
+        <div style="font-size:14px;font-weight:700;">¡Sin tareas pendientes!</div>
+        <div style="font-size:12px;margin-top:4px;">Siga adelante 🎓</div>
+      </div>`;
+  }
+
+  // ── Esta Semana — timeline mejorado ─────────────────────────
+  const tlEl = _el('ov-timeline');
+  if (tlEl) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const daysFull = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() + i); return d;
+    });
+    tlEl.innerHTML = `<div class="timeline-wrap">` + days.map(d => {
+      const dStr    = d.toISOString().slice(0, 10);
+      const isToday = d.getTime() === today.getTime();
+      const tasks   = State.tasks.filter(t => !t.done && t.due === dStr);
+      const planned = State.tasks.filter(t => !t.done && t.datePlanned === dStr && t.due !== dStr);
+      const events  = State.events.filter(e => e.date === dStr);
+      const hasItems = tasks.length > 0 || events.length > 0 || planned.length > 0;
+      const dateNum = d.getDate();
+      const monthShort = d.toLocaleDateString('es-ES', { month: 'short' });
+
+      const items = [
+        ...events.map(e => {
+          const m = getMat(e.matId);
+          return `<div class="tl-item event">
+            <span class="tl-item-icon">📅</span>
+            <div class="tl-item-text">
+              <div class="tl-item-title">${e.title}</div>
+              <div class="tl-item-meta">${m.icon || ''} ${m.name || 'Evento'}${e.hora ? ' · ' + e.hora : ''}</div>
+            </div>
+          </div>`;
+        }),
+        ...tasks.map(t => {
+          const m = getMat(t.matId);
+          const daysLeft = Math.ceil((d - today) / 86400000);
+          const urgColor = daysLeft === 0 ? '#f87171' : daysLeft <= 2 ? '#fbbf24' : '#4ade80';
+          const urgText  = daysLeft === 0 ? 'HOY' : daysLeft === 1 ? '1 día' : `${daysLeft} días`;
+          return `<div class="tl-item" style="border-left-color:${urgColor};">
+            <span class="tl-item-icon">✅</span>
+            <div class="tl-item-text" style="flex:1;">
+              <div class="tl-item-title">${t.title}</div>
+              <div class="tl-item-meta">${m.icon || ''} ${m.code || m.name || '—'} · ${t.type || 'Tarea'}${t.dueTime ? ' · 🕐 ' + t.dueTime : ''}</div>
+            </div>
+            <span style="font-size:10px;font-family:'Space Mono',monospace;font-weight:700;color:${urgColor};flex-shrink:0;padding-left:6px;">${urgText}</span>
+          </div>`;
+        }),
+        ...planned.map(t => {
+          const m = getMat(t.matId);
+          return `<div class="tl-item" style="border-left-color:#9d97ff;opacity:.85;">
+            <span class="tl-item-icon">📋</span>
+            <div class="tl-item-text">
+              <div class="tl-item-title" style="color:var(--accent2);">${t.title}</div>
+              <div class="tl-item-meta">${m.icon || ''} ${m.code || '—'} · Planificado${t.timePlanned ? ' · 🕐 ' + t.timePlanned : ''}</div>
+            </div>
+          </div>`;
+        }),
+      ].join('');
+
+      return `<div class="tl-day">
+        <div class="tl-day-label">
+          <div class="tl-day-date" style="${isToday ? 'color:var(--accent2);' : 'color:var(--text2);'}font-weight:800;">${dateNum} ${monthShort}</div>
+          <div class="tl-day-name" style="${isToday ? 'color:var(--accent2);font-weight:800;' : ''}font-size:10px;letter-spacing:.5px;">${daysFull[d.getDay()].toUpperCase()}</div>
+        </div>
+        <div class="tl-line"><div class="tl-dot ${isToday ? 'today' : hasItems ? '' : 'empty'}"></div></div>
+        <div class="tl-items">
+          ${hasItems ? items : `<div class="tl-empty-day">${isToday ? 'Sin pendientes hoy' : '—'}</div>`}
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+}
+
 function renderMaterias() { _schedRender(_renderMaterias); }
 function _renderMaterias() {
   const min  = parseFloat(document.getElementById('min-grade')?.value) || State.settings.minGrade;
