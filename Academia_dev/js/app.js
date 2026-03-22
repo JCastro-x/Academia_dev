@@ -488,7 +488,7 @@ function goPage(id, el) {
     case 'pomodoro':       fillPomSel(); renderPomHistory(); renderPomGoal(); break;
     case 'semestres':      renderSemestresList(); break;
     case 'horario':        renderHorario(); break;
-    case 'notas':          fillNotesSel(); renderNotesProPage(); break;
+    case 'notas':          fillNotesSel(); if(typeof renderNotesProPage==='function') renderNotesProPage(); break;
     case 'perfil':         renderProfilePage(); break;
     case 'general':        renderGeneralHub(); break;
     case 'flashcards':     renderFlashcards(); break;
@@ -572,11 +572,11 @@ function fillExamSel() {
 
 function renderOverview() { _schedRender(_renderOverview); }
 
-let _weekOffset = 0;
+if (typeof _weekOffset === "undefined") var _weekOffset = 0;
 
 function changeWeekOffset(delta, e) {
   if (e) e.stopPropagation();
-  _weekOffset = delta === 0 ? 0 : _weekOffset + delta;
+  _weekOffset = (delta === 0) ? 0 : (_weekOffset||0) + delta;
   renderOverview();
 }
 
@@ -626,55 +626,68 @@ function _renderOverview() {
     const startDow = (first.getDay() + 6) % 7; // lunes=0
     const monthName = today.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
 
-    // Construir mapa de tareas/eventos por día
+    // Mapa de tareas/eventos por día
     const taskMap = {};
     State.tasks.filter(t => !t.done && t.due).forEach(t => {
       const d = t.due;
-      if (!taskMap[d]) taskMap[d] = { count: 0, urgent: false, planned: false };
-      taskMap[d].count++;
+      if (!taskMap[d]) taskMap[d] = { due: 0, urgent: false, planned: false };
+      taskMap[d].due++;
       if (t.priority === 'high') taskMap[d].urgent = true;
     });
     State.tasks.filter(t => !t.done && t.datePlanned).forEach(t => {
       const d = t.datePlanned;
-      if (!taskMap[d]) taskMap[d] = { count: 0, urgent: false, planned: false };
+      if (!taskMap[d]) taskMap[d] = { due: 0, urgent: false, planned: false };
       taskMap[d].planned = true;
     });
     State.events.filter(e => e.date).forEach(e => {
       const d = e.date;
-      if (!taskMap[d]) taskMap[d] = { count: 0, urgent: false, planned: false };
-      taskMap[d].count++;
+      if (!taskMap[d]) taskMap[d] = { due: 0, urgent: false, planned: false };
+      taskMap[d].due++;
     });
 
-    const dayLabels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    const dayLabels = ['L','M','X','J','V','S','D'];
+    const cellStyle = `display:flex;align-items:center;justify-content:center;position:relative;
+      height:30px;font-size:12px;border-radius:6px;cursor:default;`;
+
     let calHtml = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:12px;font-weight:700;color:var(--text2);text-transform:capitalize;">${monthName}</span>
-        <div style="display:flex;gap:4px;font-size:11px;color:var(--text3);">
-          <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;"></span>Entrega</span>
-          <span style="display:inline-flex;align-items:center;gap:3px;margin-left:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#9d97ff;display:inline-block;"></span>Plan.</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text);text-transform:capitalize;">${monthName}</span>
+        <div style="display:flex;gap:10px;font-size:11px;color:var(--text3);align-items:center;">
+          <span style="display:inline-flex;align-items:center;gap:4px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#f87171;display:inline-block;flex-shrink:0;"></span>Entrega
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:4px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#9d97ff;display:inline-block;flex-shrink:0;"></span>Plan.
+          </span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">
-        ${dayLabels.map(l => `<div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);padding:2px 0;">${l}</div>`).join('')}
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">
+        ${dayLabels.map(l =>
+          `<div style="text-align:center;font-size:10px;font-family:'Space Mono',monospace;
+            color:var(--text3);padding:4px 0;font-weight:700;">${l}</div>`
+        ).join('')}
         ${Array(startDow).fill('<div></div>').join('')}
         ${Array.from({ length: last.getDate() }, (_, i) => {
-          const day   = i + 1;
-          const dStr  = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const isToday = day === today.getDate();
-          const info  = taskMap[dStr];
-          const hasDue     = info && info.count > 0;
-          const hasPlanned = info && info.planned;
-          const isUrgent   = info && info.urgent;
+          const day  = i + 1;
+          const dStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          const isToday   = day === today.getDate();
+          const info      = taskMap[dStr];
+          const hasDue    = info && info.due > 0;
+          const hasPlanned= info && info.planned;
+          const isUrgent  = info && info.urgent;
 
-          const dotColor = isUrgent ? '#f87171' : hasDue ? '#fbbf24' : hasPlanned ? '#9d97ff' : 'transparent';
-          const todayStyle = isToday
-            ? 'background:var(--accent);color:white;border-radius:50%;font-weight:800;'
-            : hasDue || hasPlanned ? 'color:var(--text);font-weight:700;' : 'color:var(--text2);';
+          const dotColor  = isUrgent ? '#f87171' : hasDue ? '#fbbf24' : hasPlanned ? '#9d97ff' : null;
+          const bg        = isToday ? 'var(--accent)' : 'transparent';
+          const color     = isToday ? 'white' : (hasDue||hasPlanned) ? 'var(--text)' : 'var(--text2)';
+          const fw        = (isToday || hasDue || hasPlanned) ? '700' : '400';
+          const count     = info ? (info.due + (info.planned ? 1 : 0)) : 0;
 
-          return `<div style="position:relative;padding:3px 1px;font-size:11px;${todayStyle}cursor:${hasDue||hasPlanned?'pointer':'default'};">
+          return `<div style="${cellStyle}background:${bg};color:${color};font-weight:${fw};">
             ${day}
-            ${(hasDue || hasPlanned) ? `<div style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:${dotColor};"></div>` : ''}
-            ${info && info.count > 1 ? `<div style="position:absolute;top:0;right:1px;font-size:8px;color:${dotColor};font-family:'Space Mono',monospace;font-weight:700;">${info.count}</div>` : ''}
+            ${dotColor ? `<span style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+              width:5px;height:5px;border-radius:50%;background:${dotColor};"></span>` : ''}
+            ${count > 1 ? `<span style="position:absolute;top:1px;right:2px;font-size:8px;
+              color:${dotColor};font-family:'Space Mono',monospace;font-weight:800;line-height:1;">${count}</span>` : ''}
           </div>`;
         }).join('')}
       </div>`;
