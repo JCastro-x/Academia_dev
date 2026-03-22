@@ -168,13 +168,20 @@
           </div>
         </div>
 
-        <!-- Mini calendario mensual -->
+        <!-- Weekly task load visualizer -->
         <div class="card" style="margin-bottom:16px;" id="load-card">
-          <div class="card-header" style="padding:10px 16px;">
-            <span class="card-title" style="font-size:12px;">📅 Calendario</span>
+          <div class="card-header" style="padding:10px 16px;cursor:pointer;" onclick="toggleLoadPanel()">
+            <span class="card-title" style="font-size:12px;">📊 Carga de Tareas</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button onclick="changeWeekOffset(-1,event)" class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:13px;" title="Semana anterior">‹</button>
+              <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;" id="ov-week-range"></span>
+              <button onclick="changeWeekOffset(1,event)" class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:13px;" title="Semana siguiente">›</button>
+              <button onclick="changeWeekOffset(0,event)" class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:10px;" title="Hoy">Hoy</button>
+              <span id="load-panel-toggle" style="font-size:11px;color:var(--text3);margin-left:4px;">▼</span>
+            </div>
           </div>
-          <div class="card-body" style="padding:12px 18px 14px;">
-            <div id="ov-mini-cal"></div>
+          <div class="card-body" id="load-panel-body" style="padding:12px 18px 8px;">
+            <div class="load-bar-wrap" id="ov-load-bars"></div>
           </div>
         </div>
 
@@ -1196,17 +1203,9 @@
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">📅 Fecha de Planificación</label>
-            <div style="display:flex;gap:6px;">
-              <input type="date" class="form-input" id="t-date-planned" style="flex:1;">
-              <input type="time" class="form-input" id="t-time-planned" style="width:110px;">
-            </div>
-          </div>
+            <input type="date" class="form-input" id="t-date-planned"></div>
           <div class="form-group"><label class="form-label">🎯 Fecha de Entrega (Deadline)</label>
-            <div style="display:flex;gap:6px;">
-              <input type="date" class="form-input" id="t-due" style="flex:1;">
-              <input type="time" class="form-input" id="t-due-time" style="width:110px;">
-            </div>
-          </div>
+            <input type="date" class="form-input" id="t-due"></div>
         </div>
       </div>
       <div class="form-row">

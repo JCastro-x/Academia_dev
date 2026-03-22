@@ -1204,36 +1204,3 @@ html {
   }
   .tasks-btn-delete { font-size: 10px !important; }
 }
-
-/* ── Mini calendario overview ────────────────────────────────── */
-#ov-mini-cal {
-  width: 100%;
-}
-#ov-mini-cal > div:first-child {
-  margin-bottom: 10px;
-}
-/* Grid del calendario — celdas uniformes */
-#ov-mini-cal > div:last-child,
-#ov-mini-cal .cal-grid-inner {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  text-align: center;
-}
-/* Día de hoy — círculo accent */
-.mini-cal-today {
-  background: var(--accent);
-  color: white;
-  border-radius: 50%;
-  font-weight: 800;
-}
-/* Responsive — en mobile el calendario ocupa todo el ancho */
-@media (max-width: 700px) {
-  #load-card {
-    margin-bottom: 12px;
-  }
-  /* Apilar Esta Semana y Tareas en mobile */
-  #page-overview > div[style*="grid-template-columns:1fr 1fr"] {
-    grid-template-columns: 1fr !important;
-  }
-}

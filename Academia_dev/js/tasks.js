@@ -107,9 +107,7 @@ function openTaskModal(id) {
     document.getElementById('t-mat').value   = existing.matId;
     document.getElementById('t-prio').value  = existing.priority;
     document.getElementById('t-date-planned').value = existing.datePlanned || '';
-    if (document.getElementById('t-time-planned')) document.getElementById('t-time-planned').value = existing.timePlanned || '';
     document.getElementById('t-due').value   = existing.due || '';
-    if (document.getElementById('t-due-time')) document.getElementById('t-due-time').value = existing.dueTime || '';
     document.getElementById('t-type').value  = existing.type || 'Tarea';
     document.getElementById('t-notes').value = existing.notes || '';
     if (document.getElementById('t-time-est')) document.getElementById('t-time-est').value = existing.timeEst || '';
@@ -125,9 +123,7 @@ function openTaskModal(id) {
     document.getElementById('task-modal-title').textContent = '✅ Nueva Tarea';
     document.getElementById('t-title').value = '';
     document.getElementById('t-date-planned').value = '';
-    if (document.getElementById('t-time-planned')) document.getElementById('t-time-planned').value = '';
     document.getElementById('t-due').value   = '';
-    if (document.getElementById('t-due-time')) document.getElementById('t-due-time').value = '';
     document.getElementById('t-notes').value = '';
     document.getElementById('t-prio').value  = 'med';
     document.getElementById('t-type').value  = 'Tarea';
@@ -181,10 +177,8 @@ function saveTask() {
     title,
     matId:       document.getElementById('t-mat').value,
     priority:    document.getElementById('t-prio').value,
-    datePlanned:  document.getElementById('t-date-planned').value,
-    timePlanned:  document.getElementById('t-time-planned')?.value || '',
-    due:          document.getElementById('t-due').value,
-    dueTime:      document.getElementById('t-due-time')?.value || '',
+    datePlanned: document.getElementById('t-date-planned').value,
+    due:         document.getElementById('t-due').value,
     type:        document.getElementById('t-type').value,
     notes:       document.getElementById('t-notes').value,
     timeEst:     parseInt(document.getElementById('t-time-est')?.value) || 0,
@@ -223,8 +217,6 @@ function saveTask() {
   updateBadge();
   renderOverview();
   renderCalendar();
-  typeof renderReminderBanners === 'function' && renderReminderBanners();
-  typeof scheduleTaskReminders === 'function' && scheduleTaskReminders();
 }
 
 function toggleTask(id) {
