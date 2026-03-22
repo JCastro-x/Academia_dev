@@ -2963,69 +2963,91 @@ function scheduleTaskReminders() {
 
   const today    = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const now      = new Date();
+  const tasks    = State.tasks.filter(t => !t.done);
 
-  const tasks = State.tasks.filter(t => !t.done);
+  // Sin hora — notificar al abrir la app
+  const plannedToday = tasks.filter(t => t.datePlanned === today && !t.timePlanned);
+  const dueToday     = tasks.filter(t => t.due === today && !t.dueTime);
+  const overdue      = tasks.filter(t => t.due && t.due < today);
+  const dueTomorrow  = tasks.filter(t => t.due === tomorrow);
 
-  // Agrupar por tipo de recordatorio
-  const plannedToday  = tasks.filter(t => t.datePlanned === today);
-  const dueToday      = tasks.filter(t => t.due === today);
-  const overdue       = tasks.filter(t => t.due && t.due < today);
-  const dueTomorrow   = tasks.filter(t => t.due === tomorrow);
+  // Con hora — programar con setTimeout
+  const plannedTimed = tasks.filter(t => t.datePlanned === today && t.timePlanned);
+  const dueTimed     = tasks.filter(t => t.due === today && t.dueTime);
 
   navigator.serviceWorker.ready.then(reg => {
-    // Recordatorio de planificación (morado)
+
     if (plannedToday.length) {
-      const titles = plannedToday.map(t => t.title).join(', ');
       reg.showNotification('📋 Hoy toca trabajar', {
-        body: `Planificaste para hoy: ${titles}`,
-        icon:  '/assets/icons/icon-192.png',
-        badge: '/assets/icons/icon-32.png',
-        tag:   'reminder-planned',
-        renotify: true,
-        data:  { url: '/index.html' },
+        body: `Planificaste para hoy: ${plannedToday.map(t => t.title).join(', ')}`,
+        icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
+        tag: 'reminder-planned', renotify: true,
+        data: { url: '/index.html' },
         actions: [{ action: 'open', title: 'Ver tareas' }],
       });
     }
-
-    // Recordatorio de entrega hoy (rojo)
     if (dueToday.length) {
-      const titles = dueToday.map(t => t.title).join(', ');
       reg.showNotification('🔴 Entrega hoy', {
-        body: `Entrega hoy: ${titles}`,
-        icon:  '/assets/icons/icon-192.png',
-        badge: '/assets/icons/icon-32.png',
-        tag:   'reminder-due-today',
-        renotify: true,
-        data:  { url: '/index.html' },
+        body: `Entrega hoy: ${dueToday.map(t => t.title).join(', ')}`,
+        icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
+        tag: 'reminder-due-today', renotify: true,
+        data: { url: '/index.html' },
         actions: [{ action: 'open', title: 'Ver tareas' }],
       });
     }
-
-    // Vencidas (rojo urgente)
     if (overdue.length) {
-      const titles = overdue.map(t => t.title).join(', ');
       reg.showNotification('⚠️ Tareas vencidas', {
-        body: `${overdue.length} tarea${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}: ${titles}`,
-        icon:  '/assets/icons/icon-192.png',
-        badge: '/assets/icons/icon-32.png',
-        tag:   'reminder-overdue',
-        renotify: false, // no spamear si ya se mostró
-        data:  { url: '/index.html' },
+        body: `${overdue.length} tarea${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}: ${overdue.map(t => t.title).join(', ')}`,
+        icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
+        tag: 'reminder-overdue', renotify: false,
+        data: { url: '/index.html' },
+      });
+    }
+    if (dueTomorrow.length) {
+      reg.showNotification('📅 Entrega mañana', {
+        body: `Recuerda: ${dueTomorrow.map(t => t.title).join(', ')}`,
+        icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
+        tag: 'reminder-due-tomorrow', renotify: false,
+        data: { url: '/index.html' },
       });
     }
 
-    // Entrega mañana (amarillo — sin vibración, solo aviso)
-    if (dueTomorrow.length) {
-      const titles = dueTomorrow.map(t => t.title).join(', ');
-      reg.showNotification('📅 Entrega mañana', {
-        body: `Recuerda: ${titles}`,
-        icon:  '/assets/icons/icon-192.png',
-        badge: '/assets/icons/icon-32.png',
-        tag:   'reminder-due-tomorrow',
-        renotify: false,
-        data:  { url: '/index.html' },
-      });
-    }
+    // Con hora exacta — setTimeout
+    plannedTimed.forEach(t => {
+      const [h, m] = t.timePlanned.split(':').map(Number);
+      const fireAt = new Date(); fireAt.setHours(h, m, 0, 0);
+      const delay  = fireAt - now;
+      if (delay > 0 && delay < 86400000) {
+        setTimeout(() => {
+          reg.showNotification('📋 Hora de trabajar', {
+            body: t.title,
+            icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
+            tag: `reminder-planned-${t.id}`, renotify: true,
+            data: { url: '/index.html' },
+            actions: [{ action: 'open', title: 'Ver tarea' }],
+          });
+        }, delay);
+      }
+    });
+
+    dueTimed.forEach(t => {
+      const [h, m] = t.dueTime.split(':').map(Number);
+      const fireAt = new Date(); fireAt.setHours(h, m, 0, 0);
+      const delay  = fireAt - now;
+      if (delay > 0 && delay < 86400000) {
+        setTimeout(() => {
+          reg.showNotification('🔴 Entrega ahora', {
+            body: t.title,
+            icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
+            tag: `reminder-due-${t.id}`, renotify: true,
+            data: { url: '/index.html' },
+            actions: [{ action: 'open', title: 'Ver tarea' }],
+          });
+        }, delay);
+      }
+    });
+
   }).catch(() => {});
 }
 
@@ -3045,34 +3067,28 @@ function renderReminderBanners() {
 
   if (overdue.length) {
     banners.push({
-      color:   '#f87171',
-      bg:      'rgba(248,113,113,.12)',
-      border:  'rgba(248,113,113,.4)',
-      icon:    '⚠️',
-      msg:     `${overdue.length} tarea${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}: ${overdue.map(t => t.title).join(', ')}`,
-      key:     'overdue',
+      color: '#f87171', bg: 'rgba(248,113,113,.12)', border: 'rgba(248,113,113,.4)',
+      icon: '⚠️',
+      msg: `${overdue.length} tarea${overdue.length > 1 ? 's' : ''} vencida${overdue.length > 1 ? 's' : ''}: ${overdue.map(t => t.title).join(', ')}`,
+      key: 'overdue',
     });
   }
-
   if (dueToday.length) {
+    const detalles = dueToday.map(t => t.dueTime ? `${t.title} (${t.dueTime})` : t.title).join(', ');
     banners.push({
-      color:   '#f87171',
-      bg:      'rgba(248,113,113,.12)',
-      border:  'rgba(248,113,113,.35)',
-      icon:    '🔴',
-      msg:     `Entrega hoy: ${dueToday.map(t => t.title).join(', ')}`,
-      key:     'due-today',
+      color: '#f87171', bg: 'rgba(248,113,113,.12)', border: 'rgba(248,113,113,.35)',
+      icon: '🔴',
+      msg: `Entrega hoy: ${detalles}`,
+      key: 'due-today',
     });
   }
-
   if (plannedToday.length) {
+    const detalles = plannedToday.map(t => t.timePlanned ? `${t.title} (${t.timePlanned})` : t.title).join(', ');
     banners.push({
-      color:   '#9d97ff',
-      bg:      'rgba(108,99,255,.12)',
-      border:  'rgba(108,99,255,.4)',
-      icon:    '📋',
-      msg:     `Planificaste para hoy: ${plannedToday.map(t => t.title).join(', ')}`,
-      key:     'planned-today',
+      color: '#9d97ff', bg: 'rgba(108,99,255,.12)', border: 'rgba(108,99,255,.4)',
+      icon: '📋',
+      msg: `Planificaste para hoy: ${detalles}`,
+      key: 'planned-today',
     });
   }
 
@@ -3101,11 +3117,11 @@ function renderReminderBanners() {
     </div>
   `).join('');
 
-  // Inyectar animación si no existe
   if (!document.getElementById('rbanner-style')) {
     const s = document.createElement('style');
     s.id = 'rbanner-style';
     s.textContent = '@keyframes rbannerIn{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:translateY(0)}}';
     document.head.appendChild(s);
   }
+}
 }

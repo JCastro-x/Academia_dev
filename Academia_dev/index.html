@@ -1202,10 +1202,20 @@
           </select>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">📅 Fecha de Planificación</label>
-            <input type="date" class="form-input" id="t-date-planned"></div>
-          <div class="form-group"><label class="form-label">🎯 Fecha de Entrega (Deadline)</label>
-            <input type="date" class="form-input" id="t-due"></div>
+          <div class="form-group">
+            <label class="form-label">📋 Fecha de Planificación</label>
+            <div style="display:flex;gap:6px;">
+              <input type="date" class="form-input" id="t-date-planned" style="flex:1;">
+              <input type="time" class="form-input" id="t-time-planned" style="width:115px;" placeholder="Hora">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">🎯 Fecha de Entrega (Deadline)</label>
+            <div style="display:flex;gap:6px;">
+              <input type="date" class="form-input" id="t-due" style="flex:1;">
+              <input type="time" class="form-input" id="t-due-time" style="width:115px;" placeholder="Hora">
+            </div>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -1222,8 +1232,6 @@
             <option value="480">Todo el día (8h)</option>
           </select>
         </div>
-        <div class="form-group"><label class="form-label">🏷 Tags (separados por coma)</label>
-          <input type="text" class="form-input" id="t-tags" placeholder="ej: parcial, urgente, lab"></div>
       </div>
       <div class="form-group"><label class="form-label">Descripción / Notas</label>
         <textarea class="form-textarea" id="t-notes" rows="3" placeholder="Detalles adicionales, instrucciones..."></textarea></div>
