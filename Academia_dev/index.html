@@ -1141,17 +1141,57 @@
     <div class="mn-icon" style="position:relative;">✅<span class="mobile-nav-badge" id="badge-tasks-m">0</span></div>
     <div>Tareas</div>
   </div>
-  <div class="mobile-nav-item" onclick="openQuickAdd()">
+  <div class="mobile-nav-item mn-add-btn" onclick="openQuickAdd()">
     <div class="mn-icon" style="font-size:26px;">⚡</div>
     <div>Agregar</div>
   </div>
-  <div class="mobile-nav-item" onclick="goPage('calificaciones',this)">
-    <div class="mn-icon">🎯</div><div>Notas</div>
+  <div class="mobile-nav-item" onclick="goPage('notas',this)">
+    <div class="mn-icon">📝</div><div>Notas</div>
   </div>
-  <div class="mobile-nav-item" onclick="goPage('calendario',this)">
-    <div class="mn-icon">📅</div><div>Agenda</div>
+  <div class="mobile-nav-item" onclick="toggleMobileMore()">
+    <div class="mn-icon">☰</div><div>Más</div>
   </div>
 </nav>
+
+<!-- Menú "Más" para opciones adicionales en móvil -->
+<div id="mobile-more-menu" style="display:none;">
+  <div class="mobile-more-backdrop" onclick="closeMobileMore()"></div>
+  <div class="mobile-more-sheet">
+    <div class="mobile-more-title">Más opciones</div>
+    <div class="mobile-more-grid">
+      <div class="mobile-more-item" onclick="goPage('calificaciones',null);closeMobileMore()">
+        <div class="mmi-icon">🎯</div><div>Calificaciones</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('calendario',null);closeMobileMore()">
+        <div class="mmi-icon">📅</div><div>Calendario</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('materias',null);closeMobileMore()">
+        <div class="mmi-icon">📚</div><div>Materias</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('pomodoro',null);closeMobileMore()">
+        <div class="mmi-icon">⏱️</div><div>Pomodoro</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('horario',null);closeMobileMore()">
+        <div class="mmi-icon">🗓️</div><div>Horario</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('estadisticas',null);closeMobileMore()">
+        <div class="mmi-icon">📊</div><div>Estadísticas</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('temas',null);closeMobileMore()">
+        <div class="mmi-icon">🧠</div><div>Temas</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('semestres',null);closeMobileMore()">
+        <div class="mmi-icon">🗂️</div><div>Semestres</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('perfil',null);closeMobileMore()">
+        <div class="mmi-icon">👤</div><div>Perfil</div>
+      </div>
+      <div class="mobile-more-item" onclick="goPage('flashcards',null);closeMobileMore()">
+        <div class="mmi-icon">🃏</div><div>Flashcards</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════
      MODALS
@@ -1994,6 +2034,19 @@
   <script src="js/onboarding.js"></script>
   <script src="js/bootstrap.js"></script>
 
+
+<!-- Mobile More Menu JS -->
+<script>
+function toggleMobileMore() {
+  const m = document.getElementById('mobile-more-menu');
+  if (!m) return;
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function closeMobileMore() {
+  const m = document.getElementById('mobile-more-menu');
+  if (m) m.style.display = 'none';
+}
+</script>
 
 <!-- Mobile sidebar overlay -->
 <div id="mobile-sidebar-overlay" onclick="closeMobileSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149;backdrop-filter:blur(2px);"></div>

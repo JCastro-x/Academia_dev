@@ -746,3 +746,246 @@ html {
   /* mc-task: título puede hacer wrap en móvil */
   .mc-task-title { white-space: normal !important; }
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   MENÚ "MÁS" — bottom sheet para nav móvil extra
+   ══════════════════════════════════════════════════════════════ */
+.mobile-more-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 300;
+  backdrop-filter: blur(2px);
+}
+.mobile-more-sheet {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 301;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border);
+  padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 32px rgba(0,0,0,.4);
+  animation: sheetSlideUp .22s cubic-bezier(.4,0,.2,1);
+}
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.mobile-more-title {
+  font-size: 11px;
+  font-family: 'Space Mono', monospace;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.mobile-more-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.mobile-more-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 4px 10px;
+  border-radius: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text2);
+  text-align: center;
+  transition: background .15s, border-color .15s, color .15s;
+  line-height: 1.2;
+}
+.mobile-more-item:active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+.mmi-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CALIFICACIONES MÓVIL — colapsar panel de 2 columnas
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* El body del bloque de materia pasa a columna */
+  .grades-block > div[style*="grid-template-columns:1fr 220px"],
+  .grades-block > div[style*="grid-template-columns: 1fr 220px"] {
+    grid-template-columns: 1fr !important;
+    display: block !important;
+  }
+
+  /* Panel lateral de resumen va al final y se hace compacto */
+  .grades-block > div > div[style*="border-left:1px solid"] {
+    border-left: none !important;
+    border-top: 1px solid var(--border) !important;
+    padding: 12px 14px !important;
+  }
+
+  /* Resumen de zona: horizontal compacto */
+  .grades-block > div > div[style*="border-left:1px solid"] > div[style*="display:flex"][style*="gap:8px"] {
+    gap: 6px !important;
+    font-size: 10px !important;
+  }
+
+  /* Total acumulado más pequeño */
+  .grades-block [data-mat-total] {
+    font-size: 22px !important;
+  }
+
+  /* Zone header: wrap */
+  .zone-header {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    padding: 8px 10px !important;
+  }
+  .zone-title {
+    font-size: 12px !important;
+  }
+
+  /* Grade row: label + input + net (quitar pct y bar) */
+  .grade-row {
+    grid-template-columns: 1fr 64px 58px !important;
+    gap: 5px !important;
+    padding: 5px 0 !important;
+  }
+  .grade-pct  { display: none !important; }
+  .grade-bar  { display: none !important; }
+  .grade-label { font-size: 11px !important; }
+  .grade-input { font-size: 14px !important; padding: 5px 6px !important; }
+  .grade-net   { font-size: 11px !important; }
+
+  /* Input tip hidden on mobile */
+  .input-tip { display: none !important; }
+
+  /* Zona subtotal compacto */
+  .zone-subtotal {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* Projection row */
+  .grades-block > div[style*="display:flex;gap:0"] {
+    flex-direction: column !important;
+  }
+  .grades-block > div[style*="display:flex;gap:0"] > div {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  /* Cards de calificaciones en index: 1 columna */
+  #grades-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NOTAS MÓVIL — sidebar colapsable, editor full screen
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Layout: sidebar arriba pequeño, editor abajo grande */
+  .notes-pro-layout {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr !important;
+    height: calc(100vh - 130px) !important;
+    min-height: 0 !important;
+  }
+
+  /* Sidebar horizontal: carpetas + lista de notas en una franja compacta */
+  .notes-pro-sidebar {
+    flex-direction: row !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    height: 180px !important;
+    overflow: hidden !important;
+  }
+
+  /* Panel de carpetas: angosto y con scroll */
+  .notes-folders-panel {
+    width: 100px !important;
+    min-width: 100px !important;
+    max-height: 100% !important;
+    border-bottom: none !important;
+    border-right: 1px solid var(--border) !important;
+    overflow-y: auto !important;
+  }
+
+  /* Nombre de carpeta truncado */
+  .notes-folder-name { font-size: 10px !important; }
+  .notes-folder-icon { font-size: 13px !important; }
+  .notes-folder-count { display: none !important; }
+
+  /* Lista de notas: el resto del ancho */
+  .notes-list-panel {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    min-width: 0 !important;
+  }
+
+  /* Items de nota más compactos */
+  .notes-list-item {
+    padding: 7px 10px !important;
+  }
+  .notes-list-item .nli-title {
+    font-size: 12px !important;
+  }
+  .notes-list-item .nli-preview {
+    display: none !important;
+  }
+  .notes-list-item .nli-meta {
+    gap: 3px !important;
+  }
+
+  /* Editor: ocupa el resto de la pantalla */
+  .notes-pro-editor {
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Toolbar del editor más compacta */
+  .notes-editor-toolbar {
+    padding: 5px 8px !important;
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Rich text editor: padding reducido */
+  .notes-richtext-editor {
+    padding: 12px 14px !important;
+    font-size: 13px !important;
+  }
+
+  /* Botones de toolbar más pequeños */
+  .notes-editor-toolbar .btn-sm,
+  .rte-btn {
+    padding: 4px 7px !important;
+    font-size: 12px !important;
+  }
+
+  /* Strip de imágenes scroll horizontal */
+  #notes-images-strip {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+  }
+
+  /* Barra inferior de notas */
+  #notes-toolbar {
+    padding: 4px 10px !important;
+    font-size: 10px !important;
+  }
+
+  /* Word count pequeño */
+  #notes-wordcount {
+    font-size: 10px !important;
+  }
+}
