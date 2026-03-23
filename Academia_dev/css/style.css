@@ -1204,3 +1204,150 @@ html {
   }
   .tasks-btn-delete { font-size: 10px !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   AGENDA SEMANAL RODANTE — 7 tarjetas horizontales
+   ══════════════════════════════════════════════════════════════ */
+
+.agenda-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.agenda-day-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, border-color .15s, background .15s;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+.agenda-day-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.agenda-day-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.agenda-day-card.today {
+  border-color: var(--accent2);
+  border-width: 2.5px;
+  box-shadow: 0 0 16px rgba(124,106,255,.35), 0 0 0 3px rgba(124,106,255,.15);
+  background: var(--accent-glow);
+}
+.agenda-day-card.today.selected {
+  box-shadow: 0 0 20px rgba(124,106,255,.5), 0 0 0 4px rgba(124,106,255,.25);
+}
+
+.adc-dayname {
+  font-size: 9px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.agenda-day-card.today .adc-dayname {
+  color: var(--accent2);
+}
+.adc-daynum {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+  font-family: 'Syne', var(--app-font, 'Syne', sans-serif);
+}
+.agenda-day-card.today .adc-daynum {
+  color: var(--accent2);
+}
+.agenda-day-card.selected .adc-daynum {
+  color: var(--accent2);
+}
+.adc-month {
+  font-size: 9px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.adc-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+  min-height: 10px;
+  margin-top: 3px;
+}
+.agenda-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.agenda-dot-more {
+  font-size: 8px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  line-height: 7px;
+}
+.adc-count {
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'Space Mono', monospace;
+  color: var(--accent2);
+  background: var(--accent-glow);
+  border-radius: 8px;
+  padding: 1px 7px;
+  margin-top: 2px;
+}
+.adc-today-label {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  font-size: 7px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 800;
+  color: var(--accent2);
+  letter-spacing: .5px;
+  background: var(--accent-glow);
+  border-radius: 4px;
+  padding: 1px 4px;
+  border: 1px solid rgba(124,106,255,.3);
+}
+
+/* mc-task-item clickable (en overview) */
+.mc-task-item[onclick] {
+  cursor: pointer;
+}
+.mc-task-item[onclick]:hover {
+  transform: translateX(2px);
+}
+
+/* Responsive agenda */
+@media (max-width: 600px) {
+  .agenda-strip {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .agenda-day-card {
+    padding: 8px 3px 6px;
+    border-radius: 8px;
+  }
+  .adc-daynum  { font-size: 17px; }
+  .adc-dayname { font-size: 8px; }
+  .adc-month   { display: none; }
+  .adc-count   { font-size: 9px; padding: 1px 4px; }
+  .adc-today-label { display: none; }
+  .agenda-dot  { width: 5px; height: 5px; }
+}

@@ -1928,9 +1928,10 @@ function saveFormula(matId, index, value) {
 }
 
 // ══════════════════════════════════════════════════
-// CARGA DE TAREAS — WEEK NAVIGATION
+// AGENDA SEMANAL RODANTE — 7 días desde hoy
 // ══════════════════════════════════════════════════
-let _weekOffset = 0;
+let _weekOffset   = 0;  // kept for legacy compat
+let ovFilterDay   = null; // null = sin filtro, 'YYYY-MM-DD' = filtrado
 
 function changeWeekOffset(delta, e) {
   if (e) e.stopPropagation();
@@ -1940,20 +1941,26 @@ function changeWeekOffset(delta, e) {
 }
 
 function toggleLoadPanel() {
-  const body = document.getElementById('load-panel-body');
-  const icon = document.getElementById('load-panel-toggle');
-  if (!body) return;
-  const isOpen = body.style.display !== 'none';
-  body.style.display = isOpen ? 'none' : 'block';
-  if (icon) icon.textContent = isOpen ? '▶' : '▼';
+  // legacy — ya no hace nada visible pero se mantiene para no romper onclick existentes
 }
 
-// Patch renderOverview to use _weekOffset
+function ovSetDayFilter(dateStr) {
+  ovFilterDay = ovFilterDay === dateStr ? null : dateStr;
+  renderOverview();
+}
+
+function ovClearDayFilter() {
+  ovFilterDay = null;
+  renderOverview();
+}
+
+// Patch renderOverview con la nueva implementación
 const _origRenderOverview = _renderOverview;
 function _renderOverview() {
   const pending = State.tasks.filter(t => !t.done);
   const overall = calcOverallGPA();
 
+  // ── Stats legacy (usados por otras partes de la app) ──────
   const ovMatsEl = _el('ov-mats');
   if (ovMatsEl) ovMatsEl.textContent = State.materias.filter(m=>!m.parentId).length;
   const avgEl  = _el('ov-avg');
@@ -1967,7 +1974,8 @@ function _renderOverview() {
 
   const urgentCount = pending.filter(t => t.due && (new Date(t.due)-new Date())/86400000 <= 2 && (new Date(t.due)-new Date())/86400000 >= 0).length;
   const profileSub  = State.settings?.profile?.carrera ? ` · ${State.settings.profile.carrera}` : '';
-  _el('ov-sub').textContent =
+  const subEl = _el('ov-sub');
+  if (subEl) subEl.textContent =
     urgentCount > 0 ? `⚡ ${urgentCount} tarea(s) vencen en menos de 2 días`
     : pending.length > 0 ? `${pending.length} tarea(s) pendiente(s)${profileSub}`
     : `¡Sin pendientes! 🎉${profileSub}`;
@@ -1975,129 +1983,111 @@ function _renderOverview() {
   const badge = _el('ov-pending-badge');
   if (badge) badge.textContent = pending.length > 0 ? `${pending.length} sin entregar` : '';
 
-  const loadBarsEl   = _el('ov-load-bars');
-  const weekRangeEl  = _el('ov-week-range');
-  if (loadBarsEl) {
+  // ── Agenda Semanal Rodante (7 días desde hoy) ─────────────
+  const stripEl = document.getElementById('ov-day-strip');
+  if (stripEl) {
     const today = new Date(); today.setHours(0,0,0,0);
-    const dow   = today.getDay();
-    const baseMonday = new Date(today);
-    baseMonday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
-    const monday = new Date(baseMonday);
-    monday.setDate(baseMonday.getDate() + _weekOffset * 7);
-    const days   = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const counts = days.map((_, i) => {
-      const d = new Date(monday); d.setDate(monday.getDate() + i);
+    const daysFull = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const monthNames = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+    stripEl.innerHTML = `<div class="agenda-strip">` + Array.from({length:7}, (_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() + i);
       const dStr = d.toISOString().slice(0,10);
-      return State.tasks.filter(t => t.due === dStr && !t.done).length;
-    });
-    const maxCnt = Math.max(...counts, 1);
-    const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
-    if (weekRangeEl) {
-      const isCurrentWeek = _weekOffset === 0;
-      const label = isCurrentWeek ? 'Semana actual · ' : (_weekOffset < 0 ? `Hace ${-_weekOffset} sem · ` : `En ${_weekOffset} sem · `);
-      weekRangeEl.textContent = label + `${monday.getDate()}–${sunday.getDate()} ${sunday.toLocaleDateString('es-ES',{month:'short'})}`;
-    }
-    loadBarsEl.innerHTML = days.map((lbl, i) => {
-      const d = new Date(monday); d.setDate(monday.getDate() + i);
-      const isToday = d.getTime() === today.getTime();
-      const cnt = counts[i];
-      const barH = cnt > 0 ? Math.max(8, Math.round((cnt/maxCnt)*44)) : 3;
-      const clr  = cnt === 0 ? 'var(--border2)' : cnt >= 3 ? '#f87171' : cnt >= 2 ? '#fbbf24' : '#4ade80';
-      return `<div class="load-bar-col">
-        <div class="load-bar-cnt" style="color:${cnt>0?clr:'transparent'}">${cnt>0?cnt:''}</div>
-        <div class="load-bar-inner" style="height:${barH}px;background:${clr};${isToday?'box-shadow:0 0 8px '+clr+'80;':''};"></div>
-        <div class="load-bar-lbl" style="font-weight:${isToday?700:400};color:${isToday?'var(--accent2)':'var(--text3)'}">${lbl}</div>
+      const isToday    = i === 0;
+      const isSelected = ovFilterDay === dStr;
+
+      // Materias con tareas ese día (puntos de color)
+      const dayTasks = State.tasks.filter(t => !t.done && t.due === dStr);
+      const matIds   = [...new Set(dayTasks.map(t => t.matId))];
+      const dots = matIds.slice(0,5).map(mid => {
+        const m = getMat(mid);
+        return `<div class="agenda-dot" style="background:${m.color||'var(--accent)'};" title="${m.name||''}"></div>`;
+      }).join('');
+      const extraDots = matIds.length > 5 ? `<div class="agenda-dot-more">+${matIds.length-5}</div>` : '';
+      const taskCount = dayTasks.length;
+
+      return `<div class="agenda-day-card${isToday?' today':''}${isSelected?' selected':''}" onclick="ovSetDayFilter('${dStr}')" title="${isToday?'Hoy · ':''} ${d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}">
+        <div class="adc-dayname">${daysFull[d.getDay()]}</div>
+        <div class="adc-daynum">${d.getDate()}</div>
+        <div class="adc-month">${monthNames[d.getMonth()]}</div>
+        <div class="adc-dots">${dots}${extraDots}</div>
+        ${taskCount > 0 ? `<div class="adc-count">${taskCount}</div>` : '<div class="adc-count" style="opacity:0;">0</div>'}
+        ${isToday ? '<div class="adc-today-label">HOY</div>' : ''}
       </div>`;
-    }).join('');
+    }).join('') + `</div>`;
   }
 
+  // ── Label de filtro activo ────────────────────────────────
+  const filterLbl    = document.getElementById('ov-agenda-filter-label');
+  const clearFilterBtn = document.getElementById('ov-clear-filter-btn');
+  if (ovFilterDay) {
+    const fd = new Date(ovFilterDay + 'T00:00:00');
+    const lbl = fd.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+    if (filterLbl) filterLbl.textContent = `📌 ${lbl}`;
+    if (clearFilterBtn) clearFilterBtn.style.display = '';
+  } else {
+    if (filterLbl) filterLbl.textContent = '';
+    if (clearFilterBtn) clearFilterBtn.style.display = 'none';
+  }
+
+  // ── Panel de Tareas — ordenadas por fecha más cercana ─────
   const tl = _el('ov-tasks-list');
+  if (!tl) return;
   const today2 = new Date(); today2.setHours(0,0,0,0);
-  const sorted = [...pending].sort((a,b) => {
+
+  // Filtrar por día si hay filtro activo
+  let taskPool = ovFilterDay
+    ? pending.filter(t => t.due === ovFilterDay || t.datePlanned === ovFilterDay)
+    : pending;
+
+  const sorted = [...taskPool].sort((a,b) => {
     const da = a.due || '9999-12-31', db = b.due || '9999-12-31';
     return da < db ? -1 : da > db ? 1 : 0;
   });
+
   tl.innerHTML = sorted.length ? sorted.map(t => {
     const m = getMat(t.matId);
-    const dueD = t.due ? new Date(t.due) : null;
+    const dueD = t.due ? new Date(t.due + 'T00:00:00') : null;
     const daysLeft = dueD ? Math.ceil((dueD - today2) / 86400000) : null;
     let bClass, bText;
     if (daysLeft === null)         { bClass='ub-none';    bText='Sin fecha'; }
     else if (daysLeft < 0)         { bClass='ub-overdue'; bText=`Venció hace ${-daysLeft}d`; }
     else if (daysLeft === 0)       { bClass='ub-critical';bText='Vence hoy'; }
-    else if (daysLeft < 2)         { bClass='ub-critical';bText=`Faltan ${daysLeft} día`; }
+    else if (daysLeft === 1)       { bClass='ub-critical';bText='Faltan 1 día'; }
     else if (daysLeft < 5)         { bClass='ub-warning'; bText=`Faltan ${daysLeft} días`; }
     else                           { bClass='ub-ok';      bText=`Faltan ${daysLeft} días`; }
     const prog = subtaskProgress(t);
     const prioClass = t.priority === 'high' || t.priority === 'alta' ? 'prio-alta'
                     : t.priority === 'low'  || t.priority === 'baja' ? 'prio-baja'
                     : t.priority ? 'prio-media' : 'prio-none';
-    return `<div class="mc-task-item ${prioClass}">
+    const dueTimeStr = t.dueTime ? ` · ⏰ ${t.dueTime}` : '';
+    const planStr    = t.datePlanned ? `<span style="font-size:10px;color:var(--text3);">📋 ${fmtD(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}</span>` : '';
+    return `<div class="mc-task-item ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;">
       <div class="mc-task-info">
-        <div class="mc-task-title">${t.title}</div>
+        <div class="mc-task-title">${m.icon||'📚'} ${t.title}</div>
         <div class="mc-task-meta">
-          <span>${m.icon||'📚'} ${m.code||m.name||'—'}</span>
+          <span style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;border-radius:5px;padding:1px 7px;font-weight:700;">${m.code||m.name||'—'}</span>
           <span>${t.type||'Tarea'}</span>
-          ${t.due?`<span style="font-family:'Space Mono',monospace;">${fmtD(t.due)}</span>`:''}
+          ${t.due?`<span style="font-family:'Space Mono',monospace;">${fmtD(t.due)}${dueTimeStr}</span>`:''}
+          ${planStr}
           ${prog?`<span>${prog.done}/${prog.total} sub.</span>`:''}
         </div>
       </div>
       <span class="urgency-badge ${bClass}">${bText}</span>
     </div>`;
   }).join('')
-  : `<div style="text-align:center;padding:40px;color:var(--text3);">
-      <div style="font-size:36px;margin-bottom:8px;">✅</div>
-      <div style="font-size:14px;font-weight:700;">¡Sin tareas pendientes!</div>
-      <div style="font-size:12px;margin-top:4px;color:var(--text3);">Siga adelante, Ingeniero 🎓</div>
-    </div>`;
-
-  // ── "Esta semana" timeline ──────────────────────────────────
-  const tlEl = _el('ov-timeline');
-  if (tlEl) {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    const daysFull = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    // Show today + next 6 days (7 days total)
-    const days = Array.from({length:7}, (_,i) => {
-      const d = new Date(today); d.setDate(today.getDate() + i);
-      return d;
-    });
-    tlEl.innerHTML = `<div class="timeline-wrap">` + days.map(d => {
-      const dStr = d.toISOString().slice(0,10);
-      const isToday = d.getTime() === today.getTime();
-      const tasks = State.tasks.filter(t => !t.done && t.due === dStr);
-      const events = State.events.filter(e => e.date === dStr);
-      const hasItems = tasks.length > 0 || events.length > 0;
-      const dotClass = isToday ? 'today' : !hasItems ? 'empty' : '';
-      const dateNum = d.getDate();
-      const monthShort = d.toLocaleDateString('es-ES',{month:'short'});
-      const items = [
-        ...events.map(e => {
-          const m = getMat(e.matId);
-          return `<div class="tl-item event"><span class="tl-item-icon">📅</span><div class="tl-item-text"><div class="tl-item-title">${e.title}</div><div class="tl-item-meta">${m.icon||''} ${m.name||'Evento'}${e.hora?' · '+e.hora:''}</div></div></div>`;
-        }),
-        ...tasks.map(t => {
-          const m = getMat(t.matId);
-          const prioColors = {alta:'#f87171',media:'#fbbf24',baja:'#4ade80'};
-          const borderClr = prioColors[t.priority] || 'var(--accent)';
-          return `<div class="tl-item" style="border-left-color:${borderClr}"><span class="tl-item-icon">✅</span><div class="tl-item-text"><div class="tl-item-title">${t.title}</div><div class="tl-item-meta">${m.icon||''} ${m.name||'—'} · ${t.type||'Tarea'}</div></div></div>`;
-        })
-      ].join('');
-      return `<div class="tl-day">
-        <div class="tl-day-label">
-          <div class="tl-day-date" style="${isToday?'color:var(--accent2);':'color:var(--text2);'}font-weight:800;">${dateNum} ${monthShort}</div>
-          <div class="tl-day-name" style="${isToday?'color:var(--accent2);font-weight:800;':''}font-size:10px;letter-spacing:.5px;">${daysFull[d.getDay()]}</div>
-        </div>
-        <div class="tl-line"><div class="tl-dot ${dotClass}"></div></div>
-        <div class="tl-items">
-          ${hasItems ? items : `<div class="tl-empty-day">${isToday?'Sin pendientes hoy':'—'}</div>`}
-        </div>
+  : ovFilterDay
+    ? `<div style="text-align:center;padding:40px;color:var(--text3);">
+        <div style="font-size:36px;margin-bottom:8px;">✅</div>
+        <div style="font-size:14px;font-weight:700;">Sin tareas para este día</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="ovClearDayFilter()">Ver todas las pendientes</button>
+      </div>`
+    : `<div style="text-align:center;padding:40px;color:var(--text3);">
+        <div style="font-size:36px;margin-bottom:8px;">✅</div>
+        <div style="font-size:14px;font-weight:700;">¡Sin tareas pendientes!</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--text3);">Siga adelante, Ingeniero 🎓</div>
       </div>`;
-    }).join('') + `</div>`;
-  }
 }
-
-
 // ══════════════════════════════════════════════════
 // ══════════════════════════════════════════════════
 let _sidebarCollapsed = false;
