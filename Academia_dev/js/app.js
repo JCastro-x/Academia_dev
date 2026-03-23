@@ -587,7 +587,6 @@ function _renderOverview() {
   const legacyPend = document.getElementById('ov-pending');
   if (legacyPend) legacyPend.textContent = pending.length;
   updateGPADisplay();
-
   const urgentCount = pending.filter(t=>t.due&&(new Date(t.due)-new Date())/86400000<=2&&(new Date(t.due)-new Date())/86400000>=0).length;
   const profileSub  = State.settings?.profile?.carrera ? ` · ${State.settings.profile.carrera}` : '';
   const subEl=_el('ov-sub');
@@ -596,102 +595,68 @@ function _renderOverview() {
   const badge=_el('ov-pending-badge');
   if(badge) badge.textContent = pending.length>0 ? `${pending.length} sin entregar` : '';
 
-  // ── AGENDA SEMANAL — 7 tarjetas ───────────────────────────
+  // ── Agenda semanal 7 tarjetas ──────────────────────────────
   const stripEl = _el('ov-week-strip');
   if (stripEl) {
     const today = new Date(); today.setHours(0,0,0,0);
     const days  = Array.from({length:7},(_,i)=>{ const d=new Date(today); d.setDate(today.getDate()+i); return d; });
     const dayShort=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
     stripEl.innerHTML = `<div class="week-strip">` + days.map((d,i) => {
-      const dStr    = d.toISOString().slice(0,10);
-      const isToday = i===0;
-      const dueTasks   = State.tasks.filter(t=>!t.done && t.due===dStr);
-      const planTasks  = State.tasks.filter(t=>!t.done && t.datePlanned===dStr && t.due!==dStr);
-      const evts       = State.events.filter(e=>e.date===dStr);
-      const total      = dueTasks.length+planTasks.length+evts.length;
-
-      // Chips de materias con colores
-      const matIds = [...new Set([...dueTasks,...planTasks,...evts].map(x=>x.matId||''))].filter(Boolean);
-      const chips  = matIds.slice(0,3).map(mid=>{
-        const m=getMat(mid);
-        return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${m.color||'var(--accent)'};flex-shrink:0;" title="${m.code||''}"></span>`;
-      }).join('');
-      const overflow = matIds.length>3 ? `<span style="font-size:9px;color:var(--text3);">+${matIds.length-3}</span>` : '';
-
-      return `<div class="week-day-card ${isToday?'week-day-today':''} ${total>0?'week-day-active':''}"
-        onclick="ovFilterDay('${dStr}',this)">
+      const dStr=d.toISOString().slice(0,10), isToday=i===0;
+      const dueTasks=State.tasks.filter(t=>!t.done&&t.due===dStr);
+      const planTasks=State.tasks.filter(t=>!t.done&&t.datePlanned===dStr&&t.due!==dStr);
+      const evts=State.events.filter(e=>e.date===dStr);
+      const total=dueTasks.length+planTasks.length+evts.length;
+      const matIds=[...new Set([...dueTasks,...planTasks,...evts].map(x=>x.matId||''))].filter(Boolean);
+      const chips=matIds.slice(0,3).map(mid=>{ const m=getMat(mid); return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${m.color||'var(--accent)'};flex-shrink:0;" title="${m.code||''}"></span>`; }).join('');
+      const overflow=matIds.length>3?`<span style="font-size:9px;color:var(--text3);">+${matIds.length-3}</span>`:'';
+      return `<div class="week-day-card ${isToday?'week-day-today':''} ${total>0?'week-day-active':''}" onclick="ovFilterDay('${dStr}',this)">
         <div class="wdc-num">${d.getDate()}</div>
         <div class="wdc-name">${dayShort[d.getDay()]}</div>
-        ${total>0
-          ? `<div class="wdc-chips">${chips}${overflow}</div>
-             <div class="wdc-count">${total}</div>`
-          : `<div class="wdc-empty">—</div>`}
+        ${total>0?`<div class="wdc-chips">${chips}${overflow}</div><div class="wdc-count">${total}</div>`:`<div class="wdc-empty">—</div>`}
       </div>`;
     }).join('') + `</div>`;
   }
-
-  // ── PANEL DE TAREAS ───────────────────────────────────────
   _renderOvTaskList(pending);
 }
 
 let _ovDayFilter = null;
 function ovFilterDay(dStr, el) {
-  if (_ovDayFilter===dStr) {
-    _ovDayFilter=null;
-    document.querySelectorAll('.week-day-card').forEach(c=>c.classList.remove('selected'));
-  } else {
-    _ovDayFilter=dStr;
-    document.querySelectorAll('.week-day-card').forEach(c=>c.classList.remove('selected'));
-    if(el) el.classList.add('selected');
-  }
+  if (_ovDayFilter===dStr) { _ovDayFilter=null; document.querySelectorAll('.week-day-card').forEach(c=>c.classList.remove('selected')); }
+  else { _ovDayFilter=dStr; document.querySelectorAll('.week-day-card').forEach(c=>c.classList.remove('selected')); if(el) el.classList.add('selected'); }
   _renderOvTaskList(State.tasks.filter(t=>!t.done));
 }
 
 function _renderOvTaskList(pending) {
-  const tl = _el('ov-tasks-list');
-  if (!tl) return;
-  const today2 = new Date(); today2.setHours(0,0,0,0);
-
-  let tasks = [...pending];
-  // Filtrar por día si hay selección
-  if (_ovDayFilter) {
-    tasks = tasks.filter(t => t.due===_ovDayFilter || t.datePlanned===_ovDayFilter);
-  }
-  // Ordenar por fecha de entrega más cercana
+  const tl=_el('ov-tasks-list'); if(!tl) return;
+  const today2=new Date(); today2.setHours(0,0,0,0);
+  let tasks=[...pending];
+  if (_ovDayFilter) tasks=tasks.filter(t=>t.due===_ovDayFilter||t.datePlanned===_ovDayFilter);
   tasks.sort((a,b)=>(a.due||'9999-12-31')<(b.due||'9999-12-31')?-1:1);
-
-  if (!tasks.length) {
-    tl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text3);">
-      <div style="font-size:36px;margin-bottom:8px;">${_ovDayFilter?'📆':'✅'}</div>
-      <div style="font-size:14px;font-weight:700;">${_ovDayFilter?'Sin tareas este día':'¡Sin tareas pendientes!'}</div>
-      ${_ovDayFilter?'<button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="ovFilterDay(null)">Ver todas</button>':''}
-    </div>`;
-    return;
-  }
-
-  tl.innerHTML = tasks.map(t => {
-    const m = getMat(t.matId);
-    const dueD = t.due ? new Date(t.due+'T00:00:00') : null;
-    const daysLeft = dueD ? Math.ceil((dueD-today2)/86400000) : null;
+  if (!tasks.length) { tl.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3);"><div style="font-size:36px;margin-bottom:8px;">${_ovDayFilter?'📆':'✅'}</div><div style="font-size:14px;font-weight:700;">${_ovDayFilter?'Sin tareas este día':'¡Sin tareas pendientes!'}</div>${_ovDayFilter?'<button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="ovFilterDay(null)">Ver todas</button>':''}</div>`; return; }
+  tl.innerHTML=tasks.map(t=>{
+    const m=getMat(t.matId);
+    const dueD=t.due?new Date(t.due+'T00:00:00'):null;
+    const dl=dueD?Math.ceil((dueD-today2)/86400000):null;
     let bClass,bText;
-    if      (daysLeft===null)  { bClass='ub-none';     bText='Sin fecha'; }
-    else if (daysLeft<0)       { bClass='ub-overdue';  bText=`Venció hace ${-daysLeft}d`; }
-    else if (daysLeft===0)     { bClass='ub-critical'; bText='Vence hoy ⚡'; }
-    else if (daysLeft<=2)      { bClass='ub-critical'; bText=`${daysLeft}d ⚠️`; }
-    else if (daysLeft<=5)      { bClass='ub-warning';  bText=`${daysLeft} días`; }
-    else                       { bClass='ub-ok';       bText=`${daysLeft} días`; }
-    const prog = subtaskProgress(t);
-    const prioClass = t.priority==='high'?'prio-alta':t.priority==='low'?'prio-baja':t.priority?'prio-media':'prio-none';
-    const dueTimeStr   = t.dueTime     ? ` 🕐 ${t.dueTime}` : '';
-    const planDateStr  = t.datePlanned ? `📋 ${fmtD(t.datePlanned)}${t.timePlanned?' 🕐 '+t.timePlanned:''}` : '';
+    if(dl===null){bClass='ub-none';bText='Sin fecha';}
+    else if(dl<0){bClass='ub-overdue';bText=`Venció hace ${-dl}d`;}
+    else if(dl===0){bClass='ub-critical';bText='Vence hoy ⚡';}
+    else if(dl<=2){bClass='ub-critical';bText=`${dl}d ⚠️`;}
+    else if(dl<=5){bClass='ub-warning';bText=`${dl} días`;}
+    else{bClass='ub-ok';bText=`${dl} días`;}
+    const prog=subtaskProgress(t);
+    const prioClass=t.priority==='high'?'prio-alta':t.priority==='low'?'prio-baja':t.priority?'prio-media':'prio-none';
+    const dts=t.dueTime?` 🕐 ${t.dueTime}`:'';
+    const pls=t.datePlanned?`📋 ${fmtD(t.datePlanned)}${t.timePlanned?' 🕐 '+t.timePlanned:''}`:'';
     return `<div class="mc-task-item ${prioClass}">
       <div class="mc-task-info">
         <div class="mc-task-title">${t.title}</div>
         <div class="mc-task-meta">
           <span style="background:${m.color||'var(--accent)'}22;color:${m.color||'var(--accent)'};border:1px solid ${m.color||'var(--accent)'}44;border-radius:4px;padding:1px 6px;font-weight:700;">${m.icon||'📚'} ${m.code||m.name||'—'}</span>
           <span>${t.type||'Tarea'}</span>
-          ${t.due?`<span style="font-family:'Space Mono',monospace;">📅 ${fmtD(t.due)}${dueTimeStr}</span>`:''}
-          ${planDateStr?`<span style="color:var(--accent2);font-size:10px;">${planDateStr}</span>`:''}
+          ${t.due?`<span style="font-family:'Space Mono',monospace;">📅 ${fmtD(t.due)}${dts}</span>`:''}
+          ${pls?`<span style="color:var(--accent2);font-size:10px;">${pls}</span>`:''}
           ${prog?`<span>${prog.done}/${prog.total} ✓</span>`:''}
         </div>
         ${t.notes?`<div style="font-size:11px;color:var(--text2);margin-top:5px;padding:5px 8px;background:var(--surface2);border-radius:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.notes}</div>`:''}
@@ -705,9 +670,7 @@ function _renderOvTaskList(pending) {
       </div>
     </div>`;
   }).join('');
-}
-
-function renderMaterias() { _schedRender(_renderMaterias); }
+} { _schedRender(_renderMaterias); }
 function _renderMaterias() {
   const min  = parseFloat(document.getElementById('min-grade')?.value) || State.settings.minGrade;
   const grid = _el('materias-grid');
@@ -3057,58 +3020,37 @@ async function handleLogout() {
   }
 }
 
-// ══════════════════════════════════════════════════════════
-// RECORDATORIOS + BANNERS
-// ══════════════════════════════════════════════════════════
-
+// ══ RECORDATORIOS ═══════════════════════════════════════════
 async function initNotifications() {
   if (!document.getElementById('reminder-banners')) {
-    const wrap = document.createElement('div');
-    wrap.id = 'reminder-banners';
-    wrap.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:1200;display:flex;flex-direction:column;pointer-events:none;';
-    document.body.appendChild(wrap);
+    const w=document.createElement('div'); w.id='reminder-banners';
+    w.style.cssText='position:fixed;top:0;left:0;right:0;z-index:1200;display:flex;flex-direction:column;pointer-events:none;';
+    document.body.appendChild(w);
   }
   if ('Notification' in window && Notification.permission==='default') {
     setTimeout(async()=>{ const p=await Notification.requestPermission(); if(p==='granted') scheduleTaskReminders(); }, 3000);
-  } else if ('Notification' in window && Notification.permission==='granted') {
-    scheduleTaskReminders();
-  }
+  } else if ('Notification' in window && Notification.permission==='granted') { scheduleTaskReminders(); }
   renderReminderBanners();
 }
-
 function scheduleTaskReminders() {
   if (!('serviceWorker' in navigator)||Notification.permission!=='granted') return;
-  const today=new Date().toISOString().split('T')[0];
-  const tom  =new Date(Date.now()+86400000).toISOString().split('T')[0];
-  const now  =new Date();
+  const today=new Date().toISOString().split('T')[0], tom=new Date(Date.now()+86400000).toISOString().split('T')[0], now=new Date();
   const tasks=State.tasks.filter(t=>!t.done);
-  const note=(title,body,tag,renotify=true)=>navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'/assets/icons/icon-192.png',badge:'/assets/icons/icon-32.png',tag,renotify,data:{url:'/index.html'},actions:[{action:'open',title:'Ver tareas'}]})).catch(()=>{});
-  const pt=tasks.filter(t=>t.datePlanned===today&&!t.timePlanned);
-  const dt=tasks.filter(t=>t.due===today&&!t.dueTime);
-  const ov=tasks.filter(t=>t.due&&t.due<today);
-  const tm=tasks.filter(t=>t.due===tom);
+  const note=(title,body,tag,rn=true)=>navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'/assets/icons/icon-192.png',badge:'/assets/icons/icon-32.png',tag,renotify:rn,data:{url:'/index.html'},actions:[{action:'open',title:'Ver tareas'}]})).catch(()=>{});
+  const pt=tasks.filter(t=>t.datePlanned===today&&!t.timePlanned), dt=tasks.filter(t=>t.due===today&&!t.dueTime);
+  const ov=tasks.filter(t=>t.due&&t.due<today), tm=tasks.filter(t=>t.due===tom);
   if(pt.length) note('📋 Hoy toca trabajar',`Planificaste: ${pt.map(t=>t.title).join(', ')}`,'reminder-planned');
-  if(dt.length) note('🔴 Entrega hoy',`${dt.map(t=>t.title).join(', ')}`,'reminder-due-today');
-  if(ov.length) note('⚠️ Tareas vencidas',`${ov.map(t=>t.title).join(', ')}`,'reminder-overdue',false);
-  if(tm.length) note('📅 Entrega mañana',`${tm.map(t=>t.title).join(', ')}`,'reminder-due-tomorrow',false);
-  tasks.filter(t=>t.datePlanned===today&&t.timePlanned).forEach(t=>{
-    const[h,m]=t.timePlanned.split(':').map(Number); const f=new Date(); f.setHours(h,m,0,0);
-    const dl=f-now; if(dl>0&&dl<86400000) setTimeout(()=>note(`📋 ${t.title}`,getMat(t.matId).name||'Ahora toca trabajar',`rem-plan-${t.id}`),dl);
-  });
-  tasks.filter(t=>t.due===today&&t.dueTime).forEach(t=>{
-    const[h,m]=t.dueTime.split(':').map(Number); const f=new Date(); f.setHours(h,m,0,0);
-    const dl=f-now; if(dl>0&&dl<86400000) setTimeout(()=>note(`🔴 Entrega: ${t.title}`,`${getMat(t.matId).name||''} — vence ahora`,`rem-due-${t.id}`),dl);
-  });
+  if(dt.length) note('🔴 Entrega hoy',dt.map(t=>t.title).join(', '),'reminder-due-today');
+  if(ov.length) note('⚠️ Tareas vencidas',ov.map(t=>t.title).join(', '),'reminder-overdue',false);
+  if(tm.length) note('📅 Entrega mañana',tm.map(t=>t.title).join(', '),'reminder-due-tomorrow',false);
+  tasks.filter(t=>t.datePlanned===today&&t.timePlanned).forEach(t=>{ const[h,m]=t.timePlanned.split(':').map(Number),f=new Date(); f.setHours(h,m,0,0); const dl=f-now; if(dl>0&&dl<86400000) setTimeout(()=>note(`📋 ${t.title}`,getMat(t.matId).name||'Hora de trabajar',`rem-plan-${t.id}`),dl); });
+  tasks.filter(t=>t.due===today&&t.dueTime).forEach(t=>{ const[h,m]=t.dueTime.split(':').map(Number),f=new Date(); f.setHours(h,m,0,0); const dl=f-now; if(dl>0&&dl<86400000) setTimeout(()=>note(`🔴 ${t.title}`,getMat(t.matId).name||'Vence ahora',`rem-due-${t.id}`),dl); });
 }
-
 function renderReminderBanners() {
-  const wrap=document.getElementById('reminder-banners'); if(!wrap)return;
+  const wrap=document.getElementById('reminder-banners'); if(!wrap) return;
   const today=new Date().toISOString().split('T')[0];
   const active=(typeof State!=='undefined'?State.tasks:[]).filter(t=>!t.done);
-  const banners=[];
-  const ov=active.filter(t=>t.due&&t.due<today);
-  const dt=active.filter(t=>t.due===today);
-  const pt=active.filter(t=>t.datePlanned===today);
+  const banners=[], ov=active.filter(t=>t.due&&t.due<today), dt=active.filter(t=>t.due===today), pt=active.filter(t=>t.datePlanned===today);
   if(ov.length) banners.push({c:'#f87171',bg:'rgba(248,113,113,.12)',b:'rgba(248,113,113,.4)',icon:'⚠️',msg:`${ov.length} vencida${ov.length>1?'s':''}: ${ov.map(t=>t.title).join(', ')}`,k:'overdue'});
   if(dt.length) banners.push({c:'#f87171',bg:'rgba(248,113,113,.10)',b:'rgba(248,113,113,.3)',icon:'🔴',msg:`Entrega hoy: ${dt.map(t=>t.dueTime?`${t.title} (${t.dueTime})`:t.title).join(', ')}`,k:'due-today'});
   if(pt.length) banners.push({c:'#9d97ff',bg:'rgba(108,99,255,.10)',b:'rgba(108,99,255,.35)',icon:'📋',msg:`Planificaste para hoy: ${pt.map(t=>t.timePlanned?`${t.title} (${t.timePlanned})`:t.title).join(', ')}`,k:'planned'});
