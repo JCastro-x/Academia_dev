@@ -4,7 +4,7 @@
 // Compatible con PWABuilder, TWA (Play Store) y Widgets futuros
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_VERSION  = 'academia-v9';
+const CACHE_VERSION  = 'academia-v10';
 const CACHE_STATIC   = `${CACHE_VERSION}-static`;
 const CACHE_PAGES    = `${CACHE_VERSION}-pages`;
 const CACHE_ASSETS   = `${CACHE_VERSION}-assets`;
@@ -26,8 +26,21 @@ const APP_SCRIPTS = [
   '/js/auth.js',
   '/js/db.js',
   '/js/academia-sync.js',
-  '/js/app.js',
+  // ── Módulos de app.js (dividido) ──
+  '/js/state.js',
   '/js/calificaciones.js',
+  '/js/semestres.js',
+  '/js/ui.js',
+  '/js/materias.js',
+  '/js/stats.js',
+  '/js/search.js',
+  '/js/sounds.js',
+  '/js/pomodoro.js',
+  '/js/init.js',
+  '/js/notifications.js',
+  '/js/onboarding.js',
+  '/js/bootstrap.js',
+  // ── Módulos ya separados ──
   '/js/tasks.js',
   '/js/calendar.js',
   '/js/notes.js',
