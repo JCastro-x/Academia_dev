@@ -2392,8 +2392,18 @@ function init() {
   // Verificar auth ANTES de hacer nada
   (async () => {
     try {
-      const auth = await window.Auth.checkAuth();
-      
+      // Si hay callback de OAuth en la URL, esperar a que Supabase lo procese
+      const hasOAuthCallback = window.location.hash.includes('access_token') ||
+                               window.location.search.includes('code=');
+
+      let auth = await window.Auth.checkAuth();
+
+      if (!auth && hasOAuthCallback) {
+        // Dar tiempo a Supabase para procesar el token
+        await new Promise(r => setTimeout(r, 1500));
+        auth = await window.Auth.checkAuth();
+      }
+
       if (!auth) {
         console.log('❌ NO AUTENTICADO - Redirigiendo a login');
         window.location.href = 'auth-page.html';
