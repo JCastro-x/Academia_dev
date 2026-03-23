@@ -1,16 +1,41 @@
-# OS
+# ── OS ───────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
+ehthumbs.db
 
-# Editor
+# ── Editores ─────────────────────────────────────
 .vscode/settings.json
+.idea/
 *.swp
 *.swo
+*.sublime-workspace
 
-# Logs
+# ── Logs ─────────────────────────────────────────
 *.log
+npm-debug.log*
 
-# Temp
+# ── Temporales ───────────────────────────────────
 *.tmp
 *.bak
+*.orig
+
+# ── Dependencias (si en algún momento se usan) ───
+node_modules/
+.npm/
+
+# ── Variables de entorno ─────────────────────────
+# ⚠️  Nunca subas claves reales al repo.
+#    Las claves de Supabase en auth.js son
+#    publishable (anon key), es seguro incluirlas.
+.env
+.env.local
+.env.*.local
+
+# ── Build / Deploy ────────────────────────────────
+dist/
+.vercel/
+.netlify/
+
+# ── Backups locales de datos ──────────────────────
+academia-backup-*.json

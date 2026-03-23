@@ -4,24 +4,27 @@ Dashboard académico para estudiantes universitarios. Organiza tus materias, tar
 
 ## ✨ Funcionalidades
 
-- 📊 **Resumen** — vista general de tu progreso académico
-- 📚 **Materias** — gestión de cursos con colores e iconos
-- ✅ **Tareas** — seguimiento de entregas con prioridades y subtareas
+- 📅 **Agenda Semanal** — vista de 7 días con filtro por día y puntos de color por materia
+- 📊 **Resumen** — vista general del progreso académico con tareas ordenadas por urgencia
+- 📚 **Materias** — gestión de cursos con colores, iconos y calculadora de supervivencia
+- ✅ **Tareas** — seguimiento de entregas con prioridades, subtareas, hora de planificación y hora de entrega
 - 📅 **Calendario** — eventos y fechas importantes
-- 🎯 **Calificaciones** — zonas configurables, cálculo automático
-- 📝 **Notas** — editor rico con canvas de dibujo, adjuntos PDF e imágenes
-- ⏱️ **Pomodoro** — temporizador con historial y metas
+- 🎯 **Calificaciones** — zonas configurables, nota proyectada, mínimo necesario
+- 📝 **Notas** — editor rico con canvas de dibujo, carpetas, adjuntos PDF e imágenes, OCR
+- ⏱️ **Pomodoro** — temporizador con historial, metas y sonidos ambientales
 - 🧠 **Flashcards** — tarjetas de estudio
-- 🌗 **Tema oscuro/claro**
-- 📱 **Responsive** — funciona en móvil, tablet y escritorio
+- 🔔 **Recordatorios push** — notificaciones Web Push con hora exacta
+- ☁️ **Sincronización** — datos en la nube, acceso desde cualquier dispositivo
+- 🌗 **Tema oscuro/claro** + colores de acento personalizables
+- 📱 **Responsive** — móvil, tablet y escritorio
 
 ## 🛠️ Tecnologías
 
-- HTML · CSS · JavaScript (vanilla)
+- HTML · CSS · JavaScript (vanilla, modular)
 - [Supabase](https://supabase.com) — autenticación y base de datos en la nube
 - [Google OAuth](https://developers.google.com/identity) — inicio de sesión con Google
-- [PDF.js](https://mozilla.github.io/pdf.js/) — visualización de PDFs
-- [Tesseract.js](https://tesseract.projectnaptha.com/) — OCR de imágenes
+- [PDF.js](https://mozilla.github.io/pdf.js/) — visualización y extracción de texto de PDFs
+- [Tesseract.js](https://tesseract.projectnaptha.com/) — OCR de imágenes escaneadas
 - [Vercel](https://vercel.com) — hosting y despliegue
 
 ## 🚀 Uso
@@ -36,23 +39,43 @@ No requiere instalación ni servidor.
 
 ```
 ACADEMIA_DEV/
-├── index.html          ← Estructura HTML
-├── auth-page.html      ← Login con Google
-├── privacidad.html     ← Política de privacidad
-├── terminos.html       ← Términos y condiciones
-├── sw.js               ← Service Worker (PWA)
-├── manifest.json       ← Manifiesto PWA
+├── index.html              ← Estructura HTML principal
+├── auth-page.html          ← Login con Google
+├── privacidad.html         ← Política de privacidad
+├── terminos.html           ← Términos y condiciones
+├── sw.js                   ← Service Worker (PWA offline)
+├── manifest.json           ← Manifiesto PWA
+│
 ├── css/
-│   └── style.css       ← Estilos + responsive
-└── js/
-    ├── app.js          ← Estado, páginas, overview
-    ├── auth.js         ← Google OAuth con Supabase
-    ├── db.js           ← Sincronización con Supabase
-    ├── calificaciones.js
-    ├── tasks.js
-    ├── calendar.js
-    ├── notes.js        ← Notas, canvas, OCR
-    └── chrono.js       ← Pomodoro, PDF, focus mode
+│   ├── base.css            ← Variables, reset, sidebar, nav, topbar
+│   ├── components.css      ← Notes, kanban, hub cards, timeline, tags
+│   └── mobile.css          ← Todos los @media queries + agenda responsive
+│
+├── js/
+│   ├── auth.js             ← Google OAuth con Supabase
+│   ├── db.js               ← Capa de datos (Supabase)
+│   ├── academia-sync.js    ← Sincronización PC ↔ móvil
+│   │
+│   ├── state.js            ← State global, dbGet/Set, saveState, migración
+│   ├── calificaciones.js   ← getMat, calcTotal, renderGrades
+│   ├── semestres.js        ← switchSemester, createSemester
+│   ├── ui.js               ← goPage, fillMatSels, tema, fuentes
+│   ├── materias.js         ← renderMaterias, modales de clase
+│   ├── stats.js            ← renderStats, gráficas
+│   ├── search.js           ← Búsqueda global
+│   ├── sounds.js           ← Sonidos UI, ruido blanco y sonidos ambientales
+│   ├── pomodoro.js         ← Timer Pomodoro, historial, metas
+│   ├── tasks.js            ← renderTasks, saveTask, subtareas
+│   ├── calendar.js         ← renderCalendar, eventos
+│   ├── notes.js            ← Notas, canvas, OCR, agenda semanal
+│   ├── chrono.js           ← Cronómetro, modo enfoque, racha
+│   ├── init.js             ← init(), continueInit(), auth flow
+│   ├── notifications.js    ← Web Push, banners de recordatorio
+│   ├── onboarding.js       ← Tutorial primera vez
+│   └── bootstrap.js        ← DOMContentLoaded, sidebar móvil, logout
+│
+└── assets/
+    └── icons/              ← Iconos PWA (32, 180, 192, 512, maskable)
 ```
 
 ## 🤖 Desarrollo con IA
@@ -63,7 +86,7 @@ El uso de IA como herramienta de desarrollo es una práctica legítima y cada ve
 
 ## 👤 Autor
 
-**Josué Castro** — [@josueeliucastrososa-cmyk](https://github.com/josueeliucastrososa-cmyk)
+**Josué Castro** — [@JCastro-x](https://github.com/JCastro-x)
 
 ## 📄 Licencia
 
@@ -71,9 +94,12 @@ El uso de IA como herramienta de desarrollo es una práctica legítima y cada ve
 
 ## 🗺️ Roadmap
 
-- [x] Login con Google/correo (Supabase)
+- [x] Login con Google (Supabase)
 - [x] Base de datos en la nube (datos por usuario)
 - [x] Sincronización automática entre dispositivos
-- [ ] PWA — instalable en Android/iOS
+- [x] Agenda semanal dinámica (7 días)
+- [x] Recordatorios Web Push con hora exacta
+- [x] Código modular (JS y CSS separados por responsabilidad)
+- [x] PWA — instalable en Android/iOS
 - [ ] APK nativo con Capacitor
 - [ ] Dominio propio
