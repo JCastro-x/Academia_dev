@@ -168,32 +168,51 @@
           </div>
         </div>
 
-        <!-- ═══ AGENDA SEMANAL — 7 tarjetas ═══ -->
-        <div class="card" style="margin-bottom:16px;">
-          <div class="card-header" style="padding:10px 16px;">
-            <span class="card-title">📅 Agenda Semanal</span>
-            <button class="btn btn-ghost btn-sm" onclick="goPage('calendario',document.querySelector('[onclick*=calendario]'))">Ver calendario →</button>
-          </div>
-          <div class="card-body" style="padding:10px 14px 14px;">
-            <div id="ov-week-strip"></div>
-          </div>
-        </div>
-
-        <!-- ═══ PANEL DE CONTROL DE TAREAS ═══ -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">⚡ Tareas Pendientes</span>
+        <!-- Weekly task load visualizer -->
+        <div class="card" style="margin-bottom:16px;" id="load-card">
+          <div class="card-header" style="padding:10px 16px;cursor:pointer;" onclick="toggleLoadPanel()">
+            <span class="card-title" style="font-size:12px;">📊 Carga de Tareas</span>
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:11px;font-family:'Space Mono',monospace;color:var(--red);" id="ov-pending-badge"></span>
-              <button class="btn btn-ghost btn-sm" onclick="goPage('tareas',document.querySelector('[onclick*=tareas]'))">Ver todas →</button>
+              <button onclick="changeWeekOffset(-1,event)" class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:13px;" title="Semana anterior">‹</button>
+              <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;" id="ov-week-range"></span>
+              <button onclick="changeWeekOffset(1,event)" class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:13px;" title="Semana siguiente">›</button>
+              <button onclick="changeWeekOffset(0,event)" class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:10px;" title="Hoy">Hoy</button>
+              <span id="load-panel-toggle" style="font-size:11px;color:var(--text3);margin-left:4px;">▼</span>
             </div>
           </div>
-          <div id="ov-tasks-list"></div>
+          <div class="card-body" id="load-panel-body" style="padding:12px 18px 8px;">
+            <div class="load-bar-wrap" id="ov-load-bars"></div>
+          </div>
         </div>
 
-        <!-- IDs legacy para compatibilidad -->
-        <div id="ov-timeline" style="display:none;"></div>
-        <span id="ov-pending" style="display:none;">0</span>
+
+        <!-- Esta Semana + Tareas: timeline izquierda, tareas derecha -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+          <!-- Esta semana — timeline -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📆 Esta Semana</span>
+              <button class="btn btn-ghost btn-sm" onclick="goPage('calendario',document.querySelector('[onclick*=calendario]'))">Ver calendario →</button>
+            </div>
+            <div class="card-body" id="ov-timeline" style="padding:8px 14px;"></div>
+          </div>
+
+          <!-- Tareas pendientes -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">⚡ Tareas Pendientes</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:11px;font-family:'Space Mono',monospace;color:var(--red);" id="ov-pending-badge"></span>
+                <button class="btn btn-ghost btn-sm" onclick="goPage('tareas',document.querySelector('[onclick*=tareas]'))">Ver todas →</button>
+              </div>
+            </div>
+            <div id="ov-tasks-list" style="max-height:480px;overflow-y:auto;"></div>
+          </div>
+
+        </div>
+
+        <!-- Hidden legacy elements for badge compat -->
         <span id="ov-pending" style="display:none;">0</span>
       </div>
 
@@ -1184,17 +1203,9 @@
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">📅 Fecha de Planificación</label>
-            <div style="display:flex;gap:6px;">
-              <input type="date" class="form-input" id="t-date-planned" style="flex:1;">
-              <input type="time" class="form-input" id="t-time-planned" style="width:110px;" title="Hora de planificación">
-            </div>
-          </div>
+            <input type="date" class="form-input" id="t-date-planned"></div>
           <div class="form-group"><label class="form-label">🎯 Fecha de Entrega (Deadline)</label>
-            <div style="display:flex;gap:6px;">
-              <input type="date" class="form-input" id="t-due" style="flex:1;">
-              <input type="time" class="form-input" id="t-due-time" style="width:110px;" title="Hora límite">
-            </div>
-          </div>
+            <input type="date" class="form-input" id="t-due"></div>
         </div>
       </div>
       <div class="form-row">
@@ -1979,6 +1990,17 @@
   <!-- CDN Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('Academia PWA ✅'))
+          .catch(e => console.log('SW (solo funciona en Netlify):', e));
+      });
+    }
+  </script>
 
 </body>
 </html>
