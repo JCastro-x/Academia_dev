@@ -572,10 +572,6 @@ function fillExamSel() {
 
 function renderOverview() { _schedRender(_renderOverview); }
 
-if (typeof _weekOffset === 'undefined') var _weekOffset = 0;
-function changeWeekOffset(delta,e){ if(e)e.stopPropagation(); _weekOffset=(delta===0)?0:(_weekOffset||0)+delta; renderOverview(); }
-function toggleLoadPanel(){}
-
 function _renderOverview() {
   const pending = State.tasks.filter(t => !t.done);
   const overall = calcOverallGPA();
