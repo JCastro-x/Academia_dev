@@ -587,9 +587,9 @@ body::before {
 /* ── TIMELINE ── */
 .timeline-wrap { display:flex; flex-direction:column; gap:0; }
 .tl-day { display:flex; gap:14px; min-height:44px; }
-.tl-day-label { width:72px; flex-shrink:0; text-align:right; padding-top:12px; }
-.tl-day-date { font-size:11px; font-weight:700; color:var(--text2); font-family:'Space Mono',monospace; }
-.tl-day-name  { font-size:9px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; }
+.tl-day-label { width:82px; flex-shrink:0; text-align:right; padding-top:10px; }
+.tl-day-date { font-size:13px; font-weight:800; color:var(--text); font-family:'Space Mono',monospace; }
+.tl-day-name  { font-size:10px; color:var(--text2); letter-spacing:1.5px; text-transform:uppercase; margin-top:2px; font-weight:600; }
 .tl-line { width:2px; background:var(--border); flex-shrink:0; position:relative; margin:0 6px; }
 .tl-dot { position:absolute; top:14px; left:50%; transform:translateX(-50%); width:8px; height:8px; border-radius:50%; background:var(--accent); border:2px solid var(--surface); }
 .tl-dot.today { background:var(--accent2); width:10px; height:10px; box-shadow:0 0 8px var(--accent2); }
