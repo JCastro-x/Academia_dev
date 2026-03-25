@@ -1,3 +1,13 @@
+
+// ── Stepper para campos numéricos ────────────────────────────
+function _stepperChange(id, delta, min, max, step) {
+  const el  = document.getElementById(id);
+  if (!el) return;
+  const val = parseFloat(el.value) || (delta > 0 ? min - step : max + step);
+  const nv  = Math.min(max, Math.max(min, Math.round((val + delta * step) * 10) / 10));
+  el.value  = nv;
+}
+
 let editTaskId       = null;
 let _editSubtasks    = [];
 let _editAttachments = [];
@@ -198,9 +208,8 @@ function saveTask() {
     repeatUntil: document.getElementById('t-repeat-until')?.value || '',
     repeatCount: parseInt(document.getElementById('t-repeat-count')?.value) || 0,
     repeatDone:  existing ? (existing.repeatDone || 0) : 0,
-    // Planificación distribuida
-    estDays:         parseInt(document.getElementById('t-est-days')?.value)  || 0,
-    estHoursPerDay:  parseFloat(document.getElementById('t-est-hrs')?.value) || 0,
+    estDays:        parseInt(document.getElementById('t-est-days')?.value)  || 0,
+    estHoursPerDay: parseFloat(document.getElementById('t-est-hrs')?.value) || 0,
   };
 
   // Si tiene repetición y se está creando: generar las instancias
@@ -218,7 +227,6 @@ function saveTask() {
     State.tasks.unshift(task);
   }
 
-  // Distribuir fechas de trabajo si se ingresaron días/horas
   if (typeof _plannerApplyTaskDates === 'function') _plannerApplyTaskDates(task);
 
   saveState(['tasks']);

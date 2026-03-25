@@ -1,249 +1,225 @@
 // ═══════════════════════════════════════════════════════════════
-// PLANNER.JS — Planificador Inteligente de Estudio
-// Extiende el sistema de Temas y Tareas existente.
-// Carga después de app.js/materias.js para sobreescribir
-// openTopicModal() y saveTopic().
+// PLANNER.JS v2 — Planificador Inteligente Dinámico
+// Carga DESPUÉS de todos los demás scripts.
+// Sobreescribe: openTopicModal, saveTopic, renderTopics
 // ═══════════════════════════════════════════════════════════════
 
 const PLANNER = (() => {
   'use strict';
 
-  // ── Configuración ────────────────────────────────────────────
-  const MAX_DAILY_MIN    = 4 * 60;   // 240 min = 4 h
-  const MAX_RESCHEDULE   = 3;        // días máx para reubicar un repaso
-  const NEW_TOPIC_MIN    = 50;       // minutos para estudiar un tema nuevo
+  const MAX_DAILY_MIN  = 4 * 60;
+  const NEW_TOPIC_MIN  = 50;
+  const REVIEW_MIN     = { normal: 20, hard: 25 };
+  const EXAM_BUFFER    = 2;
+  const EXAM_WARN_DAYS = 3;
 
-  // Intervalos de repaso en días desde dateAdded
-  const REVIEW_DAYS = {
-    normal: [2, 6],
-    hard:   [2, 5, 10]
-  };
-  // Minutos por sesión de repaso
-  const REVIEW_MIN = {
-    normal: 20,
-    hard:   25
-  };
+  const todayStr  = () => new Date().toISOString().slice(0, 10);
+  const addDays   = (s, n) => { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  const diffDays  = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+  const fmtShort  = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' }) : '';
+  const fmtMed    = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' }) : '';
 
-  // ── Helpers de fecha ─────────────────────────────────────────
-  function addDays(str, n) {
-    const d = new Date(str + 'T00:00:00');
-    d.setDate(d.getDate() + n);
-    return d.toISOString().slice(0, 10);
-  }
-  function todayStr() {
-    return new Date().toISOString().slice(0, 10);
-  }
-  function fmtShort(str) {
-    if (!str) return '';
-    return new Date(str + 'T00:00:00').toLocaleDateString('es-ES', {
-      weekday: 'short', day: 'numeric', month: 'short'
-    });
+  // ── Fechas de examen ──────────────────────────────────────────
+  function examKey(matId, parcial) { return `${matId}__${parcial}`; }
+
+  function getExamDate(matId, parcial) {
+    const sem = State._activeSem;
+    if (!sem.examDates) sem.examDates = {};
+    return sem.examDates[examKey(matId, parcial)] || null;
   }
 
-  // ── Carga real del día ────────────────────────────────────────
-  // Suma: tareas planificadas + sesiones de trabajo distribuidas
-  //       + repasos pendientes + tema nuevo si es hoy
+  function setExamDate(matId, parcial, date) {
+    const sem = State._activeSem;
+    if (!sem.examDates) sem.examDates = {};
+    if (date) {
+      sem.examDates[examKey(matId, parcial)] = date;
+    } else {
+      delete sem.examDates[examKey(matId, parcial)];
+    }
+    saveState(['semestres']);
+    _checkExamWarnings();
+    renderDailyPlan();
+    renderReviewQueue();
+    renderPlannerTimeline();
+  }
+
+  // ── Carga real de un día ──────────────────────────────────────
   function getDayMinutes(dateStr) {
     let total = 0;
-
-    // Tareas con datePlanned en este día
-    State.tasks
-      .filter(t => !t.done && t.datePlanned === dateStr)
+    State.tasks.filter(t => !t.done && t.datePlanned === dateStr)
       .forEach(t => { total += t.timeEst || 60; });
-
-    // Sesiones de trabajo distribuidas (plannedWorkDates)
-    State.tasks
-      .filter(t => !t.done && (t.plannedWorkDates || []).includes(dateStr))
+    State.tasks.filter(t => !t.done && (t.plannedWorkDates || []).includes(dateStr))
       .forEach(t => { total += Math.round((t.estHoursPerDay || 1) * 60); });
-
-    // Repasos pendientes para este día
     State.topics.forEach(topic => {
-      (topic.reviewSchedule || [])
-        .filter(r => r.date === dateStr && !r.done && r.status === 'pending')
-        .forEach(r => { total += r.minutes || REVIEW_MIN[topic.difficulty || 'normal']; });
+      (topic.reviewSchedule || []).forEach(r => {
+        if (r.date === dateStr && !r.done && r.status === 'pending')
+          total += r.minutes || REVIEW_MIN[topic.difficulty || 'normal'];
+      });
     });
-
-    // Estudio inicial del tema si dateAdded === este día
-    State.topics
-      .filter(t => t.dateAdded === dateStr)
+    State.topics.filter(t => t.dateAdded === dateStr)
       .forEach(t => { total += t.estMinutes || NEW_TOPIC_MIN; });
-
     return total;
   }
 
-  // ── Generar calendario de repasos para un tema ────────────────
-  function generateReviews(topic) {
-    const base    = topic.dateAdded || todayStr();
-    const diff    = topic.difficulty || 'normal';
-    const offsets = REVIEW_DAYS[diff];
-    const mins    = REVIEW_MIN[diff];
+  function loadBar(dateStr) {
+    const mins = getDayMinutes(dateStr);
+    const pct  = Math.min(100, Math.round(mins / MAX_DAILY_MIN * 100));
+    const clr  = pct >= 100 ? '#f87171' : pct >= 75 ? '#fbbf24' : pct >= 40 ? '#60a5fa' : '#4ade80';
+    return { mins, pct, color: clr, label: `${(mins/60).toFixed(1)}h / 4h` };
+  }
 
-    return offsets.map(offset => {
-      let targetDate = addDays(base, offset);
-      let status     = 'pending';
+  // ── Encontrar mejor hueco dinámico ────────────────────────────
+  function findBestSlot(windowStart, windowEnd, durationMin) {
+    const today   = todayStr();
+    const slots   = [];
+    let   current = windowStart < today ? today : windowStart;
+    if (windowEnd < current) return current;
 
-      // Buscar día con espacio (hasta MAX_RESCHEDULE días después)
-      let placed = false;
-      for (let shift = 0; shift <= MAX_RESCHEDULE; shift++) {
-        const candidate = addDays(base, offset + shift);
-        if (getDayMinutes(candidate) + mins <= MAX_DAILY_MIN) {
-          targetDate = candidate;
-          placed     = true;
-          break;
-        }
-      }
-      if (!placed) status = 'low-priority';
+    while (current <= windowEnd) {
+      const load = getDayMinutes(current);
+      slots.push({ date: current, load, available: MAX_DAILY_MIN - load });
+      current = addDays(current, 1);
+    }
 
-      return { date: targetDate, done: false, status, minutes: mins };
-    });
+    const viable = slots.filter(s => s.available >= durationMin);
+    if (!viable.length) return slots.sort((a,b) => a.load - b.load)[0]?.date || windowStart;
+    viable.sort((a, b) => a.load - b.load);
+    return viable[0].date;
+  }
+
+  // ── Generar repasos dinámicos ─────────────────────────────────
+  function generateSmartReviews(topic) {
+    const today    = todayStr();
+    const examDate = getExamDate(topic.matId, topic.parcial);
+    const diff     = topic.difficulty || 'normal';
+    const mins     = REVIEW_MIN[diff];
+    const reviews  = [];
+
+    const winStart = addDays(today, 2);
+    const winEnd   = examDate ? addDays(examDate, -EXAM_BUFFER) : addDays(today, 21);
+
+    const totalDays = diffDays(winStart, winEnd);
+
+    if (totalDays <= 0) {
+      reviews.push({ date: addDays(today, 1), done: false, status: 'urgent', minutes: mins, num: 1 });
+      return reviews;
+    }
+
+    const numReviews = diff === 'hard'
+      ? (totalDays >= 10 ? 3 : totalDays >= 5 ? 2 : 1)
+      : (totalDays >= 7  ? 2 : 1);
+
+    for (let i = 0; i < numReviews; i++) {
+      const segStart = addDays(winStart, Math.floor((totalDays / numReviews) * i));
+      const segEnd   = addDays(winStart, Math.floor((totalDays / numReviews) * (i + 1)) - 1);
+      const best     = findBestSlot(segStart, segEnd, mins);
+      const load     = loadBar(best);
+      reviews.push({ date: best, done: false, status: load.pct >= 100 ? 'low-priority' : 'pending', minutes: mins, num: i + 1 });
+    }
+
+    return reviews;
   }
 
   // ── Distribuir fechas de trabajo para una tarea ───────────────
   function planTaskDates(task) {
-    if (!task.due) return [];
-    const estDays    = Math.max(1, parseInt(task.estDays)        || 1);
-    const hrsPerDay  = Math.max(0.5, parseFloat(task.estHoursPerDay) || 1);
-    const minsPerDay = Math.round(hrsPerDay * 60);
+    if (!task.due || !task.estDays || !task.estHoursPerDay) return [];
+    const minsPerDay = Math.round(task.estHoursPerDay * 60);
     const today      = todayStr();
+    const dates      = [];
 
-    // Trabajar hacia atrás desde due-1 (buffer de 1 día antes del deadline)
-    const dates = [];
-    for (let i = 0; i < estDays; i++) {
-      const idealDate = addDays(task.due, -(1 + i));
-      if (idealDate < today) break; // no planificar en el pasado
-
-      // Buscar día con espacio (hacia atrás hasta 7 días)
-      let placed = false;
-      for (let back = 0; back <= 7; back++) {
-        const candidate = addDays(idealDate, -back);
-        if (candidate < today) break;
-        if (getDayMinutes(candidate) + minsPerDay <= MAX_DAILY_MIN) {
-          dates.push(candidate);
-          placed = true;
-          break;
-        }
-      }
-      // Si no hubo espacio, forzar el día ideal de todas formas
-      if (!placed && idealDate >= today) dates.push(idealDate);
+    for (let i = 0; i < task.estDays; i++) {
+      const ideal = addDays(task.due, -(1 + i));
+      if (ideal < today) break;
+      const rangeStart = addDays(ideal, -2) < today ? today : addDays(ideal, -2);
+      const best = findBestSlot(rangeStart, addDays(ideal, 2), minsPerDay);
+      if (best >= today) dates.push(best);
     }
-
     return [...new Set(dates)].sort();
   }
 
   // ── Reagendar repasos sobrecargados ──────────────────────────
   function rescheduleAll() {
-    let changed = false;
     const today = todayStr();
-
+    let changed = false;
     State.topics.forEach(topic => {
-      if (!topic.reviewSchedule?.length) return;
-      topic.reviewSchedule.forEach(review => {
+      const examDate = getExamDate(topic.matId, topic.parcial);
+      (topic.reviewSchedule || []).forEach(review => {
         if (review.done || review.date < today) return;
-        const revMin = review.minutes || REVIEW_MIN[topic.difficulty || 'normal'];
-
+        const revMins = review.minutes || REVIEW_MIN[topic.difficulty || 'normal'];
         if (getDayMinutes(review.date) > MAX_DAILY_MIN) {
-          let moved = false;
-          for (let d = 1; d <= MAX_RESCHEDULE; d++) {
-            const candidate = addDays(review.date, d);
-            if (getDayMinutes(candidate) + revMin <= MAX_DAILY_MIN) {
-              review.date   = candidate;
-              review.status = 'pending';
-              moved         = true;
-              changed       = true;
-              break;
-            }
-          }
-          if (!moved && review.status !== 'done') {
-            review.status = 'low-priority';
-            changed       = true;
+          const maxDate = examDate ? addDays(examDate, -1) : addDays(review.date, 7);
+          const newDate = findBestSlot(addDays(review.date, 1), maxDate, revMins);
+          if (newDate !== review.date) {
+            const old = review.date;
+            review.date = newDate;
+            review.status = getDayMinutes(newDate) + revMins > MAX_DAILY_MIN ? 'low-priority' : 'pending';
+            review.movedFrom = old;
+            changed = true;
+            _pushNotify('🔁 Repaso movido', `"${topic.name}" movido ${fmtShort(old)} → ${fmtShort(newDate)}`);
           }
         }
       });
     });
-
     if (changed) saveState(['topics']);
     return changed;
   }
 
-  // ── Armar el plan del día ─────────────────────────────────────
+  // ── Plan del día ──────────────────────────────────────────────
   function getDailyPlan(dateStr) {
-    const plan = {
-      date:         dateStr,
-      newTopics:    [],
-      reviews:      [],
-      tasks:        [],
-      totalMinutes: 0,
-      overloaded:   false,
-    };
+    const plan = { date: dateStr, newTopics: [], reviews: [], tasks: [], totalMinutes: 0 };
 
-    // Temas nuevos
-    State.topics
-      .filter(t => t.dateAdded === dateStr)
-      .forEach(t => {
-        const m    = getMat(t.matId);
-        const mins = t.estMinutes || NEW_TOPIC_MIN;
-        plan.newTopics.push({
-          id: t.id, name: t.name, parcial: t.parcial,
-          matName:  m.name  || '—',
-          matIcon:  m.icon  || '📚',
-          matColor: m.color || 'var(--accent)',
-          minutes: mins,
-        });
-        plan.totalMinutes += mins;
-      });
+    State.topics.filter(t => t.dateAdded === dateStr).forEach(t => {
+      const m = getMat(t.matId);
+      const mins = t.estMinutes || NEW_TOPIC_MIN;
+      plan.newTopics.push({ id: t.id, name: t.name, parcial: t.parcial,
+        matName: m.name||'—', matIcon: m.icon||'📚', matColor: m.color||'var(--accent)', minutes: mins });
+      plan.totalMinutes += mins;
+    });
 
-    // Repasos
     State.topics.forEach(topic => {
       (topic.reviewSchedule || []).forEach((r, idx) => {
         if (r.date !== dateStr || r.done) return;
         const m = getMat(topic.matId);
-        plan.reviews.push({
-          topicId:    topic.id,
-          reviewIdx:  idx,
-          name:       topic.name,
-          difficulty: topic.difficulty || 'normal',
-          matName:    m.name  || '—',
-          matIcon:    m.icon  || '📚',
-          matColor:   m.color || 'var(--accent)',
-          minutes:    r.minutes || 20,
-          status:     r.status,
-        });
-        if (r.status !== 'low-priority') plan.totalMinutes += (r.minutes || 20);
+        plan.reviews.push({ topicId: topic.id, reviewIdx: idx, name: topic.name,
+          difficulty: topic.difficulty||'normal', matName: m.name||'—', matIcon: m.icon||'📚',
+          matColor: m.color||'var(--accent)', minutes: r.minutes||20, status: r.status, num: r.num||1 });
+        if (r.status !== 'low-priority') plan.totalMinutes += (r.minutes||20);
       });
     });
 
-    // Tareas (sin duplicar si aparece en ambos campos)
-    const seenIds = new Set();
-    State.tasks
-      .filter(t => !t.done && (
-        t.datePlanned === dateStr ||
-        (t.plannedWorkDates || []).includes(dateStr)
-      ))
+    const seen = new Set();
+    State.tasks.filter(t => !t.done && (t.datePlanned === dateStr || (t.plannedWorkDates||[]).includes(dateStr)))
       .forEach(t => {
-        if (seenIds.has(t.id)) return;
-        seenIds.add(t.id);
-        const m    = getMat(t.matId);
-        const mins = t.datePlanned === dateStr
-          ? (t.timeEst || 60)
-          : Math.round((t.estHoursPerDay || 1) * 60);
-        plan.tasks.push({
-          id:       t.id,
-          title:    t.title,
-          due:      t.due,
-          priority: t.priority,
-          matName:  m.name  || '—',
-          matIcon:  m.icon  || '📚',
-          matColor: m.color || 'var(--accent)',
-          minutes:  mins,
-        });
+        if (seen.has(t.id)) return;
+        seen.add(t.id);
+        const m = getMat(t.matId);
+        const mins = t.datePlanned === dateStr ? (t.timeEst||60) : Math.round((t.estHoursPerDay||1)*60);
+        plan.tasks.push({ id: t.id, title: t.title, due: t.due, priority: t.priority,
+          matName: m.name||'—', matIcon: m.icon||'📚', matColor: m.color||'var(--accent)', minutes: mins });
         plan.totalMinutes += mins;
       });
 
-    plan.overloaded = plan.totalMinutes > MAX_DAILY_MIN;
     return plan;
   }
 
-  // ── Marcar repaso como hecho / omitido ───────────────────────
+  // ── Avisos de examen próximo ──────────────────────────────────
+  function _checkExamWarnings() {
+    const today = todayStr();
+    const sem   = State._activeSem;
+    if (!sem.examDates) return;
+    Object.entries(sem.examDates).forEach(([key, date]) => {
+      if (!date) return;
+      const days = diffDays(today, date);
+      if (days <= 0 || days > EXAM_WARN_DAYS) return;
+      const [matId, parcial] = key.split('__');
+      const mat = getMat(matId);
+      const label = days === 1 ? '¡Mañana!' : `En ${days} días`;
+      _plannerToast(`📅 Examen ${mat.icon||'📚'} ${mat.name||matId} — ${label}`, 'warning');
+      _pushNotify(`⚠️ Examen próximo: ${mat.name||matId}`, `${label} — Parcial ${parcial}`);
+    });
+  }
+
+  // ── Acciones de repaso ────────────────────────────────────────
   function markReviewDone(topicId, reviewIdx) {
     const topic = State.topics.find(t => t.id === topicId);
     if (!topic?.reviewSchedule?.[reviewIdx]) return;
@@ -252,6 +228,8 @@ const PLANNER = (() => {
     saveState(['topics']);
     renderDailyPlan();
     renderReviewQueue();
+    renderPlannerTimeline();
+    _plannerToast('✅ Repaso completado 🎉', 'ok');
   }
 
   function markReviewSkip(topicId, reviewIdx) {
@@ -261,210 +239,235 @@ const PLANNER = (() => {
     saveState(['topics']);
     renderDailyPlan();
     renderReviewQueue();
+    renderPlannerTimeline();
   }
 
-  // Public API
+  // ── Push notifications ────────────────────────────────────────
+  function _pushNotify(title, body) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      navigator.serviceWorker?.ready.then(sw => {
+        sw.showNotification(title, { body, icon: '/assets/icons/icon-192.png',
+          badge: '/assets/icons/icon-32.png', tag: 'planner-' + Date.now(), data: { url: '/index.html' } });
+      }).catch(() => { try { new Notification(title, { body }); } catch(e) {} });
+    }
+  }
+
+  // ── Toast visual ──────────────────────────────────────────────
+  function _plannerToast(msg, type) {
+    let el = document.getElementById('planner-toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'planner-toast';
+      el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--surface);border-radius:12px;font-size:13px;font-weight:700;z-index:4000;box-shadow:0 4px 24px rgba(0,0,0,.5);max-width:92vw;text-align:center;transition:opacity .3s;display:none;padding:10px 20px;';
+      document.body.appendChild(el);
+    }
+    const colors = { ok: 'var(--accent)', warning: '#fbbf24', error: '#f87171' };
+    el.style.border = `2px solid ${colors[type || 'ok']}`;
+    el.style.color  = 'var(--text)';
+    el.textContent  = msg;
+    el.style.opacity = '1';
+    el.style.display = 'block';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => {
+      el.style.opacity = '0';
+      setTimeout(() => { el.style.display = 'none'; }, 350);
+    }, 3500);
+  }
+
   return {
-    generateReviews,
-    planTaskDates,
-    rescheduleAll,
-    getDailyPlan,
-    getDayMinutes,
-    markReviewDone,
-    markReviewSkip,
-    addDays,
-    todayStr,
-    fmtShort,
-    MAX_DAILY_MIN,
-    NEW_TOPIC_MIN,
+    todayStr, addDays, diffDays, fmtShort, fmtMed,
+    getExamDate, setExamDate,
+    getDayMinutes, loadBar,
+    findBestSlot, generateSmartReviews, planTaskDates,
+    rescheduleAll, getDailyPlan,
+    markReviewDone, markReviewSkip,
+    _pushNotify, _plannerToast, _checkExamWarnings,
+    MAX_DAILY_MIN, NEW_TOPIC_MIN,
   };
 })();
 
 // ═══════════════════════════════════════════════════════════════
-// PLANNER UI — Renderizado del Plan del Día y Cola de Repasos
+// PLANNER UI
 // ═══════════════════════════════════════════════════════════════
+
+function renderPlannerTimeline() {
+  const container = document.getElementById('planner-timeline');
+  if (!container) return;
+
+  const today     = PLANNER.todayStr();
+  const days      = Array.from({ length: 14 }, (_, i) => PLANNER.addDays(today, i));
+  const examDates = State._activeSem.examDates || {};
+
+  const html = `
+    <div class="ptl-wrap">
+      ${days.map(d => {
+        const lb      = PLANNER.loadBar(d);
+        const isToday = d === today;
+        const dayNum  = new Date(d + 'T00:00:00').getDate();
+        const dayName = new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { weekday:'short' }).slice(0,2);
+        const examsToday = Object.entries(examDates).filter(([,date]) => date === d)
+          .map(([key]) => getMat(key.split('__')[0]));
+        const reviewsToday = State.topics.reduce((acc, t) =>
+          acc + (t.reviewSchedule||[]).filter(r => r.date===d && !r.done).length, 0);
+        const tasksToday = State.tasks.filter(t => !t.done && (t.datePlanned===d||(t.plannedWorkDates||[]).includes(d))).length;
+
+        return `
+          <div class="ptl-day ${isToday?'ptl-today':''}" title="${PLANNER.fmtMed(d)} · ${lb.label}">
+            <div class="ptl-exams">
+              ${examsToday.map(m=>`<span title="Examen ${m.name||''}" style="font-size:10px;">📝</span>`).join('')}
+            </div>
+            <div class="ptl-bar-wrap">
+              <div class="ptl-bar" style="height:${lb.pct}%;background:${lb.color};"></div>
+            </div>
+            <div class="ptl-indicators">
+              ${reviewsToday>0?`<span title="${reviewsToday} repaso(s)" style="font-size:9px;">🔁</span>`:''}
+              ${tasksToday>0?`<span title="${tasksToday} tarea(s)" style="font-size:9px;">✅</span>`:''}
+            </div>
+            <div class="ptl-load-txt" style="color:${lb.color};">${lb.pct>=8?lb.pct+'%':''}</div>
+            <div class="ptl-daynum" style="${isToday?'color:var(--accent2);font-weight:800;':''}">${dayNum}</div>
+            <div class="ptl-dayname" style="${isToday?'color:var(--accent2);':''}">${dayName}</div>
+          </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:12px;margin-top:7px;padding:0 2px;flex-wrap:wrap;">
+      ${[['#4ade80','Libre'],['#60a5fa','Moderado'],['#fbbf24','Ocupado'],['#f87171','Lleno']].map(([c,l])=>
+        `<span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block;"></span>${l}</span>`
+      ).join('')}
+      <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">📝=examen 🔁=repaso ✅=tarea</span>
+    </div>`;
+
+  container.innerHTML = html;
+}
 
 function renderDailyPlan(dateStr) {
   const target    = dateStr || PLANNER.todayStr();
   const container = document.getElementById('planner-daily-plan');
   if (!container) return;
 
-  const plan     = PLANNER.getDailyPlan(target);
-  const total    = plan.totalMinutes;
-  const pct      = Math.min(100, Math.round(total / PLANNER.MAX_DAILY_MIN * 100));
-  const barColor = pct >= 100 ? '#f87171' : pct >= 80 ? '#fbbf24' : '#4ade80';
-  const totalH   = (total / 60).toFixed(1);
-  const isEmpty  = !plan.newTopics.length && !plan.reviews.length && !plan.tasks.length;
+  const plan  = PLANNER.getDailyPlan(target);
+  const lb    = PLANNER.loadBar(target);
+  const empty = !plan.newTopics.length && !plan.reviews.length && !plan.tasks.length;
 
-  if (isEmpty) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:32px 16px;color:var(--text3);">
-        <div style="font-size:32px;margin-bottom:8px;">🎉</div>
-        <div style="font-size:14px;font-weight:700;color:var(--text2);">Día sin pendientes</div>
-        <div style="font-size:11px;margin-top:4px;">No hay repasos ni tareas para hoy</div>
-      </div>`;
+  if (empty) {
+    container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);"><div style="font-size:28px;margin-bottom:6px;">🎉</div><div style="font-size:13px;font-weight:700;color:var(--text2);">Sin pendientes hoy</div></div>`;
     return;
   }
 
   let html = `
-    <div style="margin-bottom:14px;">
+    <div style="padding:10px 14px 6px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
         <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;">CARGA DEL DÍA</span>
-        <span style="font-size:12px;font-weight:800;color:${barColor};font-family:'Space Mono',monospace;">
-          ${totalH}h / 4h${plan.overloaded ? ' ⚠️' : ''}
-        </span>
+        <span style="font-size:12px;font-weight:800;color:${lb.color};font-family:'Space Mono',monospace;">${lb.label}${lb.pct>=100?' ⚠️':''}</span>
       </div>
-      <div class="prog-bar" style="height:7px;">
-        <div class="prog-fill" style="background:${barColor};width:${pct}%;border-radius:4px;"></div>
-      </div>
-      ${plan.overloaded ? `<div style="font-size:10px;color:#f87171;margin-top:4px;font-family:'Space Mono',monospace;">Día sobrecargado — considera mover algo</div>` : ''}
+      <div class="prog-bar" style="height:6px;"><div class="prog-fill" style="background:${lb.color};width:${lb.pct}%;border-radius:3px;"></div></div>
+      ${lb.pct>=100?`<div style="font-size:10px;color:#f87171;margin-top:3px;font-family:'Space Mono',monospace;">⚠ Día lleno — el algoritmo priorizará reprogramar</div>`:''}
     </div>`;
 
-  // Temas nuevos
   if (plan.newTopics.length) {
-    html += `<div class="planner-section-title">📖 Tema nuevo (${plan.newTopics.length})</div>`;
-    html += plan.newTopics.map(t => `
+    html += `<div class="planner-section-title">📖 Tema nuevo</div>`;
+    html += plan.newTopics.map(t=>`
       <div class="planner-item">
         <div class="planner-dot" style="background:${t.matColor};"></div>
-        <div class="planner-body">
-          <div class="planner-name">${t.matIcon} ${t.name}</div>
-          <div class="planner-meta">${t.matName} · Parcial ${t.parcial}</div>
-        </div>
+        <div class="planner-body"><div class="planner-name">${t.matIcon} ${t.name}</div><div class="planner-meta">${t.matName} · P${t.parcial}</div></div>
         <span class="planner-mins">${t.minutes} min</span>
       </div>`).join('');
   }
 
-  // Repasos
   if (plan.reviews.length) {
     html += `<div class="planner-section-title">🔁 Repasos (${plan.reviews.length})</div>`;
-    html += plan.reviews.map(r => `
-      <div class="planner-item${r.status === 'low-priority' ? ' planner-lowprio' : ''}">
+    html += plan.reviews.map(r=>`
+      <div class="planner-item${r.status==='low-priority'?' planner-lowprio':''}">
         <div class="planner-dot" style="background:${r.matColor};"></div>
         <div class="planner-body">
-          <div class="planner-name">
-            ${r.matIcon} ${r.name}
-            ${r.difficulty === 'hard' ? '<span class="planner-tag-hard">difícil</span>' : ''}
-            ${r.status === 'low-priority' ? '<span class="planner-tag-skip">↓ prioridad</span>' : ''}
-          </div>
+          <div class="planner-name">${r.matIcon} ${r.name} <span class="planner-tag-num">#${r.num}</span>${r.difficulty==='hard'?'<span class="planner-tag-hard">difícil</span>':''}${r.status==='low-priority'?'<span class="planner-tag-skip">↓ prioridad</span>':''}</div>
           <div class="planner-meta">${r.matName} · ${r.minutes} min</div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0;">
-          <button class="btn btn-ghost btn-sm" onclick="PLANNER.markReviewDone('${r.topicId}',${r.reviewIdx})" title="Repasado" style="padding:4px 7px;">✅</button>
+          <button class="btn btn-ghost btn-sm planner-btn-done" onclick="PLANNER.markReviewDone('${r.topicId}',${r.reviewIdx})" title="Hecho" style="padding:4px 8px;">✅</button>
           <button class="btn btn-ghost btn-sm" onclick="PLANNER.markReviewSkip('${r.topicId}',${r.reviewIdx})" title="Omitir" style="padding:4px 7px;">⏭</button>
         </div>
       </div>`).join('');
   }
 
-  // Tareas
   if (plan.tasks.length) {
-    html += `<div class="planner-section-title">✅ Tareas (${plan.tasks.length})</div>`;
-    html += plan.tasks.map(t => {
-      const dueStr    = t.due ? `· 📅 ${new Date(t.due + 'T00:00:00').toLocaleDateString('es-ES', {day:'numeric', month:'short'})}` : '';
-      const prioColor = t.priority === 'high' ? '#f87171' : t.priority === 'low' ? '#4ade80' : '#fbbf24';
-      return `
-        <div class="planner-item" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;">
-          <div class="planner-dot" style="background:${t.matColor};"></div>
-          <div class="planner-body">
-            <div class="planner-name">${t.matIcon} ${t.title}</div>
-            <div class="planner-meta">${t.matName} ${dueStr}</div>
-          </div>
-          <span class="planner-mins" style="color:${prioColor};">${t.minutes} min</span>
-        </div>`;
+    html += `<div class="planner-section-title">✅ Tareas del día</div>`;
+    html += plan.tasks.map(t=>{
+      const dStr = t.due ? `· 📅 ${new Date(t.due+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})}` : '';
+      const pc   = t.priority==='high'?'#f87171':t.priority==='low'?'#4ade80':'#fbbf24';
+      return `<div class="planner-item" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;">
+        <div class="planner-dot" style="background:${t.matColor};"></div>
+        <div class="planner-body"><div class="planner-name">${t.matIcon} ${t.title}</div><div class="planner-meta">${t.matName} ${dStr}</div></div>
+        <span class="planner-mins" style="color:${pc};">${t.minutes} min</span>
+      </div>`;
     }).join('');
   }
 
   container.innerHTML = html;
 }
 
-// ── Cola de repasos (sección en página de Temas) ─────────────
 function renderReviewQueue() {
   const container = document.getElementById('planner-review-queue');
   if (!container) return;
-
   const today = PLANNER.todayStr();
-
-  // Recopilar todos los repasos activos (no hechos, no omitidos)
   const items = [];
+
   State.topics.forEach(topic => {
-    // Solo parciales activos — comparar con el parcial más reciente usado
-    (topic.reviewSchedule || []).forEach((r, idx) => {
-      if (r.done || r.status === 'skipped') return;
+    (topic.reviewSchedule||[]).forEach((r,idx) => {
+      if (r.done || r.status==='skipped') return;
       const m = getMat(topic.matId);
-      items.push({
-        topicId:    topic.id,
-        reviewIdx:  idx,
-        name:       topic.name,
-        difficulty: topic.difficulty || 'normal',
-        matName:    m.name  || '—',
-        matIcon:    m.icon  || '📚',
-        matColor:   m.color || 'var(--accent)',
-        date:       r.date,
-        status:     r.status,
-        minutes:    r.minutes || 20,
-        overdue:    r.date < today,
-        isToday:    r.date === today,
-        parcial:    topic.parcial,
-      });
+      items.push({ topicId:topic.id, reviewIdx:idx, name:topic.name, difficulty:topic.difficulty||'normal',
+        matName:m.name||'—', matIcon:m.icon||'📚', matColor:m.color||'var(--accent)',
+        date:r.date, status:r.status, minutes:r.minutes||20, overdue:r.date<today, isToday:r.date===today,
+        parcial:topic.parcial, num:r.num||1, movedFrom:r.movedFrom||null });
     });
   });
 
-  items.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  items.sort((a,b) => a.date<b.date?-1:1);
 
   if (!items.length) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:24px;color:var(--text3);">
-        <div style="font-size:24px;margin-bottom:6px;">✨</div>
-        <div style="font-size:12px;">Sin repasos pendientes</div>
-      </div>`;
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;">✨ Sin repasos pendientes</div>`;
     return;
   }
 
-  // Agrupar por fecha
   const grouped = {};
-  items.forEach(item => {
-    if (!grouped[item.date]) grouped[item.date] = [];
-    grouped[item.date].push(item);
-  });
+  items.forEach(i => { if (!grouped[i.date]) grouped[i.date]=[]; grouped[i.date].push(i); });
 
   let html = '';
   Object.keys(grouped).sort().forEach(date => {
-    const isToday = date === today;
-    const isPast  = date < today;
-    const label   = isToday ? '📍 Hoy'
-      : isPast   ? `⚠️ Atrasado · ${PLANNER.fmtShort(date)}`
-      : PLANNER.fmtShort(date);
-    const hdrColor = isPast ? '#f87171' : isToday ? 'var(--accent2)' : 'var(--text2)';
-    const dayMins  = PLANNER.getDayMinutes(date);
-    const loadPct  = Math.min(100, Math.round(dayMins / PLANNER.MAX_DAILY_MIN * 100));
-    const loadClr  = loadPct >= 100 ? '#f87171' : loadPct >= 80 ? '#fbbf24' : '#4ade80';
+    const isToday = date===today, isPast = date<today;
+    const lb = PLANNER.loadBar(date);
+    const label = isToday ? '📍 Hoy' : isPast ? `⚠️ ${PLANNER.fmtShort(date)}` : PLANNER.fmtShort(date);
+    const hColor = isPast ? '#f87171' : isToday ? 'var(--accent2)' : 'var(--text2)';
 
-    html += `
-      <div style="margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 2px;">
-          <span style="font-size:11px;font-weight:800;color:${hdrColor};font-family:'Space Mono',monospace;">${label}</span>
-          <span style="font-size:10px;color:${loadClr};font-family:'Space Mono',monospace;">${(dayMins/60).toFixed(1)}h / 4h</span>
-        </div>`;
+    html += `<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 14px 4px;border-bottom:1px solid var(--border);">
+        <span style="font-size:11px;font-weight:800;color:${hColor};font-family:'Space Mono',monospace;">${label}</span>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <div class="prog-bar" style="width:44px;height:4px;"><div class="prog-fill" style="background:${lb.color};width:${lb.pct}%;"></div></div>
+          <span style="font-size:10px;color:${lb.color};font-family:'Space Mono',monospace;">${lb.label}</span>
+        </div>
+      </div>`;
 
     grouped[date].forEach(item => {
-      html += `
-        <div class="planner-item${item.status === 'low-priority' ? ' planner-lowprio' : ''}" style="margin-bottom:5px;">
-          <div class="planner-dot" style="background:${item.matColor};"></div>
-          <div class="planner-body">
-            <div class="planner-name" style="font-size:12px;">
-              ${item.matIcon} ${item.name}
-              <span style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;">P${item.parcial}</span>
-              ${item.difficulty === 'hard' ? '<span class="planner-tag-hard">difícil</span>' : ''}
-              ${item.status === 'low-priority' ? '<span class="planner-tag-skip">↓</span>' : ''}
-            </div>
-            <div class="planner-meta">${item.matName} · ${item.minutes} min</div>
+      html += `<div class="planner-item${item.status==='low-priority'?' planner-lowprio':''}">
+        <div class="planner-dot" style="background:${item.matColor};"></div>
+        <div class="planner-body">
+          <div class="planner-name" style="font-size:12px;">${item.matIcon} ${item.name}
+            <span class="planner-tag-num">#${item.num}</span>
+            <span style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;">P${item.parcial}</span>
+            ${item.difficulty==='hard'?'<span class="planner-tag-hard">difícil</span>':''}
+            ${item.movedFrom?`<span class="planner-tag-moved" title="Movido de ${PLANNER.fmtShort(item.movedFrom)}">↪</span>`:''}
+            ${item.status==='low-priority'?'<span class="planner-tag-skip">↓</span>':''}
           </div>
-          <div style="display:flex;gap:4px;flex-shrink:0;">
-            <button class="btn btn-ghost btn-sm" onclick="PLANNER.markReviewDone('${item.topicId}',${item.reviewIdx})" title="Repasado" style="padding:3px 7px;font-size:11px;">✅</button>
-            <button class="btn btn-ghost btn-sm" onclick="PLANNER.markReviewSkip('${item.topicId}',${item.reviewIdx})" title="Omitir" style="padding:3px 7px;font-size:11px;">⏭</button>
-          </div>
-        </div>`;
+          <div class="planner-meta">${item.matName} · ${item.minutes} min</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          <button class="btn btn-ghost btn-sm planner-btn-done" onclick="PLANNER.markReviewDone('${item.topicId}',${item.reviewIdx})" style="padding:3px 7px;">✅</button>
+          <button class="btn btn-ghost btn-sm" onclick="PLANNER.markReviewSkip('${item.topicId}',${item.reviewIdx})" style="padding:3px 7px;">⏭</button>
+        </div>
+      </div>`;
     });
-
     html += `</div>`;
   });
 
@@ -472,56 +475,49 @@ function renderReviewQueue() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// OVERRIDE: openTopicModal y saveTopic
-// Estas funciones reemplazan las de app.js/materias.js
-// porque planner.js carga después.
+// OVERRIDES: openTopicModal / saveTopic / renderTopics
 // ═══════════════════════════════════════════════════════════════
 
 function openTopicModal() {
   fillMatSels();
-  const today = PLANNER.todayStr();
-  document.getElementById('tp-name').value              = '';
-  document.getElementById('tp-subs').value              = '';
-  if (document.getElementById('tp-difficulty'))
-    document.getElementById('tp-difficulty').value      = 'normal';
-  if (document.getElementById('tp-date-added'))
-    document.getElementById('tp-date-added').value      = today;
-  if (document.getElementById('tp-est-minutes'))
-    document.getElementById('tp-est-minutes').value     = '50';
+  document.getElementById('tp-name').value = '';
+  document.getElementById('tp-subs').value = '';
+  if (document.getElementById('tp-difficulty'))   document.getElementById('tp-difficulty').value   = 'normal';
+  if (document.getElementById('tp-date-added'))   document.getElementById('tp-date-added').value   = PLANNER.todayStr();
+  if (document.getElementById('tp-est-minutes'))  document.getElementById('tp-est-minutes').value  = '50';
+  _updateExamDateSelector();
   document.getElementById('modal-topic').classList.add('open');
 }
 
 function saveTopic() {
   const name = document.getElementById('tp-name').value.trim();
-  if (!name) return;
+  if (!name) { document.getElementById('tp-name').style.borderColor='var(--red)'; return; }
+  document.getElementById('tp-name').style.borderColor = '';
 
   const subsRaw = document.getElementById('tp-subs').value.trim();
   const subs    = subsRaw
-    ? subsRaw.split('\n').map(s => s.trim()).filter(Boolean)
-              .map(s => ({ name: s, seen: false, comp: 0 }))
+    ? subsRaw.split('\n').map(s=>s.trim()).filter(Boolean).map(s=>({name:s,seen:false,comp:0,done:false}))
     : [];
 
-  const difficulty = document.getElementById('tp-difficulty')?.value     || 'normal';
-  const dateAdded  = document.getElementById('tp-date-added')?.value     || PLANNER.todayStr();
+  const matId      = document.getElementById('tp-mat').value;
+  const parcial    = document.getElementById('tp-parcial').value;
+  const difficulty = document.getElementById('tp-difficulty')?.value    || 'normal';
+  const dateAdded  = document.getElementById('tp-date-added')?.value    || PLANNER.todayStr();
   const estMinutes = parseInt(document.getElementById('tp-est-minutes')?.value) || 50;
 
-  const topic = {
-    id:             Date.now().toString(),
-    matId:          document.getElementById('tp-mat').value,
-    parcial:        document.getElementById('tp-parcial').value,
-    name,
-    seen:           false,
-    comp:           0,
-    subs,
-    // Campos nuevos
-    difficulty,
-    dateAdded,
-    estMinutes,
-    reviewSchedule: [],
-  };
+  const examInput = document.getElementById('tp-exam-date');
+  if (examInput?.value) PLANNER.setExamDate(matId, parcial, examInput.value);
 
-  // Generar calendario de repasos
-  topic.reviewSchedule = PLANNER.generateReviews(topic);
+  const topic = { id: Date.now().toString(), matId, parcial, name, seen:false, comp:0, subs, difficulty, dateAdded, estMinutes, reviewSchedule:[] };
+
+  if (!subs.length) {
+    topic.reviewSchedule = PLANNER.generateSmartReviews(topic);
+    const next = topic.reviewSchedule.find(r => r.status==='pending');
+    if (next) PLANNER._plannerToast(`✅ Guardado · próximo repaso ${PLANNER.fmtShort(next.date)}`);
+    else PLANNER._plannerToast('✅ Tema guardado');
+  } else {
+    PLANNER._plannerToast('✅ Guardado · marca subtemas para activar repasos');
+  }
 
   State.topics.push(topic);
   saveState(['topics']);
@@ -529,54 +525,216 @@ function saveTopic() {
   renderTopics();
   renderDailyPlan();
   renderReviewQueue();
-
-  // Toast con próximo repaso
-  const next = topic.reviewSchedule.find(r => r.status === 'pending');
-  if (next) {
-    const lbl = next.date === PLANNER.todayStr() ? 'hoy' : PLANNER.fmtShort(next.date);
-    _plannerToast(`✅ Tema guardado · Próximo repaso: ${lbl}`);
-  }
+  renderPlannerTimeline();
+  PLANNER._checkExamWarnings();
 }
 
-// ── Distribuir fechas al guardar una tarea con estDays ────────
+function _updateExamDateSelector() {
+  const matId   = document.getElementById('tp-mat')?.value;
+  const parcial = document.getElementById('tp-parcial')?.value;
+  const el      = document.getElementById('tp-exam-date');
+  if (!el || !matId || !parcial) return;
+  el.value = PLANNER.getExamDate(matId, parcial) || '';
+}
+
+function togglePlannerSubtopic(topicId, subIdx) {
+  const topic = State.topics.find(t => t.id === topicId);
+  if (!topic?.subs?.[subIdx]) return;
+
+  topic.subs[subIdx].done = !topic.subs[subIdx].done;
+  topic.subs[subIdx].seen = topic.subs[subIdx].done;
+  if (topic.subs[subIdx].done) topic.subs[subIdx].comp = 100;
+
+  const anyDone   = topic.subs.some(s => s.done);
+  const hasReviews = (topic.reviewSchedule||[]).length > 0;
+
+  if (anyDone && !hasReviews) {
+    topic.reviewSchedule = PLANNER.generateSmartReviews(topic);
+    const next = topic.reviewSchedule.find(r => r.status==='pending');
+    if (next) {
+      PLANNER._plannerToast(`🔁 Repasos agendados · próximo ${PLANNER.fmtShort(next.date)}`);
+      PLANNER._pushNotify(`🔁 Repasos: ${topic.name}`, `Próximo repaso el ${PLANNER.fmtShort(next.date)}`);
+    }
+  }
+
+  saveState(['topics']);
+  renderTopics();
+  renderDailyPlan();
+  renderReviewQueue();
+  renderPlannerTimeline();
+}
+
+function renderTopics() {
+  const matId     = document.getElementById('topics-mat-sel')?.value || '';
+  const container = document.getElementById('topics-container');
+  if (!container) return;
+  if (!matId) { container.innerHTML = ''; return; }
+
+  const mat       = getMat(matId);
+  const matTopics = State.topics.filter(t => t.matId === matId);
+  const totalT    = matTopics.length;
+  const seenT     = matTopics.filter(t => t.seen || t.subs?.some(s=>s.done)).length;
+  const avgComp   = totalT ? Math.round(matTopics.reduce((a,t)=>a+t.comp,0)/totalT) : 0;
+  const needRev   = matTopics.filter(t => t.comp<70 && (t.seen||t.subs?.some(s=>s.done))).length;
+  const sem       = State._activeSem;
+  const examDates = sem.examDates || {};
+  const today     = PLANNER.todayStr();
+  const parciales = ['1','2','3','final'];
+
+  let html = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
+      <div class="stat-mini"><div class="stat-mini-lbl">✅ VISTOS</div>
+        <div class="stat-mini-val" style="color:#4ade80;">${seenT}<span style="font-size:13px;color:var(--text3);">/${totalT}</span></div>
+        <div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:#4ade80;width:${totalT?seenT/totalT*100:0}%;"></div></div>
+      </div>
+      <div class="stat-mini"><div class="stat-mini-lbl">🧠 COMPRENSIÓN</div>
+        <div class="stat-mini-val" style="color:${barColor(avgComp)};">${avgComp}%</div>
+        <div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:${barColor(avgComp)};width:${avgComp}%;"></div></div>
+      </div>
+      <div class="stat-mini"><div class="stat-mini-lbl">⚠️ REPASO</div>
+        <div class="stat-mini-val" style="color:#fbbf24;">${needRev}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">&lt;70% comp.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><span class="card-title" style="font-size:12px;">📝 Fechas de Examen</span></div>
+      <div class="card-body" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 14px;">
+        ${parciales.map(p => {
+          const key  = `${matId}__${p}`;
+          const date = examDates[key] || '';
+          const days = date ? PLANNER.diffDays(today, date) : null;
+          const urg  = days!==null && days<=3 ? '#f87171' : days!==null && days<=7 ? '#fbbf24' : 'var(--text3)';
+          return `<div>
+            <label style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;">${p==='final'?'FINAL':'PARCIAL '+p}</label>
+            <div style="display:flex;gap:5px;align-items:center;margin-top:3px;">
+              <input type="date" class="form-input" style="font-size:13px;flex:1;padding:5px 8px;"
+                value="${date}" onchange="PLANNER.setExamDate('${matId}','${p}',this.value)">
+              ${days!==null&&days>=0?`<span style="font-size:10px;font-weight:800;color:${urg};white-space:nowrap;">${days===0?'¡HOY!':days+'d'}</span>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  const parts = [{v:'1',l:'Parcial 1'},{v:'2',l:'Parcial 2'},{v:'3',l:'Parcial 3'},{v:'final',l:'Final'}];
+  let any = false;
+
+  parts.forEach(p => {
+    const pts = matTopics.filter(t => t.parcial === p.v);
+    if (!pts.length) return;
+    any = true;
+    const examDate   = PLANNER.getExamDate(matId, p.v);
+    const daysToExam = examDate ? PLANNER.diffDays(today, examDate) : null;
+    const examBadge  = daysToExam!==null
+      ? `<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;background:${daysToExam<=3?'rgba(248,113,113,.2)':daysToExam<=7?'rgba(251,191,36,.2)':'var(--surface2)'};color:${daysToExam<=3?'#f87171':daysToExam<=7?'#fbbf24':'var(--text3)'};">
+          📝 ${daysToExam===0?'¡Hoy!':daysToExam<0?'Pasado':`En ${daysToExam}d`}
+        </span>` : '';
+
+    html += `<div class="card" style="margin-bottom:14px;">
+      <div class="card-header" style="border-left:3px solid ${mat.color};">
+        <span class="card-title" style="padding-left:8px;">📖 ${p.l}</span>
+        <div style="display:flex;gap:8px;align-items:center;">${examBadge}
+          <span style="font-size:11px;color:var(--text3);">${pts.filter(t=>t.subs?.some(s=>s.done)||t.seen).length}/${pts.length}</span>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">${pts.map(t=>_renderTopicItem(t,mat)).join('')}</div>
+    </div>`;
+  });
+
+  if (!any) html += `<div style="text-align:center;padding:48px;color:var(--text3);">📖 Presiona "+ Agregar Tema" para comenzar</div>`;
+  container.innerHTML = html;
+}
+
+function _renderTopicItem(t, mat) {
+  const today      = PLANNER.todayStr();
+  const hasSubs    = t.subs && t.subs.length > 0;
+  const anyDone    = t.subs?.some(s => s.done);
+  const allDone    = hasSubs && t.subs.every(s => s.done);
+  const hasReviews = (t.reviewSchedule||[]).length > 0;
+  const nextReview = hasReviews ? t.reviewSchedule.find(r => !r.done && r.status==='pending') : null;
+  const doneSubs   = t.subs?.filter(s=>s.done).length || 0;
+  const totalSubs  = t.subs?.length || 0;
+  const pendRevs   = (t.reviewSchedule||[]).filter(r=>!r.done&&r.status!=='skipped');
+  const doneRevs   = (t.reviewSchedule||[]).filter(r=>r.done).length;
+  const dotColor   = allDone ? '#4ade80' : anyDone ? '#fbbf24' : mat.color;
+
+  return `<div class="planner-topic-item" id="topic-item-${t.id}">
+    <div class="planner-topic-header" onclick="togglePlannerTopic('${t.id}')">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${dotColor};flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</div>
+          <div style="display:flex;gap:7px;align-items:center;margin-top:2px;flex-wrap:wrap;">
+            ${hasSubs ? `<span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${doneSubs}/${totalSubs} sub.</span>` : ''}
+            ${nextReview ? `<span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;">🔁 ${nextReview.date===today?'hoy':PLANNER.fmtShort(nextReview.date)}</span>` : ''}
+            ${!hasReviews && !hasSubs ? `<span style="font-size:10px;color:var(--text3);">sin repasos</span>` : ''}
+            ${t.difficulty==='hard' ? `<span class="planner-tag-hard">difícil</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+        ${doneRevs>0?`<span style="font-size:10px;color:#4ade80;font-family:'Space Mono',monospace;">✅${doneRevs}</span>`:''}
+        ${pendRevs.length>0?`<span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;">🔁${pendRevs.length}</span>`:''}
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTopic('${t.id}')" style="padding:3px 7px;font-size:11px;">✕</button>
+        <span id="chev-${t.id}" style="font-size:11px;color:var(--text3);transition:transform .2s;display:inline-block;">▶</span>
+      </div>
+    </div>
+
+    <div class="planner-topic-body" id="tbody-${t.id}" style="display:none;">
+      ${hasSubs ? `<div style="padding:8px 14px 4px;">
+          <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:6px;">SUBTEMAS — marca cuando lo ves en clase</div>
+          ${t.subs.map((s,i)=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="togglePlannerSubtopic('${t.id}',${i})">
+              <div style="width:18px;height:18px;border-radius:5px;flex-shrink:0;border:2px solid ${s.done?'#4ade80':'var(--border2)'};background:${s.done?'#4ade80':'transparent'};display:flex;align-items:center;justify-content:center;">
+                ${s.done?'<span style="font-size:11px;color:#111;">✓</span>':''}
+              </div>
+              <span style="font-size:12px;flex:1;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${s.name}</span>
+            </div>`).join('')}
+        </div>` : `<div style="padding:8px 14px 4px;font-size:11px;color:var(--text3);">Sin subtemas · repasos se generaron al crear el tema</div>`}
+
+      ${pendRevs.length>0 ? `<div style="padding:8px 14px;border-top:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:6px;">REPASOS AGENDADOS</div>
+          ${pendRevs.map(r=>{
+            const lb = PLANNER.loadBar(r.date);
+            const isT = r.date===today;
+            return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;">
+              <span style="font-family:'Space Mono',monospace;color:${isT?'var(--accent2)':'var(--text2)'};font-weight:${isT?800:400};min-width:70px;">${isT?'HOY':PLANNER.fmtShort(r.date)}</span>
+              <div class="prog-bar" style="width:36px;height:4px;flex-shrink:0;"><div class="prog-fill" style="background:${lb.color};width:${lb.pct}%;"></div></div>
+              <span style="color:${lb.color};font-size:10px;flex:1;">${lb.label}</span>
+              <span style="color:var(--text3);">${r.minutes}min</span>
+              ${r.status==='low-priority'?'<span class="planner-tag-skip">↓</span>':''}
+            </div>`;
+          }).join('')}
+        </div>` : hasSubs ? `<div style="padding:6px 14px 8px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);">↑ Marca un subtema para activar repasos</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function togglePlannerTopic(id) {
+  const body = document.getElementById('tbody-' + id);
+  const chev = document.getElementById('chev-' + id);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? '' : 'rotate(90deg)';
+}
+
 function _plannerApplyTaskDates(task) {
   if (!task.estDays || !task.estHoursPerDay || !task.due) return;
   task.plannedWorkDates = PLANNER.planTaskDates(task);
 }
 
-// ── Toast ──────────────────────────────────────────────────────
-function _plannerToast(msg) {
-  let el = document.getElementById('planner-toast');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'planner-toast';
-    el.style.cssText = [
-      'position:fixed', 'bottom:90px', 'left:50%', 'transform:translateX(-50%)',
-      'background:var(--surface)', 'border:1px solid var(--accent)',
-      'color:var(--text)', 'padding:10px 20px', 'border-radius:10px',
-      'font-size:13px', 'font-weight:700', 'z-index:3000',
-      'box-shadow:0 4px 20px rgba(0,0,0,.4)',
-      'max-width:90vw', 'text-align:center',
-      'transition:opacity .3s',
-    ].join(';');
-    document.body.appendChild(el);
-  }
-  el.textContent  = msg;
-  el.style.opacity = '1';
-  el.style.display = 'block';
-  clearTimeout(el._t);
-  el._t = setTimeout(() => {
-    el.style.opacity = '0';
-    setTimeout(() => { el.style.display = 'none'; }, 300);
-  }, 3000);
-}
-
-// ── Inicializar al cargar ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     if (typeof State === 'undefined') return;
     PLANNER.rescheduleAll();
+    PLANNER._checkExamWarnings();
     renderDailyPlan();
     renderReviewQueue();
-  }, 600);
+    renderPlannerTimeline();
+    if ('Notification' in window && Notification.permission === 'default') {
+      setTimeout(() => Notification.requestPermission(), 4000);
+    }
+  }, 700);
 });

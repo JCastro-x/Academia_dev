@@ -199,7 +199,7 @@
           <div id="ov-tasks-list" style="max-height:560px;overflow-y:auto;"></div>
         </div>
 
-        <!-- 🗓️ PLAN DEL DÍA -->
+        <!-- 🗓️ Plan del Día -->
         <div class="card" style="margin-top:16px;">
           <div class="card-header">
             <span class="card-title">🗓️ Plan del Día</span>
@@ -541,17 +541,29 @@
           <button class="btn btn-ghost btn-sm" onclick="openFromHub('general')" style="flex-shrink:0;">← General</button>
           <span style="font-size:16px;font-weight:700;">📖 Temas del Curso</span>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-            <select id="topics-mat-sel" class="form-select" style="width:auto;padding:6px 10px;font-size:12px;" onchange="renderTopics()"></select>
+            <select id="topics-mat-sel" class="form-select" style="width:auto;padding:6px 10px;font-size:12px;" onchange="renderTopics();renderReviewQueue();"></select>
             <button class="btn btn-primary btn-sm" onclick="openTopicModal()">+ Agregar Tema</button>
           </div>
         </div>
-        <!-- Cola de repasos pendientes -->
-        <div class="card" style="margin-bottom:16px;">
-          <div class="card-header" style="cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';">
-            <span class="card-title">🔁 Repasos Pendientes</span>
-            <span style="font-size:11px;color:var(--text3);">toca para expandir ▾</span>
+
+        <!-- Línea de tiempo 14 días -->
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header">
+            <span class="card-title" style="font-size:12px;">📊 Carga — Próximos 14 días</span>
+            <button class="btn btn-ghost btn-sm" onclick="PLANNER.rescheduleAll();renderReviewQueue();renderPlannerTimeline();PLANNER._plannerToast('✅ Repasos reagendados','ok');" style="font-size:11px;">↻ Reagendar</button>
           </div>
-          <div id="planner-review-queue" style="padding:4px 0;"></div>
+          <div class="card-body" style="padding:10px 14px 12px;">
+            <div id="planner-timeline"></div>
+          </div>
+        </div>
+
+        <!-- Cola de repasos -->
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header" style="cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('planner-collapsed')">
+            <span class="card-title">🔁 Repasos Pendientes</span>
+            <span style="font-size:11px;color:var(--text3);">▾ expandir</span>
+          </div>
+          <div id="planner-review-queue"></div>
         </div>
 
         <div id="topics-container"></div>
@@ -1233,30 +1245,44 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">📆 Días de trabajo estimados</label>
-          <input type="number" class="form-input" id="t-est-days" min="1" max="30" placeholder="ej: 3" style="font-size:16px;">
-        </div>
-        <div class="form-group">
-          <label class="form-label">⏱ Horas por día</label>
-          <input type="number" class="form-input" id="t-est-hrs" min="0.5" max="8" step="0.5" placeholder="ej: 1.5" style="font-size:16px;">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">⏱ Tiempo estimado (sesión)</label>
+          <label class="form-label">⏱ Duración estimada (sesión)</label>
           <select class="form-select" id="t-time-est">
             <option value="">— Sin estimar —</option>
-            <option value="15">15 minutos</option>
-            <option value="30">30 minutos</option>
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
             <option value="60">1 hora</option>
             <option value="90">1.5 horas</option>
             <option value="120">2 horas</option>
             <option value="180">3 horas</option>
-            <option value="300">5 horas</option>
-            <option value="480">Todo el día (8h)</option>
+            <option value="240">4 horas</option>
           </select>
         </div>
         <div class="form-group"><label class="form-label">🏷 Tags (separados por coma)</label>
           <input type="text" class="form-input" id="t-tags" placeholder="ej: parcial, urgente, lab"></div>
+      </div>
+
+      <!-- Planificación distribuida -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:4px;">
+        <div style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:10px;">📆 PLANIFICACIÓN DISTRIBUIDA (OPCIONAL)</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Días de trabajo estimados</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-days',-1,1,30,1)" style="padding:5px 10px;font-size:16px;font-weight:800;">−</button>
+              <input type="number" class="form-input" id="t-est-days" min="1" max="30" placeholder="—" style="text-align:center;font-size:16px;width:60px;padding:5px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-days',1,1,30,1)" style="padding:5px 10px;font-size:16px;font-weight:800;">+</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Horas por día</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-hrs',-1,0.5,4,0.5)" style="padding:5px 10px;font-size:16px;font-weight:800;">−</button>
+              <input type="number" class="form-input" id="t-est-hrs" min="0.5" max="4" step="0.5" placeholder="—" style="text-align:center;font-size:16px;width:60px;padding:5px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-hrs',1,0.5,4,0.5)" style="padding:5px 10px;font-size:16px;font-weight:800;">+</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">El planificador distribuirá el trabajo en los días con más espacio antes del deadline.</div>
       </div>
       <div class="form-group"><label class="form-label">Descripción / Notas</label>
         <textarea class="form-textarea" id="t-notes" rows="3" placeholder="Detalles adicionales, instrucciones..."></textarea></div>
@@ -1341,45 +1367,59 @@
 
 <!-- TOPIC MODAL -->
 <div class="modal-overlay" id="modal-topic">
-  <div class="modal">
+  <div class="modal" style="max-width:520px;">
     <div class="modal-close" onclick="closeModal('modal-topic')">✕</div>
-    <div class="modal-title">📖 Agregar Tema</div>
+    <div class="modal-title">📖 Registrar Tema de Clase</div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="tp-mat"></select></div>
-      <div class="form-group"><label class="form-label">Parcial</label>
-        <select class="form-select" id="tp-parcial">
-          <option value="1">Parcial 1</option><option value="2">Parcial 2</option>
-          <option value="3">Parcial 3</option><option value="final">Final</option>
+      <div class="form-group">
+        <label class="form-label">Materia</label>
+        <select class="form-select" id="tp-mat" onchange="_updateExamDateSelector()"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Parcial</label>
+        <select class="form-select" id="tp-parcial" onchange="_updateExamDateSelector()">
+          <option value="1">Parcial 1</option>
+          <option value="2">Parcial 2</option>
+          <option value="3">Parcial 3</option>
+          <option value="final">Final</option>
         </select>
       </div>
     </div>
-    <div class="form-group"><label class="form-label">Nombre del tema</label>
-      <input type="text" class="form-input" id="tp-name" placeholder="Ej: Derivadas — Regla de la cadena"></div>
-    <div class="form-group"><label class="form-label">Subtemas (uno por línea, opcional)</label>
-      <textarea class="form-textarea" id="tp-subs" rows="3" placeholder="Ej:&#10;Derivada implícita&#10;Derivadas de orden superior"></textarea></div>
-    <div class="form-row" style="margin-top:10px;">
+    <div class="form-row">
       <div class="form-group">
-        <label class="form-label">📅 Fecha de clase</label>
-        <input type="date" class="form-input" id="tp-date-added">
+        <label class="form-label">📅 Fecha de la clase</label>
+        <input type="date" class="form-input" id="tp-date-added" style="font-size:16px;">
       </div>
       <div class="form-group">
-        <label class="form-label">🧠 Dificultad</label>
+        <label class="form-label">🧠 Dificultad del tema</label>
         <select class="form-select" id="tp-difficulty">
-          <option value="normal">Normal · repaso en +2 y +6 días</option>
-          <option value="hard">Difícil · repaso en +2, +5 y +10 días</option>
+          <option value="normal">Normal · 2 repasos</option>
+          <option value="hard">Difícil · 3 repasos</option>
         </select>
       </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nombre del tema</label>
+      <input type="text" class="form-input" id="tp-name" placeholder="Ej: Derivadas — Regla de la cadena">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subtemas (uno por línea) <span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;">→ marcar como visto activa el repaso</span></label>
+      <textarea class="form-textarea" id="tp-subs" rows="3" placeholder="Derivada implícita&#10;Derivadas de orden superior&#10;Regla de la cadena"></textarea>
     </div>
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">⏱ Tiempo de estudio inicial</label>
         <select class="form-select" id="tp-est-minutes">
-          <option value="30">30 min</option>
+          <option value="30">30 min — tema corto</option>
           <option value="45">45 min</option>
-          <option value="50" selected>50 min (recomendado)</option>
-          <option value="60">60 min</option>
-          <option value="90">90 min (tema largo)</option>
+          <option value="50" selected>50 min — recomendado</option>
+          <option value="60">60 min — tema largo</option>
+          <option value="90">90 min — muy denso</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">📝 Fecha del examen (opcional)</label>
+        <input type="date" class="form-input" id="tp-exam-date" style="font-size:16px;" placeholder="Para optimizar repasos">
       </div>
     </div>
     <div class="form-actions">
