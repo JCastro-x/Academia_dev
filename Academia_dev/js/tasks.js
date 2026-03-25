@@ -108,11 +108,11 @@ function openTaskModal(id) {
     document.getElementById('t-prio').value  = existing.priority;
     document.getElementById('t-date-planned').value = existing.datePlanned || '';
     document.getElementById('t-due').value   = existing.due || '';
-    if (document.getElementById('t-time-planned')) document.getElementById('t-time-planned').value = existing.timePlanned || '';
-    if (document.getElementById('t-due-time'))     document.getElementById('t-due-time').value     = existing.dueTime     || '';
     document.getElementById('t-type').value  = existing.type || 'Tarea';
     document.getElementById('t-notes').value = existing.notes || '';
     if (document.getElementById('t-time-est')) document.getElementById('t-time-est').value = existing.timeEst || '';
+    if (document.getElementById('t-est-days')) document.getElementById('t-est-days').value = existing.estDays || '';
+    if (document.getElementById('t-est-hrs'))  document.getElementById('t-est-hrs').value  = existing.estHoursPerDay || '';
     if (document.getElementById('t-tags')) document.getElementById('t-tags').value = (existing.tags||[]).join(', ');
     if (document.getElementById('t-repeat'))       document.getElementById('t-repeat').value       = existing.repeat      || 'none';
     if (document.getElementById('t-repeat-until')) document.getElementById('t-repeat-until').value = existing.repeatUntil || '';
@@ -126,12 +126,12 @@ function openTaskModal(id) {
     document.getElementById('t-title').value = '';
     document.getElementById('t-date-planned').value = '';
     document.getElementById('t-due').value   = '';
-    if (document.getElementById('t-time-planned')) document.getElementById('t-time-planned').value = '';
-    if (document.getElementById('t-due-time'))     document.getElementById('t-due-time').value     = '';
     document.getElementById('t-notes').value = '';
     document.getElementById('t-prio').value  = 'med';
     document.getElementById('t-type').value  = 'Tarea';
     if (document.getElementById('t-time-est')) document.getElementById('t-time-est').value = '';
+    if (document.getElementById('t-est-days')) document.getElementById('t-est-days').value = '';
+    if (document.getElementById('t-est-hrs'))  document.getElementById('t-est-hrs').value  = '';
     if (document.getElementById('t-tags')) document.getElementById('t-tags').value = '';
     if (document.getElementById('t-repeat'))       document.getElementById('t-repeat').value       = 'none';
     if (document.getElementById('t-repeat-until')) document.getElementById('t-repeat-until').value = '';
@@ -198,8 +198,9 @@ function saveTask() {
     repeatUntil: document.getElementById('t-repeat-until')?.value || '',
     repeatCount: parseInt(document.getElementById('t-repeat-count')?.value) || 0,
     repeatDone:  existing ? (existing.repeatDone || 0) : 0,
-    timePlanned: document.getElementById('t-time-planned')?.value || '',
-    dueTime:     document.getElementById('t-due-time')?.value     || '',
+    // Planificación distribuida
+    estDays:         parseInt(document.getElementById('t-est-days')?.value)  || 0,
+    estHoursPerDay:  parseFloat(document.getElementById('t-est-hrs')?.value) || 0,
   };
 
   // Si tiene repetición y se está creando: generar las instancias
@@ -216,6 +217,9 @@ function saveTask() {
   } else {
     State.tasks.unshift(task);
   }
+
+  // Distribuir fechas de trabajo si se ingresaron días/horas
+  if (typeof _plannerApplyTaskDates === 'function') _plannerApplyTaskDates(task);
 
   saveState(['tasks']);
   closeModal('modal-task');
@@ -418,8 +422,7 @@ function _renderTasks() {
           <span class="task-subject" style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;">${m.icon||'📚'} ${m.code||'?'}</span>
           <span class="type-badge ${tBadge}">${t.type || 'Tarea'}</span>
           ${prioBadge(t.priority)}
-          ${t.due ? `<span class="task-due ${dc}">📅 ${fmtD(t.due)}${t.dueTime ? ' · ⏰ '+t.dueTime : ''}</span>` : ''}
-          ${t.datePlanned ? `<span style="font-size:10px;color:var(--text3);">📋 ${fmtD(t.datePlanned)}${t.timePlanned ? ' '+t.timePlanned : ''}</span>` : ''}
+          ${t.due ? `<span class="task-due ${dc}">📅 ${fmtD(t.due)}</span>` : ''}
           ${t.timeEst ? `<span style="font-size:10px;color:var(--text3);">⏱ ${t.timeEst>=60?(t.timeEst/60)+'h':t.timeEst+'min'}</span>` : ''}
           ${(t.tags||[]).map(tg=>`<span class="tag-chip">#${tg}</span>`).join('')}
           ${commBadge}
