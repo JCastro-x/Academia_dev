@@ -1,0 +1,27 @@
+      <!-- ═══ PAGE: TAREAS ═══ -->
+      <div class="page" id="page-tareas">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <span style="font-size:16px;font-weight:700;">✅ Tareas & Pendientes</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <!-- Inline search for tasks -->
+            <div class="search-wrap" style="position:relative;">
+              <span class="search-icon" style="left:8px;">🔍</span>
+              <input id="search-input" class="search-input-bar" style="padding-left:28px;width:160px;" type="text" placeholder="Buscar tarea..." oninput="renderTasks()">
+            </div>
+            <select id="tf-mat" class="form-select" style="width:auto;padding:6px 10px;font-size:12px;" onchange="renderTasks()"><option value="">Todas las materias</option></select>
+            <select id="tf-prio" class="form-select" style="width:auto;padding:6px 10px;font-size:12px;" onchange="renderTasks()">
+              <option value="">Todas prioridades</option>
+              <option value="high">🔴 Alta</option>
+              <option value="med">🟡 Media</option>
+              <option value="low">🟢 Baja</option>
+            </select>
+            <select id="tf-status" class="form-select" style="width:auto;padding:6px 10px;font-size:12px;" onchange="renderTasks()">
+              <option value="">Todos</option><option value="pending">Pendientes</option><option value="done">Completadas</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="deleteCompletedTasks()" title="Borrar tareas completadas" style="color:var(--text3);">🗑️ Borrar completadas</button>
+            <button class="btn btn-primary btn-sm" onclick="openTaskModal()">+ Nueva Tarea</button>
+          </div>
+        </div>
+        <div class="card"><div class="card-body" id="tasks-list" style="padding:0 18px;"></div></div>
+      </div>
+

@@ -1,0 +1,29 @@
+      <!-- ═══ PAGE: CALIFICACIONES ═══ -->
+      <div class="page" id="page-calificaciones">
+        <!-- Card index view -->
+        <div id="grades-index-view">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" onclick="openFromHub('general')" style="flex-shrink:0;">← General</button>
+            <span style="font-size:16px;font-weight:700;">🎯 Calificaciones</span>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;">
+                🎓 Zona mín: <span style="color:#f87171;">configurable</span> · <span style="color:#4ade80;">zona ganada</span>
+              </div>
+              <span style="font-size:12px;color:var(--text3);">Mín.:</span>
+              <input type="number" id="min-grade" value="70" min="0" max="100" class="grade-input" style="width:52px;" oninput="renderGrades()">
+              <span style="font-size:12px;color:var(--text3);">pts</span>
+            </div>
+          </div>
+          <div id="grades-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;"></div>
+        </div>
+        <!-- Detail view -->
+        <div id="grades-detail-view" style="display:none;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+            <button class="btn btn-ghost btn-sm" onclick="gradesShowIndex()">← Volver</button>
+            <span id="grades-detail-title" style="font-size:16px;font-weight:700;"></span>
+          </div>
+          <div id="grades-container"></div>
+        </div>
+      </div>
+
+      <!-- ═══ PAGE: TEMAS ═══ -->

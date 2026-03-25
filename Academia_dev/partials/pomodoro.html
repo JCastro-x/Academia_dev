@@ -1,0 +1,270 @@
+      <div class="page" id="page-pomodoro">
+
+        <!-- ── FILA 1: Temporizador + Cronómetro lado a lado ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:16px;">
+
+          <!-- Temporizador Pomodoro -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">⏱️ Temporizador Pomodoro</span>
+              <!-- Botón Focus pequeño y discreto -->
+              <button onclick="enterFocusMode()" title="Modo Focus — pantalla limpia"
+                style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-left:auto;"
+                onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
+                onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'"
+                title="🔥 Modo Focus">🔥</button>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+                <select class="form-select" id="pom-subject" style="width:100%;"></select>
+                <div style="width:100%;">
+                  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:6px;">📋 ESTUDIANDO</div>
+                  <select class="form-select" id="pom-task-sel" style="width:100%;font-size:12px;">
+                    <option value="">— Sin tarea específica —</option>
+                  </select>
+                </div>
+                <div class="pom-ring">
+                  <svg class="pom-svg" viewBox="0 0 190 190">
+                    <circle class="pom-bg" cx="95" cy="95" r="82"/>
+                    <circle class="pom-prog" id="pom-ring" cx="95" cy="95" r="82" stroke-dasharray="515" stroke-dashoffset="0"/>
+                  </svg>
+                  <div class="pom-center">
+                    <div class="pom-time" id="pom-time">25:00</div>
+                    <div class="pom-mode" id="pom-mode">ENFOQUE</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:5px;" id="pom-dots"></div>
+                <div style="display:flex;gap:10px;">
+                  <button class="btn btn-ghost btn-sm" onclick="pomReset()">↺ Reset</button>
+                  <button class="btn btn-primary" id="pom-btn" onclick="pomToggle()">▶ Iniciar</button>
+                  <button class="btn btn-ghost btn-sm" onclick="pomSkip()">⏭ Skip</button>
+                </div>
+                <div style="display:flex;gap:16px;">
+                  <div style="text-align:center;">
+                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Enfoque (min)</div>
+                    <input type="number" id="pom-work" value="25" min="1" max="60" class="grade-input" style="width:58px;" onchange="pomReset()">
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Descanso (min)</div>
+                    <input type="number" id="pom-break" value="5" min="1" max="30" class="grade-input" style="width:58px;" onchange="pomReset()">
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Ciclos meta</div>
+                    <input type="number" id="pom-cycles" value="4" min="1" max="20" class="grade-input" style="width:58px;" oninput="renderPomGoal()">
+                  </div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="pomSavePartial()" style="width:100%;font-size:12px;">💾 Guardar sesión parcial</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cronómetro inteligente -->
+          <div class="card" style="height:100%;">
+            <div class="card-header">
+              <span class="card-title">🕐 Cronómetro</span>
+              <span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;background:var(--accent-glow);padding:2px 8px;border-radius:4px;" id="chrono-mode-badge">INDEPENDIENTE</span>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:16px;padding:18px;">
+
+              <!-- Contador EFECTIVO grande (solo cuando corre el pomodoro) -->
+              <div id="chrono-work-block" style="background:rgba(74,222,128,.1);border:2px solid rgba(74,222,128,.3);border-radius:14px;padding:20px 16px;text-align:center;transition:all .25s;">
+                <div style="font-size:10px;color:var(--green);font-family:'Space Mono',monospace;letter-spacing:2px;margin-bottom:8px;">📚 TIEMPO EFECTIVO DE ESTUDIO</div>
+                <div style="font-size:52px;font-weight:800;font-family:'Space Mono',monospace;color:var(--green);letter-spacing:2px;line-height:1;" id="chrono-work">00:00:00</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:6px;">Solo cuenta cuando el pomodoro corre</div>
+              </div>
+
+              <!-- Contadores secundarios: Descanso + Total real -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div id="chrono-break-block" style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.25);border-radius:12px;padding:14px 10px;text-align:center;transition:all .25s;">
+                  <div style="font-size:9px;color:var(--blue);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:6px;">☕ DESCANSO</div>
+                  <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace;color:var(--blue);letter-spacing:1px;line-height:1;" id="chrono-break">00:00:00</div>
+                </div>
+                <div id="chrono-total-block" style="background:rgba(124,106,255,.08);border:1px solid rgba(124,106,255,.25);border-radius:12px;padding:14px 10px;text-align:center;transition:all .25s;">
+                  <div style="font-size:9px;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:6px;">⏱️ TIEMPO REAL</div>
+                  <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace;color:var(--accent2);letter-spacing:1px;line-height:1;" id="chrono-total">00:00:00</div>
+                </div>
+              </div>
+
+              <!-- Status + Eficiencia -->
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                  <span style="font-size:12px;color:var(--text2);" id="chrono-status">⏹ Detenido</span>
+                  <span style="font-size:11px;font-weight:700;font-family:'Space Mono',monospace;" id="chrono-pct" style="color:var(--green);">—</span>
+                </div>
+                <div class="prog-bar"><div class="prog-fill" id="chrono-bar" style="width:0%;background:var(--green);transition:width .5s;"></div></div>
+                <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right;">eficiencia (estudio / tiempo real)</div>
+              </div>
+
+              <!-- Controles -->
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary" id="chrono-btn" onclick="chronoToggle()" style="flex:1;">▶ Iniciar</button>
+                <button class="btn btn-ghost btn-sm" onclick="chronoReset()" title="Reiniciar">↺</button>
+                <button class="btn btn-ghost btn-sm" onclick="chronoSave()" title="Guardar sesión">💾</button>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="chronoSwitchPhase()" style="width:100%;font-size:11px;" id="chrono-switch-btn">☕ Cambiar a descanso</button>
+
+              <!-- Resumen última sesión -->
+              <div id="chrono-summary" style="display:none;background:var(--surface2);border-radius:8px;padding:12px 14px;">
+                <div style="font-size:10px;font-weight:700;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:8px;">📊 ÚLTIMA SESIÓN GUARDADA</div>
+                <div id="chrono-summary-text" style="font-size:12px;color:var(--text2);font-family:'Space Mono',monospace;line-height:2;"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── FILA 2: Ambiente Sonoro (ancho completo) ── -->
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <span class="card-title">🎵 Ambiente Sonoro</span>
+            <span style="font-size:11px;color:var(--text3);" id="sound-now-playing">— Sin sonido —</span>
+          </div>
+          <div class="card-body" style="padding:16px 18px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+              <!-- COLUMNA 1: Sonidos ambientales -->
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:10px;">🌊 SONIDOS AMBIENTALES</div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="pom-music-btn" id="noise-white-btn" onclick="toggleNoise('white')" title="Ruido blanco">
+                      <span id="noise-white-icon">▶</span> Blanco
+                    </button>
+                    <button class="pom-music-btn" id="noise-brown-btn" onclick="toggleNoise('brown')" title="Ruido café">
+                      <span id="noise-brown-icon">▶</span> Café
+                    </button>
+                    <button class="pom-music-btn" id="noise-rain-btn" onclick="toggleNoise('rain')" title="Lluvia suave">
+                      <span id="noise-rain-icon">▶</span> Lluvia
+                    </button>
+                  </div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="pom-music-btn" id="noise-fire-btn" onclick="toggleNoise('fire')" title="Fuego crepitando">
+                      <span id="noise-fire-icon">▶</span> 🔥 Fuego
+                    </button>
+                    <button class="pom-music-btn" id="noise-cafe-btn" onclick="toggleNoise('cafe')" title="Café con gente">
+                      <span id="noise-cafe-icon">▶</span> ☕ Café
+                    </button>
+                    <button class="pom-music-btn" id="noise-forest-btn" onclick="toggleNoise('forest')" title="Bosque con pájaros">
+                      <span id="noise-forest-icon">▶</span> 🌿 Bosque
+                    </button>
+                    <button class="pom-music-btn" id="noise-ocean-btn" onclick="toggleNoise('ocean')" title="Olas del mar">
+                      <span id="noise-ocean-icon">▶</span> 🌊 Océano
+                    </button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;">🔇</span>
+                  <input type="range" id="noise-vol" min="0" max="100" value="30" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setNoiseVol(this.value)">
+                  <span style="font-size:11px;">🔊</span>
+                </div>
+              </div>
+
+              <!-- COLUMNA 2: Música propia MP3 -->
+              <div>
+                <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:10px;">🎶 MÚSICA PROPIA</div>
+                <input type="file" id="pom-mp3-input" accept="audio/*" style="display:none;" onchange="loadLocalMusic(this)">
+                <button class="pom-music-btn" onclick="document.getElementById('pom-mp3-input').click()" style="width:100%;margin-bottom:6px;">📁 Cargar MP3 / Audio</button>
+                <button class="pom-music-btn" id="pom-music-btn" onclick="togglePomMusic()" style="display:none;width:100%;margin-bottom:6px;">
+                  <span id="pom-music-icon">▶</span> <span id="pom-music-label">Reproducir</span>
+                </button>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+                  <span style="font-size:11px;">🔇</span>
+                  <input type="range" id="pom-vol" min="0" max="100" value="60" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setPomVol(this.value)">
+                  <span style="font-size:11px;">🔊</span>
+                </div>
+                <div style="font-size:11px;color:var(--text3);margin-top:6px;" id="pom-music-status">Sin archivo · Carga un MP3</div>
+                <audio id="pom-audio" loop style="display:none;"></audio>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ── FILA 3: Stats + Racha + Historial ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+          <!-- Columna izquierda: Meta + Racha + Stats rápidas -->
+          <div style="display:flex;flex-direction:column;gap:14px;">
+
+            <!-- Meta diaria -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">🎯 Meta del Día</span></div>
+              <div class="card-body" style="padding:14px 18px;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                  <div style="flex:1;">
+                    <div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Sesiones objetivo hoy</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <input type="number" id="pom-goal" min="1" max="20" value="4" class="grade-input" style="width:58px;" oninput="renderPomGoal()">
+                      <span style="font-size:12px;color:var(--text3);">sesiones</span>
+                    </div>
+                  </div>
+                  <div style="text-align:center;padding:12px 16px;background:var(--surface2);border-radius:12px;min-width:80px;">
+                    <div style="font-size:28px;font-weight:800;color:var(--accent2);" id="pom-goal-done">0</div>
+                    <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">HOY</div>
+                  </div>
+                </div>
+                <div class="prog-bar" style="margin-bottom:6px;">
+                  <div class="prog-fill" id="pom-goal-bar" style="background:var(--accent2);width:0%;transition:width .4s;"></div>
+                </div>
+                <div style="font-size:11px;color:var(--text3);" id="pom-goal-label">0 de 4 sesiones completadas</div>
+              </div>
+            </div>
+
+            <!-- Racha de estudio -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">🔥 Racha de Estudio</span></div>
+              <div class="card-body" style="padding:14px 18px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center;">
+                  <div style="background:var(--surface2);border-radius:10px;padding:12px 8px;">
+                    <div style="font-size:26px;font-weight:800;color:var(--orange);" id="pom-stat-streak">🔥 0</div>
+                    <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:4px;">RACHA DÍAS</div>
+                  </div>
+                  <div style="background:var(--surface2);border-radius:10px;padding:12px 8px;">
+                    <div style="font-size:26px;font-weight:800;color:var(--accent2);" id="pom-stat-week-sessions">0</div>
+                    <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:4px;">SESIONES SEM.</div>
+                  </div>
+                  <div style="background:var(--surface2);border-radius:10px;padding:12px 8px;">
+                    <div style="font-size:26px;font-weight:800;color:var(--green);" id="pom-stat-week-mins">0</div>
+                    <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:4px;">MIN SEM.</div>
+                  </div>
+                </div>
+                <div style="margin-top:12px;">
+                  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-bottom:6px;">ACTIVIDAD — ÚLTIMOS 7 DÍAS</div>
+                  <div style="display:flex;gap:4px;align-items:flex-end;height:40px;" id="pom-week-bars"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats rápidas hoy -->
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+              <div class="card" style="text-align:center;">
+                <div class="card-body" style="padding:14px 10px;">
+                  <div style="font-size:24px;font-weight:800;color:var(--accent2);" id="pom-stat-total">0</div>
+                  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:2px;">SESIONES HOY</div>
+                </div>
+              </div>
+              <div class="card" style="text-align:center;">
+                <div class="card-body" style="padding:14px 10px;">
+                  <div style="font-size:24px;font-weight:800;color:var(--green);" id="pom-stat-mins">0</div>
+                  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:2px;">MIN HOY</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Columna derecha: Historial de sesiones -->
+          <div class="card" style="height:100%;">
+            <div class="card-header">
+              <span class="card-title">📊 Historial de Sesiones</span>
+              <button class="btn btn-ghost btn-sm" onclick="clearPomHistory()" style="font-size:11px;color:var(--text3);">Limpiar hoy</button>
+            </div>
+            <div class="card-body" id="pom-history" style="max-height:500px;overflow-y:auto;padding:0;"></div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->

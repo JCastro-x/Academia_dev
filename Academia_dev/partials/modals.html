@@ -1,0 +1,784 @@
+
+<!-- TASK MODAL (tabbed: Info / Subtareas / Archivos / Comentarios) -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal" style="width:560px;">
+    <div class="modal-close" onclick="closeModal('modal-task')">✕</div>
+    <div class="modal-title" id="task-modal-title">✅ Nueva Tarea</div>
+
+    <!-- Tabs -->
+    <div class="modal-tabs">
+      <div class="modal-tab active" onclick="switchTaskTab('info',this)">📝 Info</div>
+      <div class="modal-tab" onclick="switchTaskTab('subtasks',this)">☑️ Subtareas</div>
+      <div class="modal-tab" onclick="switchTaskTab('attachments',this)">📎 Archivos</div>
+      <div class="modal-tab" onclick="switchTaskTab('comments',this)">💬 Comentarios</div>
+    </div>
+
+    <!-- Tab: Info -->
+    <div class="modal-tab-panel active" id="ttab-info">
+      <div class="form-group"><label class="form-label">Título *</label>
+        <input type="text" class="form-input" id="t-title" placeholder="Ej: Ejercicios cap.3 — Límites"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="t-mat"></select></div>
+        <div class="form-group"><label class="form-label">Tipo</label>
+          <select class="form-select" id="t-type">
+            <option>Tarea</option><option>Parcial</option><option>Lab</option><option>Proyecto</option>
+            <option>Quiz</option><option>Taller</option><option>Hoja de trabajo</option><option>Examen Final</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Prioridad</label>
+          <select class="form-select" id="t-prio">
+            <option value="high">🔴 Alta — urgente</option>
+            <option value="med" selected>🟡 Media — normal</option>
+            <option value="low">🟢 Baja — cuando pueda</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">📅 Fecha de Planificación</label>
+            <input type="date" class="form-input" id="t-date-planned">
+          </div>
+          <div class="form-group">
+            <label class="form-label">⏰ Hora de Planificación</label>
+            <input type="time" class="form-input" id="t-time-planned" placeholder="HH:MM">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">🎯 Fecha de Entrega (Deadline)</label>
+            <input type="date" class="form-input" id="t-due">
+          </div>
+          <div class="form-group">
+            <label class="form-label">⏰ Hora de Entrega</label>
+            <input type="time" class="form-input" id="t-due-time" placeholder="HH:MM">
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">⏱ Duración estimada</label>
+          <select class="form-select" id="t-time-est">
+            <option value="">— Sin estimar —</option>
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+            <option value="60">1 hora</option>
+            <option value="90">1.5 horas</option>
+            <option value="120">2 horas</option>
+            <option value="180">3 horas</option>
+            <option value="240">4 horas</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:4px;">
+        <div style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:10px;">📆 PLANIFICACIÓN DISTRIBUIDA (OPCIONAL)</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Días de trabajo</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-days',-1,1,30,1)" style="padding:5px 10px;font-size:16px;font-weight:800;">−</button>
+              <input type="number" class="form-input" id="t-est-days" min="1" max="30" placeholder="—" style="text-align:center;font-size:16px;width:60px;padding:5px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-days',1,1,30,1)" style="padding:5px 10px;font-size:16px;font-weight:800;">+</button>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Horas por día</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-hrs',-1,0.5,4,0.5)" style="padding:5px 10px;font-size:16px;font-weight:800;">−</button>
+              <input type="number" class="form-input" id="t-est-hrs" min="0.5" max="4" step="0.5" placeholder="—" style="text-align:center;font-size:16px;width:60px;padding:5px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-hrs',1,0.5,4,0.5)" style="padding:5px 10px;font-size:16px;font-weight:800;">+</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);">El planificador distribuirá el trabajo en los días con más espacio antes del deadline.</div>
+      </div>
+      <div class="form-row" style="display:none;"><!-- spacer --><div class="form-group"><!-- --></div
+        <div class="form-group"><label class="form-label">🏷 Tags (separados por coma)</label>
+          <input type="text" class="form-input" id="t-tags" placeholder="ej: parcial, urgente, lab"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Descripción / Notas</label>
+        <textarea class="form-textarea" id="t-notes" rows="3" placeholder="Detalles adicionales, instrucciones..."></textarea></div>
+
+      <!-- Repetición -->
+      <div class="form-group">
+        <label class="form-label">🔁 Repetir tarea</label>
+        <select class="form-select" id="t-repeat" onchange="_toggleRepeatFields()">
+          <option value="none">No repetir</option>
+          <option value="daily">Cada día</option>
+          <option value="weekly">Cada semana</option>
+          <option value="biweekly">Cada 2 semanas</option>
+          <option value="monthly">Cada mes</option>
+        </select>
+      </div>
+      <div id="t-repeat-until-wrap" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group">
+            <label class="form-label">📅 Repetir hasta</label>
+            <input type="date" class="form-input" id="t-repeat-until">
+          </div>
+          <div class="form-group" id="t-repeat-count-wrap">
+            <label class="form-label">🔢 O número de veces</label>
+            <input type="number" class="form-input" id="t-repeat-count" min="1" max="100" placeholder="ej: 4">
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:-6px;">Si pones ambos, se usa el que se cumpla primero.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Subtareas -->
+    <div class="modal-tab-panel" id="ttab-subtasks">
+      <div id="subtasks-editor"></div>
+    </div>
+
+    <!-- Tab: Archivos -->
+    <div class="modal-tab-panel" id="ttab-attachments">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Los archivos se guardan como base64 en localStorage.</div>
+      <div id="attachments-editor"></div>
+    </div>
+
+    <!-- Tab: Comentarios -->
+    <div class="modal-tab-panel" id="ttab-comments">
+      <div id="comments-editor"></div>
+    </div>
+
+    <div class="form-actions" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-task')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTask()">💾 Guardar Tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT MODAL -->
+<div class="modal-overlay" id="modal-event">
+  <div class="modal">
+    <div class="modal-close" onclick="closeModal('modal-event')">✕</div>
+    <div class="modal-title">📅 Nuevo Evento / Parcial</div>
+    <div class="form-group"><label class="form-label">Título</label>
+      <input type="text" class="form-input" id="ev-title" placeholder="Ej: Parcial 1 — Física I"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="ev-mat"></select></div>
+      <div class="form-group"><label class="form-label">Tipo</label>
+        <select class="form-select" id="ev-type">
+          <option>Parcial</option><option>Lab</option><option>Entrega</option><option>Taller</option>
+          <option>Final</option><option>Quiz</option><option>Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">📅 Fecha</label><input type="date" class="form-input" id="ev-date"></div>
+      <div class="form-group"><label class="form-label">🕐 Hora (opcional)</label><input type="time" class="form-input" id="ev-time"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Descripción</label>
+      <input type="text" class="form-input" id="ev-desc" placeholder="Ej: Capítulos 1-4, traer calculadora"></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-event')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEvent()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOPIC MODAL -->
+<div class="modal-overlay" id="modal-topic">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-close" onclick="closeModal('modal-topic')">✕</div>
+    <div class="modal-title">📖 Registrar Tema de Clase</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Materia</label>
+        <select class="form-select" id="tp-mat" onchange="_updateExamDateSelector()"></select></div>
+      <div class="form-group"><label class="form-label">Parcial</label>
+        <select class="form-select" id="tp-parcial" onchange="_updateExamDateSelector()">
+          <option value="1">Parcial 1</option><option value="2">Parcial 2</option>
+          <option value="3">Parcial 3</option><option value="final">Final</option>
+        </select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">📅 Fecha de la clase</label>
+        <input type="date" class="form-input" id="tp-date-added" style="font-size:16px;"></div>
+      <div class="form-group"><label class="form-label">🧠 Dificultad</label>
+        <select class="form-select" id="tp-difficulty">
+          <option value="normal">Normal · 2 repasos</option>
+          <option value="hard">Difícil · 3 repasos</option>
+        </select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Nombre del tema</label>
+      <input type="text" class="form-input" id="tp-name" placeholder="Ej: Derivadas — Regla de la cadena"></div>
+    <div class="form-group">
+      <label class="form-label">Subtemas (uno por línea) <span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;">→ marcar como visto activa el repaso</span></label>
+      <textarea class="form-textarea" id="tp-subs" rows="3" placeholder="Derivada implícita&#10;Derivadas de orden superior&#10;Regla de la cadena"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">⏱ Tiempo de estudio inicial</label>
+        <select class="form-select" id="tp-est-minutes">
+          <option value="30">30 min</option><option value="45">45 min</option>
+          <option value="50" selected>50 min (recomendado)</option>
+          <option value="60">60 min</option><option value="90">90 min</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">📝 Fecha del examen (opcional)</label>
+        <input type="date" class="form-input" id="tp-exam-date" style="font-size:16px;"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-topic')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTopic()">💾 Guardar Tema</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLASS MODAL -->
+<div class="modal-overlay" id="modal-addclass">
+  <div class="modal" style="width:580px;">
+    <div class="modal-close" onclick="closeModal('modal-addclass')">✕</div>
+    <div class="modal-title">📚 Nueva Clase</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Nombre de la clase *</label>
+        <input type="text" class="form-input" id="nc-name" placeholder="Ej: Física I"></div>
+      <div class="form-group"><label class="form-label">Código *</label>
+        <input type="text" class="form-input" id="nc-code" placeholder="Ej: FIS-1"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Créditos</label>
+        <input type="text" class="form-input" id="nc-credits" placeholder="Ej: 3 cred"></div>
+      <div class="form-group"><label class="form-label">Icono</label>
+        <div class="icon-picker" id="icon-picker">
+          <div class="icon-opt selected" data-icon="📚" onclick="selectIcon(this)">📚</div>
+          <div class="icon-opt" data-icon="🔬" onclick="selectIcon(this)">🔬</div>
+          <div class="icon-opt" data-icon="🧪" onclick="selectIcon(this)">🧪</div>
+          <div class="icon-opt" data-icon="📐" onclick="selectIcon(this)">📐</div>
+          <div class="icon-opt" data-icon="💻" onclick="selectIcon(this)">💻</div>
+          <div class="icon-opt" data-icon="📊" onclick="selectIcon(this)">📊</div>
+          <div class="icon-opt" data-icon="✏️" onclick="selectIcon(this)">✏️</div>
+          <div class="icon-opt" data-icon="🧮" onclick="selectIcon(this)">🧮</div>
+          <div class="icon-opt" data-icon="🌐" onclick="selectIcon(this)">🌐</div>
+          <div class="icon-opt" data-icon="⚡" onclick="selectIcon(this)">⚡</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Color</label>
+      <div class="color-picker" id="color-picker">
+        <div class="color-opt selected" data-color="#7c6aff" style="background:#7c6aff;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#60a5fa" style="background:#60a5fa;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#4ade80" style="background:#4ade80;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#fbbf24" style="background:#fbbf24;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#f472b6" style="background:#f472b6;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#fb923c" style="background:#fb923c;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#22d3ee" style="background:#22d3ee;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#a78bfa" style="background:#a78bfa;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#f87171" style="background:#f87171;" onclick="selectColor(this)"></div>
+        <div class="color-opt" data-color="#34d399" style="background:#34d399;" onclick="selectColor(this)"></div>
+      </div>
+    </div>
+
+    <!-- Lab section -->
+    <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">⚗️ ¿Tiene laboratorio?</div>
+      <div style="display:flex;gap:16px;margin-bottom:10px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+          <input type="radio" name="nc-has-lab" id="nc-nolab" value="no" checked onchange="toggleLabSection()"> Sin laboratorio
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+          <input type="radio" name="nc-has-lab" id="nc-haslab" value="yes" onchange="toggleLabSection()"> ✅ Tiene laboratorio
+        </label>
+      </div>
+      <div id="lab-section" style="display:none;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Las notas del lab se reflejarán automáticamente en esta clase magistral.</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Nombre del lab</label>
+            <input type="text" class="form-input" id="nc-lab-name" placeholder="Ej: Lab. Física I"></div>
+          <div class="form-group"><label class="form-label">Código del lab</label>
+            <input type="text" class="form-input" id="nc-lab-code" placeholder="Ej: FIS-1L"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Puntos máx en la clase magistral</label>
+            <input type="number" class="form-input" id="nc-lab-pts" placeholder="Ej: 10" min="0" max="100"></div>
+          <div class="form-group"><label class="form-label">El lab es sobre... (escala)</label>
+            <input type="number" class="form-input" id="nc-lab-scale" placeholder="Ej: 100" value="100" min="1"></div>
+        </div>
+        <div style="font-size:11px;color:#4ade80;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:6px;padding:8px 10px;">
+          💡 Ej: lab /100 vale 10 pts en la clase → sacas 90/100 en lab = 9/10 en la clase.
+        </div>
+      </div>
+    </div>
+
+    <!-- Is this class a lab? -->
+    <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;">🔗 ¿Esta clase ES un lab de otra?</div>
+      <div class="form-group" style="margin-bottom:0;">
+        <select class="form-select" id="nc-parent">
+          <option value="">— No es un lab —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Datos del curso -->
+    <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏛️ Datos del Curso</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Sección</label>
+          <input type="text" class="form-input" id="nc-seccion" placeholder="Ej: A, B, N+"></div>
+        <div class="form-group"><label class="form-label">Nombre del Catedrático</label>
+          <input type="text" class="form-input" id="nc-catedratico" placeholder="Ej: Ing. Pérez García"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Días de clase</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;" id="nc-dias-checks">
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Dom" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Dom</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Lun" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Lun</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Mar" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Mar</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Mié" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Mié</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Jue" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Jue</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Vie" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Vie</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Sáb" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Sáb</span>
+            </label>
+          </div>
+          <input type="hidden" id="nc-dias"></div>
+        <div class="form-group"><label class="form-label">Horario</label>
+          <input type="text" class="form-input" id="nc-horario" placeholder="Ej: 07:00–09:00"></div>
+      </div>
+    </div>
+
+    <!-- Configurador de zonas -->
+    <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:4px;">⚡ Configuración Rápida de Zonas</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Activa las zonas que aplican y ajusta los puntos. El total debe sumar 100.</div>
+
+      <!-- Row: Taller / Laboratorio -->
+      <div class="usac-zone-row" id="uzr-lab">
+        <label class="usac-toggle-label">
+          <input type="checkbox" id="uz-lab-on" onchange="toggleUsacZone('lab')" style="accent-color:var(--accent);">
+          <span>🧪 Taller / Lab</span>
+        </label>
+        <div class="usac-zone-ctrl" id="uzc-lab" style="display:none;">
+          <input type="number" class="form-input usac-pts-inp" id="uz-lab-pts" value="10" min="1" max="99" oninput="updateUsacSuma()" style="width:68px;">
+          <span style="font-size:11px;color:var(--text3);">pts &nbsp;|&nbsp; Talleres:</span>
+          <input type="number" class="form-input usac-pts-inp" id="uz-lab-n" value="2" min="1" max="20" style="width:52px;" title="Cantidad de talleres">
+        </div>
+      </div>
+
+      <!-- Row: Tareas -->
+      <div class="usac-zone-row" id="uzr-tar">
+        <label class="usac-toggle-label">
+          <input type="checkbox" id="uz-tar-on" onchange="toggleUsacZone('tar')" style="accent-color:var(--accent);">
+          <span>✅ Tareas</span>
+        </label>
+        <div class="usac-zone-ctrl" id="uzc-tar" style="display:none;">
+          <input type="number" class="form-input usac-pts-inp" id="uz-tar-pts" value="15" min="1" max="99" oninput="updateUsacSuma()" style="width:68px;">
+          <span style="font-size:11px;color:var(--text3);">pts &nbsp;|&nbsp; Tareas:</span>
+          <input type="number" class="form-input usac-pts-inp" id="uz-tar-n" value="3" min="1" max="20" style="width:52px;">
+        </div>
+      </div>
+
+      <!-- Row: Parciales -->
+      <div class="usac-zone-row" id="uzr-par">
+        <label class="usac-toggle-label">
+          <input type="checkbox" id="uz-par-on" onchange="toggleUsacZone('par')" checked style="accent-color:var(--accent);">
+          <span>📝 Parciales</span>
+        </label>
+        <div class="usac-zone-ctrl" id="uzc-par">
+          <input type="number" class="form-input usac-pts-inp" id="uz-par-pts" value="50" min="1" max="99" oninput="updateUsacSuma()" style="width:68px;">
+          <span style="font-size:11px;color:var(--text3);">pts &nbsp;|&nbsp; Parciales:</span>
+          <input type="number" class="form-input usac-pts-inp" id="uz-par-n" value="2" min="1" max="10" style="width:52px;">
+        </div>
+      </div>
+
+      <!-- Row: Examen Final -->
+      <div class="usac-zone-row" id="uzr-fin">
+        <label class="usac-toggle-label">
+          <input type="checkbox" id="uz-fin-on" onchange="toggleUsacZone('fin')" checked style="accent-color:var(--accent);">
+          <span>🎯 Examen Final</span>
+        </label>
+        <div class="usac-zone-ctrl" id="uzc-fin">
+          <input type="number" class="form-input usac-pts-inp" id="uz-fin-pts" value="25" min="1" max="99" oninput="updateUsacSuma()" style="width:68px;">
+          <span style="font-size:11px;color:var(--text3);">pts</span>
+        </div>
+      </div>
+
+      <!-- Zona libre extra -->
+      <div class="usac-zone-row" id="uzr-extra">
+        <label class="usac-toggle-label">
+          <input type="checkbox" id="uz-extra-on" onchange="toggleUsacZone('extra')" style="accent-color:var(--accent);">
+          <span>➕ Zona extra</span>
+        </label>
+        <div class="usac-zone-ctrl" id="uzc-extra" style="display:none;">
+          <input type="text" class="form-input" id="uz-extra-name" placeholder="Nombre" style="width:110px;font-size:12px;">
+          <input type="number" class="form-input usac-pts-inp" id="uz-extra-pts" value="5" min="1" max="99" oninput="updateUsacSuma()" style="width:68px;">
+          <span style="font-size:11px;color:var(--text3);">pts</span>
+        </div>
+      </div>
+
+      <!-- Suma total -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+        <div style="font-family:'Space Mono',monospace;font-size:12px;">
+          Total: <span id="usac-suma-val" style="font-weight:800;color:var(--accent2);">75</span>
+          <span id="usac-suma-hint" style="color:#f87171;font-size:10px;margin-left:6px;"></span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="applyUsacZones()" type="button">✅ Generar Zonas</button>
+      </div>
+    </div>
+
+    <!-- Grade zones builder -->
+
+    <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px;">📊 Zonas de calificación</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Define las zonas con sus apartados. El total de cada zona es la suma de sus apartados.</div>
+      <div id="zones-builder"></div>
+      <button class="btn btn-primary btn-sm" onclick="addZoneRow()" style="margin-top:8px;">+ Agregar zona</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-addclass')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveNewClass()">💾 Crear Clase</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLASHCARD MODAL -->
+<div class="modal-overlay" id="modal-flashcard">
+  <div class="modal" style="width:500px;">
+    <div class="modal-close" onclick="closeModal('modal-flashcard')">✕</div>
+    <div class="modal-title" id="fc-modal-title">🃏 Nueva Flashcard</div>
+    <input type="hidden" id="fc-edit-id">
+    <div class="form-group">
+      <label class="form-label">Materia</label>
+      <select class="form-select" id="fc-mat"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">🎯 Pregunta / Frente</label>
+      <textarea class="form-textarea" id="fc-front" rows="3" placeholder="¿Cuál es la definición de...?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">💡 Respuesta / Reverso</label>
+      <textarea class="form-textarea" id="fc-back" rows="3" placeholder="La respuesta es..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">🏷 Tags (separados por coma)</label>
+      <input type="text" class="form-input" id="fc-tags" placeholder="ej: parcial1, definicion, formula">
+    </div>
+    <div class="form-actions" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-flashcard')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveFlashcard()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- FLASHCARD STUDY OVERLAY -->
+<div class="modal-overlay" id="modal-fc-study" style="background:rgba(0,0,0,.96);">
+  <div class="modal" style="width:600px;max-width:95vw;text-align:center;">
+    <div class="modal-close" onclick="closeModal('modal-fc-study')">✕</div>
+    <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--text3);margin-bottom:6px;" id="fc-study-progress">1 / 10</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:20px;" id="fc-study-mat"></div>
+    <!-- Card flip container -->
+    <div id="fc-card-wrap" onclick="flipStudyCard()" style="cursor:pointer;min-height:180px;background:var(--surface2);border:2px solid var(--border2);border-radius:16px;padding:32px 28px;margin-bottom:20px;position:relative;transition:transform .2s,border-color .2s;">
+      <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--accent2);letter-spacing:1px;margin-bottom:12px;" id="fc-study-side">PREGUNTA</div>
+      <div style="font-size:17px;font-weight:700;line-height:1.5;" id="fc-study-text"></div>
+      <div style="position:absolute;bottom:10px;right:14px;font-size:11px;color:var(--text3);">clic para voltear</div>
+    </div>
+    <div id="fc-study-actions" style="display:none;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-danger btn-sm" onclick="fcRate(0)" title="Difícil — revisar mañana">😓 Difícil</button>
+      <button class="btn btn-ghost btn-sm" onclick="fcRate(1)" title="Media — revisar en el mismo intervalo">😐 Media</button>
+      <button class="btn" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,.3);" onclick="fcRate(2)" title="Fácil — intervalo aumenta">✅ Fácil</button>
+    </div>
+    <div id="fc-study-next-review" style="font-size:10px;color:var(--text3);margin-top:8px;font-family:'Space Mono',monospace;display:none;"></div>
+    <div id="fc-study-flip-hint" style="font-size:11px;color:var(--text3);">Haz clic en la tarjeta para ver la respuesta</div>
+  </div>
+</div>
+
+<!-- NOTE SEARCH MODAL -->
+<div class="modal-overlay" id="modal-notes-search">
+  <div class="modal" style="width:600px;max-width:97vw;">
+    <div class="modal-close" onclick="closeModal('modal-notes-search')">✕</div>
+    <div class="modal-title">🔍 Buscar en todas las notas</div>
+    <div class="search-wrap" style="position:relative;margin-bottom:16px;">
+      <span class="search-icon" style="left:10px;top:50%;transform:translateY(-50%);position:absolute;">🔍</span>
+      <input type="text" class="form-input" id="notes-search-inp" placeholder="Busca en títulos y contenido de tus notas..."
+        style="padding-left:34px;font-size:14px;" oninput="renderNotesSearchResults()" autofocus>
+    </div>
+    <div id="notes-search-results" style="max-height:400px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- QUICK ADD -->
+<div class="modal-overlay" id="modal-quickadd">
+  <div class="modal" style="width:340px;">
+    <div class="modal-close" onclick="closeModal('modal-quickadd')">✕</div>
+    <div class="modal-title">⚡ Agregar rápido</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:12px;padding:13px 14px;" onclick="closeModal('modal-quickadd');openTaskModal()">
+        <span style="font-size:22px;">✅</span>
+        <div style="text-align:left;"><div style="font-weight:700;">Nueva Tarea</div><div style="font-size:11px;color:var(--text3);">Tarea, lab, quiz, proyecto...</div></div>
+      </button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:12px;padding:13px 14px;" onclick="closeModal('modal-quickadd');openEventModal()">
+        <span style="font-size:22px;">📅</span>
+        <div style="text-align:left;"><div style="font-weight:700;">Nuevo Evento</div><div style="font-size:11px;color:var(--text3);">Parcial, entrega, fecha importante...</div></div>
+      </button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:12px;padding:13px 14px;" onclick="closeModal('modal-quickadd');openTopicModal()">
+        <span style="font-size:22px;">📖</span>
+        <div style="text-align:left;"><div style="font-weight:700;">Nuevo Tema</div><div style="font-size:11px;color:var(--text3);">Agregar tema al contenido del curso...</div></div>
+      </button>
+      <button class="btn btn-ghost" style="justify-content:flex-start;gap:12px;padding:13px 14px;" onclick="closeModal('modal-quickadd');openAddClassModal()">
+        <span style="font-size:22px;">📚</span>
+        <div style="text-align:left;"><div style="font-weight:700;">Nueva Clase</div><div style="font-size:11px;color:var(--text3);">Agregar materia o laboratorio...</div></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CLASS MODAL -->
+<div class="modal-overlay" id="modal-editclass">
+  <div class="modal" style="width:600px;max-height:88vh;">
+    <div class="modal-close" onclick="closeModal('modal-editclass')">✕</div>
+    <div class="modal-title" id="editclass-title">✏️ Editar Clase</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Nombre de la clase *</label>
+        <input type="text" class="form-input" id="ec-name" placeholder="Ej: Física I"></div>
+      <div class="form-group"><label class="form-label">Código *</label>
+        <input type="text" class="form-input" id="ec-code" placeholder="Ej: FIS-1"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Créditos</label>
+        <input type="text" class="form-input" id="ec-credits" placeholder="Ej: 3 cred"></div>
+      <div class="form-group"><label class="form-label">Icono</label>
+        <div class="icon-picker" id="ec-icon-picker">
+          <div class="icon-opt selected" data-icon="📚" onclick="ecSelectIcon(this)">📚</div>
+          <div class="icon-opt" data-icon="🔬" onclick="ecSelectIcon(this)">🔬</div>
+          <div class="icon-opt" data-icon="🧪" onclick="ecSelectIcon(this)">🧪</div>
+          <div class="icon-opt" data-icon="📐" onclick="ecSelectIcon(this)">📐</div>
+          <div class="icon-opt" data-icon="💻" onclick="ecSelectIcon(this)">💻</div>
+          <div class="icon-opt" data-icon="📊" onclick="ecSelectIcon(this)">📊</div>
+          <div class="icon-opt" data-icon="✏️" onclick="ecSelectIcon(this)">✏️</div>
+          <div class="icon-opt" data-icon="🧮" onclick="ecSelectIcon(this)">🧮</div>
+          <div class="icon-opt" data-icon="🌐" onclick="ecSelectIcon(this)">🌐</div>
+          <div class="icon-opt" data-icon="⚡" onclick="ecSelectIcon(this)">⚡</div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Color</label>
+      <div class="color-picker" id="ec-color-picker">
+        <div class="color-opt selected" data-color="#7c6aff" style="background:#7c6aff;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#60a5fa" style="background:#60a5fa;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#4ade80" style="background:#4ade80;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#fbbf24" style="background:#fbbf24;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#f472b6" style="background:#f472b6;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#fb923c" style="background:#fb923c;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#22d3ee" style="background:#22d3ee;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#a78bfa" style="background:#a78bfa;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#f87171" style="background:#f87171;" onclick="ecSelectColor(this)"></div>
+        <div class="color-opt" data-color="#34d399" style="background:#34d399;" onclick="ecSelectColor(this)"></div>
+      </div>
+    </div>
+    <!-- Datos del curso -->
+    <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏛️ Datos del Curso</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Sección</label>
+          <input type="text" class="form-input" id="ec-seccion" placeholder="Ej: A, B, N+"></div>
+        <div class="form-group"><label class="form-label">Nombre del Catedrático</label>
+          <input type="text" class="form-input" id="ec-catedratico" placeholder="Ej: Ing. Pérez García"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Días de clase</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;" id="ec-dias-checks">
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Dom" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Dom</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Lun" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Lun</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Mar" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Mar</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Mié" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Mié</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Jue" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Jue</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Vie" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Vie</span>
+            </label>
+            <label style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;">
+              <input type="checkbox" value="Sáb" style="accent-color:var(--accent);width:15px;height:15px;">
+              <span style="font-size:10px;color:var(--text2);font-weight:700;">Sáb</span>
+            </label>
+          </div>
+          <input type="hidden" id="ec-dias"></div>
+        <div class="form-group"><label class="form-label">Horario</label>
+          <input type="text" class="form-input" id="ec-horario" placeholder="Ej: 07:00–09:00"></div>
+      </div>
+    </div>
+    <!-- Zones Distribution Editor -->
+    <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);">📊 Distribución de Puntos (Zonas)</div>
+        <button class="btn btn-ghost btn-sm" onclick="ecAddZoneRow('',null,[])" type="button">+ Zona</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Edita las zonas y sus apartados. Los laboratorios enlazados se mantienen automáticamente.</div>
+      <div id="ec-zones-builder"></div>
+    </div>
+    <!-- Fórmulas Clave -->
+    <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:13px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">📐 Fórmulas Clave (máx. 5)</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Guarda las fórmulas críticas de esta materia para repaso rápido desde la tarjeta.</div>
+      <div id="ec-formulas-list">
+        <input class="form-input" id="ec-formula-0" placeholder="Fórmula 1…" style="font-family:'Space Mono',monospace;font-size:12px;margin-bottom:6px;">
+        <input class="form-input" id="ec-formula-1" placeholder="Fórmula 2…" style="font-family:'Space Mono',monospace;font-size:12px;margin-bottom:6px;">
+        <input class="form-input" id="ec-formula-2" placeholder="Fórmula 3…" style="font-family:'Space Mono',monospace;font-size:12px;margin-bottom:6px;">
+        <input class="form-input" id="ec-formula-3" placeholder="Fórmula 4…" style="font-family:'Space Mono',monospace;font-size:12px;margin-bottom:6px;">
+        <input class="form-input" id="ec-formula-4" placeholder="Fórmula 5…" style="font-family:'Space Mono',monospace;font-size:12px;">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-editclass')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditClass()">💾 Guardar Cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEMESTRE MODAL -->
+<div class="modal-overlay" id="modal-semestre">
+  <div class="modal" style="width:460px;">
+    <div class="modal-close" onclick="closeModal('modal-semestre')">✕</div>
+    <div class="modal-title" id="sem-modal-title">🗂️ Nuevo Semestre</div>
+    <div class="form-group">
+      <label class="form-label">Nombre del semestre *</label>
+      <input type="text" class="form-input" id="ns-nombre" placeholder="Ej: 2do Año · 1er Sem">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">📈 Promedio previo acumulado</label>
+        <input type="number" class="form-input" id="ns-prev-avg" placeholder="Ej: 78.5" min="0" max="100" step="0.01">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px;">Antes de este semestre</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🪙 Créditos previos aprobados</label>
+        <input type="number" class="form-input" id="ns-prev-cred" placeholder="Ej: 45" min="0" step="1">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px;">Total antes de este semestre</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Promedio objetivo (pts)</label>
+        <input type="number" class="form-input" id="ns-objetivo" value="70" min="0" max="100" placeholder="70">
+      </div>
+      <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:13px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" id="ns-activar" checked style="accent-color:var(--accent);width:15px;height:15px;">
+          Activar inmediatamente
+        </label>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);background:var(--surface2);border-radius:7px;padding:9px 11px;margin-bottom:4px;">
+      💡 Al activar, las materias, tareas y calificaciones cambian al nuevo semestre. Los datos anteriores se conservan.
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-semestre')">Cancelar</button>
+      <button class="btn btn-primary" id="sem-modal-save-btn" onclick="saveSemestreModal()">🗂️ Crear Semestre</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG MODAL — Historial académico previo + metas -->
+<div class="modal-overlay" id="modal-config">
+  <div class="modal" style="width:500px;">
+    <div class="modal-close" onclick="closeModal('modal-config')">✕</div>
+    <div class="modal-title">⚙️ Configuración Académica</div>
+
+    <div class="cfg-section">
+      <div class="cfg-section-title">📈 Historial Previo al Semestre Actual</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">Ingresa tu promedio acumulado y créditos aprobados <strong>antes</strong> de este semestre para calcular tu promedio general real.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">📈 Promedio Acumulado Previo</label>
+          <input type="number" class="form-input" id="cfg-prev-avg" placeholder="Ej: 75.5" min="0" max="100" step="0.01">
+          <div style="font-size:10px;color:var(--text3);margin-top:3px;">Deja vacío si es tu primer semestre</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">🪙 Créditos Aprobados Previos</label>
+          <input type="number" class="form-input" id="cfg-prev-cred" placeholder="Ej: 32" min="0" step="1">
+          <div style="font-size:10px;color:var(--text3);margin-top:3px;">Total acumulado antes de este semestre</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfg-section">
+      <div class="cfg-section-title">🎯 Metas del Semestre</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nota mínima de aprobación (pts)</label>
+          <input type="number" class="form-input" id="cfg-min-grade" placeholder="70" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">🎯 Promedio objetivo del semestre</label>
+          <input type="number" class="form-input" id="cfg-sem-target" placeholder="Ej: 80" min="0" max="100" step="0.1">
+        </div>
+      </div>
+    </div>
+
+    <!-- Live GPA preview -->
+    <div style="background:var(--surface3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:10px;">📊 PREVIEW — PROMEDIO GENERAL REAL</div>
+      <div style="display:flex;gap:0;flex-wrap:wrap;">
+        <div style="flex:1;text-align:center;padding:0 10px;border-right:1px solid var(--border);">
+          <div style="font-size:28px;font-weight:800;color:var(--accent2);" id="cfg-prev-overall">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">Promedio General</div>
+          <div style="font-size:9px;color:var(--text3);">(historial + semestre)</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:0 10px;border-right:1px solid var(--border);">
+          <div style="font-size:22px;font-weight:800;color:#4ade80;" id="cfg-prev-tcred">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">Créditos Totales</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:0 10px;">
+          <div style="font-size:22px;font-weight:800;color:#fbbf24;" id="cfg-prev-sem">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;">Prom. Semestre</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data tools -->
+    <div class="cfg-section" style="margin-top:4px;">
+      <div class="cfg-section-title">💾 Datos de la Aplicación</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-ghost btn-sm" onclick="exportData()">📤 Exportar JSON</button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer;">📥 Importar JSON<input type="file" accept=".json" style="display:none;" onchange="handleImportFile(this)"></label>
+        <button class="btn btn-ghost btn-sm" onclick="exportPDF()">🖨️ Exportar PDF</button>
+      </div>
+    </div>
+
+    <!-- LOGOUT BUTTON -->
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+      <button onclick="handleLogout()" class="btn btn-danger" style="width: 100%; background: #f87171; margin-top: 16px;">
+        🚪 Cerrar Sesión
+      </button>
+      <p style="font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px;">
+        Versión 1.0 — Google OAuth + Responsive
+      </p>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modal-config')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveConfigModal()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMP POPUP -->

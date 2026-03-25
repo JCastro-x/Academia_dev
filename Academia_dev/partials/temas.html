@@ -1,0 +1,28 @@
+      <!-- ═══ PAGE: TEMAS ═══ -->
+      <div class="page" id="page-temas">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="btn btn-ghost btn-sm" onclick="openFromHub('general')" style="flex-shrink:0;">← General</button>
+          <span style="font-size:16px;font-weight:700;">📖 Temas del Curso</span>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="topics-mat-sel" class="form-select" style="width:auto;padding:6px 10px;font-size:12px;" onchange="renderTopics();renderReviewQueue();"></select>
+            <button class="btn btn-primary btn-sm" onclick="openTopicModal()">+ Agregar Tema</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header">
+            <span class="card-title" style="font-size:12px;">📊 Carga — Próximos 14 días</span>
+            <button class="btn btn-ghost btn-sm" id="planner-reschedule-btn" onclick="plannerRescheduleUI()" style="font-size:11px;">↻ Reagendar</button>
+          </div>
+          <div class="card-body" style="padding:10px 14px 12px;"><div id="planner-timeline"></div></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header" style="cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('planner-collapsed')">
+            <span class="card-title">🔁 Repasos Pendientes</span>
+            <span style="font-size:11px;color:var(--text3);">▾ expandir</span>
+          </div>
+          <div id="planner-review-queue"></div>
+        </div>
+        <div id="topics-container"></div>
+      </div>
+
+      <!-- ═══ PAGE: ESTADÍSTICAS ═══ -->

@@ -184,19 +184,29 @@ const PLANNER = (() => {
 
   // ── Plan del día ──────────────────────────────────────────────
   function getDailyPlan(dateStr) {
-    const plan = { date: dateStr, newTopics: [], reviews: [], tasks: [], totalMinutes: 0 };
+    const plan = {
+      date: dateStr,
+      newTopics: [], reviews: [], tasks: [],
+      totalMinutes: 0,
+      overdueMinutes: 0,
+      hasOverflow: false,
+    };
+    const today = todayStr();
 
+    // ── Temas nuevos: sólo si dateAdded === dateStr ──────────────
     State.topics.filter(t => t.dateAdded === dateStr).forEach(t => {
-      const m = getMat(t.matId);
+      const m    = getMat(t.matId);
       const mins = t.estMinutes || NEW_TOPIC_MIN;
       plan.newTopics.push({ id: t.id, name: t.name, parcial: t.parcial,
-        matName: m.name || '—', matIcon: m.icon || '📚', matColor: m.color || 'var(--accent)', minutes: mins });
+        matName: m.name || '—', matIcon: m.icon || '📚',
+        matColor: m.color || 'var(--accent)', minutes: mins });
       plan.totalMinutes += mins;
     });
 
+    // ── Repasos: sólo si r.date === dateStr (nunca futuros) ──────
     State.topics.forEach(topic => {
       (topic.reviewSchedule || []).forEach((r, idx) => {
-        if (r.date !== dateStr || r.done) return;
+        if (r.done || r.date !== dateStr) return;
         const m = getMat(topic.matId);
         plan.reviews.push({ topicId: topic.id, reviewIdx: idx, name: topic.name,
           difficulty: topic.difficulty || 'normal', matName: m.name || '—',
@@ -206,19 +216,42 @@ const PLANNER = (() => {
       });
     });
 
+    // ── Tareas:
+    //    a) datePlanned === dateStr
+    //    b) plannedWorkDates incluye dateStr
+    //    c) Si dateStr === today: tareas con due <= today (atrasadas) ──
     const seen = new Set();
     State.tasks
-      .filter(t => !t.done && (t.datePlanned === dateStr || (t.plannedWorkDates || []).includes(dateStr)))
+      .filter(t => {
+        if (t.done) return false;
+        if (t.datePlanned === dateStr) return true;
+        if ((t.plannedWorkDates || []).includes(dateStr)) return true;
+        if (dateStr === today && t.due && t.due < today) return true;
+        return false;
+      })
       .forEach(t => {
         if (seen.has(t.id)) return;
         seen.add(t.id);
-        const m    = getMat(t.matId);
-        const mins = t.datePlanned === dateStr ? (t.timeEst || 60) : Math.round((t.estHoursPerDay || 1) * 60);
+        const m         = getMat(t.matId);
+        const mins      = t.datePlanned === dateStr
+          ? (t.timeEst || 60)
+          : Math.round((t.estHoursPerDay || 1) * 60);
+        const isOverdue = !!(t.due && t.due < today && dateStr === today);
         plan.tasks.push({ id: t.id, title: t.title, due: t.due, priority: t.priority,
-          matName: m.name || '—', matIcon: m.icon || '📚', matColor: m.color || 'var(--accent)', minutes: mins });
+          matName: m.name || '—', matIcon: m.icon || '📚',
+          matColor: m.color || 'var(--accent)', minutes: mins, isOverdue });
         plan.totalMinutes += mins;
+        if (isOverdue) plan.overdueMinutes += mins;
       });
 
+    // Urgentes primero, luego por prioridad
+    plan.tasks.sort((a, b) => {
+      if (a.isOverdue !== b.isOverdue) return a.isOverdue ? -1 : 1;
+      const p = { high: 0, med: 1, low: 2 };
+      return (p[a.priority] ?? 1) - (p[b.priority] ?? 1);
+    });
+
+    plan.hasOverflow = plan.totalMinutes > MAX_DAILY_MIN;
     return plan;
   }
 
@@ -362,11 +395,12 @@ function renderDailyPlan(dateStr) {
   const container = document.getElementById('planner-daily-plan');
   if (!container) return;
 
-  const plan     = PLANNER.getDailyPlan(target);
-  const lb       = PLANNER.loadBar(target);
-  const isToday  = target === PLANNER.todayStr();
+  const plan      = PLANNER.getDailyPlan(target);
+  // Usa exactamente loadBar() — mismo cálculo que el gráfico de 14 días
+  const lb        = PLANNER.loadBar(target);
+  const isToday   = target === PLANNER.todayStr();
   const dateLabel = isToday ? 'Hoy' : PLANNER.fmtShort(target);
-  const empty    = !plan.newTopics.length && !plan.reviews.length && !plan.tasks.length;
+  const empty     = !plan.newTopics.length && !plan.reviews.length && !plan.tasks.length;
 
   if (empty) {
     container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text3);">
@@ -376,54 +410,106 @@ function renderDailyPlan(dateStr) {
     return;
   }
 
+  // ── Encabezado con barra (idéntica al gráfico de 14 días) ────
   let html = `<div style="padding:10px 14px 6px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
       <span style="font-size:11px;color:var(--text2);font-weight:700;">${dateLabel}</span>
       <span style="font-size:12px;font-weight:800;color:${lb.color};font-family:'Space Mono',monospace;">${lb.label}${lb.pct>=100?' ⚠️':''}</span>
     </div>
-    <div class="prog-bar" style="height:6px;"><div class="prog-fill" style="background:${lb.color};width:${lb.pct}%;border-radius:3px;transition:width .4s;"></div></div>
-    ${lb.pct>=100?`<div style="font-size:10px;color:#f87171;margin-top:3px;font-family:'Space Mono',monospace;">Dia lleno - usa Reagendar para redistribuir</div>`:''}
-  </div>`;
+    <div class="prog-bar" style="height:6px;">
+      <div class="prog-fill" style="background:${lb.color};width:${Math.min(lb.pct,100)}%;border-radius:3px;transition:width .4s;"></div>
+    </div>`;
 
-  if (plan.newTopics.length) {
-    html += `<div class="planner-section-title">📖 Tema nuevo</div>`;
-    html += plan.newTopics.map(t => `<div class="planner-item">
-      <div class="planner-dot" style="background:${t.matColor};"></div>
-      <div class="planner-body"><div class="planner-name">${t.matIcon} ${t.name}</div><div class="planner-meta">${t.matName} · P${t.parcial}</div></div>
-      <span class="planner-mins">${t.minutes} min</span>
-    </div>`).join('');
+  // ── Aviso de desbordamiento ──────────────────────────────────
+  if (plan.hasOverflow) {
+    const overH = ((plan.totalMinutes - PLANNER.MAX_DAILY_MIN) / 60).toFixed(1);
+    const msg = plan.overdueMinutes > 0
+      ? `⚠️ +${overH}h de tareas atrasadas · Usa <strong>Reagendar</strong> para mover repasos`
+      : `⚠️ +${overH}h extra hoy · Usa <strong>Reagendar</strong> para redistribuir`;
+    html += `<div style="margin-top:6px;padding:6px 10px;background:rgba(248,113,113,.1);
+      border:1px solid rgba(248,113,113,.3);border-radius:7px;font-size:11px;
+      color:#f87171;font-family:'Space Mono',monospace;line-height:1.5;">${msg}</div>`;
   }
+  html += `</div>`;
 
-  if (plan.reviews.length) {
-    html += `<div class="planner-section-title">🔁 Repasos (${plan.reviews.length})</div>`;
-    html += plan.reviews.map(r => `<div class="planner-item${r.status==='low-priority'?' planner-lowprio':''}">
-      <div class="planner-dot" style="background:${r.matColor};"></div>
-      <div class="planner-body">
-        <div class="planner-name">${r.matIcon} ${r.name} <span class="planner-tag-num">#${r.num}</span>${r.difficulty==='hard'?'<span class="planner-tag-hard">difícil</span>':''}${r.status==='low-priority'?'<span class="planner-tag-skip">↓ prioridad</span>':''}</div>
-        <div class="planner-meta">${r.matName} · ${r.minutes} min</div>
-      </div>
-      <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button class="btn btn-ghost btn-sm planner-btn-done" onclick="PLANNER.markReviewDone('${r.topicId}',${r.reviewIdx})" style="padding:4px 8px;">✅</button>
-        <button class="btn btn-ghost btn-sm" onclick="PLANNER.markReviewSkip('${r.topicId}',${r.reviewIdx})" style="padding:4px 7px;">⏭</button>
-      </div>
-    </div>`).join('');
-  }
+  // Helper: encabezado de sección con subtotal de horas
+  const _secHdr = (icon, label, mins) =>
+    `<div class="planner-section-title" style="display:flex;justify-content:space-between;">
+      <span>${icon} ${label}</span>
+      <span style="color:var(--accent2);font-size:9px;">${(mins/60).toFixed(1)}h</span>
+    </div>`;
 
+  // ── 1. Tareas (urgentes/atrasadas primero) ───────────────────
   if (plan.tasks.length) {
-    html += `<div class="planner-section-title">✅ Tareas</div>`;
+    const taskMins = plan.tasks.reduce((s, t) => s + t.minutes, 0);
+    html += _secHdr('✅', `Tareas (${plan.tasks.length})`, taskMins);
     html += plan.tasks.map(t => {
-      const dStr = t.due ? `· 📅 ${new Date(t.due+'T00:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'})}` : '';
-      const pc   = t.priority==='high'?'#f87171':t.priority==='low'?'#4ade80':'#fbbf24';
+      const dc  = t.isOverdue ? '#f87171'
+        : (t.due && (new Date(t.due) - new Date()) < 86400000 * 3 ? '#fbbf24' : 'var(--text3)');
+      const dStr = t.due
+        ? `· <span style="color:${dc};">📅 ${new Date(t.due+'T00:00:00')
+            .toLocaleDateString('es-ES',{day:'numeric',month:'short'})}${t.isOverdue?' ⚠':''}
+          </span>` : '';
+      const pc = t.priority==='high'?'#f87171':t.priority==='low'?'#4ade80':'#fbbf24';
       return `<div class="planner-item" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;">
-        <div class="planner-dot" style="background:${t.matColor};"></div>
-        <div class="planner-body"><div class="planner-name">${t.matIcon} ${t.title}</div><div class="planner-meta">${t.matName} ${dStr}</div></div>
+        <div class="planner-dot" style="background:${t.matColor};${t.isOverdue?'box-shadow:0 0 5px #f87171;':''}"></div>
+        <div class="planner-body">
+          <div class="planner-name">${t.matIcon} ${t.title}</div>
+          <div class="planner-meta">${t.matName} ${dStr}</div>
+        </div>
         <span class="planner-mins" style="color:${pc};">${t.minutes} min</span>
       </div>`;
     }).join('');
   }
 
+  // ── 2. Repasos ───────────────────────────────────────────────
+  if (plan.reviews.length) {
+    const revMins = plan.reviews
+      .filter(r => r.status !== 'low-priority')
+      .reduce((s, r) => s + r.minutes, 0);
+    html += _secHdr('🔁', `Repasos (${plan.reviews.length})`, revMins);
+    html += plan.reviews.map(r =>
+      `<div class="planner-item${r.status==='low-priority'?' planner-lowprio':''}">
+        <div class="planner-dot" style="background:${r.matColor};"></div>
+        <div class="planner-body">
+          <div class="planner-name">${r.matIcon} ${r.name}
+            <span class="planner-tag-num">#${r.num}</span>
+            ${r.difficulty==='hard'?'<span class="planner-tag-hard">difícil</span>':''}
+            ${r.status==='low-priority'?'<span class="planner-tag-skip">↓ prio</span>':''}
+          </div>
+          <div class="planner-meta">${r.matName} · ${r.minutes} min</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          <button class="btn btn-ghost btn-sm planner-btn-done"
+            onclick="PLANNER.markReviewDone('${r.topicId}',${r.reviewIdx})"
+            style="padding:4px 8px;">✅</button>
+          <button class="btn btn-ghost btn-sm"
+            onclick="PLANNER.markReviewSkip('${r.topicId}',${r.reviewIdx})"
+            style="padding:4px 7px;">⏭</button>
+        </div>
+      </div>`
+    ).join('');
+  }
+
+  // ── 3. Temas nuevos ──────────────────────────────────────────
+  if (plan.newTopics.length) {
+    const topicMins = plan.newTopics.reduce((s, t) => s + t.minutes, 0);
+    html += _secHdr('📖', `Tema nuevo (${plan.newTopics.length})`, topicMins);
+    html += plan.newTopics.map(t =>
+      `<div class="planner-item">
+        <div class="planner-dot" style="background:${t.matColor};"></div>
+        <div class="planner-body">
+          <div class="planner-name">${t.matIcon} ${t.name}</div>
+          <div class="planner-meta">${t.matName} · P${t.parcial}</div>
+        </div>
+        <span class="planner-mins">${t.minutes} min</span>
+      </div>`
+    ).join('');
+  }
+
   container.innerHTML = html;
 }
+
 
 // ── Cola de Repasos agrupada por Urgencia ─────────────────────
 function renderReviewQueue() {

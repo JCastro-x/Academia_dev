@@ -1,0 +1,19 @@
+      <!-- ═══ PAGE: HORARIO ═══ -->
+      <div class="page" id="page-horario">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <span style="font-size:16px;font-weight:700;">🗓️ Mi Horario de Clases</span>
+          <button class="btn btn-ghost btn-sm" onclick="exportHorario()">📤 Exportar Horario</button>
+        </div>
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card-header"><span class="card-title">Vista Semanal</span></div>
+          <div class="card-body" style="overflow-x:auto;">
+            <div id="horario-table-container"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">📋 Detalle de Materias</span></div>
+          <div class="card-body" id="horario-detail-list"></div>
+        </div>
+      </div>
+
+      <!-- ═══ PAGE: NOTAS ═══ -->

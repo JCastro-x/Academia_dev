@@ -1,0 +1,21 @@
+      <!-- ═══ PAGE: CALENDARIO ═══ -->
+      <div class="page" id="page-calendario">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="btn btn-ghost btn-sm" onclick="calNav(-1)">← Anterior</button>
+            <span style="font-size:16px;font-weight:700;" id="cal-month-title"></span>
+            <button class="btn btn-ghost btn-sm" onclick="calNav(1)">Siguiente →</button>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="openTaskModal()">✅ Nueva Tarea</button>
+            <button class="btn btn-primary btn-sm" onclick="openEventModal()">📅 Nuevo Evento</button>
+          </div>
+        </div>
+        <div id="cal-legend"></div>
+        <div class="card" style="margin-bottom:18px;"><div class="card-body"><div class="cal-grid" id="cal-grid"></div></div></div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">📋 Eventos & Tareas del mes</span></div>
+          <div class="card-body" id="cal-events-list"></div>
+        </div>
+      </div>
+

@@ -1,0 +1,168 @@
+      <div class="page" id="page-perfil">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+          <span style="font-size:16px;font-weight:700;">👤 Mi Perfil Académico</span>
+          <button class="btn btn-primary btn-sm" onclick="saveProfile()">💾 Guardar Perfil</button>
+        </div>
+
+        <!-- ─── PERSONALIZACIÓN ─────────────────────────────────────── -->
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card-header"><span class="card-title">🎨 Personalización de la App</span></div>
+          <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+
+            <!-- Tipografía -->
+            <div>
+              <div class="form-label" style="margin-bottom:8px;">🔤 Tipografía</div>
+              <select class="form-select" id="cfg-font-select" onchange="setFont(this.value)" style="width:100%;">
+                <option value="Syne">Syne (actual, geométrica)</option>
+                <option value="Inter">Inter (limpia, moderna)</option>
+                <option value="JetBrains Mono">JetBrains Mono (programador)</option>
+                <option value="Playfair Display">Playfair Display (elegante)</option>
+              </select>
+            </div>
+
+            <!-- Sonidos de clic -->
+            <div>
+              <div class="form-label" style="margin-bottom:8px;">🔊 Variante de Sonido</div>
+              <select class="form-select" id="cfg-sound-select" onchange="setSoundVariant(this.value)" style="width:100%;">
+                <option value="classic">Classic (tick suave)</option>
+                <option value="minimal">Minimal (pop suave)</option>
+                <option value="digital">Digital (beep corto)</option>
+              </select>
+            </div>
+
+            <!-- Color de acento -->
+            <div>
+              <div class="form-label" style="margin-bottom:8px;">🎨 Color Principal</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;" id="accent-color-picker">
+                <div class="color-opt accent-color-opt" data-color="#7c6aff" style="background:#7c6aff;" onclick="setAccentColor('#7c6aff')" title="Violeta"></div>
+                <div class="color-opt accent-color-opt" data-color="#10b981" style="background:#10b981;" onclick="setAccentColor('#10b981')" title="Esmeralda"></div>
+                <div class="color-opt accent-color-opt" data-color="#3b82f6" style="background:#3b82f6;" onclick="setAccentColor('#3b82f6')" title="Azul Eléctrico"></div>
+                <div class="color-opt accent-color-opt" data-color="#f97316" style="background:#f97316;" onclick="setAccentColor('#f97316')" title="Naranja Sunset"></div>
+                <div class="color-opt accent-color-opt" data-color="#ec4899" style="background:#ec4899;" onclick="setAccentColor('#ec4899')" title="Rosa Fucsia"></div>
+                <div class="color-opt accent-color-opt" data-color="#f59e0b" style="background:#f59e0b;" onclick="setAccentColor('#f59e0b')" title="Ámbar"></div>
+                <div class="color-opt accent-color-opt" data-color="#06b6d4" style="background:#06b6d4;" onclick="setAccentColor('#06b6d4')" title="Cian"></div>
+                <div class="color-opt accent-color-opt" data-color="#84cc16" style="background:#84cc16;" onclick="setAccentColor('#84cc16')" title="Lima"></div>
+                <div class="color-opt accent-color-opt" data-color="#e11d48" style="background:#e11d48;" onclick="setAccentColor('#e11d48')" title="Rojo Carmín"></div>
+              </div>
+            </div>
+
+            <!-- Tema claro/oscuro -->
+            <div>
+              <div class="form-label" style="margin-bottom:8px;">🌙 Tema de Apariencia</div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-ghost" onclick="if(document.documentElement.getAttribute('data-theme')!=='dark'){toggleTheme()}">🌙 Oscuro</button>
+                <button class="btn btn-ghost" onclick="if(document.documentElement.getAttribute('data-theme')!=='light'){toggleTheme()}">☀️ Claro</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <!-- ─── FIN PERSONALIZACIÓN ────────────────────────────────── -->
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card-header"><span class="card-title">📋 Datos Personales</span></div>
+          <div class="card-body">
+            <div class="form-row" style="margin-bottom:13px;">
+              <div class="form-group">
+                <label class="form-label">Nombre completo</label>
+                <input type="text" class="form-input" id="profile-name" placeholder="Ej: Juan García López">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Carrera</label>
+                <input type="text" class="form-input" id="profile-carrera" placeholder="Ej: Ingeniería en Sistemas">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Registro Estudiantil</label>
+                <input type="text" class="form-input" id="profile-registro" placeholder="Ej: 20230001">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Facultad / Escuela</label>
+                <input type="text" class="form-input" id="profile-facultad" placeholder="Ej: Facultad de Ingeniería">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accumulated credits & average (manually tracked) -->
+        <div class="card" style="margin-bottom:18px;" id="profile-stats-card">
+          <div class="card-header">
+            <span class="card-title">🎓 Progreso Académico Acumulado</span>
+            <span style="font-size:11px;color:var(--text3);">Se actualiza al aprobar cursos abajo</span>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;">
+              <div class="stat-card" style="--c:#7c6aff;">
+                <div class="stat-lbl">PROMEDIO ACUMULADO</div>
+                <div class="stat-val" id="profile-display-avg">—</div>
+                <div class="stat-sub">puntos</div>
+              </div>
+              <div class="stat-card" style="--c:#4ade80;">
+                <div class="stat-lbl">CRÉDITOS APROBADOS</div>
+                <div class="stat-val" id="profile-display-cred">0</div>
+                <div class="stat-sub">créditos</div>
+              </div>
+              <div class="stat-card" style="--c:#fbbf24;">
+                <div class="stat-lbl">CURSOS APROBADOS</div>
+                <div class="stat-val" id="profile-display-courses">0</div>
+                <div class="stat-sub">cursos</div>
+              </div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">PROGRESO DE CARRERA</span>
+                <span style="font-size:11px;font-weight:700;color:var(--accent2);" id="profile-career-pct">0%</span>
+              </div>
+              <div class="prog-bar" style="height:8px;border-radius:4px;">
+                <div class="prog-fill" id="profile-career-bar" style="background:var(--accent);width:0%;border-radius:4px;transition:width .5s;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                <span style="font-size:10px;color:var(--text3);">0 cred</span>
+                <span style="font-size:10px;color:var(--text3);">
+                  <input type="number" id="profile-total-cred" placeholder="Total carrera (ej: 215)" min="0" max="999"
+                    style="background:var(--surface2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);font-family:'Space Mono',monospace;font-size:10px;padding:1px 6px;width:100px;outline:none;"
+                    oninput="recalcProfile()" title="Créditos totales de la carrera"> cred total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Approved courses list -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">✅ Cursos Aprobados</span>
+            <button class="btn btn-primary btn-sm" onclick="openAddApprovedCourse()">➕ Agregar Curso</button>
+          </div>
+          <div class="card-body">
+            <div id="approved-courses-list" style="min-height:60px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: add/edit approved course -->
+      <div class="modal-overlay" id="modal-approved-course">
+        <div class="modal" style="width:420px;">
+          <div class="modal-close" onclick="closeModal('modal-approved-course')">✕</div>
+          <div class="modal-title" id="ac-modal-title">✅ Agregar Curso Aprobado</div>
+          <input type="hidden" id="ac-edit-idx" value="">
+          <div class="form-group"><label class="form-label">Nombre del Curso *</label>
+            <input type="text" class="form-input" id="ac-name" placeholder="Ej: Matemática Básica 1"></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Código</label>
+              <input type="text" class="form-input" id="ac-code" placeholder="Ej: 100"></div>
+            <div class="form-group"><label class="form-label">Créditos</label>
+              <input type="number" class="form-input" id="ac-credits" placeholder="Ej: 5" min="0" max="30"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Nota obtenida (0–100)</label>
+              <input type="number" class="form-input" id="ac-grade" placeholder="Ej: 75" min="0" max="100" step="0.1"></div>
+            <div class="form-group"><label class="form-label">Semestre cursado</label>
+              <input type="text" class="form-input" id="ac-semester" placeholder="Ej: 1er Sem 2023"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-ghost" onclick="closeModal('modal-approved-course')">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveApprovedCourse()">💾 Guardar</button>
+          </div>
+        </div>
+      </div>
+
