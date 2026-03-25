@@ -747,9 +747,8 @@ html {
   .mc-task-title { white-space: normal !important; }
 }
 
-
 /* ══════════════════════════════════════════════════════════════
-   MENÚ "MÁS" — bottom sheet para nav móvil extra
+   MENÚ "MÁS" — bottom sheet
    ══════════════════════════════════════════════════════════════ */
 .mobile-more-backdrop {
   position: fixed;
@@ -765,9 +764,14 @@ html {
   background: var(--surface);
   border-radius: 20px 20px 0 0;
   border-top: 1px solid var(--border);
-  padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+  /* 12px horizontal para que nada se corte */
+  padding: 16px 12px max(20px, env(safe-area-inset-bottom));
   box-shadow: 0 -8px 32px rgba(0,0,0,.4);
   animation: sheetSlideUp .22s cubic-bezier(.4,0,.2,1);
+  max-height: 75vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
 }
 @keyframes sheetSlideUp {
   from { transform: translateY(100%); opacity: 0; }
@@ -780,12 +784,18 @@ html {
   letter-spacing: 1.5px;
   text-transform: uppercase;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
+/* 4 columnas — caben bien en cualquier teléfono */
 .mobile-more-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+}
+@media (max-width: 360px) {
+  .mobile-more-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 .mobile-more-item {
   display: flex;
@@ -803,6 +813,9 @@ html {
   text-align: center;
   transition: background .15s, border-color .15s, color .15s;
   line-height: 1.2;
+  /* Evitar que se salga */
+  min-width: 0;
+  overflow: hidden;
 }
 .mobile-more-item:active {
   background: var(--accent-glow);
@@ -815,93 +828,87 @@ html {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   CALIFICACIONES MÓVIL — colapsar panel de 2 columnas
+   TOPBAR MÓVIL — evitar desborde derecho
    ══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* El body del bloque de materia pasa a columna */
+  .topbar {
+    overflow: hidden !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+  .topbar-right {
+    flex-shrink: 0 !important;
+    gap: 4px !important;
+    align-items: center !important;
+    /* Nunca empujar fuera de pantalla */
+    max-width: 50vw;
+    overflow: hidden;
+  }
+  /* Ocultar botón Examen en topbar — ocupa demasiado espacio */
+  .topbar-right button[onclick*="openExamMode"],
+  .topbar-right .btn[onclick*="openExamMode"] {
+    display: none !important;
+  }
+  /* Botón ➕ Clase también oculto en móvil */
+  .topbar-right button[onclick*="openAddClassModal"] {
+    display: none !important;
+  }
+  /* Solo dejar: tema, sonido, config, ⚡ Agregar */
+  #theme-btn, #ui-sound-btn { display: none !important; }
+  /* ⚡ Agregar — más compacto */
+  .topbar-right .btn-primary {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+  /* Búsqueda más angosta */
+  .search-input-bar {
+    width: 110px !important;
+    font-size: 12px !important;
+  }
+  .search-input-bar:focus {
+    width: 150px !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CALIFICACIONES MÓVIL
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
   .grades-block > div[style*="grid-template-columns:1fr 220px"],
   .grades-block > div[style*="grid-template-columns: 1fr 220px"] {
     grid-template-columns: 1fr !important;
     display: block !important;
   }
-
-  /* Panel lateral de resumen va al final y se hace compacto */
   .grades-block > div > div[style*="border-left:1px solid"] {
     border-left: none !important;
     border-top: 1px solid var(--border) !important;
     padding: 12px 14px !important;
   }
-
-  /* Resumen de zona: horizontal compacto */
-  .grades-block > div > div[style*="border-left:1px solid"] > div[style*="display:flex"][style*="gap:8px"] {
-    gap: 6px !important;
-    font-size: 10px !important;
-  }
-
-  /* Total acumulado más pequeño */
-  .grades-block [data-mat-total] {
-    font-size: 22px !important;
-  }
-
-  /* Zone header: wrap */
-  .zone-header {
-    flex-wrap: wrap !important;
-    gap: 4px !important;
-    padding: 8px 10px !important;
-  }
-  .zone-title {
-    font-size: 12px !important;
-  }
-
-  /* Grade row: label + input + net (quitar pct y bar) */
-  .grade-row {
-    grid-template-columns: 1fr 64px 58px !important;
-    gap: 5px !important;
-    padding: 5px 0 !important;
-  }
-  .grade-pct  { display: none !important; }
-  .grade-bar  { display: none !important; }
+  [data-mat-total] { font-size: 22px !important; }
+  .zone-header { flex-wrap: wrap !important; padding: 8px 10px !important; }
+  .zone-title  { font-size: 12px !important; }
+  .grade-row   { grid-template-columns: 1fr 64px 58px !important; gap: 5px !important; }
+  .grade-pct, .grade-bar { display: none !important; }
   .grade-label { font-size: 11px !important; }
   .grade-input { font-size: 14px !important; padding: 5px 6px !important; }
-  .grade-net   { font-size: 11px !important; }
-
-  /* Input tip hidden on mobile */
-  .input-tip { display: none !important; }
-
-  /* Zona subtotal compacto */
-  .zone-subtotal {
-    padding: 6px 10px !important;
-    font-size: 12px !important;
-  }
-
-  /* Projection row */
-  .grades-block > div[style*="display:flex;gap:0"] {
-    flex-direction: column !important;
-  }
-  .grades-block > div[style*="display:flex;gap:0"] > div {
-    border-right: none !important;
-    border-bottom: 1px solid var(--border) !important;
-  }
-
-  /* Cards de calificaciones en index: 1 columna */
-  #grades-cards-grid {
-    grid-template-columns: 1fr !important;
-  }
+  .input-tip   { display: none !important; }
+  .zone-subtotal { padding: 6px 10px !important; font-size: 12px !important; }
+  #grades-cards-grid { grid-template-columns: 1fr !important; }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   NOTAS MÓVIL — sidebar colapsable, editor full screen
+   NOTAS MÓVIL
    ══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* Layout: sidebar arriba pequeño, editor abajo grande */
   .notes-pro-layout {
     grid-template-columns: 1fr !important;
     grid-template-rows: auto 1fr !important;
     height: calc(100vh - 130px) !important;
     min-height: 0 !important;
   }
-
-  /* Sidebar horizontal: carpetas + lista de notas en una franja compacta */
   .notes-pro-sidebar {
     flex-direction: row !important;
     border-right: none !important;
@@ -909,8 +916,6 @@ html {
     height: 180px !important;
     overflow: hidden !important;
   }
-
-  /* Panel de carpetas: angosto y con scroll */
   .notes-folders-panel {
     width: 100px !important;
     min-width: 100px !important;
@@ -919,73 +924,38 @@ html {
     border-right: 1px solid var(--border) !important;
     overflow-y: auto !important;
   }
-
-  /* Nombre de carpeta truncado */
-  .notes-folder-name { font-size: 10px !important; }
-  .notes-folder-icon { font-size: 13px !important; }
+  .notes-folder-name  { font-size: 10px !important; }
+  .notes-folder-icon  { font-size: 13px !important; }
   .notes-folder-count { display: none !important; }
+  .notes-list-panel   { flex: 1 !important; overflow-y: auto !important; min-width: 0 !important; }
+  .notes-list-item    { padding: 7px 10px !important; }
+  .notes-list-item .nli-title   { font-size: 12px !important; }
+  .notes-list-item .nli-preview { display: none !important; }
+  .notes-richtext-editor { padding: 12px 14px !important; font-size: 13px !important; }
+  #notes-images-strip { flex-wrap: nowrap !important; overflow-x: auto !important; }
+}
 
-  /* Lista de notas: el resto del ancho */
-  .notes-list-panel {
-    flex: 1 !important;
-    overflow-y: auto !important;
-    min-width: 0 !important;
+/* ══════════════════════════════════════════════════════════════
+   AGENDA SEMANAL — scroll horizontal en móvil
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  #ov-day-strip {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
   }
-
-  /* Items de nota más compactos */
-  .notes-list-item {
-    padding: 7px 10px !important;
+  .agenda-strip {
+    grid-template-columns: repeat(7, minmax(44px, 1fr));
+    gap: 4px;
+    min-width: 308px;
   }
-  .notes-list-item .nli-title {
-    font-size: 12px !important;
-  }
-  .notes-list-item .nli-preview {
-    display: none !important;
-  }
-  .notes-list-item .nli-meta {
-    gap: 3px !important;
-  }
-
-  /* Editor: ocupa el resto de la pantalla */
-  .notes-pro-editor {
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-
-  /* Toolbar del editor más compacta */
-  .notes-editor-toolbar {
-    padding: 5px 8px !important;
-    gap: 4px !important;
-    flex-wrap: wrap !important;
-  }
-
-  /* Rich text editor: padding reducido */
-  .notes-richtext-editor {
-    padding: 12px 14px !important;
-    font-size: 13px !important;
-  }
-
-  /* Botones de toolbar más pequeños */
-  .notes-editor-toolbar .btn-sm,
-  .rte-btn {
-    padding: 4px 7px !important;
-    font-size: 12px !important;
-  }
-
-  /* Strip de imágenes scroll horizontal */
-  #notes-images-strip {
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-  }
-
-  /* Barra inferior de notas */
-  #notes-toolbar {
-    padding: 4px 10px !important;
-    font-size: 10px !important;
-  }
-
-  /* Word count pequeño */
-  #notes-wordcount {
-    font-size: 10px !important;
-  }
+  .agenda-day-card  { padding: 8px 3px 6px; border-radius: 8px; min-width: 44px; }
+  .adc-daynum       { font-size: 17px; }
+  .adc-dayname      { font-size: 8px; }
+  .adc-month        { display: none; }
+  .adc-count        { font-size: 9px; padding: 1px 4px; }
+  .adc-today-label  { display: none; }
+  .agenda-dot       { width: 5px; height: 5px; }
+  #ov-tasks-list    { max-height: none !important; }
+  .mc-task-title    { white-space: normal !important; }
 }
