@@ -520,12 +520,14 @@ function fillMatSels() {
 function fillTopicMatSel() {
   const sel = document.getElementById('topics-mat-sel'); if (!sel) return;
   const prev = sel.value;
-  sel.innerHTML = '';
+  sel.innerHTML = '<option value="">📚 Todas las materias</option>';
   State.materias.forEach(m => {
     const o = document.createElement('option'); o.value = m.id;
     o.textContent = `${m.icon||'📚'} ${m.name}`; sel.appendChild(o);
   });
-  if (prev) sel.value = prev;
+  // Solo restaurar si era una materia válida; si era vacío o la primera, dejar en "Todas"
+  if (prev && State.materias.some(m => m.id === prev)) sel.value = prev;
+  else sel.value = '';
 }
 function fillPomSel() {
   const sel = document.getElementById('pom-subject'); if (!sel) return;

@@ -226,6 +226,7 @@ function exportHorario() {
 }
 
 function renderNotesPage() {
+  _notesInHub = true; // siempre empezar en el hub al entrar
   renderNotesProPage();
 }
 
@@ -322,18 +323,230 @@ function _getFoldersArray() {
 let _currentNoteId   = null;
 let _currentFolderId = null; // null = "Todas"
 let _noteAutoSaveTimer = null;
+let _notesInHub = true; // true = mostrar grid de carpetas; false = mostrar editor
 
 // ── RENDER FULL PAGE ──────────────────────────────────────────
 function renderNotesProPage() {
   _populateEditorSelects();
-  renderFoldersList();
-  renderNotesList();
-  // BUG FIX: always re-load the current note into the editor
-  if (_currentNoteId) {
-    const stillExists = _getNotesArray().find(n => n.id === _currentNoteId);
-    if (stillExists) _loadNoteInProEditor(_currentNoteId);
-    else { _currentNoteId = null; _showNotesEmptyState(); }
+  // Always start at hub level unless we're inside a folder
+  if (_notesInHub || !_currentFolderId) {
+    _notesInHub = true;
+    _showNotesHubView();
+  } else {
+    _showNotesFolderView(_currentFolderId);
   }
+}
+
+function _showNotesHub() { _showNotesHubView(); }
+function _showNotesEditor() {
+  // Legacy compat — now opens the modal approach
+  // Do nothing here; modal is opened by selectProNote
+}
+
+function _showNotesHubView() {
+  const hub    = document.getElementById('notes-hub-view');
+  const folView= document.getElementById('notes-folder-view');
+  const back   = document.getElementById('notes-back-btn');
+  const title  = document.getElementById('notes-page-title');
+  if (hub)    hub.style.display    = 'block';
+  if (folView) folView.style.display = 'none';
+  if (back)   back.style.display   = 'none';
+  if (title)  title.textContent    = '📝 Bloc de Notas';
+  _renderNotesHub();
+}
+
+function _showNotesFolderView(folderId) {
+  const hub    = document.getElementById('notes-hub-view');
+  const folView= document.getElementById('notes-folder-view');
+  const back   = document.getElementById('notes-back-btn');
+  const title  = document.getElementById('notes-page-title');
+  if (hub)    hub.style.display    = 'none';
+  if (folView) folView.style.display = 'block';
+  if (back)   back.style.display   = '';
+  // Set title
+  if (title) {
+    if (folderId === null) {
+      title.textContent = '📋 Todas las notas';
+    } else if (String(folderId).startsWith('mat_')) {
+      const matId = folderId.replace('mat_', '');
+      const mat   = State.materias.find(m => m.id === matId);
+      title.textContent = (mat ? (mat.icon||'📚') + ' ' + mat.name : '📁 Carpeta');
+    } else {
+      const f = _getFoldersArray().find(f => f.id === folderId);
+      title.textContent = f ? (f.icon||'📁') + ' ' + f.name : '📁 Carpeta';
+    }
+  }
+  _renderNotesFolderGrid(folderId);
+}
+
+function _renderNotesHub() {
+  const grid = document.getElementById('notes-hub-grid');
+  if (!grid) return;
+  const allNotes = _getNotesArray();
+  const folders  = _getFoldersArray();
+
+  const _countBadge = (n) => `<span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${n} nota${n!==1?'s':''}</span>`;
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">`;
+
+  // Todas las notas
+  html += _notesHubCard('null', '📋', 'Todas las notas', allNotes.length, 'var(--accent)', null);
+
+  // Carpetas manuales
+  folders.filter(f => !f.parentId).forEach(f => {
+    const n = allNotes.filter(x => x.folderId === f.id).length;
+    html += _notesHubCard(`'${f.id}'`, f.icon||'📁', f.name, n, f.color||'var(--accent)', null);
+  });
+
+  // Materias
+  State.materias.filter(m => !m.parentId).forEach(m => {
+    const n = allNotes.filter(x => x.matId === m.id || x.folderId === 'mat_' + m.id).length;
+    html += _notesHubCard(`'mat_${m.id}'`, m.icon||'📚', m.name, n, m.color||'var(--accent)', m.code||null);
+  });
+
+  html += `</div>`;
+  grid.innerHTML = html;
+}
+
+function _notesHubCard(folderIdStr, icon, name, count, color, subtitle) {
+  return `<div onclick="_openNotesFolder(${folderIdStr})"
+    style="cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);
+      border-top:3px solid ${color};border-radius:14px;padding:20px 16px 18px;
+      transition:transform .15s,box-shadow .15s,border-color .15s;
+      display:flex;flex-direction:column;gap:10px;min-height:120px;"
+    onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 28px rgba(0,0,0,.3)';this.style.borderColor='${color}';"
+    onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)';this.style.borderTopColor='${color}';">
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+      <span style="font-size:28px;line-height:1;flex-shrink:0;">${icon}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:800;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${name}</div>
+        ${subtitle ? `<div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:1px;">${subtitle}</div>` : ''}
+      </div>
+    </div>
+    <div style="margin-top:auto;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">
+      📄 ${count} nota${count!==1?'s':''}
+    </div>
+  </div>`;
+}
+
+function _renderNotesFolderGrid(folderId) {
+  const grid = document.getElementById('notes-folder-grid');
+  if (!grid) return;
+  let notes = _getNotesArray();
+
+  if (folderId !== null) {
+    if (String(folderId).startsWith('mat_')) {
+      const matId = folderId.replace('mat_','');
+      notes = notes.filter(n => n.matId === matId || n.folderId === folderId);
+    } else {
+      notes = notes.filter(n => n.folderId === folderId);
+    }
+  }
+
+  const sorted = [...notes].sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+
+  if (!sorted.length) {
+    grid.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3);">
+      <div style="font-size:40px;margin-bottom:12px;">📝</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Sin notas aún</div>
+      <button class="btn btn-primary btn-sm" onclick="_notesNewNote()">+ Nueva nota</button>
+    </div>`;
+    return;
+  }
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">`;
+  sorted.forEach(note => {
+    const mat     = note.matId ? State.materias.find(m => m.id === note.matId) : null;
+    const isDraw  = note.type === 'draw';
+    const preview = isDraw
+      ? null
+      : (note.rteContent || note.content || '').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim().slice(0,120);
+    const dateStr = note.updatedAt
+      ? new Date(note.updatedAt).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'2-digit'})
+      : '';
+    const color   = mat ? mat.color : 'var(--accent2)';
+    html += `<div onclick="selectProNote('${note.id}')"
+      style="cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);
+        border-radius:14px;padding:16px 14px 14px;
+        transition:transform .15s,box-shadow .15s,border-color .15s;
+        display:flex;flex-direction:column;gap:8px;min-height:130px;"
+      onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.3)';this.style.borderColor='${color}';"
+      onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)';">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+        <div style="font-size:13px;font-weight:800;line-height:1.3;flex:1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${isDraw?'🎨 ':''}${note.title||'Sin título'}</div>
+        ${mat?`<div style="width:8px;height:8px;border-radius:50%;background:${mat.color};flex-shrink:0;margin-top:4px;"></div>`:''}
+      </div>
+      ${isDraw && note.canvasData
+        ? `<img src="${note.canvasData}" style="width:100%;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">`
+        : preview
+          ? `<div style="font-size:11px;color:var(--text3);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${preview}</div>`
+          : `<div style="font-size:11px;color:var(--text3);">Sin contenido</div>`
+      }
+      <div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:5px;">
+        ${mat?`<span style="font-size:9px;font-weight:700;color:${mat.color};font-family:'Space Mono',monospace;">${mat.icon||''} ${mat.name}</span>`:'<span></span>'}
+        <span style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;">${dateStr}</span>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  grid.innerHTML = html;
+}
+
+
+function _openNotesFolder(folderId) {
+  _notesInHub = false;
+  _currentFolderId = folderId;
+  _currentNoteId = null;
+  _populateEditorSelects();
+  _showNotesFolderView(folderId);
+}
+
+function _notesGoBack() {
+  _notesInHub = true;
+  _currentFolderId = null;
+  _currentNoteId = null;
+  _showNotesHubView();
+}
+
+function _notesNewNote() {
+  if (_notesInHub) { _notesInHub = false; _currentFolderId = null; }
+  _populateEditorSelects();
+  addNewNote();
+  openNoteEditorModal();
+}
+
+function _notesNewDrawing() {
+  if (_notesInHub) { _notesInHub = false; _currentFolderId = null; }
+  _populateEditorSelects();
+  addNewDrawingNote();
+  openNoteEditorModal();
+}
+
+function openNoteEditorModal() {
+  const backdrop = document.getElementById('note-editor-backdrop');
+  const modal    = document.getElementById('note-editor-modal');
+  if (!backdrop || !modal) return;
+  backdrop.style.display = 'block';
+  modal.style.display    = 'flex';
+  requestAnimationFrame(() => {
+    modal.style.opacity   = '1';
+    modal.style.transform = 'translate(-50%,-50%) scale(1)';
+  });
+}
+
+function closeNoteEditorModal() {
+  const backdrop = document.getElementById('note-editor-backdrop');
+  const modal    = document.getElementById('note-editor-modal');
+  if (!backdrop || !modal) return;
+  modal.style.opacity   = '0';
+  modal.style.transform = 'translate(-50%,-50%) scale(.96)';
+  setTimeout(() => {
+    modal.style.display    = 'none';
+    backdrop.style.display = 'none';
+  }, 220);
+  // Refresh the folder grid to show updated note
+  if (_currentFolderId !== undefined) _renderNotesFolderGrid(_currentFolderId);
+  else _renderNotesHub();
 }
 
 function _populateEditorSelects() {
@@ -372,6 +585,7 @@ function _populateEditorSelects() {
 
 // ── FOLDERS ───────────────────────────────────────────────────
 function renderFoldersList() {
+  if (_notesInHub) { _renderNotesHub(); return; }
   const container = document.getElementById('notes-folders-list');
   if (!container) return;
   const folders = _getFoldersArray();
@@ -381,7 +595,10 @@ function renderFoldersList() {
   const countAll = notes.length;
   const countFolder = fid => notes.filter(n => n.folderId === fid).length;
 
-  let html = `<div class="notes-folder-item ${_currentFolderId===null?'active':''}" onclick="selectFolder(null)">
+  let html = `<div style="padding:5px 6px 3px;">
+    <button onclick="_notesInHub=true;renderNotesProPage();" style="width:100%;text-align:left;background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:4px 6px;border-radius:6px;font-family:inherit;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">← Carpetas</button>
+  </div>
+  <div class="notes-folder-item ${_currentFolderId===null?'active':''}" onclick="selectFolder(null)">
     <span class="notes-folder-icon">📋</span>
     <span class="notes-folder-name">Todas las notas</span>
     <span class="notes-folder-count">${countAll}</span>
@@ -435,6 +652,12 @@ function renderFoldersList() {
 
 function selectFolder(folderId) {
   if (_currentNoteId) _autoCommitNote();
+  // Si estamos en el hub, salir al editor
+  if (_notesInHub) {
+    _notesInHub = false;
+    _showNotesEditor();
+    _populateEditorSelects();
+  }
   _currentFolderId = folderId;
   renderFoldersList();
   renderNotesList();
@@ -511,7 +734,8 @@ function saveNewFolder() {
   }
   saveState(['all']);
   closeModal('modal-new-folder');
-  renderFoldersList();
+  if (_notesInHub) { _renderNotesHub(); } else { renderFoldersList(); }
+  if (typeof _renderNotesHub === "function") { if (_notesInHub) _renderNotesHub(); }
 }
 
 function deleteFolder(folderId) {
@@ -528,8 +752,9 @@ function deleteFolder(folderId) {
 
 // ── NOTES LIST ────────────────────────────────────────────────
 function renderNotesList() {
+  if (_notesInHub) return;
   const container = document.getElementById('notes-list-items');
-  if (!container) return;
+  if (!container) return; // container is in legacy hidden layout, gracefully skip
 
   let notes = _getNotesArray();
 
@@ -583,12 +808,11 @@ function renderNotesList() {
 // ── SELECT / LOAD NOTE — THE BUG FIX ─────────────────────────
 function selectProNote(id) {
   if (_currentNoteId && _currentNoteId !== id) _autoCommitNote();
-  clearTimeout(_noteAutoSaveTimer); // cancelar autosave pendiente de la nota anterior
+  clearTimeout(_noteAutoSaveTimer);
   _currentNoteId = id;
-  // Re-render list first (marks active)
-  renderNotesList();
-  // THEN load editor — this was the bug: editor wasn't being called after list re-render
+  _populateEditorSelects();
   _loadNoteInProEditor(id);
+  openNoteEditorModal();
 }
 
 function _loadNoteInProEditor(noteId) {
@@ -790,7 +1014,7 @@ function deleteNoteImage(noteId, imgKey) {
 }
 
 // ── ADD NOTES ─────────────────────────────────────────────────
-function openNewNoteMenu() { addNewNote(); }
+function openNewNoteMenu() { _notesNewNote(); }
 
 function addNewNote() {
   if (_currentNoteId) _autoCommitNote();
@@ -813,6 +1037,7 @@ function addNewNote() {
 }
 
 function addNewDrawingNote() {
+  if (_notesInHub) { _notesInHub=false; _showNotesEditor(); _populateEditorSelects(); renderFoldersList(); renderNotesList(); }
   if (_currentNoteId) _autoCommitNote();
   clearTimeout(_noteAutoSaveTimer);
   const noteId = 'note_' + Date.now();
@@ -846,6 +1071,9 @@ function deleteCurrentNote() {
   renderFoldersList();
   renderNotesList();
   _showNotesEmptyState();
+  closeNoteEditorModal();
+  if (_currentFolderId !== undefined) setTimeout(() => _renderNotesFolderGrid(_currentFolderId), 50);
+  else setTimeout(() => _renderNotesHub(), 50);
 }
 
 // ── INPUT HANDLERS ────────────────────────────────────────────
@@ -1907,7 +2135,7 @@ function saveEditClass() {
   fillMatSels(); fillTopicMatSel(); fillPomSel(); fillNotesSel(); fillExamSel();
 }
 
-function renderNotebookPage() { renderNotesProPage(); }
+function renderNotebookPage() { if (!_notesInHub) renderNotesProPage(); }
 function selectNoteMat(matId) { setNotesMat(matId); }
 function handleNoteFile(matId, input) {  }
 
@@ -2293,3 +2521,15 @@ function deleteApprovedCourse(idx) {
   recalcProfile();
   renderApprovedCourses();
 }
+
+// ── Notes grid refresh hook ───────────────────────────────────
+const _origRenderNotesList = renderNotesList;
+function renderNotesList() {
+  _origRenderNotesList();
+  // Also refresh folder card grid if it's visible
+  const folView = document.getElementById('notes-folder-view');
+  if (folView && folView.style.display !== 'none' && typeof _renderNotesFolderGrid === 'function') {
+    _renderNotesFolderGrid(_currentFolderId);
+  }
+}
+

@@ -16,9 +16,9 @@
           <div class="card-body" style="padding:10px 14px 12px;"><div id="planner-timeline"></div></div>
         </div>
         <div class="card" style="margin-bottom:14px;">
-          <div class="card-header" style="cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('planner-collapsed')">
+          <div class="card-header" style="cursor:pointer;user-select:none;" onclick="_toggleReviewQueue(this)">
             <span class="card-title">🔁 Repasos Pendientes</span>
-            <span style="font-size:11px;color:var(--text3);">▾ expandir</span>
+            <span id="review-queue-chevron" style="font-size:11px;color:var(--text3);">▾ ocultar</span>
           </div>
           <div id="planner-review-queue"></div>
         </div>

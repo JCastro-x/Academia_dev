@@ -1,164 +1,159 @@
       <!-- ═══ PAGE: NOTAS ═══ -->
       <div class="page" id="page-notas">
-        <!-- Top bar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-          <span style="font-size:16px;font-weight:700;">📝 Bloc de Notas</span>
+
+        <!-- ── Top bar ── -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button id="notes-back-btn" class="btn btn-ghost btn-sm" onclick="_notesGoBack()" style="display:none;">← Volver</button>
+            <span style="font-size:16px;font-weight:700;" id="notes-page-title">📝 Bloc de Notas</span>
+          </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-notes-search')" title="Buscar en notas">🔍 Buscar</button>
-            <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;" id="notes-autosave-indicator">—</span>
-            <button class="btn btn-ghost btn-sm" onclick="openNewNoteMenu()" title="Nueva nota de texto">📄 Nueva nota</button>
-            <button class="btn btn-ghost btn-sm" onclick="addNewDrawingNote()" title="Nueva nota de dibujo">🎨 Nuevo dibujo</button>
-            <button class="btn btn-primary btn-sm" onclick="openNewFolderModal()" title="Nueva carpeta">📁 Carpeta</button>
+            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-notes-search')">🔍 Buscar</button>
+            <button class="btn btn-ghost btn-sm" onclick="_notesNewNote()">📄 Nueva nota</button>
+            <button class="btn btn-ghost btn-sm" onclick="_notesNewDrawing()">🎨 Nuevo dibujo</button>
+            <button class="btn btn-primary btn-sm" onclick="openNewFolderModal()">📁 Carpeta</button>
           </div>
         </div>
 
-        <div class="notes-pro-layout" id="notes-pro-layout">
-
-          <!-- ── LEFT SIDEBAR ── -->
-          <div class="notes-pro-sidebar" id="notes-pro-sidebar">
-
-            <!-- FOLDERS PANEL -->
-            <div class="notes-folders-panel" id="notes-folders-panel">
-              <div class="notes-folders-header">
-                <span style="font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--text2);">CARPETAS</span>
-                <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px;" onclick="openNewFolderModal()" title="Nueva carpeta">+</button>
-              </div>
-              <div id="notes-folders-list"></div>
-            </div>
-
-            <!-- NOTES LIST PANEL -->
-            <div class="notes-list-panel" id="notes-list-panel">
-              <div class="notes-list-header">
-                <span id="notes-folder-label" style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">TODAS</span>
-                <button class="btn btn-ghost btn-sm" style="padding:2px 7px;font-size:11px;" onclick="openNewNoteMenu()" title="Nueva nota">+</button>
-              </div>
-              <div id="notes-list-items" style="flex:1;overflow-y:auto;"></div>
-            </div>
-
-          </div>
-
-          <!-- ── RIGHT EDITOR ── -->
-          <div class="notes-pro-editor" id="notes-pro-editor-area">
-
-            <!-- Toolbar (changes based on note type) -->
-            <div class="notes-editor-toolbar" id="notes-toolbar">
-              <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">Selecciona o crea una nota</span>
-            </div>
-
-            <!-- Title + meta (text notes) -->
-            <div id="notes-title-wrap" class="notes-title-section" style="display:none;padding:12px 20px 0;border-bottom:1px solid var(--border);">
-              <input type="text" id="notes-title-inp" class="form-input" placeholder="Título de la nota..."
-                style="font-size:15px;font-weight:700;border:none;background:transparent;padding:5px 0;border-bottom:2px solid var(--border2);outline:none;width:100%;"
-                oninput="onNotesTitleInput()">
-              <div style="display:flex;gap:8px;margin-top:7px;margin-bottom:9px;flex-wrap:wrap;align-items:center;">
-                <select id="notes-folder-sel-editor" class="form-select" style="padding:4px 8px;font-size:11px;width:auto;" onchange="onNoteFolderChange()">
-                  <option value="">— Sin carpeta —</option>
-                </select>
-                <select id="notes-mat-sel-editor" class="form-select" style="padding:4px 8px;font-size:11px;width:auto;" onchange="onNoteMatChange()">
-                  <option value="">— Sin materia —</option>
-                </select>
-                <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;" id="notes-timestamp">—</span>
-                <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:13px;" onclick="openCanvasForNote()" title="Abrir canvas de dibujo">🎨</button>
-                <button class="btn btn-ghost btn-sm" onclick="expandCurrentNote()" title="Expandir nota en pantalla completa" style="font-size:13px;">⛶</button>
-                <button class="btn btn-ghost btn-sm" onclick="exportCurrentNote()" title="Exportar a PDF/texto">⬇️</button>
-                <label class="btn btn-ghost btn-sm" title="Escanear PDF o imagen → texto (OCR)" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-                  📄 Escanear
-                  <input type="file" accept=".pdf,image/*" multiple style="display:none;" onchange="scanDocumentFiles(this.files);this.value=''">
-                </label>
-                <label class="btn btn-ghost btn-sm" title="Adjuntar imágenes a esta nota" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-                  🖼️ Imágenes
-                  <input type="file" accept="image/*" multiple style="display:none;" onchange="attachImagesToNote(this.files);this.value=''">
-                </label>
-                <label class="btn btn-ghost btn-sm" title="Ver PDF completo en notas" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-                  📑 Ver PDF
-                  <input type="file" accept=".pdf" style="display:none;" onchange="loadPDFIntoNotes(this.files[0]);this.value=''">
-                </label>
-                <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()">🗑️</button>
-              </div>
-              <div style="padding:4px 0 8px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-                <span style="font-size:10px;color:var(--text3);">🏷</span>
-                <input type="text" id="notes-tags-inp" class="form-input" placeholder="tags separados por coma..."
-                  style="flex:1;min-width:120px;padding:3px 7px;font-size:11px;border:none;background:var(--surface2);border-radius:6px;"
-                  oninput="onNoteTagsInput()">
-                <div id="notes-tags-display" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
-              </div>
-            </div>
-
-            <!-- Rich text formatting toolbar -->
-            <div class="notes-richtext-toolbar" id="notes-rte-toolbar">
-              <select class="rte-select" id="rte-heading" title="Estilo de texto" onchange="rteApplyHeading(this.value)">
-                <option value="p">Párrafo</option>
-                <option value="h1">Encabezado 1</option>
-                <option value="h2">Encabezado 2</option>
-                <option value="h3">Encabezado 3</option>
-              </select>
-              <div class="rte-sep"></div>
-              <button class="rte-btn" id="rte-bold" onclick="rteExec('bold')" title="Negrita (Ctrl+B)"><b>B</b></button>
-              <button class="rte-btn" id="rte-italic" onclick="rteExec('italic')" title="Itálica (Ctrl+I)"><i>I</i></button>
-              <button class="rte-btn" id="rte-underline" onclick="rteExec('underline')" title="Subrayado (Ctrl+U)"><u>U</u></button>
-              <button class="rte-btn" id="rte-strikethrough" onclick="rteExec('strikeThrough')" title="Tachado" style="text-decoration:line-through;">S</button>
-              <div class="rte-sep"></div>
-              <button class="rte-btn" onclick="rteExec('insertUnorderedList')" title="Lista con viñetas">☰</button>
-              <button class="rte-btn" onclick="rteExec('insertOrderedList')" title="Lista numerada">①</button>
-              <button class="rte-btn" onclick="rteExec('formatBlock','blockquote')" title="Cita">❝</button>
-              <div class="rte-sep"></div>
-              <button class="rte-btn" onclick="rteCopyFormatted()" title="Copiar con formato (HTML)" style="font-size:10px;">📋</button>
-              <button class="rte-btn" onclick="rteCopyPlain()" title="Copiar como texto plano" style="font-size:10px;">📄</button>
-            </div>
-
-            <!-- Rich text editor (contenteditable) -->
-            <div class="notes-richtext-editor" id="notes-rte"
-              contenteditable="true"
-              data-placeholder="Escribe tus apuntes aquí... Usa la barra de arriba para negrita, encabezados, listas, etc."
-              oninput="onRteInput()"
-              onkeydown="onRteKeydown(event)"
-              onmouseup="rteUpdateToolbarState()"
-              onkeyup="rteUpdateToolbarState()"
-              style="display:none;"></div>
-
-            <!-- Text editor (hidden, kept for compat) -->
-            <textarea class="notes-main-textarea" id="notes-main-ta"
-              placeholder="Escribe tus apuntes aquí...&#10;&#10;Puedes pegar imágenes (Ctrl+V) directamente."
-              oninput="onNotesInput()" style="display:none;position:absolute;pointer-events:none;opacity:0;"></textarea>
-
-            <!-- Images strip (shown when note has images) -->
-            <div class="notes-images-strip" id="notes-images-strip" style="display:none;"></div>
-
-            <!-- Word count -->
-            <div class="notes-wordcount" id="notes-wordcount" style="display:none;">0 palabras · 0 caracteres</div>
-
-            <!-- Drawing note view -->
-            <div class="notes-drawing-area" id="notes-drawing-area" style="display:none;">
-              <div class="canvas-toolbar" id="canvas-toolbar-inline">
-                <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">Vista previa del dibujo</span>
-                <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openCanvasForNote()">✏️ Editar dibujo</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()">🗑️</button>
-              </div>
-              <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:20px;">
-                <img id="notes-drawing-preview" style="max-width:100%;max-height:100%;border-radius:8px;border:1px solid var(--border);" src="" alt="dibujo">
-              </div>
-            </div>
-
-            <!-- PDF attachments strip -->
-            <div id="notes-pdf-strip" style="display:none;padding:8px 16px;border-top:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;gap:8px;"></div>
-
-            <!-- Empty state -->
-            <div id="notes-empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:60px 20px;color:var(--text3);">
-              <div style="font-size:44px;margin-bottom:12px;">📝</div>
-              <div style="font-size:14px;font-weight:700;">Sin nota seleccionada</div>
-              <div style="font-size:12px;margin-top:6px;">Elige una nota o crea una nueva</div>
-              <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
-                <button class="btn btn-primary btn-sm" onclick="openNewNoteMenu()">📄 Nueva nota</button>
-                <button class="btn btn-ghost btn-sm" onclick="addNewDrawingNote()">🎨 Nuevo dibujo</button>
-              </div>
-            </div>
-
-          </div>
+        <!-- ── LEVEL 1: Hub (carpetas / materias) ── -->
+        <div id="notes-hub-view">
+          <div id="notes-hub-grid"></div>
         </div>
 
-        <!-- Hidden compat selectors -->
+        <!-- ── LEVEL 2: Notas de una carpeta como tarjetas ── -->
+        <div id="notes-folder-view" style="display:none;">
+          <div id="notes-folder-grid"></div>
+        </div>
+
+        <!-- Hidden compat -->
         <select id="notes-mat-sel" style="display:none;" onchange="renderNotesPage()"></select>
         <div id="notes-container" style="display:none;"></div>
+        <!-- legacy layout hidden but kept for compat functions -->
+        <div class="notes-pro-layout" id="notes-pro-layout" style="display:none !important;position:absolute;pointer-events:none;opacity:0;"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           EDITOR FLOTANTE (modal de nota)
+      ═══════════════════════════════════════════ -->
+      <div id="note-editor-backdrop" onclick="closeNoteEditorModal()"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;backdrop-filter:blur(4px);"></div>
+
+      <div id="note-editor-modal"
+        style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
+          width:min(780px,96vw);max-height:90vh;
+          background:var(--surface);border:1px solid var(--border);border-radius:18px;
+          z-index:601;display:none;flex-direction:column;overflow:hidden;
+          box-shadow:0 24px 80px rgba(0,0,0,.6);transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s;">
+
+        <!-- Modal header -->
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+          <input type="text" id="notes-title-inp" class="form-input"
+            placeholder="Título de la nota..."
+            style="font-size:15px;font-weight:700;border:none;background:transparent;padding:4px 0;outline:none;flex:1;min-width:0;"
+            oninput="onNotesTitleInput()">
+          <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;" id="notes-autosave-indicator">—</span>
+          <button class="btn btn-ghost btn-sm" onclick="expandCurrentNote()" title="Pantalla completa" style="flex-shrink:0;">⛶</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportCurrentNote()" style="flex-shrink:0;">⬇️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()" style="flex-shrink:0;">🗑️</button>
+          <button onclick="closeNoteEditorModal()"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 11px;color:var(--text2);cursor:pointer;font-size:13px;font-weight:700;flex-shrink:0;">✕</button>
+        </div>
+
+        <!-- Meta row -->
+        <div id="notes-title-wrap" style="padding:8px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <select id="notes-folder-sel-editor" class="form-select" style="padding:4px 8px;font-size:11px;width:auto;" onchange="onNoteFolderChange()">
+            <option value="">— Sin carpeta —</option>
+          </select>
+          <select id="notes-mat-sel-editor" class="form-select" style="padding:4px 8px;font-size:11px;width:auto;" onchange="onNoteMatChange()">
+            <option value="">— Sin materia —</option>
+          </select>
+          <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;" id="notes-timestamp">—</span>
+          <button class="btn btn-ghost btn-sm" onclick="openCanvasForNote()" title="Abrir canvas" style="font-size:13px;">🎨</button>
+          <label class="btn btn-ghost btn-sm" title="Escanear PDF/imagen" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+            📄 Escanear<input type="file" accept=".pdf,image/*" multiple style="display:none;" onchange="scanDocumentFiles(this.files);this.value=''">
+          </label>
+          <label class="btn btn-ghost btn-sm" title="Adjuntar imágenes" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+            🖼️<input type="file" accept="image/*" multiple style="display:none;" onchange="attachImagesToNote(this.files);this.value=''">
+          </label>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+            📑 PDF<input type="file" accept=".pdf" style="display:none;" onchange="loadPDFIntoNotes(this.files[0]);this.value=''">
+          </label>
+          <div style="padding:0;display:flex;gap:5px;align-items:center;flex:1;">
+            <span style="font-size:10px;color:var(--text3);">🏷</span>
+            <input type="text" id="notes-tags-inp" class="form-input"
+              placeholder="tags, separados, por coma"
+              style="flex:1;min-width:80px;padding:3px 7px;font-size:11px;border:none;background:var(--surface2);border-radius:6px;"
+              oninput="onNoteTagsInput()">
+            <div id="notes-tags-display" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+          </div>
+        </div>
+
+        <!-- RTE toolbar -->
+        <div class="notes-richtext-toolbar" id="notes-rte-toolbar" style="flex-shrink:0;">
+          <select class="rte-select" id="rte-heading" title="Estilo" onchange="rteApplyHeading(this.value)">
+            <option value="p">Párrafo</option>
+            <option value="h1">H1</option>
+            <option value="h2">H2</option>
+            <option value="h3">H3</option>
+          </select>
+          <div class="rte-sep"></div>
+          <button class="rte-btn" id="rte-bold"          onclick="rteExec('bold')"            title="Negrita"><b>B</b></button>
+          <button class="rte-btn" id="rte-italic"        onclick="rteExec('italic')"          title="Itálica"><i>I</i></button>
+          <button class="rte-btn" id="rte-underline"     onclick="rteExec('underline')"       title="Subrayado"><u>U</u></button>
+          <button class="rte-btn" id="rte-strikethrough" onclick="rteExec('strikeThrough')"   title="Tachado" style="text-decoration:line-through;">S</button>
+          <div class="rte-sep"></div>
+          <button class="rte-btn" onclick="rteExec('insertUnorderedList')" title="Lista">☰</button>
+          <button class="rte-btn" onclick="rteExec('insertOrderedList')"   title="Numerada">①</button>
+          <button class="rte-btn" onclick="rteExec('formatBlock','blockquote')" title="Cita">❝</button>
+          <div class="rte-sep"></div>
+          <button class="rte-btn" onclick="rteCopyFormatted()" style="font-size:10px;">📋</button>
+          <button class="rte-btn" onclick="rteCopyPlain()"     style="font-size:10px;">📄</button>
+        </div>
+
+        <!-- Editor area (scrollable) -->
+        <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;">
+          <div class="notes-richtext-editor" id="notes-rte"
+            contenteditable="true"
+            data-placeholder="Escribe tus apuntes aquí..."
+            oninput="onRteInput()"
+            onkeydown="onRteKeydown(event)"
+            onmouseup="rteUpdateToolbarState()"
+            onkeyup="rteUpdateToolbarState()"
+            style="display:none;flex:1;padding:16px 20px;min-height:200px;"></div>
+
+          <textarea class="notes-main-textarea" id="notes-main-ta"
+            placeholder="Escribe tus apuntes aquí..." oninput="onNotesInput()"
+            style="display:none;position:absolute;pointer-events:none;opacity:0;"></textarea>
+
+          <div class="notes-images-strip" id="notes-images-strip" style="display:none;"></div>
+          <div class="notes-wordcount"    id="notes-wordcount"    style="display:none;padding:6px 20px;"></div>
+
+          <!-- Drawing view -->
+          <div class="notes-drawing-area" id="notes-drawing-area" style="display:none;flex-direction:column;flex:1;">
+            <div class="canvas-toolbar" id="canvas-toolbar-inline" style="padding:8px 14px;border-bottom:1px solid var(--border);">
+              <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">Vista previa del dibujo</span>
+              <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openCanvasForNote()">✏️ Editar dibujo</button>
+            </div>
+            <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:20px;">
+              <img id="notes-drawing-preview" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" src="" alt="dibujo">
+            </div>
+          </div>
+
+          <div id="notes-pdf-strip" style="display:none;padding:8px 16px;border-top:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;gap:8px;"></div>
+
+          <!-- Empty state inside modal (shouldn't normally show) -->
+          <div id="notes-empty-state" style="display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px;color:var(--text3);">
+            <div style="font-size:40px;margin-bottom:10px;">📝</div>
+            <div style="font-size:13px;font-weight:700;">Sin nota seleccionada</div>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+              <button class="btn btn-primary btn-sm" onclick="_notesNewNote()">📄 Nueva nota</button>
+              <button class="btn btn-ghost btn-sm"   onclick="_notesNewDrawing()">🎨 Nuevo dibujo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toolbar de nota (bottom, para dibujos) -->
+        <div class="notes-editor-toolbar" id="notes-toolbar" style="display:none;padding:6px 14px;border-top:1px solid var(--border);flex-shrink:0;"></div>
       </div>
 
       <!-- ═══ CANVAS MODAL ═══ -->
@@ -167,46 +162,39 @@
           <div class="canvas-toolbar" id="canvas-toolbar-modal" style="padding:8px 14px;border-bottom:1px solid var(--border);gap:8px;flex-shrink:0;flex-wrap:wrap;">
             <span style="font-size:13px;font-weight:700;" id="canvas-note-title-lbl">Dibujo</span>
             <div style="width:1px;height:20px;background:var(--border);margin:0 3px;"></div>
-            <!-- Colors -->
             <div style="display:flex;gap:5px;align-items:center;" id="canvas-colors">
-              <button class="canvas-color-btn active" data-color="#e2e8f0" style="background:#e2e8f0;" onclick="setCanvasColor(this,'#e2e8f0')"></button>
-              <button class="canvas-color-btn" data-color="#f87171" style="background:#f87171;" onclick="setCanvasColor(this,'#f87171')"></button>
-              <button class="canvas-color-btn" data-color="#fb923c" style="background:#fb923c;" onclick="setCanvasColor(this,'#fb923c')"></button>
-              <button class="canvas-color-btn" data-color="#facc15" style="background:#facc15;" onclick="setCanvasColor(this,'#facc15')"></button>
-              <button class="canvas-color-btn" data-color="#4ade80" style="background:#4ade80;" onclick="setCanvasColor(this,'#4ade80')"></button>
-              <button class="canvas-color-btn" data-color="#60a5fa" style="background:#60a5fa;" onclick="setCanvasColor(this,'#60a5fa')"></button>
-              <button class="canvas-color-btn" data-color="#a78bfa" style="background:#a78bfa;" onclick="setCanvasColor(this,'#a78bfa')"></button>
-              <button class="canvas-color-btn" data-color="#f472b6" style="background:#f472b6;" onclick="setCanvasColor(this,'#f472b6')"></button>
+              <div class="canvas-color-btn active" data-color="#e2e8f0" style="background:#e2e8f0;" onclick="setCanvasColor(this,'#e2e8f0')"></div>
+              <div class="canvas-color-btn" data-color="#f87171" style="background:#f87171;" onclick="setCanvasColor(this,'#f87171')"></div>
+              <div class="canvas-color-btn" data-color="#fbbf24" style="background:#fbbf24;" onclick="setCanvasColor(this,'#fbbf24')"></div>
+              <div class="canvas-color-btn" data-color="#4ade80" style="background:#4ade80;" onclick="setCanvasColor(this,'#4ade80')"></div>
+              <div class="canvas-color-btn" data-color="#60a5fa" style="background:#60a5fa;" onclick="setCanvasColor(this,'#60a5fa')"></div>
+              <div class="canvas-color-btn" data-color="#c084fc" style="background:#c084fc;" onclick="setCanvasColor(this,'#c084fc')"></div>
             </div>
-            <div style="width:1px;height:20px;background:var(--border);margin:0 3px;"></div>
-            <!-- Brush sizes -->
             <div style="display:flex;gap:6px;align-items:center;" id="canvas-sizes">
-              <div class="canvas-size-btn active" data-size="2"  style="width:6px;height:6px;"  onclick="setCanvasSize(this,2)"></div>
-              <div class="canvas-size-btn" data-size="5"  style="width:10px;height:10px;" onclick="setCanvasSize(this,5)"></div>
-              <div class="canvas-size-btn" data-size="10" style="width:16px;height:16px;" onclick="setCanvasSize(this,10)"></div>
-              <div class="canvas-size-btn" data-size="20" style="width:22px;height:22px;" onclick="setCanvasSize(this,20)"></div>
+              <div class="canvas-size-btn active" data-size="2"  style="width:6px;height:6px;"   onclick="setCanvasSize(this,2)"></div>
+              <div class="canvas-size-btn"        data-size="5"  style="width:10px;height:10px;" onclick="setCanvasSize(this,5)"></div>
+              <div class="canvas-size-btn"        data-size="10" style="width:16px;height:16px;" onclick="setCanvasSize(this,10)"></div>
+              <div class="canvas-size-btn"        data-size="20" style="width:22px;height:22px;" onclick="setCanvasSize(this,20)"></div>
             </div>
             <div style="width:1px;height:20px;background:var(--border);margin:0 3px;"></div>
-            <!-- Drawing tools -->
             <div style="display:flex;gap:5px;align-items:center;">
-              <button class="btn btn-ghost btn-sm canvas-tool-btn active" id="tool-pen-btn" onclick="setCanvasTool(this,'pen')" title="Lápiz libre">✏️</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn" id="tool-line-btn" onclick="setCanvasTool(this,'line')" title="Línea recta">╱</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn" id="tool-rect-btn" onclick="setCanvasTool(this,'rect')" title="Rectángulo">▭</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn" id="tool-circle-btn" onclick="setCanvasTool(this,'circle')" title="Círculo">⭕</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn" id="tool-text-btn" onclick="setCanvasTool(this,'text')" title="Texto — haz clic en el canvas para escribir">T</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn" id="tool-move-btn" onclick="setCanvasTool(this,'move')" title="Mover imagen — arrastra las imágenes del canvas">↕ Mover</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn" id="tool-ai-btn" onclick="setCanvasTool(this,'ai')" title="Auto-corrección de formas: dibuja libremente y se convierte en línea/círculo/rectángulo" style="color:var(--accent);">🪄 Auto</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn active" id="tool-pen-btn"    onclick="setCanvasTool(this,'pen')"    title="Lápiz">✏️</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-line-btn"   onclick="setCanvasTool(this,'line')"   title="Línea">╱</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-rect-btn"   onclick="setCanvasTool(this,'rect')"   title="Rect">▭</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-circle-btn" onclick="setCanvasTool(this,'circle')" title="Círculo">⭕</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-text-btn"   onclick="setCanvasTool(this,'text')"   title="Texto">T</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-move-btn"   onclick="setCanvasTool(this,'move')"   title="Mover">↕ Mover</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-ai-btn"     onclick="setCanvasTool(this,'ai')"     style="color:var(--accent);">🪄 Auto</button>
             </div>
             <div style="width:1px;height:20px;background:var(--border);margin:0 3px;"></div>
-            <!-- Tools -->
-            <button id="canvas-eraser-btn" class="btn btn-ghost btn-sm" onclick="toggleCanvasEraser()" title="Borrador">🧹</button>
-            <button class="btn btn-ghost btn-sm" onclick="undoCanvas()" title="Deshacer (Ctrl+Z)">↩️</button>
-            <button class="btn btn-ghost btn-sm" onclick="clearCanvas()" title="Limpiar todo">🗑️</button>
-            <label class="btn btn-ghost btn-sm" title="Pegar imagen desde archivo" style="cursor:pointer;">🖼️ Imagen<input type="file" accept="image/*" style="display:none;" onchange="_pasteImageToCanvas(this.files[0],50,50);this.value=''"></label>
+            <button id="canvas-eraser-btn" class="btn btn-ghost btn-sm" onclick="toggleCanvasEraser()">🧹</button>
+            <button class="btn btn-ghost btn-sm" onclick="undoCanvas()">↩️</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearCanvas()">🗑️</button>
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer;">🖼️ Imagen<input type="file" accept="image/*" style="display:none;" onchange="_pasteImageToCanvas(this.files[0],50,50);this.value=''"></label>
             <div style="flex:1;"></div>
             <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">Ctrl+V para pegar imagen</span>
             <button class="btn btn-primary btn-sm" onclick="saveCanvasAndClose()">💾 Guardar</button>
-            <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-canvas')">✕</button>
+            <button class="btn btn-ghost btn-sm"   onclick="closeModal('modal-canvas')">✕</button>
           </div>
           <canvas id="notes-canvas" style="flex:1;width:100%;cursor:crosshair;touch-action:none;"></canvas>
         </div>
@@ -275,4 +263,3 @@
           </div>
         </div>
       </div>
-

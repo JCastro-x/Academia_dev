@@ -616,13 +616,19 @@ function renderReviewQueue() {
   });
 
   let html = '';
+  let _grpIdx = 0;
   Object.values(groups).forEach(group => {
     if (!group.items.length) return;
+    const gid = 'prq-g-' + _grpIdx++;
     html += `<div class="prq-group">
-      <div class="prq-group-header">
+      <div class="prq-group-header" style="cursor:pointer;user-select:none;" onclick="_togglePrqGroup('${gid}',this)">
         <span style="font-size:11px;font-weight:800;color:${group.color};font-family:'Space Mono',monospace;">${group.label}</span>
-        <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${group.items.length} repaso(s)</span>
-      </div>`;
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${group.items.length} repaso(s)</span>
+          <span style="font-size:10px;color:var(--text3);">▾</span>
+        </div>
+      </div>
+      <div id="${gid}">`;
 
     const byDate = {};
     group.items.forEach(i => { if (!byDate[i.date]) byDate[i.date]=[]; byDate[i.date].push(i); });
@@ -672,7 +678,7 @@ function renderReviewQueue() {
         </div>`;
       });
     });
-    html += `</div>`;
+    html += `</div></div>`;
   });
   container.innerHTML = html;
 }
@@ -853,37 +859,48 @@ function _renderTopicsAllMats(container) {
     container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3);">Agrega materias primero</div>`;
     return;
   }
-  let html = '';
-  State.materias.filter(m => !m.parentId).forEach(mat => {
+  const mats = State.materias.filter(m => !m.parentId);
+  if (!mats.length) {
+    container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3);">Sin temas registrados</div>`;
+    return;
+  }
+  const cards = mats.map(mat => {
     const matTopics = State.topics.filter(t => t.matId === mat.id);
     const total   = matTopics.length;
     const done    = matTopics.filter(t => t.subs?.every(s=>s.done) || (t.seen && !t.subs?.length)).length;
     const pending = matTopics.filter(t => (t.reviewSchedule||[]).some(r=>!r.done&&r.date<=today)).length;
     const pct = total ? Math.round(done/total*100) : 0;
     const clr = pct>=70?'#4ade80':pct>=30?'#fbbf24':total?'#f87171':'var(--text3)';
-    html += `<div class="card" onclick="document.getElementById('topics-mat-sel').value='${mat.id}';renderTopics();"
-      style="cursor:pointer;border-left:4px solid ${mat.color};margin-bottom:12px;">
-      <div class="card-body" style="padding:14px 16px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="font-size:22px;">${mat.icon||'📚'}</span>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${mat.name}</div>
-            <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${mat.code}</div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;">
-            <div style="font-size:20px;font-weight:800;color:${clr};">${pct}%</div>
-            <div style="font-size:9px;color:var(--text3);">preparado</div>
+    return `<div onclick="document.getElementById('topics-mat-sel').value='${mat.id}';renderTopics();"
+      style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-top:3px solid ${mat.color};
+        border-radius:var(--radius);padding:16px 14px;display:flex;flex-direction:column;gap:10px;
+        transition:border-color .15s,background .15s;min-width:0;"
+      onmouseover="this.style.background='var(--surface2)'"
+      onmouseout="this.style.background='var(--surface)'">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+          <span style="font-size:24px;flex-shrink:0;">${mat.icon||'📚'}</span>
+          <div style="min-width:0;">
+            <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${mat.name}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:1px;">${mat.code}</div>
           </div>
         </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:22px;font-weight:800;color:${clr};line-height:1;">${pct}%</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:1px;">preparado</div>
+        </div>
+      </div>
+      <div>
         <div class="prog-bar" style="height:5px;margin-bottom:6px;"><div class="prog-fill" style="background:${clr};width:${pct}%;transition:width .4s;"></div></div>
-        <div style="display:flex;gap:12px;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">
+        <div style="display:flex;gap:10px;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;flex-wrap:wrap;">
           <span>📖 ${total} temas</span>
-          ${pending>0?`<span style="color:#fbbf24;">🔁 ${pending} repasos hoy/atrasados</span>`:''}
+          ${pending>0?`<span style="color:#fbbf24;">🔁 ${pending} atrasados</span>`:''}
         </div>
       </div>
     </div>`;
-  });
-  container.innerHTML = html || `<div style="text-align:center;padding:48px;color:var(--text3);">Sin temas registrados</div>`;
+  }).join('');
+
+  container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">${cards}</div>`;
 }
 
 function _renderTopicsForMat(container, matId) {
@@ -1152,4 +1169,29 @@ function _toggleRepeatFields() {
   const distWrap   = document.getElementById('t-distributed-wrap');
   if (repeatWrap) repeatWrap.style.display = isRepeat ? 'block' : 'none';
   if (distWrap)   distWrap.style.display   = isRepeat ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOGGLE — Cola de repasos (sección completa y grupos)
+// ═══════════════════════════════════════════════════════════════
+
+// Toggle toda la sección de Repasos Pendientes
+function _toggleReviewQueue(headerEl) {
+  const queue = document.getElementById('planner-review-queue');
+  const chev  = document.getElementById('review-queue-chevron');
+  if (!queue) return;
+  const isOpen = queue.style.display !== 'none';
+  queue.style.display = isOpen ? 'none' : '';
+  if (chev) chev.textContent = isOpen ? '▸ expandir' : '▾ ocultar';
+}
+
+// Toggle un grupo individual dentro de la cola (Mañana / Esta semana / etc.)
+function _togglePrqGroup(id, headerEl) {
+  const body = document.getElementById(id);
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  // Actualizar el chevron dentro del header
+  const chev = headerEl?.querySelector('span:last-child');
+  if (chev) chev.textContent = isOpen ? '▸' : '▾';
 }
