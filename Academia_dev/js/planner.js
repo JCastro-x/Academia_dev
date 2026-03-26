@@ -40,9 +40,11 @@ const PLANNER = (() => {
   // ── Carga real de un día ──────────────────────────────────────
   function getDayMinutes(dateStr) {
     let total = 0;
+    // Evitar doble conteo: si una tarea tiene datePlanned Y plannedWorkDates,
+    // priorizar datePlanned (timeEst) y no contarla de nuevo por plannedWorkDates
     State.tasks.filter(t => !t.done && t.datePlanned === dateStr)
       .forEach(t => { total += t.timeEst || 60; });
-    State.tasks.filter(t => !t.done && (t.plannedWorkDates || []).includes(dateStr))
+    State.tasks.filter(t => !t.done && t.datePlanned !== dateStr && (t.plannedWorkDates || []).includes(dateStr))
       .forEach(t => { total += Math.round((t.estHoursPerDay || 1) * 60); });
     State.topics.forEach(topic => {
       (topic.reviewSchedule || []).forEach(r => {
@@ -193,8 +195,14 @@ const PLANNER = (() => {
     };
     const today = todayStr();
 
-    // ── Temas nuevos: sólo si dateAdded === dateStr ──────────────
-    State.topics.filter(t => t.dateAdded === dateStr).forEach(t => {
+    // ── Temas nuevos: sólo si dateAdded === dateStr
+    //    Y no tienen repasos ya generados (si los tienen = ya fueron procesados,
+    //    sus repasos aparecerán en sus fechas correspondientes)
+    State.topics.filter(t => {
+      if (t.dateAdded !== dateStr) return false;
+      const hasReviews = (t.reviewSchedule || []).length > 0;
+      return !hasReviews;
+    }).forEach(t => {
       const m    = getMat(t.matId);
       const mins = t.estMinutes || NEW_TOPIC_MIN;
       plan.newTopics.push({ id: t.id, name: t.name, parcial: t.parcial,
@@ -233,6 +241,7 @@ const PLANNER = (() => {
         if (seen.has(t.id)) return;
         seen.add(t.id);
         const m         = getMat(t.matId);
+        // Si tiene datePlanned para este día, usar timeEst; si solo está en plannedWorkDates, usar estHoursPerDay
         const mins      = t.datePlanned === dateStr
           ? (t.timeEst || 60)
           : Math.round((t.estHoursPerDay || 1) * 60);
@@ -389,16 +398,22 @@ function renderPlannerTimeline() {
 
 // ── Plan del Día — reactivo al día seleccionado ───────────────
 let _plannerActiveDate = null;
+// Track qué secciones están abiertas (persistir entre re-renders)
+const _pdSectOpen = { tasks: true, reviews: true, topics: true };
 
 function renderDailyPlan(dateStr) {
-  const target    = dateStr || _plannerActiveDate || PLANNER.todayStr();
+  // Siempre usar hoy como default; nunca mostrar fecha equivocada
+  const today     = PLANNER.todayStr();
+  const target    = dateStr || _plannerActiveDate || today;
+  if (dateStr) _plannerActiveDate = dateStr;       // guardar el día activo
+  else if (!_plannerActiveDate) _plannerActiveDate = today;
+
   const container = document.getElementById('planner-daily-plan');
   if (!container) return;
 
   const plan      = PLANNER.getDailyPlan(target);
-  // Usa exactamente loadBar() — mismo cálculo que el gráfico de 14 días
   const lb        = PLANNER.loadBar(target);
-  const isToday   = target === PLANNER.todayStr();
+  const isToday   = target === today;
   const dateLabel = isToday ? 'Hoy' : PLANNER.fmtShort(target);
   const empty     = !plan.newTopics.length && !plan.reviews.length && !plan.tasks.length;
 
@@ -410,7 +425,7 @@ function renderDailyPlan(dateStr) {
     return;
   }
 
-  // ── Encabezado con barra (idéntica al gráfico de 14 días) ────
+  // ── Encabezado con barra ─────────────────────────────────────
   let html = `<div style="padding:10px 14px 6px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
       <span style="font-size:11px;color:var(--text2);font-weight:700;">${dateLabel}</span>
@@ -420,7 +435,6 @@ function renderDailyPlan(dateStr) {
       <div class="prog-fill" style="background:${lb.color};width:${Math.min(lb.pct,100)}%;border-radius:3px;transition:width .4s;"></div>
     </div>`;
 
-  // ── Aviso de desbordamiento ──────────────────────────────────
   if (plan.hasOverflow) {
     const overH = ((plan.totalMinutes - PLANNER.MAX_DAILY_MIN) / 60).toFixed(1);
     const msg = plan.overdueMinutes > 0
@@ -432,52 +446,79 @@ function renderDailyPlan(dateStr) {
   }
   html += `</div>`;
 
-  // Helper: encabezado de sección con subtotal de horas
-  const _secHdr = (icon, label, mins) =>
-    `<div class="planner-section-title" style="display:flex;justify-content:space-between;">
-      <span>${icon} ${label}</span>
+  // ── Helper: cabecera de sección DESPLEGABLE ──────────────────
+  const _secHdr = (id, icon, label, mins, open) => {
+    const chev = open ? '▾' : '▸';
+    return `<div class="planner-section-title planner-sec-toggle"
+      style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;"
+      onclick="_pdToggleSec('${id}')">
+      <span style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text3);transition:transform .2s;" id="pdchev-${id}">${chev}</span>
+        ${icon} ${label}
+      </span>
       <span style="color:var(--accent2);font-size:9px;">${(mins/60).toFixed(1)}h</span>
     </div>`;
+  };
 
-  // ── 1. Tareas (urgentes/atrasadas primero) ───────────────────
+  // ── Formato de fecha resaltado ───────────────────────────────
+  const _fmtDueDate = (due, isOverdue) => {
+    if (!due) return '';
+    const d    = new Date(due + 'T00:00:00');
+    const lbl  = d.toLocaleDateString('es-ES', { day:'numeric', month:'short' });
+    const diff = Math.round((d - new Date(today + 'T00:00:00')) / 86400000);
+    let color, badge = '';
+    if (isOverdue || diff < 0) {
+      color = '#f87171'; badge = ' 🔴';
+    } else if (diff === 0) {
+      color = '#f87171'; badge = ' · HOY';
+    } else if (diff === 1) {
+      color = '#fbbf24'; badge = ' · mañana';
+    } else if (diff <= 3) {
+      color = '#fbbf24'; badge = ` · en ${diff}d`;
+    } else {
+      color = 'var(--text3)'; badge = '';
+    }
+    return `· <span style="color:${color};font-weight:700;font-family:'Space Mono',monospace;font-size:10px;">📅 ${lbl}${badge}</span>`;
+  };
+
+  // ── 1. Tareas ────────────────────────────────────────────────
   if (plan.tasks.length) {
     const taskMins = plan.tasks.reduce((s, t) => s + t.minutes, 0);
-    html += _secHdr('✅', `Tareas (${plan.tasks.length})`, taskMins);
+    const open = _pdSectOpen.tasks;
+    html += _secHdr('tasks', '✅', `Tareas (${plan.tasks.length})`, taskMins, open);
+    html += `<div id="pdsect-tasks" style="display:${open?'block':'none'};">`;
     html += plan.tasks.map(t => {
-      const dc  = t.isOverdue ? '#f87171'
-        : (t.due && (new Date(t.due) - new Date()) < 86400000 * 3 ? '#fbbf24' : 'var(--text3)');
-      const dStr = t.due
-        ? `· <span style="color:${dc};">📅 ${new Date(t.due+'T00:00:00')
-            .toLocaleDateString('es-ES',{day:'numeric',month:'short'})}${t.isOverdue?' ⚠':''}
-          </span>` : '';
       const pc = t.priority==='high'?'#f87171':t.priority==='low'?'#4ade80':'#fbbf24';
       return `<div class="planner-item" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;">
-        <div class="planner-dot" style="background:${t.matColor};${t.isOverdue?'box-shadow:0 0 5px #f87171;':''}"></div>
+        <div class="planner-dot" style="background:${t.matColor};${t.isOverdue?'box-shadow:0 0 6px #f87171;':''}"></div>
         <div class="planner-body">
           <div class="planner-name">${t.matIcon} ${t.title}</div>
-          <div class="planner-meta">${t.matName} ${dStr}</div>
+          <div class="planner-meta">${t.matName} ${_fmtDueDate(t.due, t.isOverdue)}</div>
         </div>
         <span class="planner-mins" style="color:${pc};">${t.minutes} min</span>
       </div>`;
     }).join('');
+    html += `</div>`;
   }
 
-  // ── 2. Repasos ───────────────────────────────────────────────
+  // ── 2. Repasos (solo los del día, sin low-priority en lista principal) ───
   if (plan.reviews.length) {
-    const revMins = plan.reviews
-      .filter(r => r.status !== 'low-priority')
-      .reduce((s, r) => s + r.minutes, 0);
-    html += _secHdr('🔁', `Repasos (${plan.reviews.length})`, revMins);
-    html += plan.reviews.map(r =>
-      `<div class="planner-item${r.status==='low-priority'?' planner-lowprio':''}">
+    const pendRevs  = plan.reviews.filter(r => r.status !== 'low-priority');
+    const lowRevs   = plan.reviews.filter(r => r.status === 'low-priority');
+    const revMins   = pendRevs.reduce((s, r) => s + r.minutes, 0);
+    const totalLbl  = pendRevs.length + (lowRevs.length ? ` +${lowRevs.length}↓` : '');
+    const open = _pdSectOpen.reviews;
+    html += _secHdr('reviews', '🔁', `Repasos (${totalLbl})`, revMins, open);
+    html += `<div id="pdsect-reviews" style="display:${open?'block':'none'};">`;
+    html += pendRevs.map(r =>
+      `<div class="planner-item">
         <div class="planner-dot" style="background:${r.matColor};"></div>
         <div class="planner-body">
           <div class="planner-name">${r.matIcon} ${r.name}
             <span class="planner-tag-num">#${r.num}</span>
             ${r.difficulty==='hard'?'<span class="planner-tag-hard">difícil</span>':''}
-            ${r.status==='low-priority'?'<span class="planner-tag-skip">↓ prio</span>':''}
           </div>
-          <div class="planner-meta">${r.matName} · ${r.minutes} min</div>
+          <div class="planner-meta">${r.matName} · <span style="font-family:'Space Mono',monospace;font-size:10px;">${r.minutes} min</span></div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0;">
           <button class="btn btn-ghost btn-sm planner-btn-done"
@@ -489,12 +530,20 @@ function renderDailyPlan(dateStr) {
         </div>
       </div>`
     ).join('');
+    if (lowRevs.length) {
+      html += `<div style="padding:5px 14px 7px;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;border-top:1px solid var(--border);">
+        ↓ ${lowRevs.length} repaso(s) de baja prioridad — usa Reagendar para redistribuir
+      </div>`;
+    }
+    html += `</div>`;
   }
 
-  // ── 3. Temas nuevos ──────────────────────────────────────────
+  // ── 3. Temas nuevos (sin repasos aún) ───────────────────────
   if (plan.newTopics.length) {
     const topicMins = plan.newTopics.reduce((s, t) => s + t.minutes, 0);
-    html += _secHdr('📖', `Tema nuevo (${plan.newTopics.length})`, topicMins);
+    const open = _pdSectOpen.topics;
+    html += _secHdr('topics', '📖', `Tema nuevo (${plan.newTopics.length})`, topicMins, open);
+    html += `<div id="pdsect-topics" style="display:${open?'block':'none'};">`;
     html += plan.newTopics.map(t =>
       `<div class="planner-item">
         <div class="planner-dot" style="background:${t.matColor};"></div>
@@ -505,9 +554,21 @@ function renderDailyPlan(dateStr) {
         <span class="planner-mins">${t.minutes} min</span>
       </div>`
     ).join('');
+    html += `</div>`;
   }
 
   container.innerHTML = html;
+}
+
+// ── Toggle de sección en Plan del Día ────────────────────────
+function _pdToggleSec(id) {
+  const body = document.getElementById('pdsect-' + id);
+  const chev = document.getElementById('pdchev-' + id);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.textContent = open ? '▸' : '▾';
+  _pdSectOpen[id] = !open;
 }
 
 
@@ -567,10 +628,24 @@ function renderReviewQueue() {
     group.items.forEach(i => { if (!byDate[i.date]) byDate[i.date]=[]; byDate[i.date].push(i); });
 
     Object.keys(byDate).sort().forEach(date => {
-      const dlb = PLANNER.loadBar(date);
-      const isT = date === today;
-      html += `<div class="prq-date-row">
-        <span style="font-size:10px;color:${isT?'var(--accent2)':'var(--text3)'};font-family:'Space Mono',monospace;font-weight:${isT?800:400};">${isT?'Hoy':PLANNER.fmtShort(date)}</span>
+      const dlb  = PLANNER.loadBar(date);
+      const isT  = date === today;
+      const isTm = date === tomorrow;
+      const diff = PLANNER.diffDays(today, date);
+      // Color de la etiqueta de fecha según urgencia
+      const dateLabelColor = date < today ? '#f87171'
+        : isT  ? '#f87171'
+        : isTm ? '#fbbf24'
+        : diff <= 3 ? '#fbbf24'
+        : 'var(--text3)';
+      const dateLabelText = date < today
+        ? `⚠ ${PLANNER.fmtShort(date)}`
+        : isT  ? '📍 Hoy'
+        : isTm ? '📅 Mañana'
+        : PLANNER.fmtShort(date);
+
+      html += `<div class="prq-date-row" style="background:${isT?'rgba(248,113,113,.06)':isTm?'rgba(251,191,36,.05)':'transparent'};border-radius:6px;margin:2px 0;">
+        <span style="font-size:11px;font-weight:800;color:${dateLabelColor};font-family:'Space Mono',monospace;letter-spacing:.5px;">${dateLabelText}</span>
         <div style="display:flex;align-items:center;gap:4px;">
           <div class="prog-bar" style="width:36px;height:3px;"><div class="prog-fill" style="background:${dlb.color};width:${dlb.pct}%;"></div></div>
           <span style="font-size:9px;color:${dlb.color};font-family:'Space Mono',monospace;">${dlb.label}</span>
@@ -1051,3 +1126,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 800);
 });
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS: stepper + toggle campos de repetición
+// ═══════════════════════════════════════════════════════════════
+
+// Si _stepperChange no está definida en app.js, la definimos aquí
+if (typeof _stepperChange === 'undefined') {
+  window._stepperChange = function(id, delta, min, max, step) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let val = parseFloat(el.value) || min;
+    val = Math.round((val + delta) / step) * step;
+    val = Math.max(min, Math.min(max, val));
+    el.value = val;
+    el.dispatchEvent(new Event('input'));
+  };
+}
+
+// Mostrar/ocultar campos de repetición Y planificación distribuida
+function _toggleRepeatFields() {
+  const val        = document.getElementById('t-repeat')?.value || 'none';
+  const isRepeat   = val !== 'none';
+  const repeatWrap = document.getElementById('t-repeat-until-wrap');
+  const distWrap   = document.getElementById('t-distributed-wrap');
+  if (repeatWrap) repeatWrap.style.display = isRepeat ? 'block' : 'none';
+  if (distWrap)   distWrap.style.display   = isRepeat ? 'block' : 'none';
+}

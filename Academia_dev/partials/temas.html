@@ -25,4 +25,15 @@
         <div id="topics-container"></div>
       </div>
 
+      <!-- ═══ TOPIC DETAIL DRAWER ═══ -->
+      <div id="topic-detail-backdrop" onclick="closeTopicDetail()"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;backdrop-filter:blur(3px);"></div>
+      <div id="topic-detail-drawer"
+        style="display:none;position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);
+          background:var(--surface);border-left:1px solid var(--border);z-index:501;
+          overflow-y:auto;box-shadow:-8px 0 40px rgba(0,0,0,.4);
+          transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);">
+        <div id="topic-detail-content" style="padding:20px 18px 80px;"></div>
+      </div>
+
       <!-- ═══ PAGE: ESTADÍSTICAS ═══ -->

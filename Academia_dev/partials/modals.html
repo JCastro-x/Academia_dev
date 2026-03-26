@@ -69,30 +69,8 @@
           </select>
         </div>
       </div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:4px;">
-        <div style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:10px;">📆 PLANIFICACIÓN DISTRIBUIDA (OPCIONAL)</div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Días de trabajo</label>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-days',-1,1,30,1)" style="padding:5px 10px;font-size:16px;font-weight:800;">−</button>
-              <input type="number" class="form-input" id="t-est-days" min="1" max="30" placeholder="—" style="text-align:center;font-size:16px;width:60px;padding:5px;">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-days',1,1,30,1)" style="padding:5px 10px;font-size:16px;font-weight:800;">+</button>
-            </div>
-          </div>
-          <div class="form-group"><label class="form-label">Horas por día</label>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-hrs',-1,0.5,4,0.5)" style="padding:5px 10px;font-size:16px;font-weight:800;">−</button>
-              <input type="number" class="form-input" id="t-est-hrs" min="0.5" max="4" step="0.5" placeholder="—" style="text-align:center;font-size:16px;width:60px;padding:5px;">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-hrs',1,0.5,4,0.5)" style="padding:5px 10px;font-size:16px;font-weight:800;">+</button>
-            </div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);">El planificador distribuirá el trabajo en los días con más espacio antes del deadline.</div>
-      </div>
-      <div class="form-row" style="display:none;"><!-- spacer --><div class="form-group"><!-- --></div
-        <div class="form-group"><label class="form-label">🏷 Tags (separados por coma)</label>
-          <input type="text" class="form-input" id="t-tags" placeholder="ej: parcial, urgente, lab"></div>
-      </div>
+      <div class="form-group"><label class="form-label">🏷 Tags (separados por coma)</label>
+        <input type="text" class="form-input" id="t-tags" placeholder="ej: parcial, urgente, lab"></div>
       <div class="form-group"><label class="form-label">Descripción / Notas</label>
         <textarea class="form-textarea" id="t-notes" rows="3" placeholder="Detalles adicionales, instrucciones..."></textarea></div>
 
@@ -120,6 +98,28 @@
         </div>
         <div style="font-size:11px;color:var(--text3);margin-top:-6px;">Si pones ambos, se usa el que se cumpla primero.</div>
       </div>
+
+      <!-- Planificación distribuida: solo visible al activar Repetir -->
+      <div id="t-distributed-wrap" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:8px;">
+        <div style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:10px;">📆 PLANIFICACIÓN DISTRIBUIDA (OPCIONAL)</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Días de trabajo</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-days',-1,1,30,1)" style="padding:5px 10px;font-size:16px;font-weight:800;">−</button>
+              <input type="number" class="form-input" id="t-est-days" min="1" max="30" placeholder="—" style="text-align:center;font-size:16px;width:60px;padding:5px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-days',1,1,30,1)" style="padding:5px 10px;font-size:16px;font-weight:800;">+</button>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Horas por día</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-hrs',-1,0.5,4,0.5)" style="padding:5px 10px;font-size:16px;font-weight:800;">−</button>
+              <input type="number" class="form-input" id="t-est-hrs" min="0.5" max="4" step="0.5" placeholder="—" style="text-align:center;font-size:16px;width:60px;padding:5px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="_stepperChange('t-est-hrs',1,0.5,4,0.5)" style="padding:5px 10px;font-size:16px;font-weight:800;">+</button>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);">El planificador distribuirá el trabajo en los días con más espacio antes del deadline.</div>
+      </div>
     </div>
 
     <!-- Tab: Subtareas -->
@@ -138,7 +138,7 @@
       <div id="comments-editor"></div>
     </div>
 
-    <div class="form-actions" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;">
+    <div class="form-actions" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;display:flex;justify-content:flex-end;gap:10px;">
       <button class="btn btn-ghost" onclick="closeModal('modal-task')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveTask()">💾 Guardar Tarea</button>
     </div>

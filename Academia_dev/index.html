@@ -176,16 +176,10 @@
   <div class="mobile-nav-item" onclick="goPage('calificaciones',this)">
     <div class="mn-icon">🎯</div><div>Notas</div>
   </div>
-  <div class="mobile-nav-item" onclick="goPage('calendario',this)">
-    <div class="mn-icon">📅</div><div>Agenda</div>
-  </div>
   <div class="mobile-nav-item" id="mobile-more-btn" onclick="openMobileMore(this)">
     <div class="mn-icon">☰</div><div>Más</div>
   </div>
 </nav>
-
-<!-- ═══ MOBILE "MÁS" BOTTOM SHEET ═══════════════════════════════ -->
-<script src="js/mobile-more.js"></script>
 
 <!-- Mobile sidebar overlay -->
 <div id="mobile-sidebar-overlay" onclick="closeMobileSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149;backdrop-filter:blur(2px);"></div>
@@ -223,6 +217,9 @@
   <script src="js/onboarding.js"></script>
   <script src="js/bootstrap.js"></script>
   <script src="js/planner.js"></script>
+
+  <!-- ═══ MOBILE "MÁS" BOTTOM SHEET — cargado al final para que el DOM esté listo ═══ -->
+  <script src="js/mobile-more.js"></script>
 
   <!-- PWA Service Worker -->
   <script>

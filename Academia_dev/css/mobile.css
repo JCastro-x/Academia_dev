@@ -106,10 +106,12 @@
     justify-content: space-around;
     box-shadow: 0 -4px 20px rgba(0,0,0,.3);
   }
-  .mobile-nav-item { display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; padding:4px 8px; border-radius:8px; color:var(--text3); font-size:10px; font-weight:600; transition:color .15s; min-width:48px; }
+  .mobile-nav-item { display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; padding:4px 6px; border-radius:8px; color:var(--text3); font-size:10px; font-weight:600; transition:color .15s; min-width:44px; flex:1; max-width:72px; }
   .mobile-nav-item.active { color:var(--accent); }
   .mobile-nav-item .mn-icon { font-size:20px; }
   .mobile-nav-badge { position:absolute; top:-4px; right:-4px; background:var(--red); color:#fff; font-size:9px; font-family:'Space Mono',monospace; padding:1px 4px; border-radius:10px; }
+  /* Asegurar que el botón Más nunca quede oculto */
+  #mobile-more-btn { display:flex !important; }
   .content { padding-bottom:90px; }
 }
 

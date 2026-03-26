@@ -606,11 +606,10 @@ function openTaskDetail(id) {
 function _toggleRepeatFields() {
   const val     = document.getElementById('t-repeat')?.value || 'none';
   const untilEl = document.getElementById('t-repeat-until-wrap');
-  const countEl = document.getElementById('t-repeat-count-wrap');
-  if (!untilEl || !countEl) return;
-  const show = val !== 'none';
-  untilEl.style.display = show ? '' : 'none';
-  countEl.style.display = show ? '' : 'none';
+  const distEl  = document.getElementById('t-distributed-wrap');
+  const show    = val !== 'none';
+  if (untilEl) untilEl.style.display = show ? '' : 'none';
+  if (distEl)  distEl.style.display  = show ? '' : 'none';
 }
 
 function closeTaskDetail() {
