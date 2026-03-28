@@ -1501,6 +1501,7 @@ function searchGoTo(type, id) {
 }
 
 let pomI=null, pomR=false, pomB=false, pomSL=0, pomTS=0, pomD=0;
+let _pomEndTime = 0; // absolute timestamp when current segment ends
 
 let _pomAudioCtx = null;
 function initAudioContext() {
@@ -2089,6 +2090,8 @@ function pomToggle() {
     clearInterval(pomI); pomI=null; pomR=false;
     _el('pom-btn').textContent='▶ Reanudar';
     _pomBeep('pause');
+    _pomReleaseWakeLock();
+    if (typeof _pomStopSwKeepAlive !== 'undefined') _pomStopSwKeepAlive();
     // Notify chrono: pom paused → stop counting work time
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, null);
   } else {
@@ -2097,8 +2100,15 @@ function pomToggle() {
     _pomBeep(pomB ? 'break' : 'start');
     // Notify chrono: pom running
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(true, pomB ? 'break' : 'work');
+    // ── Wake Lock: evitar que la pantalla se apague en móvil ──
+    _pomRequestWakeLock();
+    if (typeof _pomStartSwKeepAlive !== 'undefined') _pomStartSwKeepAlive();
+    // ── Timestamp-based countdown (resistente a throttling en background) ──
+    _pomEndTime = Date.now() + pomSL * 1000;
     pomI = setInterval(() => {
-      pomSL--; updatePomDisp();
+      const remaining = Math.round((_pomEndTime - Date.now()) / 1000);
+      pomSL = Math.max(0, remaining);
+      updatePomDisp();
       if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
       if (pomSL <= 0) {
         clearInterval(pomI); pomI=null; pomR=false;
@@ -2131,6 +2141,42 @@ function pomToggle() {
     }, 1000);
   }
 }
+// ── Wake Lock API — mantiene pantalla activa en móvil ──────
+let _pomWakeLock = null;
+async function _pomRequestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      _pomWakeLock = await navigator.wakeLock.request('screen');
+    }
+  } catch(e) { console.log('WakeLock not available', e); }
+}
+function _pomReleaseWakeLock() {
+  try { if (_pomWakeLock) { _pomWakeLock.release(); _pomWakeLock = null; } } catch(e) {}
+}
+// Re-adquirir wake lock si se pierde (ej. al volver de background)
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && pomR && !_pomWakeLock) {
+    _pomRequestWakeLock();
+  }
+});
+
+// ── Visibilidad: recalcular al volver a la pestaña ──────────
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && pomR && pomI) {
+    // El timer sigue corriendo — solo forzar un update visual inmediato
+    const remaining = Math.round((_pomEndTime - Date.now()) / 1000);
+    if (remaining <= 0) {
+      // Tiempo expirado mientras estaba en background — disparar fin
+      pomSL = 0;
+      clearInterval(pomI); pomI = null;
+      updatePomDisp();
+    } else {
+      pomSL = remaining;
+      updatePomDisp();
+    }
+  }
+});
+
 function pomSkip() {
   if (pomI) { clearInterval(pomI); pomI=null; }
   pomR=false;

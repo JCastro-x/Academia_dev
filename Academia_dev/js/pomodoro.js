@@ -97,3 +97,33 @@ function _pomBeep(type) {
     else _do();
   } catch(e) {}
 }
+
+// ═══════════════════════════════════════════════════════════════
+// SW KEEPALIVE — ping al service worker para que no duerma
+// en background en móvil mientras el pomodoro corre
+// ═══════════════════════════════════════════════════════════════
+let _swKeepAliveInterval = null;
+
+function _pomStartSwKeepAlive() {
+  if (_swKeepAliveInterval) return;
+  _swKeepAliveInterval = setInterval(() => {
+    if (!pomR) { _pomStopSwKeepAlive(); return; }
+    // Ping al SW para mantenerlo vivo
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'POM_KEEPALIVE',
+        endTime: _pomEndTime,
+        isBreak: pomB
+      });
+    }
+    // Fallback: fetch silencioso para evitar que el browser suspenda el contexto
+    // (solo en desktop, en móvil el SW maneja esto)
+  }, 20000); // cada 20 segundos
+}
+
+function _pomStopSwKeepAlive() {
+  if (_swKeepAliveInterval) {
+    clearInterval(_swKeepAliveInterval);
+    _swKeepAliveInterval = null;
+  }
+}
