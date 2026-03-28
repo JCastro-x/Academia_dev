@@ -1502,6 +1502,8 @@ function searchGoTo(type, id) {
 
 let pomI=null, pomR=false, pomB=false, pomSL=0, pomTS=0, pomD=0;
 let _pomEndTime = 0; // absolute timestamp when current segment ends
+let _pomWorker = null;     // Web Worker instance
+let _pomWorkerPing = null; // health-check interval
 
 let _pomAudioCtx = null;
 function initAudioContext() {
@@ -2046,6 +2048,7 @@ function pomWork()  { return (parseInt(document.getElementById('pom-work')?.valu
 function pomBreak() { return (parseInt(document.getElementById('pom-break')?.value)||5)*60; }
 function pomReset() {
   if (_pomWorker) { _pomWorker.postMessage({ type: 'STOP' }); _pomWorker = null; }
+  if (_pomWorkerPing) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; }
   if (pomI) { clearInterval(pomI); pomI=null; }
   pomR=false; pomB=false; pomSL=pomTS=pomWork();
   _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp();
@@ -2091,6 +2094,7 @@ function pomToggle() {
   try { const ctx = _pomAudio(); if (ctx.state === 'suspended') ctx.resume(); } catch(e) {}
   if (pomR) {
     if (_pomWorker) { _pomWorker.postMessage({ type: 'PAUSE' }); _pomWorker = null; }
+    if (_pomWorkerPing) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; }
     clearInterval(pomI); pomI=null; pomR=false;
     // Guardar tiempo restante basado en timestamp
     pomSL = Math.max(0, Math.round((_pomEndTime - Date.now()) / 1000));
@@ -2152,27 +2156,58 @@ function _pomOnSegmentDone() {
 function _pomStartWorkerTimer(endTime) {
   // Parar worker previo si existe
   if (_pomWorker) { _pomWorker.postMessage({ type: 'STOP' }); _pomWorker = null; }
+  // Parar ping previo
+  if (_pomWorkerPing) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; }
 
   // Intentar usar Web Worker (hilo separado, sin throttling)
   try {
     _pomWorker = new Worker('js/pom-worker.js');
     _pomWorker.onmessage = function(e) {
-      const { type, remaining } = e.data;
+      const { type, remaining, lag } = e.data;
       if (type === 'TICK') {
         pomSL = remaining;
         updatePomDisp();
         if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
       } else if (type === 'DONE') {
         _pomWorker = null;
+        if (_pomWorkerPing) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; }
         _pomOnSegmentDone();
+      } else if (type === 'LAG_DETECTED') {
+        console.warn('[PomWorker] Lag detectado en worker:', lag, 'ms — recalculando desde timestamp');
+        // El worker ya calcula desde timestamp, solo corregimos la UI
+        pomSL = Math.max(0, Math.round((_pomEndTime - Date.now()) / 1000));
+        updatePomDisp();
+      } else if (type === 'PONG') {
+        // Health check respondido — si el tiempo es muy diferente al local, corregir
+        if (remaining >= 0) {
+          const localRemaining = Math.round((_pomEndTime - Date.now()) / 1000);
+          if (Math.abs(remaining - localRemaining) > 2) {
+            pomSL = Math.max(0, localRemaining);
+            updatePomDisp();
+          }
+        }
       }
     };
     _pomWorker.onerror = function(err) {
       console.warn('PomWorker error, fallback to interval:', err);
       _pomWorker = null;
+      if (_pomWorkerPing) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; }
       _pomFallbackInterval(endTime); // fallback si el worker falla
     };
     _pomWorker.postMessage({ type: 'START', endTime });
+
+    // Ping cada 10s para detectar si el worker fue matado por el browser
+    _pomWorkerPing = setInterval(() => {
+      if (!pomR) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; return; }
+      if (_pomWorker) {
+        _pomWorker.postMessage({ type: 'PING' });
+      } else if (!pomI) {
+        // Worker muerto y sin fallback — reiniciar
+        console.warn('[Pom] Worker muerto detectado por ping — reiniciando');
+        _pomStartWorkerTimer(_pomEndTime);
+      }
+    }, 10000);
+
   } catch(e) {
     console.warn('Worker not available, using interval fallback:', e);
     _pomFallbackInterval(endTime);
@@ -2246,18 +2281,28 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 // ── Visibilidad: recalcular al volver a la pestaña ──────────
+// Funciona tanto con Web Worker como con setInterval fallback
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && pomR && pomI) {
-    // El timer sigue corriendo — solo forzar un update visual inmediato
-    const remaining = Math.round((_pomEndTime - Date.now()) / 1000);
-    if (remaining <= 0) {
-      // Tiempo expirado mientras estaba en background — disparar fin
-      pomSL = 0;
-      clearInterval(pomI); pomI = null;
-      updatePomDisp();
-    } else {
-      pomSL = remaining;
-      updatePomDisp();
+  if (document.visibilityState !== 'visible' || !pomR) return;
+
+  const remaining = Math.round((_pomEndTime - Date.now()) / 1000);
+
+  if (remaining <= 0) {
+    // El tiempo expiró mientras la pestaña estaba oculta
+    if (_pomWorker) { _pomWorker.postMessage({ type: 'STOP' }); _pomWorker = null; }
+    if (pomI) { clearInterval(pomI); pomI = null; }
+    pomSL = 0;
+    updatePomDisp();
+    _pomOnSegmentDone();
+  } else {
+    // Corregir el display con el tiempo real
+    pomSL = remaining;
+    updatePomDisp();
+
+    // Si el worker murió en background (throttling agresivo), reiniciarlo
+    if (!_pomWorker && !pomI) {
+      console.warn('[Pom] Timer muerto en background — reiniciando worker');
+      _pomStartWorkerTimer(_pomEndTime);
     }
   }
 });
