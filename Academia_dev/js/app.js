@@ -2236,21 +2236,41 @@ function _pomFallbackInterval(endTime) {
 function _pomStartSilentKeeper() {
   try {
     const ctx = _pomAudio();
-    if (!ctx || _pomSilentNode) return;
-    // Buffer de 1 segundo de silencio en loop
-    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-    // El buffer ya tiene ceros por defecto — silencio total
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.loop = true;
-    const gain = ctx.createGain();
-    gain.gain.value = 0; // volumen = 0, completamente inaudible
-    src.connect(gain);
-    gain.connect(ctx.destination);
-    src.start();
-    _pomSilentNode = src;
-    _pomSilentGain = gain;
-    if (ctx.state === 'suspended') ctx.resume();
+    if (!ctx) return;
+    // Si ya hay un nodo corriendo, no crear otro
+    if (_pomSilentNode) return;
+
+    const _doStart = () => {
+      try {
+        // Buffer de 1 segundo de silencio
+        const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+        // Llenar con valores casi-cero — algunos browsers ignoran gain:0
+        // pero sí detectan señal si los samples no son exactamente 0
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = 1e-10;
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.loop = true;
+
+        const gain = ctx.createGain();
+        gain.gain.value = 0.0001; // inaudible pero no cero
+
+        src.connect(gain);
+        gain.connect(ctx.destination);
+        src.start();
+        _pomSilentNode = src;
+        _pomSilentGain = gain;
+        console.log('[Pom] Silent keeper activo — AudioContext procesando');
+      } catch(e) { console.warn('Silent keeper start failed', e); }
+    };
+
+    // Resumir PRIMERO, luego arrancar el nodo
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(_doStart).catch(e => console.warn('AudioContext resume failed', e));
+    } else {
+      _doStart();
+    }
   } catch(e) { console.warn('Silent keeper failed', e); }
 }
 
@@ -2275,21 +2295,32 @@ function _pomReleaseWakeLock() {
 }
 // Re-adquirir wake lock si se pierde (ej. al volver de background)
 document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && pomR && !_pomWakeLock) {
-    _pomRequestWakeLock();
-  }
-});
-
-// ── Visibilidad: recalcular al volver a la pestaña ──────────
-// Funciona tanto con Web Worker como con setInterval fallback
-document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || !pomR) return;
 
+  // 1. Re-adquirir WakeLock si se perdió
+  if (!_pomWakeLock) _pomRequestWakeLock();
+
+  // 2. Re-arrancar AudioContext y silent keeper si el browser los suspendió
+  //    (ocurre especialmente en iOS Safari al volver de background)
+  try {
+    const ctx = _pomAudioCtx;
+    if (ctx && ctx.state === 'suspended') {
+      await ctx.resume();
+      console.log('[Pom] AudioContext reactivado al volver a la pestaña');
+    }
+    // Si el silent keeper murió (AudioContext suspendido lo mata), reiniciarlo
+    if (!_pomSilentNode && !_noiseNode) {
+      _pomStartSilentKeeper();
+    }
+  } catch(e) {}
+
+  // 3. Recalcular tiempo restante con timestamp absoluto
   const remaining = Math.round((_pomEndTime - Date.now()) / 1000);
 
   if (remaining <= 0) {
     // El tiempo expiró mientras la pestaña estaba oculta
     if (_pomWorker) { _pomWorker.postMessage({ type: 'STOP' }); _pomWorker = null; }
+    if (_pomWorkerPing) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; }
     if (pomI) { clearInterval(pomI); pomI = null; }
     pomSL = 0;
     updatePomDisp();
