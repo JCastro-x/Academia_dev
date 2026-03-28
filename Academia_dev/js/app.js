@@ -2050,6 +2050,7 @@ function pomReset() {
   if (_pomWorker) { _pomWorker.postMessage({ type: 'STOP' }); _pomWorker = null; }
   if (_pomWorkerPing) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; }
   if (pomI) { clearInterval(pomI); pomI=null; }
+  _pomStopDisplayLoop();
   pomR=false; pomB=false; pomSL=pomTS=pomWork();
   _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp();
 }
@@ -2096,6 +2097,7 @@ function pomToggle() {
     if (_pomWorker) { _pomWorker.postMessage({ type: 'PAUSE' }); _pomWorker = null; }
     if (_pomWorkerPing) { clearInterval(_pomWorkerPing); _pomWorkerPing = null; }
     clearInterval(pomI); pomI=null; pomR=false;
+    _pomStopDisplayLoop();
     // Guardar tiempo restante basado en timestamp
     pomSL = Math.max(0, Math.round((_pomEndTime - Date.now()) / 1000));
     _el('pom-btn').textContent='▶ Reanudar';
@@ -2118,11 +2120,14 @@ function pomToggle() {
     // ── Web Worker timer — NO se throttlea en background ─────────
     _pomEndTime = Date.now() + pomSL * 1000;
     _pomStartWorkerTimer(_pomEndTime);
+    _pomStartDisplayLoop(); // loop de display independiente del Worker
   }
 }
 
 function _pomOnSegmentDone() {
+  if (!pomR) return; // guard: evitar doble llamada (Worker + display loop)
   pomR = false; pomI = null;
+  _pomStopDisplayLoop();
   if (!_noiseNode) _pomStopSilentKeeper();
   _pomReleaseWakeLock();
   pomPlayAlarm(pomB);
@@ -2362,6 +2367,35 @@ function updatePomDisp() {
   ring.style.strokeDashoffset=circ*(1-prog);
   ring.style.stroke=pomB?'#4ade80':'var(--accent)';
   document.getElementById('pom-mode').textContent=pomB?'DESCANSO':'ENFOQUE';
+}
+
+// ── Display loop independiente — no depende de mensajes del Worker ──
+// Lee _pomEndTime directamente para que el display sea correcto
+// aunque el tab esté oculto o los mensajes del Worker lleguen tarde.
+let _pomDisplayLoopId = null;
+function _pomStartDisplayLoop() {
+  if (_pomDisplayLoopId) return;
+  function loop() {
+    if (!pomR) { _pomDisplayLoopId = null; return; }
+    const remaining = Math.max(0, Math.round((_pomEndTime - Date.now()) / 1000));
+    // Solo actualizar si el valor cambió (evitar repaints innecesarios)
+    if (remaining !== pomSL) {
+      pomSL = remaining;
+      updatePomDisp();
+      if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
+      if (pomSL <= 0) {
+        _pomDisplayLoopId = null;
+        // El Worker también detectará DONE — nos aseguramos de no duplicar
+        if (pomR) _pomOnSegmentDone();
+        return;
+      }
+    }
+    _pomDisplayLoopId = setTimeout(loop, 250);
+  }
+  _pomDisplayLoopId = setTimeout(loop, 250);
+}
+function _pomStopDisplayLoop() {
+  if (_pomDisplayLoopId) { clearTimeout(_pomDisplayLoopId); _pomDisplayLoopId = null; }
 }
 function updatePomDots() {
   const cycles = parseInt(document.getElementById('pom-cycles')?.value) || 4;
