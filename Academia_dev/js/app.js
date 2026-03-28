@@ -2091,6 +2091,73 @@ function _pomMusicOnWork() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// POM POPUP — ventana flotante independiente
+// La ventana corre su propio timer basado en _pomEndTime,
+// así nunca se throttlea aunque el tab principal esté en background.
+// ═══════════════════════════════════════════════════════════════
+const _POM_POPUP_KEY = 'academia_pom_popup';
+const _POM_CMD_KEY   = 'academia_pom_cmd';
+let   _pomPopupWin   = null;
+
+function _pomSyncPopup() {
+  // Escribir estado actual en localStorage para que el popup lo lea
+  try {
+    const subjectSel = document.getElementById('pom-subject');
+    const subjectName = subjectSel
+      ? (getMat(subjectSel.value)?.name || subjectSel.value || 'General')
+      : 'General';
+    localStorage.setItem(_POM_POPUP_KEY, JSON.stringify({
+      endTime:  _pomEndTime,
+      totalSec: pomTS || pomWork(),
+      isBreak:  pomB,
+      running:  pomR,
+      subject:  subjectName,
+      ts:       Date.now()
+    }));
+  } catch(e) {}
+}
+
+function _pomOpenPopup() {
+  // Si ya está abierta, solo enfocarla
+  if (_pomPopupWin && !_pomPopupWin.closed) {
+    _pomPopupWin.focus();
+    return;
+  }
+  const w = 300, h = 380;
+  const left = Math.round(screen.width  / 2 - w / 2);
+  const top  = Math.round(screen.height / 2 - h / 2);
+  _pomPopupWin = window.open(
+    'pom-popup.html',
+    'academia_pom',
+    `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+  );
+}
+
+// Escuchar comandos que manda el popup (pause, resume, done)
+window.addEventListener('storage', (e) => {
+  if (e.key !== _POM_CMD_KEY) return;
+  try {
+    const cmd = JSON.parse(e.newValue);
+    if (!cmd) return;
+    if (cmd.action === 'PAUSE' && pomR) {
+      pomToggle(); // pausar desde app principal
+    } else if (cmd.action === 'RESUME' && !pomR) {
+      pomToggle(); // reanudar desde app principal
+    } else if (cmd.action === 'DONE') {
+      // El popup detectó que el tiempo terminó — disparar fin si no lo hizo ya
+      if (pomR) _pomOnSegmentDone();
+    } else if (cmd.action === 'FOCUS_MAIN') {
+      window.focus();
+    }
+  } catch(e) {}
+});
+
+// Sincronizar popup cada segundo mientras corre (por si se abre tarde)
+setInterval(() => {
+  if (pomR && _pomPopupWin && !_pomPopupWin.closed) _pomSyncPopup();
+}, 5000);
+
 function pomToggle() {
   try { const ctx = _pomAudio(); if (ctx.state === 'suspended') ctx.resume(); } catch(e) {}
   if (pomR) {
@@ -2105,22 +2172,21 @@ function pomToggle() {
     _pomReleaseWakeLock();
     if (!_noiseNode) _pomStopSilentKeeper();
     if (typeof _pomStopSwKeepAlive !== 'undefined') _pomStopSwKeepAlive();
-    // Notify chrono: pom paused → stop counting work time
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, null);
+    _pomSyncPopup(); // notificar popup
   } else {
     if (pomSL<=0||pomTS===0) pomReset();
     pomR=true; _el('pom-btn').textContent='⏸ Pausar';
     _pomBeep(pomB ? 'break' : 'start');
-    // Notify chrono: pom running
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(true, pomB ? 'break' : 'work');
-    // ── Wake Lock: evitar que la pantalla se apague en móvil ──
     _pomRequestWakeLock();
     _pomStartSilentKeeper();
     if (typeof _pomStartSwKeepAlive !== 'undefined') _pomStartSwKeepAlive();
-    // ── Web Worker timer — NO se throttlea en background ─────────
     _pomEndTime = Date.now() + pomSL * 1000;
     _pomStartWorkerTimer(_pomEndTime);
-    _pomStartDisplayLoop(); // loop de display independiente del Worker
+    _pomStartDisplayLoop();
+    _pomSyncPopup();  // escribir estado y abrir ventana flotante
+    _pomOpenPopup();
   }
 }
 

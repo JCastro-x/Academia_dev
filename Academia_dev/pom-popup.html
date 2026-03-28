@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⏱ Pomodoro</title>
+<style>
+  :root {
+    --bg:      #0d0d14;
+    --surface: #16161f;
+    --border:  #2a2a38;
+    --text:    #e8e8f0;
+    --text2:   #9090a8;
+    --text3:   #5a5a72;
+    --accent:  #7c6aff;
+    --green:   #4ade80;
+    --red:     #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  /* Mode label */
+  #mode {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--text3);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+  }
+
+  /* SVG ring */
+  .ring-wrap {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin-bottom: 20px;
+  }
+  svg { transform: rotate(-90deg); }
+  .ring-bg   { fill: none; stroke: var(--border); stroke-width: 8; }
+  .ring-prog { fill: none; stroke: var(--accent); stroke-width: 8;
+               stroke-linecap: round;
+               stroke-dasharray: 565; stroke-dashoffset: 0;
+               transition: stroke-dashoffset .4s linear, stroke .4s; }
+  #time {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 46px; font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  /* Subject label */
+  #subject-lbl {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 24px;
+    max-width: 220px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 12px; }
+  button {
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  button:hover { border-color: var(--accent); }
+  #btn-toggle {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    min-width: 120px;
+  }
+  #btn-toggle:hover { background: #6a58e8; }
+  #btn-toggle.paused {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Bottom hint */
+  #hint {
+    margin-top: 20px;
+    font-size: 10px;
+    color: var(--text3);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+  }
+  #hint a { color: var(--accent); text-decoration: none; cursor: pointer; }
+
+  /* Alarm flash */
+  @keyframes flash {
+    0%,100% { background: var(--bg); }
+    50%      { background: rgba(124,106,255,.18); }
+  }
+  body.flashing { animation: flash .5s 4; }
+</style>
+</head>
+<body>
+
+<div id="mode">ENFOQUE</div>
+
+<div class="ring-wrap">
+  <svg viewBox="0 0 200 200" width="200" height="200">
+    <circle class="ring-bg"   cx="100" cy="100" r="90"/>
+    <circle class="ring-prog" cx="100" cy="100" r="90" id="ring"/>
+  </svg>
+  <div id="time">25:00</div>
+</div>
+
+<div id="subject-lbl">—</div>
+
+<div class="btn-row">
+  <button id="btn-toggle" onclick="togglePom()">⏸ Pausar</button>
+  <button onclick="window.close()">✕ Cerrar</button>
+</div>
+
+<div id="hint">mantén esta ventana abierta · <a onclick="focusMain()">volver a Academia</a></div>
+
+<script>
+// ─── Estado local ─────────────────────────────────────────────
+const CIRC = 2 * Math.PI * 90; // circunferencia del anillo
+let _endTime  = 0;
+let _totalSec = 0;
+let _isBreak  = false;
+let _running  = false;
+let _loopId   = null;
+
+const elTime    = document.getElementById('time');
+const elMode    = document.getElementById('mode');
+const elRing    = document.getElementById('ring');
+const elSubject = document.getElementById('subject-lbl');
+const elBtn     = document.getElementById('btn-toggle');
+
+// ─── Leer estado desde localStorage (escrito por la app principal) ─
+const KEY = 'academia_pom_popup';
+
+function readState() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+function applyState(s) {
+  if (!s) return;
+  _endTime  = s.endTime  || 0;
+  _totalSec = s.totalSec || 1500;
+  _isBreak  = s.isBreak  || false;
+  _running  = s.running  || false;
+  elSubject.textContent = s.subject || '—';
+  elMode.textContent    = _isBreak ? 'DESCANSO' : 'ENFOQUE';
+  elRing.style.stroke   = _isBreak ? 'var(--green)' : 'var(--accent)';
+  updateBtn();
+  if (_running) startLoop();
+  else { stopLoop(); updateDisp(Math.max(0, Math.round((_endTime - Date.now()) / 1000))); }
+}
+
+// ─── Display ──────────────────────────────────────────────────
+function updateDisp(remaining) {
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  elTime.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const prog = _totalSec > 0 ? remaining / _totalSec : 1;
+  elRing.style.strokeDashoffset = CIRC * (1 - prog);
+  // Actualizar título de la ventana
+  document.title = `${_isBreak ? '☕' : '⏱'} ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} — ${_isBreak ? 'Descanso' : 'Enfoque'}`;
+}
+
+function updateBtn() {
+  if (_running) {
+    elBtn.textContent = '⏸ Pausar';
+    elBtn.classList.remove('paused');
+  } else {
+    elBtn.textContent = '▶ Reanudar';
+    elBtn.classList.add('paused');
+  }
+}
+
+// ─── Loop propio — este tab nunca se throttlea porque está visible ─
+function startLoop() {
+  stopLoop();
+  function loop() {
+    if (!_running) return;
+    const remaining = Math.max(0, Math.round((_endTime - Date.now()) / 1000));
+    updateDisp(remaining);
+    if (remaining <= 0) {
+      stopLoop();
+      onDone();
+      return;
+    }
+    _loopId = setTimeout(loop, 250);
+  }
+  _loopId = setTimeout(loop, 250);
+}
+
+function stopLoop() {
+  if (_loopId) { clearTimeout(_loopId); _loopId = null; }
+}
+
+function onDone() {
+  _running = false;
+  updateBtn();
+  // Flash visual
+  document.body.classList.add('flashing');
+  setTimeout(() => document.body.classList.remove('flashing'), 2200);
+  // Beep
+  playAlarm();
+  // Notificar a la app principal
+  notifyMain('DONE');
+}
+
+// ─── Comunicación con la app principal via localStorage ───────
+function notifyMain(action) {
+  try {
+    localStorage.setItem('academia_pom_cmd', JSON.stringify({
+      action,
+      ts: Date.now()
+    }));
+  } catch(e) {}
+}
+
+function togglePom() {
+  if (_running) {
+    _running = false;
+    stopLoop();
+    updateBtn();
+    notifyMain('PAUSE');
+  } else {
+    if (_endTime > Date.now()) {
+      _running = true;
+      updateBtn();
+      startLoop();
+      notifyMain('RESUME');
+    }
+  }
+}
+
+function focusMain() {
+  try { window.opener && window.opener.focus(); } catch(e) {}
+  notifyMain('FOCUS_MAIN');
+}
+
+// ─── Alarma de audio propia ───────────────────────────────────
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+function playAlarm() {
+  try {
+    const ctx = getAudioCtx();
+    const notes = _isBreak ? [523,659,784,1047] : [880,659,523];
+    const now = ctx.currentTime;
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      const t = now + i * 0.22;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.4, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+      osc.start(t); osc.stop(t + 0.65);
+    });
+  } catch(e) {}
+}
+
+// ─── Escuchar cambios de estado desde la app principal ────────
+window.addEventListener('storage', (e) => {
+  if (e.key === KEY) {
+    const s = readState();
+    if (s) applyState(s);
+  }
+});
+
+// ─── Init: leer estado inicial ─────────────────────────────────
+const initial = readState();
+if (initial) {
+  applyState(initial);
+} else {
+  elTime.textContent = '25:00';
+  elMode.textContent = 'Sin timer activo';
+}
+
+// Desbloquear audio al primer clic
+document.addEventListener('click', () => {
+  try { getAudioCtx().resume(); } catch(e) {}
+}, { once: true });
+</script>
+</body>
+</html>
