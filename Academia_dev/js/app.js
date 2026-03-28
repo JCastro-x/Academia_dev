@@ -2045,6 +2045,7 @@ function setPomVol(v) {
 function pomWork()  { return (parseInt(document.getElementById('pom-work')?.value)||25)*60; }
 function pomBreak() { return (parseInt(document.getElementById('pom-break')?.value)||5)*60; }
 function pomReset() {
+  if (_pomWorker) { _pomWorker.postMessage({ type: 'STOP' }); _pomWorker = null; }
   if (pomI) { clearInterval(pomI); pomI=null; }
   pomR=false; pomB=false; pomSL=pomTS=pomWork();
   _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp();
@@ -2089,11 +2090,14 @@ function _pomMusicOnWork() {
 function pomToggle() {
   try { const ctx = _pomAudio(); if (ctx.state === 'suspended') ctx.resume(); } catch(e) {}
   if (pomR) {
+    if (_pomWorker) { _pomWorker.postMessage({ type: 'PAUSE' }); _pomWorker = null; }
     clearInterval(pomI); pomI=null; pomR=false;
+    // Guardar tiempo restante basado en timestamp
+    pomSL = Math.max(0, Math.round((_pomEndTime - Date.now()) / 1000));
     _el('pom-btn').textContent='▶ Reanudar';
     _pomBeep('pause');
     _pomReleaseWakeLock();
-    if (!_noiseNode) _pomStopSilentKeeper(); // solo parar si no hay ruido activo
+    if (!_noiseNode) _pomStopSilentKeeper();
     if (typeof _pomStopSwKeepAlive !== 'undefined') _pomStopSwKeepAlive();
     // Notify chrono: pom paused → stop counting work time
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, null);
@@ -2107,18 +2111,17 @@ function pomToggle() {
     _pomRequestWakeLock();
     _pomStartSilentKeeper();
     if (typeof _pomStartSwKeepAlive !== 'undefined') _pomStartSwKeepAlive();
-    // ── Timestamp-based countdown (resistente a throttling en background) ──
+    // ── Web Worker timer — NO se throttlea en background ─────────
     _pomEndTime = Date.now() + pomSL * 1000;
-    pomI = setInterval(() => {
-      const remaining = Math.round((_pomEndTime - Date.now()) / 1000);
-      pomSL = Math.max(0, remaining);
-      updatePomDisp();
-      if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
-      if (pomSL <= 0) {
-        clearInterval(pomI); pomI=null; pomR=false;
-        if (!_noiseNode) _pomStopSilentKeeper(); // segmento terminó, parar keeper
-        _pomReleaseWakeLock();
-        pomPlayAlarm(pomB);
+    _pomStartWorkerTimer(_pomEndTime);
+  }
+}
+
+function _pomOnSegmentDone() {
+  pomR = false; pomI = null;
+  if (!_noiseNode) _pomStopSilentKeeper();
+  _pomReleaseWakeLock();
+  pomPlayAlarm(pomB);
         if (!pomB) {
           pomD++;
           const subj = document.getElementById('pom-subject').value;
@@ -2143,10 +2146,54 @@ function pomToggle() {
           if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, 'work');
         }
         _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp(); updatePomDots();
+  _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp(); updatePomDots();
+}
+
+function _pomStartWorkerTimer(endTime) {
+  // Parar worker previo si existe
+  if (_pomWorker) { _pomWorker.postMessage({ type: 'STOP' }); _pomWorker = null; }
+
+  // Intentar usar Web Worker (hilo separado, sin throttling)
+  try {
+    _pomWorker = new Worker('js/pom-worker.js');
+    _pomWorker.onmessage = function(e) {
+      const { type, remaining } = e.data;
+      if (type === 'TICK') {
+        pomSL = remaining;
+        updatePomDisp();
+        if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
+      } else if (type === 'DONE') {
+        _pomWorker = null;
+        _pomOnSegmentDone();
       }
-    }, 1000);
+    };
+    _pomWorker.onerror = function(err) {
+      console.warn('PomWorker error, fallback to interval:', err);
+      _pomWorker = null;
+      _pomFallbackInterval(endTime); // fallback si el worker falla
+    };
+    _pomWorker.postMessage({ type: 'START', endTime });
+  } catch(e) {
+    console.warn('Worker not available, using interval fallback:', e);
+    _pomFallbackInterval(endTime);
   }
 }
+
+function _pomFallbackInterval(endTime) {
+  // Fallback con setInterval + timestamps (mejor que nada si no hay worker)
+  if (pomI) clearInterval(pomI);
+  pomI = setInterval(() => {
+    const remaining = Math.round((endTime - Date.now()) / 1000);
+    pomSL = Math.max(0, remaining);
+    updatePomDisp();
+    if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
+    if (pomSL <= 0) {
+      clearInterval(pomI); pomI = null;
+      _pomOnSegmentDone();
+    }
+  }, 500);
+}
+
 // ── Silent AudioContext Keeper — evita throttling de timers ──
 // El browser NO throttlea setInterval cuando hay audio activo.
 // Este nodo emite silencio total (ganancia 0) para mantener el
@@ -2216,7 +2263,9 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function pomSkip() {
+  if (_pomWorker) { _pomWorker.postMessage({ type: 'STOP' }); _pomWorker = null; }
   if (pomI) { clearInterval(pomI); pomI=null; }
+  pomSL = Math.max(0, Math.round((_pomEndTime - Date.now()) / 1000));
   pomR=false;
   if (!pomB) {
     pomD++; pomB=true; pomSL=pomTS=pomBreak(); _pomBeep('break');
