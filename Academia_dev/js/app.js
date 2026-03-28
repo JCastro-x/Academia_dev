@@ -1605,6 +1605,8 @@ function _pomBeep(type) {
 // ══════════════════════════════════════════════════════════════
 let _uiSoundsEnabled = true;
 let _noiseNode = null, _noiseGain = null, _noiseType = null;
+// Nodo silencioso que mantiene el AudioContext activo para evitar throttling
+let _pomSilentNode = null, _pomSilentGain = null;
 let _noiseVol = 0.30;
 
 function toggleUiSounds() {
@@ -2091,6 +2093,7 @@ function pomToggle() {
     _el('pom-btn').textContent='▶ Reanudar';
     _pomBeep('pause');
     _pomReleaseWakeLock();
+    if (!_noiseNode) _pomStopSilentKeeper(); // solo parar si no hay ruido activo
     if (typeof _pomStopSwKeepAlive !== 'undefined') _pomStopSwKeepAlive();
     // Notify chrono: pom paused → stop counting work time
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, null);
@@ -2102,6 +2105,7 @@ function pomToggle() {
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(true, pomB ? 'break' : 'work');
     // ── Wake Lock: evitar que la pantalla se apague en móvil ──
     _pomRequestWakeLock();
+    _pomStartSilentKeeper();
     if (typeof _pomStartSwKeepAlive !== 'undefined') _pomStartSwKeepAlive();
     // ── Timestamp-based countdown (resistente a throttling en background) ──
     _pomEndTime = Date.now() + pomSL * 1000;
@@ -2112,6 +2116,8 @@ function pomToggle() {
       if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
       if (pomSL <= 0) {
         clearInterval(pomI); pomI=null; pomR=false;
+        if (!_noiseNode) _pomStopSilentKeeper(); // segmento terminó, parar keeper
+        _pomReleaseWakeLock();
         pomPlayAlarm(pomB);
         if (!pomB) {
           pomD++;
@@ -2141,6 +2147,38 @@ function pomToggle() {
     }, 1000);
   }
 }
+// ── Silent AudioContext Keeper — evita throttling de timers ──
+// El browser NO throttlea setInterval cuando hay audio activo.
+// Este nodo emite silencio total (ganancia 0) para mantener el
+// AudioContext procesando sin hacer ningún sonido audible.
+function _pomStartSilentKeeper() {
+  try {
+    const ctx = _pomAudio();
+    if (!ctx || _pomSilentNode) return;
+    // Buffer de 1 segundo de silencio en loop
+    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    // El buffer ya tiene ceros por defecto — silencio total
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const gain = ctx.createGain();
+    gain.gain.value = 0; // volumen = 0, completamente inaudible
+    src.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+    _pomSilentNode = src;
+    _pomSilentGain = gain;
+    if (ctx.state === 'suspended') ctx.resume();
+  } catch(e) { console.warn('Silent keeper failed', e); }
+}
+
+function _pomStopSilentKeeper() {
+  try {
+    if (_pomSilentNode) { _pomSilentNode.stop(); _pomSilentNode.disconnect(); _pomSilentNode = null; }
+    if (_pomSilentGain) { _pomSilentGain.disconnect(); _pomSilentGain = null; }
+  } catch(e) {}
+}
+
 // ── Wake Lock API — mantiene pantalla activa en móvil ──────
 let _pomWakeLock = null;
 async function _pomRequestWakeLock() {
