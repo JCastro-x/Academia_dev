@@ -477,6 +477,13 @@ function goPage(id, el) {
   _el('page-title').textContent = PAGE_TITLES[id] || id;
   closeCompPopup();
 
+  // ── Mini-timer flotante: mostrar al salir del Pomodoro, ocultar al volver ──
+  if (id === 'pomodoro') {
+    _pomHideMiniFloat();   // volvimos a la página, ocultamos el mini
+  } else if (pomR) {
+    _pomShowMiniFloat();   // nos fuimos de la página y el timer corre
+  }
+
   switch(id) {
     case 'overview':       renderOverview(); break;
     case 'materias':       renderMaterias(); break;
@@ -2092,6 +2099,271 @@ function _pomMusicOnWork() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// MINI POMODORO FLOTANTE — DOM overlay (no window.open, nunca bloqueado)
+// Se muestra automáticamente cuando:
+//   • El usuario navega a otra página mientras el timer corre
+//   • La pestaña se oculta (visibilitychange → hidden)
+// Se oculta cuando:
+//   • El usuario vuelve a la página Pomodoro
+//   • El timer termina
+// ═══════════════════════════════════════════════════════════════
+
+(function _injectMiniFloatStyles() {
+  if (document.getElementById('_miniPomStyle')) return;
+  const s = document.createElement('style');
+  s.id = '_miniPomStyle';
+  s.textContent = `
+    #_miniPomFloat {
+      position: fixed;
+      bottom: 80px; right: 16px;
+      z-index: 9999;
+      background: var(--surface, #16161f);
+      border: 1.5px solid var(--accent, #7c6aff);
+      border-radius: 16px;
+      padding: 12px 16px 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 0 0 1px rgba(124,106,255,.15);
+      min-width: 160px;
+      max-width: 200px;
+      cursor: grab;
+      user-select: none;
+      animation: _miniPomIn .22s cubic-bezier(.4,0,.2,1);
+      backdrop-filter: blur(8px);
+    }
+    @keyframes _miniPomIn {
+      from { opacity:0; transform:translateY(12px) scale(.95); }
+      to   { opacity:1; transform:translateY(0)    scale(1);   }
+    }
+    #_miniPomFloat._hiding {
+      animation: _miniPomOut .18s cubic-bezier(.4,0,.2,1) forwards;
+    }
+    @keyframes _miniPomOut {
+      to { opacity:0; transform:translateY(8px) scale(.95); }
+    }
+    #_miniPomFloat ._mf-mode {
+      font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+      color: var(--accent2, #a89cff); margin-bottom: 4px;
+    }
+    #_miniPomFloat ._mf-time {
+      font-size: 32px; font-weight: 800;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 1px;
+      color: var(--text, #e8e8f0);
+      line-height: 1;
+    }
+    #_miniPomFloat ._mf-subj {
+      font-size: 10px; color: var(--text3, #5a5a72);
+      margin-top: 4px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    #_miniPomFloat ._mf-row {
+      display: flex; gap: 6px; margin-top: 10px;
+    }
+    #_miniPomFloat ._mf-btn {
+      flex: 1; padding: 5px 0; border-radius: 8px;
+      border: 1px solid var(--border, #2a2a38);
+      background: var(--surface2, #1e1e2a);
+      color: var(--text, #e8e8f0); font-size: 11px;
+      font-weight: 700; cursor: pointer;
+      transition: background .12s, border-color .12s;
+    }
+    #_miniPomFloat ._mf-btn:hover { border-color: var(--accent, #7c6aff); }
+    #_miniPomFloat ._mf-btn.primary {
+      background: var(--accent, #7c6aff);
+      border-color: var(--accent, #7c6aff); color: #fff;
+    }
+    #_miniPomFloat ._mf-btn.primary:hover { background: #6a58e8; }
+    #_miniPomFloat ._mf-ring {
+      width: 100%; height: 3px;
+      background: var(--border, #2a2a38);
+      border-radius: 2px; margin-top: 8px; overflow: hidden;
+    }
+    #_miniPomFloat ._mf-ring-fill {
+      height: 100%; border-radius: 2px;
+      background: var(--accent, #7c6aff);
+      transition: width .8s linear;
+    }
+    #_miniPomFloat ._mf-go {
+      font-size: 9px; color: var(--accent2, #a89cff);
+      font-family: 'Space Mono', monospace;
+      text-align: center; margin-top: 7px;
+      cursor: pointer; text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    /* En móvil: anclar arriba si la nav ocupa el fondo */
+    @media (max-width: 768px) {
+      #_miniPomFloat { bottom: 78px; right: 10px; }
+    }
+  `;
+  document.head.appendChild(s);
+})();
+
+let _miniPomRaf = null;
+
+function _pomShowMiniFloat() {
+  // No mostrar si estamos EN la página de pomodoro
+  const pomPage = document.getElementById('page-pomodoro');
+  if (pomPage && pomPage.classList.contains('active')) return;
+  // No mostrar si el timer no corre
+  if (!pomR) return;
+  // Si ya existe, solo actualizar
+  if (document.getElementById('_miniPomFloat')) { _pomUpdateMiniFloat(); return; }
+
+  const el = document.createElement('div');
+  el.id = '_miniPomFloat';
+  el.innerHTML = `
+    <div class="_mf-mode" id="_mfMode">ENFOQUE</div>
+    <div class="_mf-time" id="_mfTime">--:--</div>
+    <div class="_mf-subj" id="_mfSubj">—</div>
+    <div class="_mf-ring"><div class="_mf-ring-fill" id="_mfRingFill" style="width:100%"></div></div>
+    <div class="_mf-row">
+      <button class="_mf-btn primary" id="_mfBtnToggle" onclick="_pomMiniToggle()">⏸</button>
+      <button class="_mf-btn" onclick="_pomMiniGoTo()">↗ Ir</button>
+    </div>
+    <div class="_mf-go" onclick="_pomMiniGoTo()">volver al pomodoro</div>
+  `;
+  document.body.appendChild(el);
+
+  // Drag para reposicionar
+  _pomMakeDraggable(el);
+
+  // Loop de actualización
+  _pomStartMiniLoop();
+}
+
+function _pomHideMiniFloat() {
+  const el = document.getElementById('_miniPomFloat');
+  if (!el) return;
+  el.classList.add('_hiding');
+  setTimeout(() => el.remove(), 200);
+  _pomStopMiniLoop();
+}
+
+function _pomUpdateMiniFloat() {
+  if (!pomR && !pomSL) { _pomHideMiniFloat(); return; }
+  const mfTime = document.getElementById('_mfTime');
+  const mfMode = document.getElementById('_mfMode');
+  const mfSubj = document.getElementById('_mfSubj');
+  const mfFill = document.getElementById('_mfRingFill');
+  const mfBtn  = document.getElementById('_mfBtnToggle');
+  if (!mfTime) return;
+
+  const remaining = Math.max(0, Math.round((_pomEndTime - Date.now()) / 1000));
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  mfTime.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  const total = pomTS || (pomB ? pomBreak() : pomWork()) * 60;
+  const pct   = total > 0 ? Math.min(100, (remaining / total) * 100) : 0;
+  if (mfFill) mfFill.style.width = pct + '%';
+  if (mfFill) mfFill.style.background = pomB ? '#4ade80' : 'var(--accent, #7c6aff)';
+
+  if (mfMode) {
+    mfMode.textContent = pomB ? 'DESCANSO' : 'ENFOQUE';
+    mfMode.style.color = pomB ? '#4ade80' : 'var(--accent2, #a89cff)';
+  }
+  if (mfBtn) mfBtn.textContent = pomR ? '⏸' : '▶';
+
+  // Materia activa
+  if (mfSubj) {
+    const subSel = document.getElementById('pom-subject');
+    const subName = subSel ? (getMat(subSel.value)?.name || '—') : '—';
+    mfSubj.textContent = subName;
+  }
+
+  // Si el timer terminó mientras el mini estaba visible → esconder
+  if (remaining <= 0 && pomR) {
+    _pomHideMiniFloat();
+  }
+}
+
+function _pomStartMiniLoop() {
+  _pomStopMiniLoop();
+  function tick() {
+    _pomUpdateMiniFloat();
+    if (document.getElementById('_miniPomFloat')) {
+      _miniPomRaf = requestAnimationFrame(() => setTimeout(tick, 500));
+    }
+  }
+  tick();
+}
+
+function _pomStopMiniLoop() {
+  if (_miniPomRaf) { cancelAnimationFrame(_miniPomRaf); _miniPomRaf = null; }
+}
+
+function _pomMiniToggle() {
+  if (typeof pomToggle === 'function') pomToggle();
+  // Actualizar botón inmediatamente
+  const btn = document.getElementById('_mfBtnToggle');
+  if (btn) btn.textContent = pomR ? '⏸' : '▶';
+}
+
+function _pomMiniGoTo() {
+  const navEl = document.querySelector('[onclick*="\'pomodoro\'"]') ||
+                document.querySelector('[onclick*="pomodoro"]');
+  if (typeof goPage === 'function') goPage('pomodoro', navEl);
+}
+
+// Drag simple para reposicionar el widget
+function _pomMakeDraggable(el) {
+  let ox = 0, oy = 0, sx = 0, sy = 0;
+  const onDown = (e) => {
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    ox = el.offsetLeft; oy = el.offsetTop;
+    sx = pt.clientX;    sy = pt.clientY;
+    el.style.cursor = 'grabbing';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('mouseup',   onUp);
+    document.addEventListener('touchend',  onUp);
+  };
+  const onMove = (e) => {
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - sx, dy = pt.clientY - sy;
+    const newLeft = Math.max(0, Math.min(window.innerWidth  - el.offsetWidth,  ox + dx));
+    const newTop  = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, oy + dy));
+    el.style.right  = 'auto';
+    el.style.bottom = 'auto';
+    el.style.left   = newLeft + 'px';
+    el.style.top    = newTop  + 'px';
+  };
+  const onUp = () => {
+    el.style.cursor = 'grab';
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('mouseup',   onUp);
+    document.removeEventListener('touchend',  onUp);
+  };
+  el.addEventListener('mousedown',  onDown);
+  el.addEventListener('touchstart', onDown, { passive: false });
+}
+
+// ── Auto-show cuando el tab se oculta y el timer corre ────────
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && pomR) {
+    // No podemos mostrar DOM en background, pero al volver...
+    return;
+  }
+  if (document.visibilityState === 'visible' && pomR) {
+    // Al volver al tab, si NO estamos en la página de pomodoro → mostrar mini
+    const pomPage = document.getElementById('page-pomodoro');
+    if (!pomPage || !pomPage.classList.contains('active')) {
+      _pomShowMiniFloat();
+    }
+  }
+});
+
+// ── Auto-hide cuando el timer termina ─────────────────────────
+// (llamado desde _pomOnSegmentDone en app.js)
+function _pomOnMiniFloatDone() {
+  _pomHideMiniFloat();
+}
+
 // POM POPUP — ventana flotante independiente
 // La ventana corre su propio timer basado en _pomEndTime,
 // así nunca se throttlea aunque el tab principal esté en background.
@@ -2185,8 +2457,11 @@ function pomToggle() {
     _pomEndTime = Date.now() + pomSL * 1000;
     _pomStartWorkerTimer(_pomEndTime);
     _pomStartDisplayLoop();
-    _pomSyncPopup();  // escribir estado y abrir ventana flotante
-    _pomOpenPopup();
+    _pomSyncPopup();  // escribir estado
+    // Mostrar mini-float si el usuario no está en la página de pomodoro
+    _pomOpenPopup();  // mantener por compatibilidad (sin bloqueo si ya existe)
+    const _pp = document.getElementById('page-pomodoro');
+    if (!_pp || !_pp.classList.contains('active')) _pomShowMiniFloat();
   }
 }
 
@@ -2197,6 +2472,8 @@ function _pomOnSegmentDone() {
   if (!_noiseNode) _pomStopSilentKeeper();
   _pomReleaseWakeLock();
   pomPlayAlarm(pomB);
+  // Ocultar mini-float cuando el timer termina
+  if (typeof _pomOnMiniFloatDone === 'function') _pomOnMiniFloatDone();
         if (!pomB) {
           pomD++;
           const subj = document.getElementById('pom-subject').value;

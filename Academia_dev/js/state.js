@@ -111,13 +111,14 @@ function _buildDefaultSemester(id, nombre) {
     promedioObjetivo: 70,
     prevAvg:  0,
     prevCred: 0,
-    materias:  [],
-    grades:    {},
-    tasks:     [],
-    events:    [],
-    topics:    [],
-    notes:     {},
+    materias:   [],
+    grades:     {},
+    tasks:      [],
+    events:     [],
+    topics:     [],
+    notes:      {},
     notesArray: [],
+    flashcards: [],   // ← agregado
   };
 }
 
@@ -163,6 +164,8 @@ const State = {
   set notes(v)      { this._activeSem.notes    = v;              },
   get notesArray()  { return this._activeSem.notesArray || (this._activeSem.notesArray = []); },
   set notesArray(v) { this._activeSem.notesArray = v;            },
+  get flashcards()  { return this._activeSem.flashcards || (this._activeSem.flashcards = []); },
+  set flashcards(v) { this._activeSem.flashcards = v;            },
 
   pomSessions: (() => {
     const today = new Date().toDateString();
