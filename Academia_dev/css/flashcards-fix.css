@@ -1,0 +1,408 @@
+/* ═══════════════════════════════════════════════════════════
+   ACADEMIA — FLASHCARDS CSS FIX
+   Reemplaza el bloque <style> interno de flashcards.html
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Clase .input global (usada en flashcards.html pero no definida en base.css) ── */
+.input {
+  width: 100%;
+  padding: 9px 11px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--app-font);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s, background .15s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.input:focus {
+  border-color: var(--accent);
+  background: var(--surface3);
+}
+.input::placeholder { color: var(--text3); }
+
+/* Textarea específico */
+textarea.input {
+  resize: vertical;
+  line-height: 1.6;
+  min-height: 80px;
+  font-family: var(--app-font);
+}
+
+/* Select específico */
+select.input {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5a72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+select.input option {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* ── Header de la página ── */
+#page-flashcards > .card:first-child {
+  padding: 20px 24px;
+}
+
+/* ── Botón "Nueva Tarjeta" en el header ── */
+#page-flashcards .btn-primary {
+  gap: 6px;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+/* ── Filtro de materias ── */
+#fc-filter-mat {
+  height: 36px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Grid de tarjetas ── */
+#fc-list {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+}
+
+/* ── Tarjeta individual en lista ── */
+.fc-list-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 170px;
+  cursor: default;
+  position: relative;
+  overflow: hidden;
+}
+.fc-list-item::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.fc-list-item:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+}
+.fc-list-item:hover::before { opacity: 1; }
+
+/* ── Header de tarjeta: chip de materia + acciones ── */
+.fc-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.fc-item-subject {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  padding: 3px 9px;
+  background: var(--accent-glow);
+  border: 1px solid rgba(124, 106, 255, .3);
+  border-radius: 5px;
+  color: var(--accent2);
+  letter-spacing: .3px;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc-item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.fc-list-item:hover .fc-item-actions { opacity: 1; }
+
+/* Botones de acción en la tarjeta */
+.fc-item-actions .btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  border-radius: 7px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.fc-item-actions .btn:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+.fc-item-actions .btn-danger:hover {
+  background: var(--red-dim);
+  border-color: rgba(248, 113, 113, .4);
+  color: var(--red);
+}
+
+/* ── Pregunta ── */
+.fc-item-question {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  flex: 1;
+}
+
+/* ── Respuesta colapsada (se muestra al hover) ── */
+.fc-item-answer {
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.5;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Tags de tarjeta ── */
+.fc-item-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+.fc-tag {
+  font-size: 10px;
+  font-family: 'Space Mono', monospace;
+  padding: 2px 7px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  color: var(--text3);
+  transition: color .12s, border-color .12s;
+}
+.fc-tag:hover { color: var(--accent2); border-color: var(--accent); }
+
+/* ── Estado vacío ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.empty-icon { font-size: 48px; }
+.empty-title { font-size: 18px; font-weight: 800; color: var(--text); }
+.empty-desc { font-size: 13px; color: var(--text3); max-width: 320px; line-height: 1.6; }
+
+/* ── Flip card (modo estudio) ── */
+.fc-card-wrapper {
+  perspective: 1000px;
+  min-height: 300px;
+  cursor: pointer;
+  user-select: none;
+}
+.fc-card {
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+  transition: transform 0.55s cubic-bezier(.4, 0, .2, 1);
+  transform-style: preserve-3d;
+}
+.fc-card.flipped { transform: rotateY(180deg); }
+
+.fc-card-front,
+.fc-card-back {
+  position: absolute;
+  inset: 0;
+  min-height: 300px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  transition: border-color .2s;
+}
+.fc-card-front:hover { border-color: var(--border2); }
+.fc-card-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, rgba(124, 106, 255, .07), rgba(255, 107, 157, .05));
+  border-color: rgba(124, 106, 255, .35);
+}
+
+.fc-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text3);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fc-card-label::before,
+.fc-card-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  max-width: 40px;
+}
+
+.fc-card-content {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* Hint "click para voltear" */
+.fc-card-front .fc-card-hint {
+  position: absolute;
+  bottom: 14px;
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: .6;
+}
+
+/* ── Barra de progreso del modo estudio ── */
+#fc-study-bar {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 4px;
+}
+
+/* ── Botón flotante "Modo Estudio" ── */
+#fc-study-trigger button {
+  background: linear-gradient(135deg, var(--accent), #9b6fff);
+  border: none;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: .3px;
+}
+#fc-study-trigger button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(124, 106, 255, .45);
+}
+
+/* ── Modal de flashcard ── */
+#modal-flashcard .modal {
+  background: var(--surface);
+}
+#modal-flashcard .modal-title {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 800;
+}
+#modal-flashcard label {
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  display: block;
+}
+
+/* Todos los inputs/textarea/select del modal usan tema oscuro */
+#modal-flashcard .input,
+#modal-flashcard select,
+#modal-flashcard textarea,
+#modal-flashcard input[type="text"] {
+  background: var(--surface2) !important;
+  border: 1px solid var(--border2) !important;
+  color: var(--text) !important;
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+  width: 100%;
+  font-family: var(--app-font);
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s, background .15s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+#modal-flashcard .input:focus,
+#modal-flashcard select:focus,
+#modal-flashcard textarea:focus,
+#modal-flashcard input[type="text"]:focus {
+  border-color: var(--accent) !important;
+  background: var(--surface3) !important;
+}
+#modal-flashcard .input::placeholder,
+#modal-flashcard textarea::placeholder,
+#modal-flashcard input::placeholder {
+  color: var(--text3);
+}
+#modal-flashcard select option {
+  background: var(--surface2);
+  color: var(--text);
+}
+#modal-flashcard textarea.input {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* Hint de etiquetas */
+#modal-flashcard [style*="font-size:12px;color:var(--text3)"] {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+  font-family: 'Space Mono', monospace;
+}
+
+/* ── Modo estudio — contador y materia ── */
+#fc-study-progress { font-weight: 700; color: var(--text2); }
+#fc-study-subject  { color: var(--accent2); font-weight: 700; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  #fc-list {
+    grid-template-columns: 1fr !important;
+  }
+  .fc-card-wrapper,
+  .fc-card,
+  .fc-card-front,
+  .fc-card-back {
+    min-height: 240px;
+  }
+  .fc-card-front,
+  .fc-card-back {
+    padding: 24px 16px;
+  }
+  .fc-card-content { font-size: 17px; }
+  #fc-study-trigger { bottom: 76px; right: 14px; }
+  .fc-item-actions { opacity: 1; }
+}

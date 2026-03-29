@@ -180,7 +180,12 @@ const State = {
 /* ─── Debounced save: batches rapid saveState calls into one write every 400ms ─── */
 let _saveTimer = null;
 let _pendingKeys = new Set();
+
+// Guard para evitar que el sync de Supabase sobreescriba cambios locales recientes
+window._localModifiedAt = 0;
+
 function saveState(keys = ['all']) {
+  window._localModifiedAt = Date.now(); // marcar modificación local
   keys.forEach(k => _pendingKeys.add(k));
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(_flushSave, 400);
@@ -197,6 +202,7 @@ function _flushSave() {
   }
 }
 function saveStateNow(keys = ['all']) {
+  window._localModifiedAt = Date.now(); // marcar modificación local
   clearTimeout(_saveTimer); _pendingKeys.clear();
   const all = keys.includes('all');
   if (all || keys.includes('materias')) getMat.bust();

@@ -19,7 +19,7 @@
 }
 
 [data-theme="light"] {
-  --bg:      #e8eaed; --surface: #f0f2f5; --surface2: #e4e6ea; --surface3: #d8dade;
+  --bg:      #dadde2; --surface: #d6dde7; --surface2: #d4d8df; --surface3: #d8dade;
   --border:  #c8ccd4; --border2: #b8bdc7;
   --text:    #1a1f2e; --text2:  #4a5568; --text3:  #8a95a5;
   --accent:  #6b58e8; --accent2: #7c6aff; --accent-glow: rgba(107,88,232,.1);

@@ -24,6 +24,7 @@
     'horario',
     'notas',
     'pomodoro',
+    'flashcards',
   ];
 
   // ── Overlays/Modales: van directo al <body> ───────────────────

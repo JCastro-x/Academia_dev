@@ -390,32 +390,42 @@ function _renderNotesHub() {
   let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">`;
 
   // Todas las notas
-  html += _notesHubCard('null', '📋', 'Todas las notas', allNotes.length, 'var(--accent)', null);
+  html += _notesHubCard('null', '📋', 'Todas las notas', allNotes.length, 'var(--accent)', null, false, null);
 
   // Carpetas manuales
   folders.filter(f => !f.parentId).forEach(f => {
     const n = allNotes.filter(x => x.folderId === f.id).length;
-    html += _notesHubCard(`'${f.id}'`, f.icon||'📁', f.name, n, f.color||'var(--accent)', null);
+    html += _notesHubCard(`'${f.id}'`, f.icon||'📁', f.name, n, f.color||'var(--accent)', null, true, f.id);
   });
 
   // Materias
   State.materias.filter(m => !m.parentId).forEach(m => {
     const n = allNotes.filter(x => x.matId === m.id || x.folderId === 'mat_' + m.id).length;
-    html += _notesHubCard(`'mat_${m.id}'`, m.icon||'📚', m.name, n, m.color||'var(--accent)', m.code||null);
+    html += _notesHubCard(`'mat_${m.id}'`, m.icon||'📚', m.name, n, m.color||'var(--accent)', m.code||null, false, null);
   });
 
   html += `</div>`;
   grid.innerHTML = html;
 }
 
-function _notesHubCard(folderIdStr, icon, name, count, color, subtitle) {
-  return `<div onclick="_openNotesFolder(${folderIdStr})"
-    style="cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);
+function _notesHubCard(folderIdStr, icon, name, count, color, subtitle, isManualFolder, folderId) {
+  const actionBtns = isManualFolder ? `
+    <div class="hub-card-actions" style="position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:10;">
+      <button onclick="event.stopPropagation();openNewFolderModal('${folderId}')"
+        style="background:rgba(0,0,0,.45);border:none;border-radius:6px;color:var(--text2);cursor:pointer;font-size:12px;padding:3px 6px;line-height:1;"
+        title="Editar carpeta">✎</button>
+      <button onclick="event.stopPropagation();deleteNotesFolder('${folderId}')"
+        style="background:rgba(248,113,113,.25);border:none;border-radius:6px;color:#f87171;cursor:pointer;font-size:12px;padding:3px 6px;line-height:1;"
+        title="Eliminar carpeta">✕</button>
+    </div>` : '';
+  return `<div id="folder-${folderId}" onclick="if(event.target.closest('button'))return;_openNotesFolder(${folderIdStr})"
+    style="cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);position:relative;
       border-top:3px solid ${color};border-radius:14px;padding:20px 16px 18px;
       transition:transform .15s,box-shadow .15s,border-color .15s;
       display:flex;flex-direction:column;gap:10px;min-height:120px;"
-    onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 28px rgba(0,0,0,.3)';this.style.borderColor='${color}';"
-    onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)';this.style.borderTopColor='${color}';">
+    onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 28px rgba(0,0,0,.3)';this.style.borderColor='${color}';${isManualFolder?"var _a=this.querySelector('.hub-card-actions');if(_a){_a.style.opacity='1';_a.style.pointerEvents='auto';}":''}"
+    onmouseout="if(this.contains(event.relatedTarget))return;this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)';this.style.borderTopColor='${color}';${isManualFolder?"var _a=this.querySelector('.hub-card-actions');if(_a){_a.style.opacity='0';_a.style.pointerEvents='none';}":""}">
+    ${actionBtns}
     <div style="display:flex;align-items:flex-start;gap:10px;">
       <span style="font-size:28px;line-height:1;flex-shrink:0;">${icon}</span>
       <div style="flex:1;min-width:0;">
@@ -544,9 +554,12 @@ function closeNoteEditorModal() {
     modal.style.display    = 'none';
     backdrop.style.display = 'none';
   }, 220);
-  // Refresh the folder grid to show updated note
-  if (_currentFolderId !== undefined) _renderNotesFolderGrid(_currentFolderId);
-  else _renderNotesHub();
+  // Only refresh data, not re-mount the view
+  if (_notesInHub) {
+    _renderNotesHub();
+  } else {
+    _renderNotesFolderGrid(_currentFolderId);
+  }
 }
 
 function _populateEditorSelects() {
@@ -735,26 +748,38 @@ function saveNewFolder() {
   saveState(['all']);
   closeModal('modal-new-folder');
   if (_notesInHub) { _renderNotesHub(); } else { renderFoldersList(); }
-  if (typeof _renderNotesHub === "function") { if (_notesInHub) _renderNotesHub(); }
 }
 
-function deleteFolder(folderId) {
-  if (!confirm('¿Eliminar esta carpeta? Las notas no se borran.')) return;
-  const sem = State._activeSem;
-  sem.notesFolders = (sem.notesFolders||[]).filter(f => f.id !== folderId);
-  // unlink notes
-  _getNotesArray().forEach(n => { if (n.folderId === folderId) n.folderId = ''; });
-  if (_currentFolderId === folderId) _currentFolderId = null;
-  saveState(['all']);
-  renderFoldersList();
-  renderNotesList();
-}
+window.deleteNotesFolder = function(folderId) {
+  if (!confirm('¿Eliminar esta carpeta de notas?')) return;
+
+  const folders = _getFoldersArray();
+  const index = folders.findIndex(f => f.id === folderId);
+
+  if (index !== -1) {
+    folders.splice(index, 1);
+    saveState(['all']); 
+    
+    // Refrescar UI
+    if (_notesInHub) _renderNotesHub();
+    else renderFoldersList();
+    console.log("Carpeta de notas borrada ✅");
+  }
+};
 
 // ── NOTES LIST ────────────────────────────────────────────────
 function renderNotesList() {
-  if (_notesInHub) return;
+  // Always refresh the folder grid when in folder view
+  if (_notesInHub) {
+    _renderNotesHub();
+    return;
+  }
+  const folView = document.getElementById('notes-folder-view');
+  if (folView && folView.style.display !== 'none') {
+    _renderNotesFolderGrid(_currentFolderId);
+  }
   const container = document.getElementById('notes-list-items');
-  if (!container) return; // container is in legacy hidden layout, gracefully skip
+  if (!container) return;
 
   let notes = _getNotesArray();
 
@@ -1060,20 +1085,15 @@ function addNewDrawingNote() {
 function deleteCurrentNote() {
   if (!_currentNoteId) return;
   if (!confirm('¿Eliminar esta nota?')) return;
-  // Cancelar cualquier timer pendiente ANTES de nulificar el ID
   clearTimeout(_noteAutoSaveTimer);
   _noteAutoSaveTimer = null;
   const idToDelete = _currentNoteId;
-  _currentNoteId = null; // nullificar primero para que _autoCommitNote no resurja la nota
+  _currentNoteId = null;
   const sem = State._activeSem;
   if (sem.notesArray) sem.notesArray = sem.notesArray.filter(n => n.id !== idToDelete);
   saveState(['all']);
-  renderFoldersList();
-  renderNotesList();
-  _showNotesEmptyState();
+  // closeNoteEditorModal now handles re-rendering the correct view
   closeNoteEditorModal();
-  if (_currentFolderId !== undefined) setTimeout(() => _renderNotesFolderGrid(_currentFolderId), 50);
-  else setTimeout(() => _renderNotesHub(), 50);
 }
 
 // ── INPUT HANDLERS ────────────────────────────────────────────
@@ -2522,14 +2542,5 @@ function deleteApprovedCourse(idx) {
   renderApprovedCourses();
 }
 
-// ── Notes grid refresh hook ───────────────────────────────────
-const _origRenderNotesList = renderNotesList;
-function renderNotesList() {
-  _origRenderNotesList();
-  // Also refresh folder card grid if it's visible
-  const folView = document.getElementById('notes-folder-view');
-  if (folView && folView.style.display !== 'none' && typeof _renderNotesFolderGrid === 'function') {
-    _renderNotesFolderGrid(_currentFolderId);
-  }
-}
+// ── Notes grid refresh hook — moved inline into renderNotesList to avoid hoisting loop ──
 

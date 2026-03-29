@@ -11,7 +11,7 @@
               <div class="hub-stat" id="hub-stat-cal"></div>
             </div>
           </div>
-          <div class="card hub-card" onclick="openFromHub('flashcards')">
+          <div class="card hub-card" onclick="goPage('flashcards')">
             <div class="card-body hub-card-body">
               <div class="hub-icon">🃏</div>
               <div class="hub-label">Flashcards</div>
@@ -38,16 +38,5 @@
         </div>
       </div>
 
-      <!-- ═══ PAGE: FLASHCARDS ═══ -->
-      <div class="page" id="page-flashcards">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-          <button class="btn btn-ghost btn-sm" onclick="openFromHub('general')" style="flex-shrink:0;">← General</button>
-          <span style="font-size:16px;font-weight:700;">🃏 Flashcards</span>
-          <div style="margin-left:auto;display:flex;gap:8px;">
-            <button class="btn btn-ghost btn-sm" onclick="openNewFlashcardModal()">+ Nueva tarjeta</button>
-            <button class="btn btn-primary btn-sm" onclick="startFlashcardStudy()">▶ Estudiar</button>
-          </div>
-        </div>
-        <div id="flashcards-container"></div>
-      </div>
+
 

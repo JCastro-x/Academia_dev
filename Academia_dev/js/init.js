@@ -220,10 +220,19 @@ function continueInit(auth) {
 
   // ── Auto-sync cuando el usuario vuelve a la pestaña o app ──────
   let _lastSync = Date.now();
-  async function _syncFromSupabase() {
+  async function _syncFromSupabase(force = false) {
     if (!window.DB || !window.DB._ready) return;
     const now = Date.now();
-    if (now - _lastSync < 5000) return; // no sync si fue hace menos de 5s
+    if (!force && now - _lastSync < 5000) return; // no sync si fue hace menos de 5s
+
+    // GUARD: si hubo modificaciones locales en los últimos 30s, NO sobreescribir.
+    // Esto evita que un sync instantáneo borre cambios que aún no llegaron a Supabase.
+    const msSinceLocalMod = now - (window._localModifiedAt || 0);
+    if (msSinceLocalMod < 30000) {
+      console.log('⏭️ Sync omitido: cambios locales recientes (' + Math.round(msSinceLocalMod/1000) + 's)');
+      return;
+    }
+
     _lastSync = now;
     const dbData = await window.DB.load();
     if (!dbData) return;
@@ -256,7 +265,7 @@ function continueInit(auth) {
       if (dbData.settings && Object.keys(dbData.settings).length) {
         Object.assign(State.settings, dbData.settings);
       }
-      // FIX: re-renderizar TODO (antes faltaban materias, grades, GPA)
+      // FIX: re-renderizar TODO
       try {
         renderOverview     && renderOverview();
         renderMaterias     && renderMaterias();
@@ -266,9 +275,11 @@ function continueInit(auth) {
         updateGPADisplay   && updateGPADisplay();
         renderSemestresList && renderSemestresList();
         fillMatSels        && fillMatSels();
-        // Flashcards: re-renderizar solo si la pagina esta activa
+        // FIX: Flashcards — usar classList.contains('active'), no style.display
         const _fcPage = document.getElementById('page-flashcards');
-        if (_fcPage && _fcPage.style.display !== 'none') renderFlashcards && renderFlashcards();
+        if (_fcPage && _fcPage.classList.contains('active')) {
+          renderFlashcards && renderFlashcards();
+        }
       } catch(e) { console.warn('Sync re-render error', e); }
     }
   }
@@ -286,6 +297,16 @@ function continueInit(auth) {
     if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
   });
   window.addEventListener('focus', () => _syncFromSupabase());
+
+  // Polling cada 90s para sincronización entre dispositivos (PC ↔ móvil)
+  // Solo sincroniza si no hay cambios locales recientes (evita conflictos)
+  setInterval(() => {
+    const canSync = (Date.now() - (window._localModifiedAt || 0)) > 30000;
+    if (canSync && window.DB && window.DB._ready) {
+      _lastSync = 0; // forzar que el guard de 5s no bloquee
+      _syncFromSupabase();
+    }
+  }, 90000);
 
   // Mostrar onboarding si es primera vez
   _maybeShowOnboarding();

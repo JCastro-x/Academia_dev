@@ -1,0 +1,516 @@
+<!-- ═════════════════════════════════════════════════
+     FLASHCARDS PAGE  v3.0  — HTML + CSS only
+     JS vive en js/flashcards.js (cargado por index.html)
+     ════════════════════════════════════════════════ -->
+<div class="page" id="page-flashcards">
+
+  <!-- ═══ VISTA 1: GRID DE MATERIAS ═══ -->
+  <div id="fc-view-materias">
+    <div class="fc-header-bar">
+      <div class="fc-header-top">
+        <div class="fc-header-left">
+          <button class="fc-back-btn" onclick="goPage('general', document.querySelector('.nav-item[onclick*=general]'))">← General</button>
+          <div class="fc-title-wrap">
+            <span class="fc-title-icon">🎴</span>
+            <h2 class="fc-title-text">Flashcards</h2>
+          </div>
+        </div>
+        <div class="fc-header-actions">
+          <button class="btn btn-primary" onclick="openAddFlashcardModal()">
+            ➕ <span class="hide-mobile">Nueva Tarjeta</span>
+          </button>
+        </div>
+      </div>
+      <div class="fc-stats-row">
+        <span class="fc-stat-total"><span id="fc-count-total">0</span> tarjetas</span>
+        <span class="fc-stat-sep">·</span>
+        <span class="fc-stat fc-stat-dom"><span id="fc-stat-dominadas">0</span> dominadas</span>
+        <span class="fc-stat-sep">·</span>
+        <span class="fc-stat fc-stat-prac"><span id="fc-stat-practicando">0</span> practicando</span>
+        <span class="fc-stat-sep">·</span>
+        <span class="fc-stat fc-stat-new"><span id="fc-stat-nuevas">0</span> nuevas</span>
+      </div>
+    </div>
+    <div id="fc-materias-grid" class="fc-materias-grid"></div>
+    <div id="fc-global-empty" style="display:none;">
+      <div class="empty-state">
+        <div class="empty-icon">🎴</div>
+        <div class="empty-title">No hay flashcards todavía</div>
+        <div class="empty-desc">Crea tu primera tarjeta seleccionando una materia abajo.</div>
+        <button class="btn btn-primary" onclick="openAddFlashcardModal()">➕ Crear Flashcard</button>
+      </div>
+    </div>
+    <div id="fc-no-materias" style="display:none;">
+      <div class="empty-state">
+        <div class="empty-icon">📚</div>
+        <div class="empty-title">No tienes materias todavía</div>
+        <div class="empty-desc">Agrega tus materias en la sección "Materias" para poder crear flashcards.</div>
+        <button class="btn btn-primary" onclick="goPage('materias', document.querySelector('.nav-item[onclick*=materias]'))">Ir a Materias</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VISTA 2: CARPETAS DE UNA MATERIA ═══ -->
+  <div id="fc-view-folders" style="display:none;">
+    <div class="fc-header-bar">
+      <div class="fc-header-top">
+        <div class="fc-header-left">
+          <button class="fc-back-btn" onclick="fcNavBack('materias')">← Materias</button>
+          <div class="fc-title-wrap">
+            <span class="fc-title-icon" id="fc-folder-mat-icon">📚</span>
+            <h2 class="fc-title-text" id="fc-folder-mat-name">Materia</h2>
+          </div>
+        </div>
+        <div class="fc-header-actions">
+          <button class="btn btn-ghost" onclick="openCreateFolderModal()">
+            📁 <span class="hide-mobile">Nueva Carpeta</span>
+          </button>
+          <button class="btn btn-primary" onclick="openAddFlashcardModal()">
+            ➕ <span class="hide-mobile">Nueva Tarjeta</span>
+          </button>
+        </div>
+      </div>
+      <div class="fc-stats-row" id="fc-folder-stats-row"></div>
+    </div>
+    <div id="fc-folder-all-card" class="fc-folder-all-card" onclick="fcOpenFolder(null)"></div>
+    <div id="fc-folders-grid" class="fc-folders-grid"></div>
+  </div>
+
+  <!-- ═══ VISTA 3: TARJETAS ═══ -->
+  <div id="fc-view-cards" style="display:none;">
+    <div class="fc-header-bar">
+      <div class="fc-header-top">
+        <div class="fc-header-left">
+          <button class="fc-back-btn" id="fc-cards-back-btn" onclick="fcNavBack('folders')">← Carpetas</button>
+          <div class="fc-title-wrap">
+            <span class="fc-title-icon" id="fc-cards-folder-icon">📁</span>
+            <h2 class="fc-title-text" id="fc-cards-folder-name">Carpeta</h2>
+          </div>
+        </div>
+        <div class="fc-header-actions">
+          <button class="btn btn-ghost" id="fc-study-btn-header" onclick="enterStudyMode()" style="display:none;">
+            📖 <span class="hide-mobile">Modo Estudio</span>
+          </button>
+          <button class="btn btn-primary" onclick="openAddFlashcardModal()">
+            ➕ <span class="hide-mobile">Nueva Tarjeta</span>
+          </button>
+        </div>
+      </div>
+      <div class="fc-stats-row" id="fc-cards-stats-row"></div>
+    </div>
+
+    <!-- Modo estudio -->
+    <div id="fc-study-mode" style="display:none;">
+      <div class="card" style="max-width:700px;margin:0 auto 20px;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:14px;color:var(--text3);margin-bottom:12px;">
+            <span id="fc-study-progress">Tarjeta 1 de 10</span>
+            <span style="margin:0 12px;">·</span>
+            <span id="fc-study-subject"></span>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;height:6px;overflow:hidden;">
+            <div id="fc-study-bar" style="height:100%;width:0%;transition:width 0.3s;"></div>
+          </div>
+        </div>
+        <div class="fc-card-wrapper" onclick="flipCard()">
+          <div class="fc-card" id="fc-card">
+            <div class="fc-card-front">
+              <div class="fc-card-label">Pregunta</div>
+              <div class="fc-card-content" id="fc-question">Click para voltear</div>
+              <div class="fc-card-hint">↩ click para ver respuesta</div>
+            </div>
+            <div class="fc-card-back">
+              <div class="fc-card-label">Respuesta</div>
+              <div class="fc-card-content" id="fc-answer">...</div>
+            </div>
+          </div>
+        </div>
+        <!-- Rating buttons (spaced repetition) -->
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:center;flex-wrap:wrap;" id="fc-rating-row" style="display:none;">
+          <button class="btn fc-rating-btn fc-rating-hard"  onclick="rateCard('dificil')">😤 Difícil</button>
+          <button class="btn fc-rating-btn fc-rating-med"   onclick="rateCard('media')">😐 Media</button>
+          <button class="btn fc-rating-btn fc-rating-easy"  onclick="rateCard('facil')">✅ Fácil</button>
+        </div>
+        <div id="fc-next-info" style="text-align:center;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:6px;display:none;"></div>
+        <div style="display:flex;gap:12px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn" onclick="prevCard()" id="fc-prev-btn">‹ Anterior</button>
+          <button class="btn btn-ghost" onclick="exitStudyMode()">Salir del modo estudio</button>
+          <button class="btn" onclick="nextCard()" id="fc-next-btn">Siguiente ›</button>
+        </div>
+        <div style="text-align:center;margin-top:14px;">
+          <button class="btn btn-sm btn-ghost" onclick="shuffleStudyCards()">🔀 Mezclar tarjetas</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista tarjetas -->
+    <div id="fc-list-mode">
+      <div id="fc-cards-empty" style="display:none;">
+        <div class="empty-state">
+          <div class="empty-icon">🃏</div>
+          <div class="empty-title">No hay tarjetas aquí</div>
+          <div class="empty-desc">Crea tu primera tarjeta para esta sección</div>
+          <button class="btn btn-primary" onclick="openAddFlashcardModal()">➕ Crear Flashcard</button>
+        </div>
+      </div>
+      <div id="fc-list" style="display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));"></div>
+    </div>
+
+    <div id="fc-study-trigger" style="display:none;position:fixed;bottom:24px;right:24px;z-index:100;">
+      <button class="btn btn-primary" style="padding:14px 24px;font-size:16px;box-shadow:0 8px 24px rgba(0,0,0,.3);" onclick="enterStudyMode()">
+        📖 Modo Estudio
+      </button>
+    </div>
+  </div>
+
+</div><!-- /page-flashcards -->
+
+<!-- ═══ MODAL: Nueva / Editar Flashcard ═══ -->
+<div id="modal-flashcard" class="modal-overlay">
+  <div class="modal" style="max-width:560px;width:96vw;">
+    <div class="modal-title">
+      <span id="fc-modal-title">Nueva Flashcard</span>
+      <button class="modal-close" onclick="closeFlashcardModal()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">Materia <span style="color:var(--red,#f87171);">*</span></label>
+      <select id="fc-mat" class="fc-input" onchange="fcUpdateFolderSelect()">
+        <option value="">— Selecciona una materia —</option>
+      </select>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">Carpeta <span style="color:var(--text3);">(opcional)</span></label>
+      <select id="fc-folder-sel" class="fc-input">
+        <option value="">Sin carpeta (general)</option>
+      </select>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">Pregunta / Concepto <span style="color:var(--red,#f87171);">*</span></label>
+      <textarea id="fc-question-input" class="fc-input" rows="3" placeholder="¿Qué es la fotosíntesis?"></textarea>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">Respuesta / Definición <span style="color:var(--red,#f87171);">*</span></label>
+      <textarea id="fc-answer-input" class="fc-input" rows="4" placeholder="Proceso por el cual las plantas..."></textarea>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">Etiquetas <span style="color:var(--text3);">(separa con comas)</span></label>
+      <input type="text" id="fc-tags" class="fc-input" placeholder="biología, célula, proceso">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-ghost" onclick="closeFlashcardModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveFlashcard()"><span id="fc-save-text">Guardar</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Nueva / Editar Carpeta ═══ -->
+<div id="modal-folder" class="modal-overlay">
+  <div class="modal" style="max-width:440px;width:96vw;">
+    <div class="modal-title">
+      <span id="fc-folder-modal-title">Nueva Carpeta</span>
+      <button class="modal-close" onclick="closeFolderModal()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">Nombre <span style="color:var(--red,#f87171);">*</span></label>
+      <input type="text" id="fc-folder-name-input" class="fc-input" placeholder="Ej: Unidad 1, Parcial 2, Conceptos clave...">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:18px;">
+      <label class="fc-label">Icono</label>
+      <div class="fc-folder-icons" id="fc-folder-icon-picker">
+        <span class="fc-icon-opt selected" data-icon="📁">📁</span>
+        <span class="fc-icon-opt" data-icon="📂">📂</span>
+        <span class="fc-icon-opt" data-icon="📖">📖</span>
+        <span class="fc-icon-opt" data-icon="📝">📝</span>
+        <span class="fc-icon-opt" data-icon="🧪">🧪</span>
+        <span class="fc-icon-opt" data-icon="🔬">🔬</span>
+        <span class="fc-icon-opt" data-icon="🧮">🧮</span>
+        <span class="fc-icon-opt" data-icon="💻">💻</span>
+        <span class="fc-icon-opt" data-icon="⚗️">⚗️</span>
+        <span class="fc-icon-opt" data-icon="🏛️">🏛️</span>
+        <span class="fc-icon-opt" data-icon="📐">📐</span>
+        <span class="fc-icon-opt" data-icon="🌍">🌍</span>
+        <span class="fc-icon-opt" data-icon="⭐">⭐</span>
+        <span class="fc-icon-opt" data-icon="🎯">🎯</span>
+        <span class="fc-icon-opt" data-icon="🔥">🔥</span>
+        <span class="fc-icon-opt" data-icon="💡">💡</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeFolderModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveFolder()"><span id="fc-folder-save-text">Crear Carpeta</span></button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ══════════════════════════════════════
+   FLASHCARDS — Estilos internos
+   (no dependen de flashcards-fix.css)
+══════════════════════════════════════ */
+
+/* Input base */
+.fc-input {
+  width: 100%; padding: 9px 11px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm, 7px); color: var(--text);
+  font-family: var(--app-font, 'Syne', sans-serif); font-size: 13px;
+  outline: none; transition: border-color .15s, background .15s;
+  appearance: none; -webkit-appearance: none; box-sizing: border-box;
+}
+.fc-input:focus  { border-color: var(--accent); background: var(--surface3, var(--surface2)); }
+.fc-input::placeholder { color: var(--text3); }
+textarea.fc-input  { resize: vertical; line-height: 1.6; min-height: 80px; }
+select.fc-input {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a5a72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px;
+}
+select.fc-input option { background: var(--surface2); color: var(--text); }
+
+.fc-label {
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  display: block; margin-bottom: 5px;
+}
+
+/* ── Header bar ── */
+.fc-header-bar {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius, 12px); padding: 16px 20px 14px;
+  margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;
+}
+.fc-header-top {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.fc-header-left  { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.fc-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.fc-back-btn {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
+  background: transparent; border: 1px solid var(--border2); border-radius: 20px;
+  color: var(--text2); font-size: 12px; font-weight: 600;
+  font-family: var(--app-font, sans-serif); cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s; white-space: nowrap;
+}
+.fc-back-btn:hover { border-color: var(--accent); color: var(--accent2); background: var(--accent-glow); }
+
+.fc-title-wrap { display: flex; align-items: center; gap: 8px; }
+.fc-title-icon { font-size: 20px; }
+.fc-title-text { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.4px; color: var(--text); }
+
+.fc-stats-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12.5px; font-family: 'Space Mono', monospace; font-weight: 600;
+}
+.fc-stat-total { color: var(--text3); }
+.fc-stat-sep   { color: var(--border2); font-size: 11px; }
+.fc-stat-dom   { color: #4ade80; }
+.fc-stat-prac  { color: #fbbf24; }
+.fc-stat-new   { color: #f87171; }
+
+/* ── Grid materias ── */
+.fc-materias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+.fc-mat-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 22px 20px 18px; cursor: pointer;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; overflow: hidden; min-height: 150px;
+}
+.fc-mat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--mat-color, var(--accent)); opacity: .6; transition: opacity .2s;
+}
+.fc-mat-card:hover { border-color: var(--mat-color, var(--accent)); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.3); }
+.fc-mat-card:hover::before { opacity: 1; }
+.fc-mat-icon { font-size: 28px; }
+.fc-mat-name { font-size: 14px; font-weight: 800; color: var(--text); line-height: 1.3; }
+.fc-mat-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.fc-mat-chip {
+  font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px;
+}
+.fc-mat-chip-cards   { background: var(--accent-glow); border: 1px solid rgba(124,106,255,.25); color: var(--accent2); }
+.fc-mat-chip-folders { background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.25); color: #fbbf24; }
+
+/* ── Card "Todas" ── */
+.fc-folder-all-card {
+  background: linear-gradient(135deg, rgba(124,106,255,.08), rgba(168,146,255,.04));
+  border: 1px solid rgba(124,106,255,.25); border-radius: 14px;
+  padding: 16px 20px; cursor: pointer; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 14px;
+  transition: border-color .2s, background .2s, transform .15s;
+}
+.fc-folder-all-card:hover { border-color: var(--accent); background: rgba(124,106,255,.13); transform: translateX(3px); }
+
+/* ── Grid carpetas ── */
+.fc-folders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+.fc-folder-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 18px 16px; cursor: pointer;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column; gap: 8px;
+  position: relative; min-height: 130px;
+}
+.fc-folder-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.fc-folder-card-top     { display: flex; justify-content: space-between; align-items: flex-start; }
+.fc-folder-card-icon    { font-size: 28px; }
+.fc-folder-card-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.fc-folder-card:hover .fc-folder-card-actions { opacity: 1; }
+.fc-folder-card-name  { font-size: 14px; font-weight: 800; color: var(--text); line-height: 1.3; }
+.fc-folder-card-count { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--text3); font-weight: 600; margin-top: auto; }
+.fc-folder-card-count span { color: var(--accent2); }
+
+/* ── Botones de acción pequeños ── */
+.fc-act-btn {
+  width: 26px; height: 26px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; border-radius: 6px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text2); cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.fc-act-btn:hover { background: var(--accent-glow); border-color: var(--accent); color: var(--accent2); }
+
+/* ── Tarjeta individual en lista ── */
+.fc-list-item {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 170px; position: relative; overflow: hidden;
+}
+.fc-list-item::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--accent); opacity: 0; transition: opacity .2s;
+}
+.fc-list-item:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.fc-list-item:hover::before { opacity: 1; }
+.fc-item-header  { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.fc-item-chips   { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.fc-item-subject {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700;
+  font-family: 'Space Mono', monospace; padding: 2px 8px;
+  background: var(--accent-glow); border: 1px solid rgba(124,106,255,.3);
+  border-radius: 5px; color: var(--accent2);
+}
+.fc-item-folder-chip {
+  font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700; padding: 2px 7px;
+  background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.25); border-radius: 4px; color: #fbbf24;
+}
+.fc-item-actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+.fc-list-item:hover .fc-item-actions { opacity: 1; }
+.fc-item-question { font-weight: 700; font-size: 14px; line-height: 1.5; color: var(--text); flex: 1; }
+.fc-item-answer {
+  font-size: 12.5px; color: var(--text2); line-height: 1.5; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.fc-item-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: auto; }
+.fc-tag {
+  font-size: 10px; font-family: 'Space Mono', monospace; padding: 2px 7px;
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px; color: var(--text3);
+  transition: color .12s, border-color .12s;
+}
+.fc-tag:hover { color: var(--accent2); border-color: var(--accent); }
+
+/* ── Icon picker ── */
+.fc-folder-icons { display: flex; flex-wrap: wrap; gap: 8px; }
+.fc-icon-opt {
+  width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 18px; border-radius: 9px; background: var(--surface2);
+  border: 1.5px solid var(--border2); cursor: pointer;
+  transition: background .12s, border-color .12s, transform .12s; user-select: none;
+}
+.fc-icon-opt:hover  { background: var(--accent-glow); border-color: var(--accent); }
+.fc-icon-opt.selected { background: var(--accent-glow); border-color: var(--accent); transform: scale(1.12); }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.empty-icon  { font-size: 48px; }
+.empty-title { font-size: 18px; font-weight: 800; color: var(--text); }
+.empty-desc  { font-size: 13px; color: var(--text3); max-width: 320px; line-height: 1.6; }
+
+/* ── Flip card (modo estudio) ── */
+.fc-card-wrapper {
+  perspective: 1000px; min-height: 300px; cursor: pointer; user-select: none;
+}
+.fc-card {
+  position: relative; width: 100%; min-height: 300px;
+  transition: transform 0.55s cubic-bezier(.4,0,.2,1); transform-style: preserve-3d;
+}
+.fc-card.flipped { transform: rotateY(180deg); }
+.fc-card-front,
+.fc-card-back {
+  position: absolute; inset: 0; min-height: 300px;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 16px; padding: 32px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  transition: border-color .2s;
+}
+.fc-card-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, rgba(124,106,255,.07), rgba(255,107,157,.05));
+  border-color: rgba(124,106,255,.35);
+}
+.fc-card-label {
+  font-size: 10px; font-weight: 700; font-family: 'Space Mono', monospace;
+  text-transform: uppercase; letter-spacing: 2px; color: var(--text3); margin-bottom: 18px;
+  display: flex; align-items: center; gap: 6px;
+}
+.fc-card-label::before, .fc-card-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--border); max-width: 40px;
+}
+.fc-card-content { font-size: 20px; font-weight: 600; line-height: 1.6; color: var(--text); }
+.fc-card-hint {
+  position: absolute; bottom: 14px; font-size: 10px; color: var(--text3);
+  font-family: 'Space Mono', monospace; letter-spacing: 1px;
+  display: flex; align-items: center; gap: 4px; opacity: .6;
+}
+
+/* ── Rating buttons ── */
+.fc-rating-btn { min-width: 100px; font-weight: 700; }
+.fc-rating-hard { background: rgba(248,113,113,.15) !important; color: #f87171 !important; border-color: rgba(248,113,113,.3) !important; }
+.fc-rating-med  { background: rgba(251,191,36,.15) !important; color: #fbbf24 !important; border-color: rgba(251,191,36,.3) !important; }
+.fc-rating-easy { background: rgba(74,222,128,.15) !important; color: #4ade80 !important; border-color: rgba(74,222,128,.3) !important; }
+.fc-rating-hard:hover { background: rgba(248,113,113,.3) !important; }
+.fc-rating-med:hover  { background: rgba(251,191,36,.3) !important; }
+.fc-rating-easy:hover { background: rgba(74,222,128,.3) !important; }
+
+/* ── Barra de progreso ── */
+#fc-study-bar { background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; }
+
+/* ── Botón flotante modo estudio ── */
+#fc-study-trigger button {
+  background: linear-gradient(135deg, var(--accent), #9b6fff); border: none; color: #fff; font-weight: 800;
+}
+#fc-study-trigger button:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(124,106,255,.45); }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .fc-materias-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .fc-folders-grid  { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  #fc-list { grid-template-columns: 1fr !important; }
+  .fc-card-wrapper, .fc-card, .fc-card-front, .fc-card-back { min-height: 240px; }
+  .fc-card-front, .fc-card-back { padding: 24px 16px; }
+  .fc-card-content { font-size: 17px; }
+  #fc-study-trigger { bottom: 76px; right: 14px; }
+  .fc-item-actions, .fc-folder-card-actions { opacity: 1 !important; }
+  .fc-title-text { font-size: 17px; }
+  .fc-header-bar { padding: 12px 14px 10px; }
+  .fc-mat-card { min-height: 120px; padding: 16px 14px 12px; }
+}
+
+@media (max-width: 480px) {
+  .fc-materias-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fc-folders-grid  { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fc-header-actions .btn span.hide-mobile { display: none; }
+}
+</style>
