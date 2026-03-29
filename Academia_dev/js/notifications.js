@@ -68,24 +68,84 @@ function scheduleTaskReminders() {
 function renderReminderBanners() {
   const wrap = document.getElementById('reminder-banners');
   if (!wrap) return;
+
   const today = new Date().toISOString().split('T')[0];
   const active = (typeof State !== 'undefined' ? State.tasks : []).filter(t => !t.done);
+  
   const ov = active.filter(t => t.due && t.due < today);
   const dt = active.filter(t => t.due === today);
   const pt = active.filter(t => t.datePlanned === today);
+
   const banners = [];
-  if (ov.length) banners.push({ c:'#f87171', bg:'rgba(248,113,113,.12)', b:'rgba(248,113,113,.4)', icon:'⚠️',
-    msg:`${ov.length} vencida${ov.length>1?'s':''}: ${ov.map(t=>t.title).join(', ')}`, k:'overdue' });
-  if (dt.length) banners.push({ c:'#f87171', bg:'rgba(248,113,113,.10)', b:'rgba(248,113,113,.3)', icon:'🔴',
-    msg:`Entrega hoy: ${dt.map(t=>t.dueTime?`${t.title} (${t.dueTime})`:t.title).join(', ')}`, k:'due-today' });
-  if (pt.length) banners.push({ c:'#9d97ff', bg:'rgba(108,99,255,.10)', b:'rgba(108,99,255,.35)', icon:'📋',
-    msg:`Planificaste para hoy: ${pt.map(t=>t.timePlanned?`${t.title} (${t.timePlanned})`:t.title).join(', ')}`, k:'planned' });
+
+  // 🔴 Vencidas: Rojo más sólido
+  if (ov.length) banners.push({ 
+    c: '#ff8a8a', 
+    bg: 'rgba(40, 20, 20, 0.95)', 
+    b: '#f87171', 
+    icon: '⚠️',
+    msg: `${ov.length} vencida${ov.length > 1 ? 's' : ''}: ${ov.map(t => t.title).join(', ')}`, 
+    k: 'overdue' 
+  });
+
+  // 🟠 Entrega hoy: Naranja/Rojo vibrante
+  if (dt.length) banners.push({ 
+    c: '#ff8a8a', 
+    bg: 'rgba(40, 20, 20, 0.95)', 
+    b: 'rgba(248, 113, 113, 0.8)', 
+    icon: '🔴',
+    msg: `Entrega hoy: ${dt.map(t => t.dueTime ? `${t.title} (${t.dueTime})` : t.title).join(', ')}`, 
+    k: 'due-today' 
+  });
+
+  // 🟣 Planificadas: Morado sólido
+  if (pt.length) banners.push({ 
+    c: '#c7c4ff', 
+    bg: 'rgba(25, 25, 45, 0.98)', 
+    b: '#7c6aff', 
+    icon: '📋',
+    msg: `Planificaste para hoy: ${pt.map(t => t.timePlanned ? `${t.title} (${t.timePlanned})` : t.title).join(', ')}`, 
+    k: 'planned' 
+  });
+
   if (!banners.length) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = banners.map(b =>
-    `<div id="rb-${b.k}" style="pointer-events:all;background:${b.bg};border-bottom:2px solid ${b.b};color:${b.c};padding:7px 16px;font-size:12px;font-family:'Space Mono',monospace;display:flex;align-items:center;gap:8px;">
-      <span>${b.icon}</span>
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.msg}</span>
-      <button onclick="document.getElementById('rb-${b.k}').remove()" style="background:none;border:none;color:${b.c};cursor:pointer;font-size:14px;opacity:.7;padding:0 4px;flex-shrink:0;">✕</button>
-    </div>`
-  ).join('');
+
+  wrap.innerHTML = banners.map(b => `
+    <div id="rb-${b.k}" style="
+      pointer-events: all;
+      background: ${b.bg};
+      border: 1px solid ${b.b};
+      border-left: 4px solid ${b.b};
+      color: ${b.c};
+      padding: 10px 16px;
+      margin: 6px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      backdrop-filter: blur(8px);
+    ">
+      <span style="font-size: 16px;">${b.icon}</span>
+      <span style="flex: 1; line-height: 1.4;">${b.msg}</span>
+      <button onclick="this.parentElement.remove()" style="
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: ${b.c};
+        cursor: pointer;
+        font-size: 16px;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: background 0.2s;
+      " onmouseover="this.style.background='rgba(255,255,255,0.2)'" 
+         onmouseout="this.style.background='rgba(255,255,255,0.1)'">✕</button>
+    </div>
+  `).join('');
 }
