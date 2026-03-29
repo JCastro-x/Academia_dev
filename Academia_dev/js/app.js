@@ -1260,7 +1260,7 @@ function renderGeneralHub() {
     : 'Sin materias aún';
 
   // Flashcards stat
-  const fcAll = (() => { try { return JSON.parse(localStorage.getItem('academia_flashcards')||'[]'); } catch { return []; } })();
+  const fcAll = State.flashcards || [];
   const fcStat = document.getElementById('hub-stat-fc');
   if (fcStat) fcStat.textContent = fcAll.length ? `${fcAll.length} tarjeta${fcAll.length!==1?'s':''}` : 'Sin tarjetas aún';
 
