@@ -213,3 +213,28 @@ function savePom() {
 }
 
 function getActiveSem() { return State._activeSem; }
+// ─── Migración única: mueve flashcards de la key vieja a State.flashcards ───
+(function _migrateFlashcards() {
+  const MIGRATION_KEY = 'academia_fc_migrated_v1';
+  if (localStorage.getItem(MIGRATION_KEY)) return; // ya se hizo
+ 
+  try {
+    const old = localStorage.getItem('academia_flashcards');
+    if (old) {
+      const oldCards = JSON.parse(old);
+      if (Array.isArray(oldCards) && oldCards.length > 0) {
+        // Fusionar con las que ya estén en State (por si acaso)
+        const existing = State.flashcards || [];
+        const existingIds = new Set(existing.map(c => c.id));
+        const toAdd = oldCards.filter(c => !existingIds.has(c.id));
+        State.flashcards = [...existing, ...toAdd];
+        dbSet(DB_KEYS.SEMESTRES, State.semestres);
+        console.log(`✅ Migradas ${toAdd.length} flashcards al State`);
+      }
+    }
+  } catch (e) {
+    console.warn('Error en migración de flashcards:', e);
+  }
+ 
+  localStorage.setItem(MIGRATION_KEY, '1');
+})();

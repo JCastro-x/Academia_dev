@@ -266,6 +266,9 @@ function continueInit(auth) {
         updateGPADisplay   && updateGPADisplay();
         renderSemestresList && renderSemestresList();
         fillMatSels        && fillMatSels();
+        // Flashcards: re-renderizar solo si la pagina esta activa
+        const _fcPage = document.getElementById('page-flashcards');
+        if (_fcPage && _fcPage.style.display !== 'none') renderFlashcards && renderFlashcards();
       } catch(e) { console.warn('Sync re-render error', e); }
     }
   }
