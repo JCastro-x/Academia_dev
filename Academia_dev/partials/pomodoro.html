@@ -8,11 +8,41 @@
             <div class="card-header">
               <span class="card-title">⏱️ Temporizador Pomodoro</span>
               <!-- Botón Focus pequeño y discreto -->
+              <!-- Botón Mini Float — muestra el widget de esquina -->
+              <button id="pom-mini-toggle-btn"
+                onclick="window._pomShowMiniFloat&&_pomIsRunningCheck()"
+                title="Mini timer flotante — aparece al cambiar de página"
+                style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;"
+                onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
+                onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'"
+                title="📟 Mini Timer">📟</button>
               <button onclick="enterFocusMode()" title="Modo Focus — pantalla limpia"
-                style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-left:auto;"
+                style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;"
                 onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
                 onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'"
                 title="🔥 Modo Focus">🔥</button>
+              <script>
+              // Mostrar aviso si el timer no corre al presionar el botón 📟
+              function _pomIsRunningCheck() {
+                if (typeof pomR !== "undefined" && pomR) {
+                  // Simular que estamos en otra página para que aparezca
+                  const p = document.getElementById("page-pomodoro");
+                  if (p) p.classList.remove("active");
+                  window._pomShowMiniFloat();
+                  setTimeout(() => { if (p) p.classList.add("active"); }, 50);
+                } else {
+                  const btn = document.getElementById("pom-mini-toggle-btn");
+                  if (btn) {
+                    btn.title = "⚠️ Inicia el timer primero";
+                    btn.style.borderColor = "#f87171";
+                    setTimeout(() => {
+                      btn.title = "📟 Mini Timer";
+                      btn.style.borderColor = "";
+                    }, 1500);
+                  }
+                }
+              }
+              </script>
             </div>
             <div class="card-body">
               <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
