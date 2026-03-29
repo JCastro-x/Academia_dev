@@ -387,8 +387,8 @@ function _renderNotesHub() {
 
   const _countBadge = (n) => `<span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${n} nota${n!==1?'s':''}</span>`;
 
-  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">`;
-
+  //let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">`;
+let html = '<div class="smart-grid">';
   // Todas las notas
   html += _notesHubCard('null', '📋', 'Todas las notas', allNotes.length, 'var(--accent)', null, false, null);
 
@@ -442,6 +442,7 @@ function _notesHubCard(folderIdStr, icon, name, count, color, subtitle, isManual
 function _renderNotesFolderGrid(folderId) {
   const grid = document.getElementById('notes-folder-grid');
   if (!grid) return;
+  
   let notes = _getNotesArray();
 
   if (folderId !== null) {
@@ -451,6 +452,7 @@ function _renderNotesFolderGrid(folderId) {
     } else {
       notes = notes.filter(n => n.folderId === folderId);
     }
+    
   }
 
   const sorted = [...notes].sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
@@ -464,7 +466,8 @@ function _renderNotesFolderGrid(folderId) {
     return;
   }
 
-  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">`;
+  //let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">`;
+  let html = '<div class="smart-grid">';
   sorted.forEach(note => {
     const mat     = note.matId ? State.materias.find(m => m.id === note.matId) : null;
     const isDraw  = note.type === 'draw';
@@ -782,8 +785,7 @@ function renderNotesList() {
   if (!container) return;
 
   let notes = _getNotesArray();
-
-  // Filter by selected folder
+  let html = '<div class="smart-grid">';
   if (_currentFolderId !== null) {
     if (String(_currentFolderId).startsWith('mat_')) {
       const matId = _currentFolderId.replace('mat_','');

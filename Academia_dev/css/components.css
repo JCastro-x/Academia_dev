@@ -317,3 +317,26 @@
   .planner-topic-header { padding:9px 12px; }
   .prq-date-row { padding:3px 12px; }
 }
+/* Cuadrícula inteligente para el Hub de Notas */
+.notes-hub-grid-layout {
+  display: grid;
+  /* auto-fit: estira las tarjetas para llenar el ancho */
+  /* minmax(240px, 1fr): mínimo 240px, máximo lo que sobre */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+  gap: 16px;
+  width: 100%;
+}/* Cuadrícula inteligente que llena el espacio vacío */
+.smart-grid {
+  display: grid;
+  /* auto-fit: estira las tarjetas; minmax: asegura un tamaño decente */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+  gap: 16px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Ajuste para que las tarjetas se vean uniformes */
+.smart-grid > div {
+  width: 100% !important;
+  max-width: none !important;
+}
