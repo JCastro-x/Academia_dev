@@ -2372,21 +2372,64 @@ const _POM_POPUP_KEY = 'academia_pom_popup';
 const _POM_CMD_KEY   = 'academia_pom_cmd';
 let   _pomPopupWin   = null;
 
+// ── BroadcastChannel — sincronización en tiempo real con el popup ──────────
+// Canal único compartido entre la ventana principal y el popup.
+const _pomBC = (() => {
+  try { return new BroadcastChannel('academia_pomodoro'); } catch(e) { return null; }
+})();
+
+/** Envía el estado completo del timer al popup vía BroadcastChannel */
+function _pomBroadcastState() {
+  if (!_pomBC) return;
+  try {
+    const sel = document.getElementById('pom-subject');
+    const subject = sel ? (sel.options[sel.selectedIndex]?.text || '—') : '—';
+    _pomBC.postMessage({
+      type:      'STATE',
+      remaining: pomSL,
+      total:     (pomTS > 0) ? pomTS : pomWork(),
+      isBreak:   pomB,
+      running:   pomR,
+      endTime:   _pomEndTime,
+      subject
+    });
+  } catch(e) {}
+}
+
+// Escuchar comandos del popup vía BroadcastChannel
+if (_pomBC) {
+  _pomBC.onmessage = (e) => {
+    const d = e.data || {};
+    if (d.type === 'REQUEST') {
+      _pomBroadcastState(); // popup pide estado inicial → responder
+    } else if (d.type === 'CMD') {
+      const a = d.action;
+      if      (a === 'TOGGLE') { if (typeof pomToggle === 'function') pomToggle(); }
+      else if (a === 'SKIP')   { if (typeof pomSkip   === 'function') pomSkip();   }
+      else if (a === 'RESET')  { if (typeof pomReset  === 'function') pomReset();  }
+      else if (a === 'FOCUS')  window.focus();
+    }
+  };
+}
+
 function _pomSyncPopup() {
-  // Escribir estado actual en localStorage para que el popup lo lea
+  // Escribir estado actual en localStorage (leído por el popup al abrir)
   try {
     const subjectSel = document.getElementById('pom-subject');
     const subjectName = subjectSel
       ? (getMat(subjectSel.value)?.name || subjectSel.value || 'General')
       : 'General';
     localStorage.setItem(_POM_POPUP_KEY, JSON.stringify({
-      endTime:  _pomEndTime,
-      totalSec: pomTS || pomWork(),
-      isBreak:  pomB,
-      running:  pomR,
-      subject:  subjectName,
-      ts:       Date.now()
+      remaining: pomSL,
+      total:     pomTS || pomWork(),
+      endTime:   _pomEndTime,
+      isBreak:   pomB,
+      running:   pomR,
+      subject:   subjectName,
+      ts:        Date.now()
     }));
+    // También broadcast inmediato vía BroadcastChannel
+    _pomBroadcastState();
   } catch(e) {}
 }
 
@@ -2406,22 +2449,17 @@ function _pomOpenPopup() {
   );
 }
 
-// Escuchar comandos que manda el popup (pause, resume, done)
+// Fallback localStorage: comandos del popup en browsers sin BroadcastChannel
 window.addEventListener('storage', (e) => {
   if (e.key !== _POM_CMD_KEY) return;
   try {
     const cmd = JSON.parse(e.newValue);
     if (!cmd) return;
-    if (cmd.action === 'PAUSE' && pomR) {
-      pomToggle(); // pausar desde app principal
-    } else if (cmd.action === 'RESUME' && !pomR) {
-      pomToggle(); // reanudar desde app principal
-    } else if (cmd.action === 'DONE') {
-      // El popup detectó que el tiempo terminó — disparar fin si no lo hizo ya
-      if (pomR) _pomOnSegmentDone();
-    } else if (cmd.action === 'FOCUS_MAIN') {
-      window.focus();
-    }
+    const a = cmd.action;
+    if      (a === 'TOGGLE') { if (typeof pomToggle === 'function') pomToggle(); }
+    else if (a === 'SKIP')   { if (typeof pomSkip   === 'function') pomSkip();   }
+    else if (a === 'RESET')  { if (typeof pomReset  === 'function') pomReset();  }
+    else if (a === 'FOCUS')  window.focus();
   } catch(e) {}
 });
 
@@ -2513,6 +2551,7 @@ function _pomStartWorkerTimer(endTime) {
     _pomWorker.onmessage = function(e) {
       const { type, remaining, lag } = e.data;
       if (type === 'TICK') {
+
         pomSL = remaining;
         updatePomDisp();
         if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
@@ -2703,15 +2742,36 @@ function pomSkip() {
   _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp(); updatePomDots();
 }
 function updatePomDisp() {
-  const m=Math.floor(pomSL/60), s=pomSL%60;
-  document.getElementById('pom-time').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  const circ=2*Math.PI*82, prog=pomTS>0?pomSL/pomTS:1;
-  const ring=document.getElementById('pom-ring');
-  ring.style.strokeDashoffset=circ*(1-prog);
-  ring.style.stroke=pomB?'#4ade80':'var(--accent)';
-  document.getElementById('pom-mode').textContent=pomB?'DESCANSO':'ENFOQUE';
-}
+  // Usamos el tiempo del State para evitar errores de variables duplicadas
+  const seconds = (typeof pomSL !== 'undefined') ? pomSL : 0;
+  const isBreak = (typeof pomB !== 'undefined') ? pomB : false;
 
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  const timeText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  
+  // Actualizar UI principal
+  const pomTimeEl = document.getElementById('pom-time');
+  if (pomTimeEl) pomTimeEl.textContent = timeText;
+
+  // 📢 SINCRONIZAR CON POPUP — en cada tick via BroadcastChannel
+  _pomBroadcastState();
+
+  // Anillo de progreso
+  const currentTS = (typeof pomTS !== 'undefined' && pomTS > 0) ? pomTS : 1500;
+  const circ = 2 * Math.PI * 82;
+  const prog = seconds / currentTS;
+  const ring = document.getElementById('pom-ring');
+  
+  if (ring) {
+    ring.style.strokeDashoffset = circ * (1 - prog);
+    ring.style.stroke = isBreak ? '#4ade80' : 'var(--accent)';
+  }
+  
+  const modeEl = document.getElementById('pom-mode');
+  if (modeEl) modeEl.textContent = isBreak ? 'DESCANSO' : 'ENFOQUE';
+  
+}
 // ── Display loop independiente — no depende de mensajes del Worker ──
 // Lee _pomEndTime directamente para que el display sea correcto
 // aunque el tab esté oculto o los mensajes del Worker lleguen tarde.

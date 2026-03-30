@@ -4,314 +4,524 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>⏱ Pomodoro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:      #0d0d14;
     --surface: #16161f;
+    --surface2:#1e1e2a;
     --border:  #2a2a38;
     --text:    #e8e8f0;
     --text2:   #9090a8;
     --text3:   #5a5a72;
     --accent:  #7c6aff;
+    --accent2: #a89cff;
     --green:   #4ade80;
     --red:     #f87171;
+    --yellow:  #fbbf24;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
+  html, body {
     background: var(--bg);
     color: var(--text);
     font-family: 'Inter', system-ui, sans-serif;
+    height: 100%;
+    overflow: hidden;
+    user-select: none;
+  }
+  body {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-    user-select: none;
-    overflow: hidden;
+    gap: 0;
+    padding: 20px 16px 16px;
   }
 
-  /* Mode label */
+  /* ── Mode label ────────────────────────────────────────── */
   #mode {
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 3px;
     color: var(--text3);
     font-family: 'Space Mono', monospace;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     text-transform: uppercase;
+    transition: color .3s;
   }
 
-  /* SVG ring */
+  /* ── SVG ring ──────────────────────────────────────────── */
   .ring-wrap {
     position: relative;
-    width: 200px;
-    height: 200px;
-    margin-bottom: 20px;
+    width: 190px;
+    height: 190px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
   }
-  svg { transform: rotate(-90deg); }
-  .ring-bg   { fill: none; stroke: var(--border); stroke-width: 8; }
-  .ring-prog { fill: none; stroke: var(--accent); stroke-width: 8;
-               stroke-linecap: round;
-               stroke-dasharray: 565; stroke-dashoffset: 0;
-               transition: stroke-dashoffset .4s linear, stroke .4s; }
+  .ring-wrap svg { transform: rotate(-90deg); display: block; }
+  .ring-bg   { fill: none; stroke: var(--border); stroke-width: 7; }
+  .ring-prog {
+    fill: none; stroke: var(--accent); stroke-width: 7;
+    stroke-linecap: round;
+    stroke-dasharray: 534;   /* 2π × 85 */
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset .5s linear, stroke .4s;
+  }
   #time {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 46px; font-weight: 800;
+    font-size: 42px; font-weight: 800;
     font-family: 'Space Mono', monospace;
     letter-spacing: 2px;
     color: var(--text);
   }
 
-  /* Subject label */
+  /* ── Subject ───────────────────────────────────────────── */
   #subject-lbl {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text2);
-    margin-bottom: 24px;
-    max-width: 220px;
+    margin-bottom: 16px;
+    max-width: 240px;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  /* Buttons */
-  .btn-row { display: flex; gap: 12px; }
+  /* ── Dots (cycles) ─────────────────────────────────────── */
+  #dots {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+    min-height: 10px;
+  }
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background .3s;
+  }
+  .dot.done { background: var(--accent); }
+
+  /* ── Buttons ───────────────────────────────────────────── */
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    max-width: 260px;
+    margin-bottom: 8px;
+  }
+  .btn-row.secondary { gap: 6px; }
   button {
-    padding: 10px 24px;
+    padding: 9px 0;
     border-radius: 10px;
     border: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--surface2);
     color: var(--text);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: background .15s, border-color .15s;
+    transition: background .12s, border-color .12s, color .12s;
+    font-family: 'Inter', system-ui, sans-serif;
+    flex: 1;
   }
-  button:hover { border-color: var(--accent); }
+  button:hover { border-color: var(--accent); background: #1e1e30; }
+  button:active { transform: scale(.97); }
+
   #btn-toggle {
     background: var(--accent);
     border-color: var(--accent);
     color: #fff;
-    min-width: 120px;
+    font-size: 14px;
+    padding: 10px 0;
   }
-  #btn-toggle:hover { background: #6a58e8; }
+  #btn-toggle:hover { background: #6a58e8; border-color: #6a58e8; }
   #btn-toggle.paused {
-    background: var(--surface);
+    background: var(--surface2);
     border-color: var(--accent);
     color: var(--accent);
   }
+  #btn-toggle.paused:hover { background: rgba(124,106,255,.15); }
 
-  /* Bottom hint */
+  #btn-skip  { color: var(--text2); }
+  #btn-reset { color: var(--text3); font-size: 12px; }
+
+  /* ── Status chip ───────────────────────────────────────── */
+  #status-chip {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--text3);
+    letter-spacing: 1px;
+    margin-top: 4px;
+    min-height: 14px;
+    transition: color .3s;
+  }
+  #status-chip.paused-state { color: var(--yellow); }
+  #status-chip.running-state { color: var(--green); }
+
+  /* ── Back link ─────────────────────────────────────────── */
   #hint {
-    margin-top: 20px;
+    margin-top: 10px;
     font-size: 10px;
     color: var(--text3);
     font-family: 'Space Mono', monospace;
-    letter-spacing: 1px;
+    letter-spacing: .8px;
+    text-align: center;
   }
-  #hint a { color: var(--accent); text-decoration: none; cursor: pointer; }
+  #hint a { color: var(--accent2); text-decoration: none; cursor: pointer; }
+  #hint a:hover { text-decoration: underline; }
 
-  /* Alarm flash */
+  /* ── Alarm flash ───────────────────────────────────────── */
   @keyframes flash {
     0%,100% { background: var(--bg); }
-    50%      { background: rgba(124,106,255,.18); }
+    50%      { background: rgba(124,106,255,.22); }
   }
-  body.flashing { animation: flash .5s 4; }
+  body.flashing { animation: flash .5s 5; }
+
+  /* ── No-timer state ────────────────────────────────────── */
+  #no-timer {
+    text-align: center;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  #no-timer .nt-icon { font-size: 36px; }
+  #no-timer .nt-msg  { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  #no-timer .nt-sub  { font-size: 10px; color: var(--text3); font-family: 'Space Mono', monospace; }
 </style>
 </head>
 <body>
 
-<div id="mode">ENFOQUE</div>
-
-<div class="ring-wrap">
-  <svg viewBox="0 0 200 200" width="200" height="200">
-    <circle class="ring-bg"   cx="100" cy="100" r="90"/>
-    <circle class="ring-prog" cx="100" cy="100" r="90" id="ring"/>
-  </svg>
-  <div id="time">25:00</div>
+<!-- Estado vacío (cuando no hay timer activo) -->
+<div id="no-timer">
+  <div class="nt-icon">⏱️</div>
+  <div class="nt-msg">Sin timer activo<br><span style="font-size:11px;color:var(--text3);">Inicia el Pomodoro en Academia</span></div>
+  <button onclick="focusMain()" style="margin-top:4px;width:auto;padding:8px 20px;font-size:12px;">↗ Ir a Academia</button>
+  <div class="nt-sub" style="margin-top:6px;">esperando timer...</div>
 </div>
 
-<div id="subject-lbl">—</div>
+<!-- Timer activo -->
+<div id="timer-ui" style="display:flex;flex-direction:column;align-items:center;width:100%;">
+  <div id="mode">ENFOQUE</div>
 
-<div class="btn-row">
-  <button id="btn-toggle" onclick="togglePom()">⏸ Pausar</button>
-  <button onclick="window.close()">✕ Cerrar</button>
+  <div class="ring-wrap">
+    <svg viewBox="0 0 190 190" width="190" height="190">
+      <circle class="ring-bg"   cx="95" cy="95" r="85"/>
+      <circle class="ring-prog" cx="95" cy="95" r="85" id="ring"/>
+    </svg>
+    <div id="time">25:00</div>
+  </div>
+
+  <div id="subject-lbl">—</div>
+  <div id="dots"></div>
+
+  <!-- Botón principal -->
+  <div class="btn-row">
+    <button id="btn-toggle" onclick="sendCmd('TOGGLE')">⏸ Pausar</button>
+  </div>
+
+  <!-- Botones secundarios -->
+  <div class="btn-row secondary">
+    <button id="btn-skip"  onclick="sendCmd('SKIP')"  title="Saltar al siguiente segmento">⏭ Skip</button>
+    <button id="btn-reset" onclick="sendCmd('RESET')" title="Reiniciar timer">↺ Reset</button>
+  </div>
+
+  <div id="status-chip" class="running-state">CORRIENDO</div>
 </div>
 
-<div id="hint">mantén esta ventana abierta · <a onclick="focusMain()">volver a Academia</a></div>
+<div id="hint">
+  <a onclick="focusMain()">↗ volver a Academia</a>
+  &nbsp;·&nbsp;
+  <span>esta ventana se sincroniza en tiempo real</span>
+</div>
 
 <script>
-// ─── Estado local ─────────────────────────────────────────────
-const CIRC = 2 * Math.PI * 90; // circunferencia del anillo
-let _endTime  = 0;
-let _totalSec = 0;
-let _isBreak  = false;
-let _running  = false;
-let _loopId   = null;
+'use strict';
 
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTES
+// ═══════════════════════════════════════════════════════════════
+const CIRC       = 2 * Math.PI * 85; // circunferencia del anillo (r=85)
+const LS_STATE   = 'academia_pom_popup'; // clave localStorage (estado inicial)
+const LS_CMD     = 'academia_pom_cmd';   // clave localStorage (comandos fallback)
+
+// ═══════════════════════════════════════════════════════════════
+// ESTADO LOCAL DEL POPUP
+// Nota: no corre su propio timer — sólo calcula desde _endTime
+// ═══════════════════════════════════════════════════════════════
+let _remaining = 0;
+let _total     = 1500;
+let _isBreak   = false;
+let _running   = false;
+let _endTime   = 0;
+let _loopId    = null;
+let _hasTimer  = false;
+let _cycles    = 0; // estimado desde el popup (no tenemos pomD)
+
+// ── DOM ──────────────────────────────────────────────────────
 const elTime    = document.getElementById('time');
 const elMode    = document.getElementById('mode');
 const elRing    = document.getElementById('ring');
 const elSubject = document.getElementById('subject-lbl');
-const elBtn     = document.getElementById('btn-toggle');
+const elBtnTog  = document.getElementById('btn-toggle');
+const elStatus  = document.getElementById('status-chip');
+const elDots    = document.getElementById('dots');
+const elUi      = document.getElementById('timer-ui');
+const elNoTimer = document.getElementById('no-timer');
 
-// ─── Leer estado desde localStorage (escrito por la app principal) ─
-const KEY = 'academia_pom_popup';
+// ═══════════════════════════════════════════════════════════════
+// BROADCAST CHANNEL — canal principal de sincronización
+// ═══════════════════════════════════════════════════════════════
+const _bc = (() => {
+  try { return new BroadcastChannel('academia_pomodoro'); } catch(e) { return null; }
+})();
 
-function readState() {
+if (_bc) {
+  _bc.onmessage = (e) => {
+    const d = e.data || {};
+    if (d.type === 'STATE') applyState(d);
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENVIAR COMANDOS A LA VENTANA PRINCIPAL
+// ═══════════════════════════════════════════════════════════════
+function sendCmd(action) {
+  // 1. BroadcastChannel (principal)
+  if (_bc) {
+    try { _bc.postMessage({ type: 'CMD', action }); } catch(e) {}
+  }
+  // 2. localStorage (fallback para browsers sin BC)
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch(e) { return null; }
+    localStorage.setItem(LS_CMD, JSON.stringify({ action, ts: Date.now() }));
+  } catch(e) {}
 }
 
+// ═══════════════════════════════════════════════════════════════
+// APLICAR ESTADO RECIBIDO (desde BC o localStorage)
+// ═══════════════════════════════════════════════════════════════
 function applyState(s) {
-  if (!s) return;
-  _endTime  = s.endTime  || 0;
-  _totalSec = s.totalSec || 1500;
-  _isBreak  = s.isBreak  || false;
-  _running  = s.running  || false;
-  elSubject.textContent = s.subject || '—';
-  elMode.textContent    = _isBreak ? 'DESCANSO' : 'ENFOQUE';
-  elRing.style.stroke   = _isBreak ? 'var(--green)' : 'var(--accent)';
+  if (!s || typeof s.remaining === 'undefined') return;
+
+  _remaining = Math.max(0, s.remaining);
+  _total     = s.total     || 1500;
+  _isBreak   = !!s.isBreak;
+  _running   = !!s.running;
+  _endTime   = s.endTime   || 0;
+  _hasTimer  = true;
+
+  if (s.subject && s.subject !== '—') {
+    elSubject.textContent = s.subject;
+  }
+
+  // Mostrar UI del timer, ocultar "sin timer"
+  elUi.style.display      = 'flex';
+  elNoTimer.style.display = 'none';
+
+  // Colores según modo
+  const color = _isBreak ? 'var(--green)' : 'var(--accent)';
+  elRing.style.stroke = color;
+  elMode.textContent  = _isBreak ? 'DESCANSO' : 'ENFOQUE';
+  elMode.style.color  = _isBreak ? 'var(--green)' : 'var(--text3)';
+
   updateBtn();
-  if (_running) startLoop();
-  else { stopLoop(); updateDisp(Math.max(0, Math.round((_endTime - Date.now()) / 1000))); }
+  updateStatus();
+  updateTitle();
+
+  if (_running) {
+    // Asegurarnos de que el loop está corriendo
+    if (!_loopId) startLoop();
+    // Actualizar display inmediatamente con el dato recibido
+    renderDisp(_remaining);
+  } else {
+    // Pausado: detener loop y mostrar tiempo exacto del estado recibido
+    stopLoop();
+    renderDisp(_remaining);
+  }
 }
 
-// ─── Display ──────────────────────────────────────────────────
-function updateDisp(remaining) {
-  const m = Math.floor(remaining / 60);
-  const s = remaining % 60;
-  elTime.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  const prog = _totalSec > 0 ? remaining / _totalSec : 1;
+// ═══════════════════════════════════════════════════════════════
+// DISPLAY
+// ═══════════════════════════════════════════════════════════════
+function renderDisp(rem) {
+  rem = Math.max(0, rem);
+  const m = Math.floor(rem / 60);
+  const s = rem % 60;
+  const txt = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  elTime.textContent = txt;
+
+  const prog = _total > 0 ? rem / _total : 1;
   elRing.style.strokeDashoffset = CIRC * (1 - prog);
-  // Actualizar título de la ventana
-  document.title = `${_isBreak ? '☕' : '⏱'} ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} — ${_isBreak ? 'Descanso' : 'Enfoque'}`;
+
+  updateTitle(m, s);
+}
+
+function updateTitle(m, s) {
+  if (m === undefined) {
+    m = Math.floor(_remaining / 60);
+    s = _remaining % 60;
+  }
+  const timeStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.title = `${_isBreak ? '☕' : '⏱'} ${timeStr} — ${_isBreak ? 'Descanso' : 'Enfoque'}`;
 }
 
 function updateBtn() {
   if (_running) {
-    elBtn.textContent = '⏸ Pausar';
-    elBtn.classList.remove('paused');
+    elBtnTog.textContent = '⏸ Pausar';
+    elBtnTog.classList.remove('paused');
   } else {
-    elBtn.textContent = '▶ Reanudar';
-    elBtn.classList.add('paused');
+    elBtnTog.textContent = '▶ Reanudar';
+    elBtnTog.classList.add('paused');
   }
 }
 
-// ─── Loop propio — este tab nunca se throttlea porque está visible ─
+function updateStatus() {
+  elStatus.className = _running ? 'running-state' : 'paused-state';
+  elStatus.textContent = _running ? 'CORRIENDO' : 'PAUSADO';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOOP PROPIO — calcula desde _endTime (no se throttlea porque
+// esta ventana ES la visible mientras el main tab está en fondo)
+// ═══════════════════════════════════════════════════════════════
 function startLoop() {
   stopLoop();
-  function loop() {
-    if (!_running) return;
-    const remaining = Math.max(0, Math.round((_endTime - Date.now()) / 1000));
-    updateDisp(remaining);
-    if (remaining <= 0) {
+  function tick() {
+    if (!_running) { _loopId = null; return; }
+    const rem = Math.max(0, Math.round((_endTime - Date.now()) / 1000));
+    renderDisp(rem);
+    _remaining = rem;
+    if (rem <= 0) {
       stopLoop();
-      onDone();
+      onAlarm();
       return;
     }
-    _loopId = setTimeout(loop, 250);
+    _loopId = setTimeout(tick, 250);
   }
-  _loopId = setTimeout(loop, 250);
+  _loopId = setTimeout(tick, 0);
 }
 
 function stopLoop() {
   if (_loopId) { clearTimeout(_loopId); _loopId = null; }
 }
 
-function onDone() {
-  _running = false;
-  updateBtn();
-  // Flash visual
+// ═══════════════════════════════════════════════════════════════
+// ALARMA (visual + audio en el popup)
+// La lógica del segmento la maneja la ventana principal.
+// ═══════════════════════════════════════════════════════════════
+function onAlarm() {
   document.body.classList.add('flashing');
-  setTimeout(() => document.body.classList.remove('flashing'), 2200);
-  // Beep
+  setTimeout(() => document.body.classList.remove('flashing'), 2600);
   playAlarm();
-  // Notificar a la app principal
-  notifyMain('DONE');
 }
 
-// ─── Comunicación con la app principal via localStorage ───────
-function notifyMain(action) {
-  try {
-    localStorage.setItem('academia_pom_cmd', JSON.stringify({
-      action,
-      ts: Date.now()
-    }));
-  } catch(e) {}
-}
-
-function togglePom() {
-  if (_running) {
-    _running = false;
-    stopLoop();
-    updateBtn();
-    notifyMain('PAUSE');
-  } else {
-    if (_endTime > Date.now()) {
-      _running = true;
-      updateBtn();
-      startLoop();
-      notifyMain('RESUME');
-    }
-  }
-}
-
-function focusMain() {
-  try { window.opener && window.opener.focus(); } catch(e) {}
-  notifyMain('FOCUS_MAIN');
-}
-
-// ─── Alarma de audio propia ───────────────────────────────────
 let _audioCtx = null;
-function getAudioCtx() {
-  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function getAudio() {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
   return _audioCtx;
 }
 function playAlarm() {
   try {
-    const ctx = getAudioCtx();
-    const notes = _isBreak ? [523,659,784,1047] : [880,659,523];
-    const now = ctx.currentTime;
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const g   = ctx.createGain();
-      osc.connect(g); g.connect(ctx.destination);
-      osc.type = 'sine'; osc.frequency.value = freq;
-      const t = now + i * 0.22;
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.4, t + 0.04);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
-      osc.start(t); osc.stop(t + 0.65);
-    });
+    const ctx = getAudio();
+    const notes = _isBreak ? [523, 659, 784, 1047] : [880, 659, 523];
+    const doPlay = () => {
+      const now = ctx.currentTime;
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g   = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = now + i * 0.22;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.4, t + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+        osc.start(t); osc.stop(t + 0.7);
+      });
+    };
+    if (ctx.state === 'suspended') ctx.resume().then(doPlay); else doPlay();
   } catch(e) {}
 }
-
-// ─── Escuchar cambios de estado desde la app principal ────────
-window.addEventListener('storage', (e) => {
-  if (e.key === KEY) {
-    const s = readState();
-    if (s) applyState(s);
-  }
-});
-
-// ─── Init: leer estado inicial ─────────────────────────────────
-const initial = readState();
-if (initial) {
-  applyState(initial);
-} else {
-  elTime.textContent = '25:00';
-  elMode.textContent = 'Sin timer activo';
-}
-
 // Desbloquear audio al primer clic
 document.addEventListener('click', () => {
-  try { getAudioCtx().resume(); } catch(e) {}
+  try { getAudio().resume(); } catch(e) {}
 }, { once: true });
+
+// ═══════════════════════════════════════════════════════════════
+// SINCRONIZACIÓN INICIAL — al abrir el popup
+// ═══════════════════════════════════════════════════════════════
+function requestInitialState() {
+  // 1. Leer localStorage (estado guardado por la app principal)
+  try {
+    const raw = localStorage.getItem(LS_STATE);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // Convertir formato antiguo (endTime + totalSec) al nuevo si hace falta
+      const normalized = {
+        remaining: s.remaining !== undefined
+          ? s.remaining
+          : Math.max(0, Math.round(((s.endTime || 0) - Date.now()) / 1000)),
+        total:     s.total   || s.totalSec || 1500,
+        isBreak:   s.isBreak || false,
+        running:   s.running || false,
+        endTime:   s.endTime || 0,
+        subject:   s.subject || '—'
+      };
+      applyState(normalized);
+    }
+  } catch(e) {}
+
+  // 2. Pedir estado fresco vía BroadcastChannel
+  //    La ventana principal responderá con el estado actual al instante.
+  if (_bc) {
+    try { _bc.postMessage({ type: 'REQUEST' }); } catch(e) {}
+  }
+  // 3. También escuchar cambios de localStorage (compatibilidad)
+  window.addEventListener('storage', (e) => {
+    if (e.key !== LS_STATE) return;
+    try {
+      const s = JSON.parse(e.newValue);
+      if (!s) return;
+      const normalized = {
+        remaining: s.remaining !== undefined
+          ? s.remaining
+          : Math.max(0, Math.round(((s.endTime || 0) - Date.now()) / 1000)),
+        total:     s.total   || s.totalSec || 1500,
+        isBreak:   s.isBreak || false,
+        running:   s.running || false,
+        endTime:   s.endTime || 0,
+        subject:   s.subject || '—'
+      };
+      applyState(normalized);
+    } catch(e) {}
+  });
+}
+
+// ── Reenviar REQUEST si no recibimos nada en 1.5s ───────────
+function _pollForState() {
+  if (_hasTimer) return; // ya tenemos estado
+  if (_bc) {
+    try { _bc.postMessage({ type: 'REQUEST' }); } catch(e) {}
+  }
+  setTimeout(() => {
+    if (!_hasTimer) {
+      // Mostrar estado "sin timer"
+      elUi.style.display      = 'none';
+      elNoTimer.style.display = 'flex';
+    }
+  }, 800);
+}
+
+function focusMain() {
+  try { window.opener && window.opener.focus(); } catch(e) {}
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+requestInitialState();
+setTimeout(_pollForState, 1500);
 </script>
 </body>
 </html>

@@ -8,19 +8,23 @@
             <div class="card-header">
               <span class="card-title">⏱️ Temporizador Pomodoro</span>
               <!-- Botón Focus pequeño y discreto -->
-              <!-- Botón Mini Float — muestra el widget de esquina -->
+              <!-- Botón Popup flotante -->
               <button id="pom-mini-toggle-btn"
-                onclick="window._pomShowMiniFloat&&_pomIsRunningCheck()"
-                title="Mini timer flotante — aparece al cambiar de página"
-                style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;"
+                onclick="enterFloatingMode()"
+                title="Ventana flotante — siempre visible sobre otras apps"
+                style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-weight:700;color:var(--accent2);display:flex;align-items:center;gap:5px;transition:all .2s;"
                 onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
-                onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'"
-                title="📟 Mini Timer">📟</button>
-              <button onclick="enterFocusMode()" title="Modo Focus — pantalla limpia"
-                style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .2s;"
+                onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'">
+                ⏰ Popup
+              </button>
+              <!-- Botón Focus Mode -->
+              <button onclick="enterFocusMode()"
+                title="Modo Focus — pantalla limpia"
+                style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:5px;transition:all .2s;"
                 onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
-                onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'"
-                title="🔥 Modo Focus">🔥</button>
+                onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'">
+                🔥 Focus
+              </button>
               <script>
               // Mostrar aviso si el timer no corre al presionar el botón 📟
               function _pomIsRunningCheck() {
