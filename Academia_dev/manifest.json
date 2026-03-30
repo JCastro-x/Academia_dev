@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Academia — Dashboard Académico",
   "short_name": "Academia",
-  "description": "Organiza tu semestre universitario: calificaciones, tareas, notas, pomodoro y más.",
+  "description": "Dashboard académico completo: calificaciones por zona, tareas con subtareas, notas con OCR, Pomodoro con Web Worker, flashcards, calendario, horario semanal y sincronización multi-dispositivo vía Supabase.",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
@@ -36,6 +36,23 @@
     }
   ],
 
+  "screenshots": [
+    {
+      "src": "/assets/screenshots/overview.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Resumen del semestre — agenda, tareas y plan del día"
+    },
+    {
+      "src": "/assets/screenshots/mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Vista móvil con navegación inferior"
+    }
+  ],
+
   "shortcuts": [
     {
       "name": "Nueva Tarea",
@@ -50,10 +67,30 @@
       "description": "Inicia una sesión de estudio",
       "url": "/index.html?page=pomodoro",
       "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Mis Notas",
+      "short_name": "Notas",
+      "description": "Abre el bloc de notas",
+      "url": "/index.html?page=notas",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Calificaciones",
+      "short_name": "Notas",
+      "description": "Ver calificaciones por zona",
+      "url": "/index.html?page=calificaciones",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],
 
   "launch_handler": {
     "client_mode": ["navigate-existing", "auto"]
+  },
+
+  "handle_links": "preferred",
+
+  "edge_side_panel": {
+    "preferred_width": 480
   }
 }
