@@ -105,5 +105,5 @@ Este proyecto está bajo la [GNU AGPL v3](LICENSE). Cualquier uso, modificación
 
 > *"Based on Academia Dev by JCastro014"*  
 > https://github.com/JCastro-x/Academia_dev
-
+> https://academia-dev-kappa.vercel.app/
 Para uso comercial o propietario contactar: josueliucastrososa@gmail.com
