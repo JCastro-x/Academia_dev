@@ -1,243 +1,1028 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-  <!-- ═══ FAVICON & PWA ═══ -->
-  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
-  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
-  <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-  <link rel="manifest" href="manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Academia — Dashboard académico que organiza tu semestre universitario. Calificaciones, tareas, Pomodoro y sync multi-dispositivo.">
   <meta name="theme-color" content="#7c6aff">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Academia">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Academia — Organiza tu semestre universitario">
-<title>Academia — Dashboard Académico</title>
- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/flashcards-fix.css">
-  <link rel="stylesheet" href="css/mobile.css">
+  <title>Academia — Tu semestre, organizado.</title>
+
+  <!-- OG tags para cuando lo compartas -->
+  <meta property="og:title" content="Academia — Tu semestre, organizado.">
+  <meta property="og:description" content="Dashboard académico con calificaciones, tareas, Pomodoro, flashcards y sync en tiempo real.">
+  <meta property="og:type" content="website">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #07070d;
+      --surface:  #0f0f18;
+      --border:   #1e1e2e;
+      --border2:  #2a2a3e;
+      --accent:   #7c6aff;
+      --accent2:  #a78bfa;
+      --text:     #eeeef5;
+      --text2:    #9090aa;
+      --text3:    #52526a;
+      --green:    #4ade80;
+      --pink:     #f472b6;
+      --orange:   #fb923c;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── NOISE TEXTURE overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.025;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── GLOW orbs ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 {
+      width: 600px; height: 600px;
+      background: rgba(124,106,255,.12);
+      top: -200px; left: -100px;
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: rgba(244,114,182,.07);
+      bottom: -100px; right: -80px;
+      animation: drift 14s ease-in-out infinite alternate-reverse;
+    }
+    .orb-3 {
+      width: 300px; height: 300px;
+      background: rgba(74,222,128,.06);
+      top: 50%; right: 20%;
+      animation: drift 20s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(40px, 30px) scale(1.1); }
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(7,7,13,.7);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .nav-logo {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+    }
+    .nav-logo span { color: var(--accent2); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    .nav-links a {
+      font-size: 13px;
+      color: var(--text2);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      padding: 8px 20px;
+      background: var(--accent);
+      color: #fff !important;
+      border-radius: 8px;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      transition: box-shadow .2s, transform .2s !important;
+    }
+    .nav-cta:hover {
+      box-shadow: 0 0 24px rgba(124,106,255,.5);
+      transform: translateY(-1px);
+      color: #fff !important;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 20px 80px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border: 1px solid rgba(124,106,255,.35);
+      border-radius: 100px;
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      color: var(--accent2);
+      letter-spacing: 1.5px;
+      margin-bottom: 32px;
+      background: rgba(124,106,255,.08);
+      animation: fadeUp .6s ease-out both;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .5; transform: scale(.8); }
+    }
+
+    .hero-title {
+      font-size: clamp(48px, 8vw, 96px);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      max-width: 820px;
+      animation: fadeUp .7s .1s ease-out both;
+    }
+    .hero-title .grad {
+      background: linear-gradient(135deg, #fff 0%, var(--accent2) 50%, var(--pink) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      color: var(--text2);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-top: 24px;
+      font-weight: 400;
+      animation: fadeUp .7s .2s ease-out both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      margin-top: 44px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp .7s .3s ease-out both;
+    }
+
+    .btn-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 36px;
+      background: linear-gradient(135deg, #9b6fff, var(--accent));
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-main::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.15), transparent);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .btn-main:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(124,106,255,.45);
+    }
+    .btn-main:hover::before { opacity: 1; }
+    .btn-main:active { transform: translateY(-1px); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 28px;
+      background: transparent;
+      color: var(--text2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color .2s, color .2s, background .2s;
+    }
+    .btn-ghost:hover {
+      border-color: var(--accent);
+      color: var(--accent2);
+      background: rgba(124,106,255,.07);
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 0 auto 80px;
+      max-width: 700px;
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      background: var(--surface);
+      overflow: hidden;
+      animation: fadeUp .7s .4s ease-out both;
+    }
+    .stat-item {
+      flex: 1;
+      padding: 20px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent2);
+      font-family: 'Space Mono', monospace;
+      line-height: 1;
+    }
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 1px;
+    }
+
+    /* ── APP PREVIEW ── */
+    .preview-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto 100px;
+      padding: 0 20px;
+      animation: fadeUp .8s .5s ease-out both;
+    }
+    .preview-frame {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04);
+    }
+    .preview-topbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+    .preview-url {
+      flex: 1;
+      margin: 0 12px;
+      padding: 5px 12px;
+      background: var(--bg);
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+      color: var(--text3);
+      text-align: center;
+    }
+
+    /* App preview content */
+    .preview-content {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 16px;
+      min-height: 400px;
+    }
+
+    .preview-sidebar {
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 12px;
+    }
+    .ps-logo {
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 20px;
+      padding: 0 4px;
+    }
+    .ps-logo span { color: var(--accent2); }
+    .ps-section {
+      font-size: 9px;
+      font-family: 'Space Mono', monospace;
+      color: var(--text3);
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+    .ps-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 2px;
+      transition: background .15s;
+    }
+    .ps-item.active {
+      background: rgba(124,106,255,.15);
+      color: var(--accent2);
+    }
+
+    .preview-main { display: flex; flex-direction: column; gap: 12px; }
+
+    .preview-card {
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .pc-title {
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      color: var(--text3);
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .pom-ring-wrap {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .pom-ring {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: 4px solid var(--border);
+      position: relative;
+      flex-shrink: 0;
+    }
+    .pom-ring svg { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); transform: rotate(-90deg); }
+    .pom-time {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .pom-info { flex: 1; }
+    .pom-label { font-size: 10px; color: var(--accent2); font-family: 'Space Mono', monospace; letter-spacing: 1.5px; margin-bottom: 4px; }
+    .pom-subject { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+    .pom-bar-bg { height: 4px; background: var(--border); border-radius: 2px; }
+    .pom-bar-fill { height: 100%; width: 62%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; }
+
+    .tasks-list { display: flex; flex-direction: column; gap: 8px; }
+    .task-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,.03);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .task-check {
+      width: 16px; height: 16px;
+      border-radius: 4px;
+      border: 2px solid var(--border2);
+      flex-shrink: 0;
+    }
+    .task-check.done {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .task-title { font-size: 12px; font-weight: 600; flex: 1; }
+    .task-title.done { text-decoration: line-through; color: var(--text3); }
+    .task-chip {
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .chip-red   { background: rgba(248,113,113,.15); color: #f87171; }
+    .chip-yel   { background: rgba(251,191,36,.15);  color: #fbbf24; }
+    .chip-grn   { background: rgba(74,222,128,.15);  color: #4ade80; }
+    .chip-acc   { background: rgba(124,106,255,.15); color: var(--accent2); }
+
+    .grades-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grade-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border-left: 3px solid;
+    }
+    .grade-item:nth-child(1) { border-color: #7c6aff; background: rgba(124,106,255,.08); }
+    .grade-item:nth-child(2) { border-color: #60a5fa; background: rgba(96,165,250,.08); }
+    .grade-item:nth-child(3) { border-color: #4ade80; background: rgba(74,222,128,.08); }
+    .grade-item:nth-child(4) { border-color: #fbbf24; background: rgba(251,191,36,.08); }
+    .gi-code { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--text3); }
+    .gi-name { font-size: 12px; font-weight: 700; margin: 2px 0; }
+    .gi-score { font-size: 18px; font-weight: 800; }
+
+    /* ── FEATURES ── */
+    .section {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 100px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      color: var(--accent2);
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 56px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .feature-card:hover {
+      border-color: rgba(124,106,255,.4);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 48px rgba(0,0,0,.4);
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card.big {
+      grid-column: span 2;
+    }
+
+    .fc-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .fc-title {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -.3px;
+    }
+    .fc-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.7;
+    }
+    .fc-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .fc-tag {
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      padding: 3px 9px;
+      border-radius: 5px;
+      background: rgba(124,106,255,.12);
+      border: 1px solid rgba(124,106,255,.2);
+      color: var(--accent2);
+    }
+
+    /* ── TECH STACK ── */
+    .tech-section {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto 100px;
+      padding: 0 24px;
+    }
+    .tech-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 32px;
+    }
+    .tech-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border: 1px solid var(--border2);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+      background: var(--surface);
+      transition: border-color .2s, color .2s;
+    }
+    .tech-chip:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+    .tech-chip span { font-size: 18px; }
+
+    /* ── CTA FINAL ── */
+    .cta-section {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 0 24px 120px;
+    }
+    .cta-box {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 64px 40px;
+      border: 1px solid var(--border2);
+      border-radius: 24px;
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 20%; right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent2), var(--pink), transparent);
+    }
+    .cta-title {
+      font-size: clamp(28px, 5vw, 44px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+    .cta-sub {
+      font-size: 16px;
+      color: var(--text2);
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text3);
+      font-family: 'Space Mono', monospace;
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .6s ease-out, transform .6s ease-out;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 14px 20px; }
+      .nav-links { gap: 14px; }
+      .nav-links a:not(.nav-cta) { display: none; }
+      .preview-content { grid-template-columns: 1fr; }
+      .preview-sidebar { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .feature-card.big { grid-column: span 1; }
+      .stats-bar { flex-wrap: wrap; }
+      .grades-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- Sidebar collapse toggle -->
-  <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Ocultar/mostrar menú">‹</button>
+  <!-- Ambient orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
 
-  <!-- ═══════════════════════════════════════════════
-       SIDEBAR (Desktop)
-  ══════════════════════════════════════════════════ -->
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-name">Acade<span>mia</span></div>
+  <!-- ── NAV ── -->
+  <nav>
+    <div class="nav-logo">Acade<span>mia</span></div>
+    <div class="nav-links">
+      <a href="#features">Funciones</a>
+      <a href="#tech">Tecnología</a>
+      <a href="https://github.com/JCastro-x/Academia_dev" target="_blank" rel="noopener">GitHub</a>
+      <a href="auth-page.html" class="nav-cta">Entrar →</a>
     </div>
-    <nav class="nav">
-      <!-- GESTIÓN -->
-      <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-gestion',this)">Gestión <span id="sec-gestion-arrow">▾</span></div>
-      <div id="sec-gestion">
-        <div class="nav-item active" onclick="goPage('overview',this)"><span class="icon">🏠</span>Resumen</div>
-        <div class="nav-item" onclick="goPage('materias',this)"><span class="icon">📚</span>Materias</div>
-        <div class="nav-item" onclick="goPage('horario',this)"><span class="icon">🗓️</span>Mi Horario</div>
-      </div>
-      <!-- HERRAMIENTAS -->
-      <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-herramientas',this)">Herramientas <span id="sec-herramientas-arrow">▾</span></div>
-      <div id="sec-herramientas">
-        <div class="nav-item" onclick="goPage('tareas',this)"><span class="icon">✅</span>Tareas <span class="nav-badge" id="badge-tasks">0</span></div>
-        <div class="nav-item" onclick="goPage('notas',this)"><span class="icon">📝</span>Notas</div>
-        <div class="nav-item" onclick="goPage('pomodoro',this)"><span class="icon">⏱️</span>Pomodoro</div>
-        <div class="nav-item" onclick="goPage('calendario',this)"><span class="icon">📅</span>Calendario</div>
-      </div>
-      <!-- GENERAL -->
-      <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-general',this)">General <span id="sec-general-arrow">▾</span></div>
-      <div id="sec-general">
-        <div class="nav-item" onclick="goPage('general',this)"><span class="icon">🧰</span>General</div>
-      </div>
-      <!-- CONFIG -->
-      <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-config',this)">Configuración <span id="sec-config-arrow">▾</span></div>
-      <div id="sec-config">
-        <div class="nav-item" onclick="goPage('semestres',this)"><span class="icon">🗂️</span>Semestres</div>
-        <div class="nav-item" onclick="goPage('perfil',this)"><span class="icon">👤</span>Mi Perfil</div>
-      </div>
-    </nav>
-    <div class="sidebar-bottom" style="position:relative;">
-      <!-- Semester switcher dropdown -->
-      <div class="sem-sw-dropdown" id="sem-sw-dd">
-        <div id="sem-sw-list"></div>
-        <div class="sem-sw-footer">
-          <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;" onclick="openSemestreModal()">➕ Nuevo Semestre</button>
-        </div>
-      </div>
-      <div class="sem-badge" onclick="toggleSemSwitcher(event)">
-        <div class="sem-lbl">📂 SEMESTRE · <span style="color:var(--accent2);">click para cambiar</span></div>
-        <div class="sem-name-edit" onclick="event.stopPropagation()">
-          <div class="sem-val" id="sidebar-sem-nombre" ondblclick="startSemEdit()" style="cursor:text;" title="Doble clic para editar">—</div>
-          <button class="sem-edit-btn" id="sem-edit-btn" onclick="startSemEdit()" title="Editar nombre del semestre">✏️</button>
-        </div>
-        <div class="sem-mini-stats" style="display:none;">
-          <span class="sem-mini-chip" style="background:rgba(124,106,255,.15);color:var(--accent2);" id="sidebar-sem-avg">📈 —</span>
-          <span class="sem-mini-chip" style="background:rgba(74,222,128,.15);color:#4ade80;" id="sidebar-sem-cred">🪙 —</span>
-        </div>
-      </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-badge">
+      <div class="hero-badge-dot"></div>
+      DASHBOARD ACADÉMICO · v2.0
     </div>
 
-    <!-- Botón StudySpace -->
-    <div style="padding:8px 12px;border-top:1px solid var(--border);">
-      <a href="https://study-space-jc.vercel.app/" target="_blank" rel="noopener" style="text-decoration:none;">
-        <button style="
-          width:100%;padding:9px 12px;
-          background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(255,107,157,.1));
-          border:1px solid rgba(108,99,255,.3);border-radius:8px;
-          color:var(--accent2);cursor:pointer;font-size:12px;font-weight:700;
-          display:flex;align-items:center;gap:8px;
-          transition:border-color .15s,background .15s;
-        " onmouseover="this.style.borderColor='var(--accent)';this.style.background='linear-gradient(135deg,rgba(108,99,255,.25),rgba(255,107,157,.15))'"
-           onmouseout="this.style.borderColor='rgba(108,99,255,.3)';this.style.background='linear-gradient(135deg,rgba(108,99,255,.15),rgba(255,107,157,.1))'">
-          📚 <span>StudySpace</span>
-          <span style="margin-left:auto;font-size:9px;font-family:'Space Mono',monospace;color:var(--text3);">↗</span>
-        </button>
+    <h1 class="hero-title">
+      Tu semestre,<br>
+      <span class="grad">perfectamente organizado.</span>
+    </h1>
+
+    <p class="hero-sub">
+      Calificaciones, tareas, Pomodoro, flashcards y notas con OCR.
+      Todo sincronizado en tiempo real entre todos tus dispositivos.
+    </p>
+
+    <div class="hero-actions">
+      <a href="auth-page.html" class="btn-main">
+        🎓 Entrar con Google
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://github.com/JCastro-x/Academia_dev" target="_blank" rel="noopener" class="btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        Ver código
       </a>
     </div>
+  </section>
 
-    <!-- Botón tutorial -->
-    <div style="padding:4px 12px 10px;">
-      <button onclick="showTutorial()" style="
-        width:100%;padding:7px 12px;background:none;
-        border:1px solid var(--border);border-radius:8px;
-        color:var(--text3);cursor:pointer;font-size:11px;
-        display:flex;align-items:center;gap:8px;
-        transition:border-color .15s,color .15s;
-      " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">
-        ❓ <span>Ver tutorial</span>
-      </button>
+  <!-- ── STATS ── -->
+  <div class="stats-bar reveal">
+    <div class="stat-item">
+      <div class="stat-num">14+</div>
+      <div class="stat-lbl">MÓDULOS</div>
     </div>
-  </aside>
+    <div class="stat-item">
+      <div class="stat-num">∞</div>
+      <div class="stat-lbl">DISPOSITIVOS</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">0ms</div>
+      <div class="stat-lbl">THROTTLE TIMER</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">PWA</div>
+      <div class="stat-lbl">INSTALABLE</div>
+    </div>
+  </div>
 
-  <!-- ═══════════════════════════════════════════════
-       MAIN CONTENT
-  ══════════════════════════════════════════════════ -->
-  <div class="main">
+  <!-- ── APP PREVIEW ── -->
+  <div class="preview-wrap reveal">
+    <div class="preview-frame">
+      <div class="preview-topbar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <div class="preview-url">academia-dev.vercel.app</div>
+      </div>
+      <div class="preview-content">
 
-    <!-- TOP BAR -->
-    <div class="topbar">
-      <div class="page-title" id="page-title">Resumen</div>
-      <div class="topbar-right">
-        <!-- Global search -->
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input id="global-search" class="search-input-bar" type="text" placeholder="Buscar..."
-            oninput="globalSearch(this.value)" autocomplete="off">
-          <div id="search-results"></div>
+        <!-- Sidebar -->
+        <div class="preview-sidebar">
+          <div class="ps-logo">Acade<span>mia</span></div>
+          <div class="ps-section">GESTIÓN</div>
+          <div class="ps-item active">🏠 Resumen</div>
+          <div class="ps-item">📚 Materias</div>
+          <div class="ps-item">🗓️ Horario</div>
+          <div class="ps-section" style="margin-top:12px;">HERRAMIENTAS</div>
+          <div class="ps-item">✅ Tareas</div>
+          <div class="ps-item">📝 Notas</div>
+          <div class="ps-item">⏱️ Pomodoro</div>
+          <div class="ps-item">📅 Calendario</div>
         </div>
-        <div class="date-chip" id="topbar-date"></div>
-        <button id="theme-btn" class="btn btn-ghost btn-sm" onclick="toggleTheme()" title="Cambiar tema">☀️</button>
-        <button id="ui-sound-btn" class="btn btn-ghost btn-sm" onclick="toggleUiSounds()" title="Activar/desactivar sonidos de interfaz">🔔</button>
-        <button class="btn btn-ghost btn-sm" onclick="openConfigModal()" title="Configurar historial académico">⚙️</button>
-        <button class="btn btn-ghost btn-sm" onclick="openAddClassModal()">➕ Clase</button>
-        <button class="btn btn-primary btn-sm" onclick="openQuickAdd()">⚡ Agregar</button>
-        <button class="btn btn-sm" style="background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3);" onclick="openExamMode()" title="Modo Examen — Concentración total">⏱️ Examen</button>
+
+        <!-- Main content -->
+        <div class="preview-main">
+
+          <!-- Pomodoro card -->
+          <div class="preview-card">
+            <div class="pc-title">⏱️ POMODORO ACTIVO</div>
+            <div class="pom-ring-wrap">
+              <div class="pom-ring">
+                <svg viewBox="0 0 88 88">
+                  <circle cx="44" cy="44" r="38" fill="none" stroke="#1e1e2e" stroke-width="6"/>
+                  <circle cx="44" cy="44" r="38" fill="none" stroke="#7c6aff" stroke-width="6"
+                    stroke-dasharray="238.8" stroke-dashoffset="91" stroke-linecap="round"/>
+                </svg>
+                <div class="pom-time">18:32</div>
+              </div>
+              <div class="pom-info">
+                <div class="pom-label">ENFOQUE · SESIÓN 2/4</div>
+                <div class="pom-subject">📐 Cálculo Diferencial</div>
+                <div class="pom-bar-bg"><div class="pom-bar-fill"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tasks -->
+          <div class="preview-card">
+            <div class="pc-title">✅ TAREAS PENDIENTES</div>
+            <div class="tasks-list">
+              <div class="task-row">
+                <div class="task-check done"></div>
+                <div class="task-title done">Lab 3 — Circuitos RC</div>
+                <div class="task-chip chip-grn">Entregado</div>
+              </div>
+              <div class="task-row">
+                <div class="task-check"></div>
+                <div class="task-title">Parcial 2 — Cálculo</div>
+                <div class="task-chip chip-red">Hoy</div>
+              </div>
+              <div class="task-row">
+                <div class="task-check"></div>
+                <div class="task-title">Informe de práctica #4</div>
+                <div class="task-chip chip-yel">3 días</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grades -->
+          <div class="preview-card">
+            <div class="pc-title">🎯 CALIFICACIONES</div>
+            <div class="grades-grid">
+              <div class="grade-item">
+                <div class="gi-code">MAT-201</div>
+                <div class="gi-name">Cálculo</div>
+                <div class="gi-score" style="color:#7c6aff;">82.5</div>
+              </div>
+              <div class="grade-item">
+                <div class="gi-code">FIS-101</div>
+                <div class="gi-name">Física</div>
+                <div class="gi-score" style="color:#60a5fa;">78.0</div>
+              </div>
+              <div class="grade-item">
+                <div class="gi-code">PRO-301</div>
+                <div class="gi-name">Programación</div>
+                <div class="gi-score" style="color:#4ade80;">91.0</div>
+              </div>
+              <div class="grade-item">
+                <div class="gi-code">ALG-202</div>
+                <div class="gi-name">Álgebra</div>
+                <div class="gi-score" style="color:#fbbf24;">74.5</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- ═══ PAGES CONTAINER — populated by loader.js ═══ -->
-    <div class="content" id="pages-content">
-      <!-- Loading state while partials load -->
-      <div id="partials-loading" style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:16px;">
-        <div style="font-size:32px;">⏳</div>
-        <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--text3);letter-spacing:2px;">CARGANDO ACADEMIA...</div>
+  <!-- ── FEATURES ── -->
+  <section class="section" id="features">
+    <div class="section-label reveal">FUNCIONALIDADES</div>
+    <h2 class="section-title reveal">Todo lo que necesitás<br>para el semestre.</h2>
+
+    <div class="features-grid">
+      <div class="feature-card big reveal">
+        <span class="fc-icon">☁️</span>
+        <div class="fc-title">Sync multi-dispositivo en tiempo real</div>
+        <div class="fc-desc">
+          Abrí la app en tu PC y en el celular al mismo tiempo. Los cambios se propagan automáticamente entre dispositivos vía Supabase. Un sistema de guard evita conflictos si modificás desde dos lugares a la vez.
+        </div>
+        <div class="fc-tags">
+          <span class="fc-tag">Supabase</span>
+          <span class="fc-tag">Row Level Security</span>
+          <span class="fc-tag">Debounced sync</span>
+          <span class="fc-tag">Conflict guard</span>
+        </div>
       </div>
+
+      <div class="feature-card reveal">
+        <span class="fc-icon">⏱️</span>
+        <div class="fc-title">Pomodoro anti-throttle</div>
+        <div class="fc-desc">
+          Timer en Web Worker con timestamps absolutos. No importa si cambiás de pestaña o el browser lo congela — el tiempo siempre es preciso.
+        </div>
+        <div class="fc-tags">
+          <span class="fc-tag">Web Worker</span>
+          <span class="fc-tag">Picture-in-Picture</span>
+        </div>
+      </div>
+
+      <div class="feature-card reveal">
+        <span class="fc-icon">🎯</span>
+        <div class="fc-title">Calificaciones por zona</div>
+        <div class="fc-desc">
+          Ingresá notas por parcial, laboratorio y final. El promedio ponderado por créditos se calcula solo, con proyección de qué necesitás para aprobar.
+        </div>
+      </div>
+
+      <div class="feature-card reveal">
+        <span class="fc-icon">📝</span>
+        <div class="fc-title">Notas con OCR</div>
+        <div class="fc-desc">
+          Adjuntá imágenes y PDFs a tus notas. Tesseract.js extrae el texto de documentos escaneados automáticamente.
+        </div>
+        <div class="fc-tags">
+          <span class="fc-tag">Tesseract.js</span>
+          <span class="fc-tag">PDF.js</span>
+        </div>
+      </div>
+
+      <div class="feature-card reveal">
+        <span class="fc-icon">🃏</span>
+        <div class="fc-title">Flashcards</div>
+        <div class="fc-desc">
+          Tarjetas de estudio por materia con flip animado. Modo repaso con progreso por sesión para memorizar eficientemente.
+        </div>
+      </div>
+
+      <div class="feature-card reveal">
+        <span class="fc-icon">📱</span>
+        <div class="fc-title">PWA instalable</div>
+        <div class="fc-desc">
+          Instalala en Android, iOS o escritorio como app nativa. Service Worker con cache inteligente — funciona offline.
+        </div>
+        <div class="fc-tags">
+          <span class="fc-tag">Network First</span>
+          <span class="fc-tag">Cache First</span>
+        </div>
+      </div>
+
     </div>
+  </section>
 
-  </div><!-- /main -->
-</div><!-- /app -->
+  <!-- ── TECH ── -->
+  <section class="tech-section" id="tech">
+    <div class="section-label reveal" style="text-align:center;">TECNOLOGÍA</div>
+    <h2 class="section-title reveal" style="margin-bottom:0;">Sin bundler. Sin framework.<br>JS vanilla a propósito.</h2>
+    <div class="tech-grid reveal">
+      <div class="tech-chip"><span>🔐</span> Supabase Auth</div>
+      <div class="tech-chip"><span>🗄️</span> PostgreSQL + RLS</div>
+      <div class="tech-chip"><span>⚙️</span> Web Workers</div>
+      <div class="tech-chip"><span>🖼️</span> Picture-in-Picture API</div>
+      <div class="tech-chip"><span>🔊</span> Web Audio API</div>
+      <div class="tech-chip"><span>📦</span> IndexedDB</div>
+      <div class="tech-chip"><span>📡</span> BroadcastChannel</div>
+      <div class="tech-chip"><span>🔍</span> Tesseract.js OCR</div>
+      <div class="tech-chip"><span>📄</span> PDF.js</div>
+      <div class="tech-chip"><span>🚀</span> Vercel</div>
+      <div class="tech-chip"><span>📱</span> PWA / Service Worker</div>
+    </div>
+  </section>
 
-<!-- ═══════════════════════════════════════════════
-     MOBILE BOTTOM NAV
-══════════════════════════════════════════════════ -->
-<nav class="mobile-nav" style="display:none;">
-  <div class="mobile-nav-item active" onclick="goPage('overview',this)">
-    <div class="mn-icon">🏠</div><div>Inicio</div>
-  </div>
-  <div class="mobile-nav-item" onclick="goPage('tareas',this)">
-    <div class="mn-icon" style="position:relative;">✅<span class="mobile-nav-badge" id="badge-tasks-m">0</span></div>
-    <div>Tareas</div>
-  </div>
-  <div class="mobile-nav-item" onclick="openQuickAdd()">
-    <div class="mn-icon" style="font-size:26px;">⚡</div>
-    <div>Agregar</div>
-  </div>
-  <div class="mobile-nav-item" onclick="goPage('calificaciones',this)">
-    <div class="mn-icon">🎯</div><div>Notas</div>
-  </div>
-  <div class="mobile-nav-item" id="mobile-more-btn" onclick="openMobileMore(this)">
-    <div class="mn-icon">☰</div><div>Más</div>
-  </div>
-</nav>
+  <!-- ── CTA FINAL ── -->
+  <section class="cta-section">
+    <div class="cta-box reveal">
+      <h2 class="cta-title">Empezá tu semestre<br>con todo organizado.</h2>
+      <p class="cta-sub">Gratis. Sin configuración. Entrás con Google<br>y tus datos están listos en segundos.</p>
+      <a href="auth-page.html" class="btn-main" style="font-size:17px;padding:18px 44px;">
+        🎓 Entrar con Google
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
 
-<!-- Mobile sidebar overlay -->
-<div id="mobile-sidebar-overlay" onclick="closeMobileSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149;backdrop-filter:blur(2px);"></div>
+  <!-- ── FOOTER ── -->
+  <footer>
+    <span>Academia Dev · Hecho con ☕ en Guatemala</span>
+    &nbsp;·&nbsp;
+    <a href="terminos.html">Términos</a>
+    &nbsp;·&nbsp;
+    <a href="privacidad.html">Privacidad</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/JCastro-x/Academia_dev" target="_blank" rel="noopener">GitHub</a>
+  </footer>
 
-  <!-- ═══ LOADER — carga las páginas y modales desde partials/ ═══ -->
-  <script src="js/loader.js"></script>
-
-  <!-- ─── Auth & Sync ─── -->
-  <script src="js/auth.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/academia-sync.js"></script>
-
-  <!-- ─── State & Core ─── -->
-  <script src="js/state.js"></script>
-  <script src="js/calificaciones.js"></script>
-  <script src="js/semestres.js"></script>
-  <script src="js/ui.js"></script>
-
-  <!-- ─── Features ─── -->
-  <script src="js/materias.js"></script>
-  <script src="js/stats.js"></script>
-  <script src="js/search.js"></script>
-  <script src="js/sounds.js"></script>
-  <script src="js/pomodoro.js"></script>
-
-  <!-- ─── Módulos separados ─── -->
-  <script src="js/tasks.js"></script>
-  <script src="js/calendar.js"></script>
-  <script src="js/notes.js"></script>
-  <script src="js/chrono.js"></script>
-  <script src="js/flashcards.js"></script>
-
-  <!-- ─── Init & Bootstrap ─── -->
-  <script src="js/init.js"></script>
-  <script src="js/notifications.js"></script>
-  <script src="js/onboarding.js"></script>
-  <script src="js/bootstrap.js"></script>
-  <script src="js/planner.js"></script>
-
-  <!-- ═══ MOBILE "MÁS" BOTTOM SHEET — cargado al final para que el DOM esté listo ═══ -->
-  <script src="js/mobile-more.js"></script>
-  <script src="js/pom-mini.js"></script>
-
-  <!-- PWA Service Worker -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(() => console.log('Academia PWA ready ✅'))
-          .catch(e => console.log('SW error:', e));
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          // Stagger children si es grid
+          const children = e.target.querySelectorAll('.feature-card, .tech-chip, .stat-item');
+          children.forEach((c, i) => {
+            c.style.transitionDelay = `${i * 80}ms`;
+            c.classList.add('visible');
+          });
+        }
       });
-    }
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Animar el timer del preview
+    let pomSeconds = 18 * 60 + 32;
+    const totalSeconds = 25 * 60;
+    const timeEl = document.querySelector('.pom-time');
+    const ringEl = document.querySelector('.pom-ring circle:last-child');
+    const circumference = 238.8;
+
+    setInterval(() => {
+      if (pomSeconds <= 0) pomSeconds = totalSeconds;
+      pomSeconds--;
+      const m = Math.floor(pomSeconds / 60);
+      const s = pomSeconds % 60;
+      if (timeEl) timeEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      if (ringEl) {
+        const pct = pomSeconds / totalSeconds;
+        ringEl.style.strokeDashoffset = circumference * (1 - pct);
+      }
+    }, 1000);
   </script>
-
-  <!-- CDN Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
-
 </body>
 </html>

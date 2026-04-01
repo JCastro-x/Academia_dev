@@ -12,7 +12,8 @@ const CACHE_ASSETS   = `${CACHE_VERSION}-assets`;
 // Archivos críticos — se cachean en install, app funciona offline con ellos
 const STATIC_SHELL = [
   '/',
-  '/index.html',
+  '/index.html',      // landing page
+  '/app.html',        // la app
   '/auth-page.html',
   '/manifest.json',
   '/assets/icons/icon-192.png',
@@ -64,7 +65,7 @@ self.addEventListener('install', e => {
         ))
       ),
     ]).then(() => {
-      console.log('[SW] Install completo — academia-v9');
+      console.log('[SW] Install completo — academia-v10');
       self.skipWaiting();
     })
   );
@@ -107,7 +108,7 @@ self.addEventListener('fetch', e => {
   const path = url.pathname;
 
   // ── JS / HTML / CSS: Network First (siempre código fresco) ──
-  if (/\.(js|html|css)$/.test(path) || path === '/' || path === '/index.html') {
+  if (/\.(js|html|css)$/.test(path) || path === '/' || path === '/app.html') {
     e.respondWith(networkFirstStrategy(req, CACHE_PAGES));
     return;
   }
@@ -136,8 +137,8 @@ async function networkFirstStrategy(req, cacheName) {
   } catch {
     const cached = await caches.match(req);
     if (cached) return cached;
-    // Fallback final: devolver index.html para rutas de la SPA
-    return caches.match('/index.html');
+    // Fallback final: devolver app.html para rutas de la SPA
+    return caches.match('/app.html');
   }
 }
 
@@ -166,7 +167,6 @@ async function fetchAndCache(req, cacheName) {
 }
 
 // ── WIDGET SUPPORT (futuro) ──────────────────────────────────
-// Cuando el SW recibe un mensaje para actualizar datos del widget
 self.addEventListener('widgetinstall',   e => handleWidgetEvent(e, 'install'));
 self.addEventListener('widgetuninstall', e => handleWidgetEvent(e, 'uninstall'));
 self.addEventListener('widgetresume',    e => handleWidgetEvent(e, 'resume'));
@@ -176,7 +176,6 @@ async function handleWidgetEvent(e, type) {
   if (!widget) return;
 
   if (type === 'install' || type === 'resume') {
-    // Datos del widget — se leen desde localStorage/cache cuando estén disponibles
     const payload = {
       tasks: [],
       updatedAt: new Date().toISOString(),
@@ -197,7 +196,6 @@ async function handleWidgetEvent(e, type) {
 self.addEventListener('message', e => {
   if (!e.data) return;
 
-  // La app puede pedir que el SW actualice el widget con datos frescos
   if (e.data.type === 'UPDATE_WIDGET') {
     if (self.widgets) {
       self.widgets.updateByTag('tareas-widget', {
@@ -206,7 +204,6 @@ self.addEventListener('message', e => {
     }
   }
 
-  // Forzar actualización inmediata del SW
   if (e.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
@@ -216,10 +213,7 @@ self.addEventListener('message', e => {
 self.addEventListener('sync', e => {
   if (e.tag === 'sync-academia-data') {
     console.log('[SW] Background sync: academia-data');
-    // La próxima vez que haya red, la app sincroniza automáticamente
-    // No necesitamos hacer nada aquí porque academia-sync.js
-    // lo maneja cuando visibilitychange/focus se disparan
   }
 });
 
-console.log('[SW] academia-v9 cargado');
+console.log('[SW] academia-v10 cargado');

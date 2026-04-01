@@ -3,7 +3,7 @@
   "name": "Academia — Dashboard Académico",
   "short_name": "Academia",
   "description": "Dashboard académico completo: calificaciones por zona, tareas con subtareas, notas con OCR, Pomodoro con Web Worker, flashcards, calendario, horario semanal y sincronización multi-dispositivo vía Supabase.",
-  "start_url": "/index.html",
+  "start_url": "/app.html",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
@@ -58,14 +58,14 @@
       "name": "Nueva Tarea",
       "short_name": "Tarea",
       "description": "Agrega una tarea rápidamente",
-      "url": "/index.html?page=tareas",
+      "url": "/app.html?page=tareas",
       "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Pomodoro",
       "short_name": "Pomodoro",
       "description": "Inicia una sesión de estudio",
-      "url": "/index.html?page=pomodoro",
+      "url": "/app.html?page=pomodoro",
       "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {

@@ -41,8 +41,8 @@
       const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo:          window.location.origin + '/index.html',
-          skipBrowserRedirect: false,   // ← fix iOS Safari (bloquea popups)
+          redirectTo:          window.location.origin + '/app.html',
+          skipBrowserRedirect: false,
           queryParams: {
             prompt: 'select_account'
           }

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+  <!-- ═══ FAVICON & PWA ═══ -->
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7c6aff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Academia">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Academia — Organiza tu semestre universitario">
+<title>Academia — Dashboard Académico</title>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/flashcards-fix.css">
+  <link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar collapse toggle -->
+  <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Ocultar/mostrar menú">‹</button>
+
+  <!-- ═══════════════════════════════════════════════
+       SIDEBAR (Desktop)
+  ══════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-name">Acade<span>mia</span></div>
+    </div>
+    <nav class="nav">
+      <!-- GESTIÓN -->
+      <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-gestion',this)">Gestión <span id="sec-gestion-arrow">▾</span></div>
+      <div id="sec-gestion">
+        <div class="nav-item active" onclick="goPage('overview',this)"><span class="icon">🏠</span>Resumen</div>
+        <div class="nav-item" onclick="goPage('materias',this)"><span class="icon">📚</span>Materias</div>
+        <div class="nav-item" onclick="goPage('horario',this)"><span class="icon">🗓️</span>Mi Horario</div>
+      </div>
+      <!-- HERRAMIENTAS -->
+      <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-herramientas',this)">Herramientas <span id="sec-herramientas-arrow">▾</span></div>
+      <div id="sec-herramientas">
+        <div class="nav-item" onclick="goPage('tareas',this)"><span class="icon">✅</span>Tareas <span class="nav-badge" id="badge-tasks">0</span></div>
+        <div class="nav-item" onclick="goPage('notas',this)"><span class="icon">📝</span>Notas</div>
+        <div class="nav-item" onclick="goPage('pomodoro',this)"><span class="icon">⏱️</span>Pomodoro</div>
+        <div class="nav-item" onclick="goPage('calendario',this)"><span class="icon">📅</span>Calendario</div>
+      </div>
+      <!-- GENERAL -->
+      <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-general',this)">General <span id="sec-general-arrow">▾</span></div>
+      <div id="sec-general">
+        <div class="nav-item" onclick="goPage('general',this)"><span class="icon">🧰</span>General</div>
+      </div>
+      <!-- CONFIG -->
+      <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-config',this)">Configuración <span id="sec-config-arrow">▾</span></div>
+      <div id="sec-config">
+        <div class="nav-item" onclick="goPage('semestres',this)"><span class="icon">🗂️</span>Semestres</div>
+        <div class="nav-item" onclick="goPage('perfil',this)"><span class="icon">👤</span>Mi Perfil</div>
+      </div>
+    </nav>
+    <div class="sidebar-bottom" style="position:relative;">
+      <!-- Semester switcher dropdown -->
+      <div class="sem-sw-dropdown" id="sem-sw-dd">
+        <div id="sem-sw-list"></div>
+        <div class="sem-sw-footer">
+          <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;" onclick="openSemestreModal()">➕ Nuevo Semestre</button>
+        </div>
+      </div>
+      <div class="sem-badge" onclick="toggleSemSwitcher(event)">
+        <div class="sem-lbl">📂 SEMESTRE · <span style="color:var(--accent2);">click para cambiar</span></div>
+        <div class="sem-name-edit" onclick="event.stopPropagation()">
+          <div class="sem-val" id="sidebar-sem-nombre" ondblclick="startSemEdit()" style="cursor:text;" title="Doble clic para editar">—</div>
+          <button class="sem-edit-btn" id="sem-edit-btn" onclick="startSemEdit()" title="Editar nombre del semestre">✏️</button>
+        </div>
+        <div class="sem-mini-stats" style="display:none;">
+          <span class="sem-mini-chip" style="background:rgba(124,106,255,.15);color:var(--accent2);" id="sidebar-sem-avg">📈 —</span>
+          <span class="sem-mini-chip" style="background:rgba(74,222,128,.15);color:#4ade80;" id="sidebar-sem-cred">🪙 —</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón StudySpace -->
+    <div style="padding:8px 12px;border-top:1px solid var(--border);">
+      <a href="https://study-space-jc.vercel.app/" target="_blank" rel="noopener" style="text-decoration:none;">
+        <button style="
+          width:100%;padding:9px 12px;
+          background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(255,107,157,.1));
+          border:1px solid rgba(108,99,255,.3);border-radius:8px;
+          color:var(--accent2);cursor:pointer;font-size:12px;font-weight:700;
+          display:flex;align-items:center;gap:8px;
+          transition:border-color .15s,background .15s;
+        " onmouseover="this.style.borderColor='var(--accent)';this.style.background='linear-gradient(135deg,rgba(108,99,255,.25),rgba(255,107,157,.15))'"
+           onmouseout="this.style.borderColor='rgba(108,99,255,.3)';this.style.background='linear-gradient(135deg,rgba(108,99,255,.15),rgba(255,107,157,.1))'">
+          📚 <span>StudySpace</span>
+          <span style="margin-left:auto;font-size:9px;font-family:'Space Mono',monospace;color:var(--text3);">↗</span>
+        </button>
+      </a>
+    </div>
+
+    <!-- Botón tutorial -->
+    <div style="padding:4px 12px 10px;">
+      <button onclick="showTutorial()" style="
+        width:100%;padding:7px 12px;background:none;
+        border:1px solid var(--border);border-radius:8px;
+        color:var(--text3);cursor:pointer;font-size:11px;
+        display:flex;align-items:center;gap:8px;
+        transition:border-color .15s,color .15s;
+      " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">
+        ❓ <span>Ver tutorial</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════════════════════ -->
+  <div class="main">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="page-title" id="page-title">Resumen</div>
+      <div class="topbar-right">
+        <!-- Global search -->
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="global-search" class="search-input-bar" type="text" placeholder="Buscar..."
+            oninput="globalSearch(this.value)" autocomplete="off">
+          <div id="search-results"></div>
+        </div>
+        <div class="date-chip" id="topbar-date"></div>
+        <button id="theme-btn" class="btn btn-ghost btn-sm" onclick="toggleTheme()" title="Cambiar tema">☀️</button>
+        <button id="ui-sound-btn" class="btn btn-ghost btn-sm" onclick="toggleUiSounds()" title="Activar/desactivar sonidos de interfaz">🔔</button>
+        <button class="btn btn-ghost btn-sm" onclick="openConfigModal()" title="Configurar historial académico">⚙️</button>
+        <button class="btn btn-ghost btn-sm" onclick="openAddClassModal()">➕ Clase</button>
+        <button class="btn btn-primary btn-sm" onclick="openQuickAdd()">⚡ Agregar</button>
+        <button class="btn btn-sm" style="background:rgba(248,113,113,.15);color:#f87171;border:1px solid rgba(248,113,113,.3);" onclick="openExamMode()" title="Modo Examen — Concentración total">⏱️ Examen</button>
+      </div>
+    </div>
+
+    <!-- ═══ PAGES CONTAINER — populated by loader.js ═══ -->
+    <div class="content" id="pages-content">
+      <!-- Loading state while partials load -->
+      <div id="partials-loading" style="display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:16px;">
+        <div style="font-size:32px;">⏳</div>
+        <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--text3);letter-spacing:2px;">CARGANDO ACADEMIA...</div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════
+     MOBILE BOTTOM NAV
+══════════════════════════════════════════════════ -->
+<nav class="mobile-nav" style="display:none;">
+  <div class="mobile-nav-item active" onclick="goPage('overview',this)">
+    <div class="mn-icon">🏠</div><div>Inicio</div>
+  </div>
+  <div class="mobile-nav-item" onclick="goPage('tareas',this)">
+    <div class="mn-icon" style="position:relative;">✅<span class="mobile-nav-badge" id="badge-tasks-m">0</span></div>
+    <div>Tareas</div>
+  </div>
+  <div class="mobile-nav-item" onclick="openQuickAdd()">
+    <div class="mn-icon" style="font-size:26px;">⚡</div>
+    <div>Agregar</div>
+  </div>
+  <div class="mobile-nav-item" onclick="goPage('calificaciones',this)">
+    <div class="mn-icon">🎯</div><div>Notas</div>
+  </div>
+  <div class="mobile-nav-item" id="mobile-more-btn" onclick="openMobileMore(this)">
+    <div class="mn-icon">☰</div><div>Más</div>
+  </div>
+</nav>
+
+<!-- Mobile sidebar overlay -->
+<div id="mobile-sidebar-overlay" onclick="closeMobileSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149;backdrop-filter:blur(2px);"></div>
+
+  <!-- ═══ LOADER — carga las páginas y modales desde partials/ ═══ -->
+  <script src="js/loader.js"></script>
+
+  <!-- ─── Auth & Sync ─── -->
+  <script src="js/auth.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/academia-sync.js"></script>
+
+  <!-- ─── State & Core ─── -->
+  <script src="js/state.js"></script>
+  <script src="js/calificaciones.js"></script>
+  <script src="js/semestres.js"></script>
+  <script src="js/ui.js"></script>
+
+  <!-- ─── Features ─── -->
+  <script src="js/materias.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/sounds.js"></script>
+  <script src="js/pomodoro.js"></script>
+
+  <!-- ─── Módulos separados ─── -->
+  <script src="js/tasks.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/notes.js"></script>
+  <script src="js/chrono.js"></script>
+  <script src="js/flashcards.js"></script>
+
+  <!-- ─── Init & Bootstrap ─── -->
+  <script src="js/init.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/onboarding.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script src="js/planner.js"></script>
+
+  <!-- ═══ MOBILE "MÁS" BOTTOM SHEET — cargado al final para que el DOM esté listo ═══ -->
+  <script src="js/mobile-more.js"></script>
+  <script src="js/pom-mini.js"></script>
+
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('Academia PWA ready ✅'))
+          .catch(e => console.log('SW error:', e));
+      });
+    }
+  </script>
+
+  <!-- CDN Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+
+</body>
+</html>

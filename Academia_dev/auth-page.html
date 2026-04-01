@@ -236,7 +236,6 @@
   <script src="js/auth.js"></script>
   <script src="js/db.js"></script>
   <script>
-    // Esperar a que Auth esté listo
     function waitForAuth(callback, attempts = 0) {
       if (window.Auth && window.Auth.signInGoogle) {
         callback();
@@ -248,8 +247,6 @@
     }
 
     function handleGoogleLogin(btn) {
-      // FIX iOS Safari: capturar btn SINCRÓNICAMENTE antes de cualquier async/setTimeout
-      // Safari bloquea redirecciones OAuth si no se inician directo en el click handler
       const errorMsg = document.getElementById('errorMsg');
       errorMsg.classList.remove('show');
       btn.disabled = true;
@@ -264,14 +261,13 @@
             errorMsg.textContent = result.error;
             errorMsg.classList.add('show');
           }
-          // Si es exitoso, Google redirige automáticamente
+          // Si es exitoso, Google redirige automáticamente a app.html
         });
       };
 
       if (window.Auth && window.Auth.signInGoogle) {
         doLogin();
       } else {
-        // Fallback: Auth aún no cargó (raro), reintentar una sola vez
         setTimeout(() => {
           if (window.Auth && window.Auth.signInGoogle) {
             doLogin();
@@ -285,13 +281,13 @@
       }
     }
 
-    // Verificar si ya está autenticado
+    // Verificar si ya está autenticado → ir directo a app.html
     window.addEventListener('load', () => {
       waitForAuth(async () => {
         const auth = await window.Auth.checkAuth();
         if (auth) {
           console.log('✅ Ya autenticado, redirigiendo...');
-          window.location.href = 'index.html';
+          window.location.href = 'app.html';
         }
       });
     });
