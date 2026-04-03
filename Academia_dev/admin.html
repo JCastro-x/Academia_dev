@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academia — Admin Panel</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:      #07070d;
+      --surface: #0f0f18;
+      --surface2:#161622;
+      --border:  #1e1e2e;
+      --border2: #2a2a3e;
+      --text:    #eeeef5;
+      --text2:   #9090aa;
+      --text3:   #52526a;
+      --accent:  #7c6aff;
+      --accent2: #a78bfa;
+      --green:   #4ade80;
+      --red:     #f87171;
+      --yellow:  #fbbf24;
+      --blue:    #60a5fa;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Syne', sans-serif; min-height: 100vh;
+    }
+
+    /* ── AUTH SCREEN ── */
+    /*Probando*//*Probando*//*Probando*//*Probando*//*Probando*/
+    #auth-screen {
+      min-height: 100vh; display: flex;
+      align-items: center; justify-content: center;
+    }
+    .auth-card {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 16px; padding: 40px; text-align: center;
+      max-width: 360px; width: 100%;
+    }
+    .auth-icon { font-size: 48px; margin-bottom: 16px; }
+    .auth-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
+    .auth-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; line-height: 1.6; }
+    .auth-btn {
+      width: 100%; padding: 12px; background: linear-gradient(135deg, #a78bfa, #7c6aff);
+      color: #fff; border: none; border-radius: 8px; font-family: 'Syne', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .auth-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,106,255,.35); }
+    .error-box {
+      background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3);
+      color: var(--red); padding: 10px 14px; border-radius: 8px;
+      font-size: 12px; margin-top: 14px; display: none;
+    }
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── DASHBOARD ── */
+    #dashboard { display: none; }
+
+    header {
+      padding: 18px 28px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); position: sticky; top: 0; z-index: 10;
+    }
+    .header-logo { font-size: 16px; font-weight: 800; }
+    .header-logo span { color: var(--accent2); }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .header-badge {
+      font-size: 10px; font-family: 'Space Mono', monospace;
+      padding: 4px 10px; border-radius: 100px;
+      background: rgba(124,106,255,.15); border: 1px solid rgba(124,106,255,.3);
+      color: var(--accent2); letter-spacing: 1px;
+    }
+    .refresh-btn {
+      padding: 7px 14px; background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 8px; color: var(--text2); font-family: 'Syne', sans-serif;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--accent2); }
+    .logout-btn {
+      padding: 7px 14px; background: transparent; border: 1px solid var(--border2);
+      border-radius: 8px; color: var(--text3); font-family: 'Syne', sans-serif;
+      font-size: 12px; cursor: pointer; transition: border-color .15s, color .15s;
+    }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    main { padding: 28px; max-width: 1200px; margin: 0 auto; }
+
+    .section-title {
+      font-size: 11px; font-family: 'Space Mono', monospace;
+      color: var(--text3); letter-spacing: 2px; margin-bottom: 14px;
+    }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px; margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px;
+      transition: border-color .2s, transform .2s;
+    }
+    .stat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+    .sc-label {
+      font-size: 10px; font-family: 'Space Mono', monospace;
+      color: var(--text3); letter-spacing: 1.5px; margin-bottom: 8px;
+    }
+    .sc-value {
+      font-size: 36px; font-weight: 800;
+      font-family: 'Space Mono', monospace; line-height: 1;
+      margin-bottom: 4px;
+    }
+    .sc-sub { font-size: 11px; color: var(--text3); }
+
+    /* ── GRID 2 COL ── */
+    .grid-2 {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-bottom: 28px;
+    }
+    .panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .panel-header {
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 700; color: var(--text2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-body { padding: 14px 18px; }
+
+    /* ── CHART ── */
+    .chart-wrap { position: relative; height: 120px; }
+    .chart-bars {
+      display: flex; align-items: flex-end; gap: 4px;
+      height: 100%; padding-top: 8px;
+    }
+    .chart-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .chart-bar {
+      width: 100%; border-radius: 4px 4px 0 0;
+      background: rgba(124,106,255,.4);
+      transition: background .2s;
+      min-height: 2px;
+    }
+    .chart-bar:hover { background: var(--accent); }
+    .chart-label { font-size: 9px; font-family: 'Space Mono', monospace; color: var(--text3); }
+
+    /* ── DEVICE SPLIT ── */
+    .device-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+    }
+    .device-label { font-size: 13px; font-weight: 600; flex: 1; }
+    .device-bar-bg {
+      flex: 2; height: 6px; background: var(--border);
+      border-radius: 3px; overflow: hidden;
+    }
+    .device-bar-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+    .device-count { font-size: 12px; font-family: 'Space Mono', monospace; color: var(--text2); min-width: 40px; text-align: right; }
+
+    /* ── PAGE SPLIT ── */
+    .page-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .page-row:last-child { border-bottom: none; }
+    .page-name { font-weight: 600; }
+    .page-count {
+      font-family: 'Space Mono', monospace; font-size: 12px;
+      color: var(--accent2); font-weight: 700;
+    }
+
+    /* ── RECENT USERS ── */
+    .users-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .users-table th {
+      text-align: left; padding: 8px 10px;
+      font-size: 10px; font-family: 'Space Mono', monospace;
+      color: var(--text3); letter-spacing: 1px;
+      border-bottom: 1px solid var(--border);
+    }
+    .users-table td { padding: 10px; border-bottom: 1px solid var(--border); }
+    .users-table tr:last-child td { border-bottom: none; }
+    .users-table tr:hover td { background: rgba(255,255,255,.02); }
+    .uid-cell {
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      color: var(--text3); max-width: 120px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; font-family: 'Space Mono', monospace; font-weight: 700;
+    }
+    .badge-green { background: rgba(74,222,128,.15); color: var(--green); }
+    .badge-gray  { background: rgba(144,144,168,.1);  color: var(--text3);  }
+
+    /* ── LOADING SKELETON ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .sk-value { height: 40px; width: 80px; margin-bottom: 4px; }
+    .sk-text  { height: 12px; width: 60%; }
+
+    /* ── LAST UPDATED ── */
+    .last-updated {
+      font-size: 11px; font-family: 'Space Mono', monospace;
+      color: var(--text3); text-align: center; margin-top: 20px;
+      padding-top: 20px; border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 768px) {
+      main { padding: 16px; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      header { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── PANTALLA DE AUTH ── -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <div class="auth-icon">📊</div>
+      <div class="auth-title">Admin Panel</div>
+      <div class="auth-sub">
+        Acceso restringido al administrador.<br>
+        Iniciá sesión con tu cuenta de Google para continuar.
+      </div>
+      <button class="auth-btn" onclick="handleAdminLogin(this)">
+        <span style="font-size:16px;">🔐</span>
+        <span>Entrar con Google</span>
+      </button>
+      <div class="error-box" id="auth-error"></div>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD ── -->
+  <div id="dashboard">
+    <header>
+      <div class="header-logo">Acade<span>mia</span> · Admin</div>
+      <div class="header-right">
+        <div class="header-badge">ADMIN PANEL</div>
+        <button class="refresh-btn" onclick="loadStats()">↻ Actualizar</button>
+        <button class="logout-btn" onclick="adminLogout()">Salir</button>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- Usuarios -->
+      <div class="section-title">USUARIOS</div>
+      <div class="stats-grid" id="users-stats">
+        <div class="stat-card">
+          <div class="sc-label">TOTAL USUARIOS</div>
+          <div class="sc-value" id="s-total" style="color:var(--accent2);">
+            <div class="skeleton sk-value"></div>
+          </div>
+          <div class="sc-sub">cuentas registradas</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">ACTIVOS · 7 DÍAS</div>
+          <div class="sc-value" id="s-7d" style="color:var(--green);">
+            <div class="skeleton sk-value"></div>
+          </div>
+          <div class="sc-sub">abrieron la app esta semana</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">ACTIVOS · 30 DÍAS</div>
+          <div class="sc-value" id="s-30d" style="color:var(--blue);">
+            <div class="skeleton sk-value"></div>
+          </div>
+          <div class="sc-sub">abrieron la app este mes</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">ÚLTIMO ACCESO</div>
+          <div class="sc-value" id="s-last" style="color:var(--yellow);font-size:16px;padding-top:10px;">
+            <div class="skeleton sk-value"></div>
+          </div>
+          <div class="sc-sub">actividad más reciente</div>
+        </div>
+      </div>
+
+      <!-- Visitas -->
+      <div class="section-title" style="margin-top:8px;">VISITAS</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="sc-label">VISITAS TOTALES</div>
+          <div class="sc-value" id="v-total" style="color:var(--accent2);">
+            <div class="skeleton sk-value"></div>
+          </div>
+          <div class="sc-sub">desde que activaste el tracker</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">ÚLTIMAS 24 HORAS</div>
+          <div class="sc-value" id="v-today" style="color:var(--green);">
+            <div class="skeleton sk-value"></div>
+          </div>
+          <div class="sc-sub">visitas hoy</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">ÚLTIMOS 7 DÍAS</div>
+          <div class="sc-value" id="v-7d" style="color:var(--blue);">
+            <div class="skeleton sk-value"></div>
+          </div>
+          <div class="sc-sub">visitas esta semana</div>
+        </div>
+      </div>
+
+      <!-- Gráfico + dispositivos -->
+      <div class="grid-2">
+
+        <!-- Gráfico de visitas diarias -->
+        <div class="panel">
+          <div class="panel-header">
+            <span>📈 Visitas últimos 14 días</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-wrap">
+              <div class="chart-bars" id="chart-daily"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dispositivos + páginas -->
+        <div class="panel">
+          <div class="panel-header"><span>📱 Por dispositivo</span></div>
+          <div class="panel-body" id="device-breakdown">
+            <div style="height:60px;display:flex;align-items:center;justify-content:center;">
+              <div class="skeleton" style="height:12px;width:60%;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Páginas + usuarios recientes -->
+      <div class="grid-2">
+
+        <div class="panel">
+          <div class="panel-header"><span>🔗 Visitas por página</span></div>
+          <div class="panel-body" id="page-breakdown">
+            <div class="skeleton" style="height:12px;width:80%;margin-bottom:10px;"></div>
+            <div class="skeleton" style="height:12px;width:60%;margin-bottom:10px;"></div>
+            <div class="skeleton" style="height:12px;width:40%;"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span>👤 Usuarios recientes</span>
+            <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">últimos 10</span>
+          </div>
+          <div class="panel-body" style="padding:0;" id="recent-users">
+            <div style="padding:16px;display:flex;align-items:center;gap:8px;">
+              <div class="skeleton" style="height:12px;width:70%;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="last-updated" id="last-updated">—</div>
+
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // ── INIT ─────────────────────────────────────────────────────
+    let _adminClient = null;
+
+    function waitForAuth(cb, attempts = 0) {
+      if (window.Auth && window.Auth.checkAuth) cb();
+      else if (attempts < 50) setTimeout(() => waitForAuth(cb, attempts + 1), 100);
+    }
+
+    window.addEventListener('load', () => {
+      waitForAuth(async () => {
+        const auth = await window.Auth.checkAuth();
+        if (auth) {
+          // Ya logueado — intentar cargar stats directamente
+          _adminClient = window.Auth.getClient();
+          showDashboard();
+          loadStats();
+        }
+        // Si no está logueado, se queda en la pantalla de auth
+      });
+    });
+
+    // ── LOGIN ─────────────────────────────────────────────────────
+    async function handleAdminLogin(btn) {
+      const errEl = document.getElementById('auth-error');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div><span>Abriendo Google...</span>';
+
+      const result = await window.Auth.signInGoogle();
+      if (!result.success) {
+        btn.disabled = false;
+        btn.innerHTML = '<span style="font-size:16px;">🔐</span><span>Entrar con Google</span>';
+        errEl.textContent = result.error;
+        errEl.style.display = 'block';
+      }
+      // Si es exitoso, Google redirige de vuelta aquí
+    }
+
+    function showDashboard() {
+      document.getElementById('auth-screen').style.display  = 'none';
+      document.getElementById('dashboard').style.display    = 'block';
+    }
+
+    async function adminLogout() {
+      await window.Auth.logoutUser();
+      window.location.reload();
+    }
+
+    // ── CARGAR ESTADÍSTICAS ───────────────────────────────────────
+    async function loadStats() {
+      if (!_adminClient) {
+        _adminClient = window.Auth.getClient();
+      }
+      if (!_adminClient) return;
+
+      try {
+        const { data, error } = await _adminClient.rpc('get_admin_stats');
+
+        if (error) {
+          console.error('Error cargando stats:', error.message);
+          if (error.message.includes('Unauthorized')) {
+            document.getElementById('auth-screen').innerHTML = `
+              <div class="auth-card">
+                <div class="auth-icon">🚫</div>
+                <div class="auth-title">Acceso denegado</div>
+                <div class="auth-sub" style="color:var(--red);">
+                  Tu cuenta no tiene permisos de admin.<br>
+                  Asegurate de haber puesto tu User ID en el SQL.
+                </div>
+                <button class="auth-btn" onclick="adminLogout()" style="background:#f87171;margin-top:8px;">
+                  Cerrar sesión
+                </button>
+              </div>
+            `;
+            document.getElementById('auth-screen').style.display = 'flex';
+            document.getElementById('dashboard').style.display   = 'none';
+          }
+          return;
+        }
+
+        renderStats(data);
+
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    // ── RENDER ────────────────────────────────────────────────────
+    function renderStats(d) {
+
+      // Usuarios
+      _setText('s-total', d.total_users ?? 0);
+      _setText('s-7d',    d.active_7d   ?? 0);
+      _setText('s-30d',   d.active_30d  ?? 0);
+      _setText('s-last',  d.last_access ? _relTime(d.last_access) : '—');
+
+      // Visitas
+      _setText('v-total', d.views_total ?? 0);
+      _setText('v-today', d.views_today ?? 0);
+      _setText('v-7d',    d.views_7d    ?? 0);
+
+      // Gráfico diario
+      _renderDailyChart(d.views_daily || []);
+
+      // Dispositivos
+      _renderDevices(d.views_by_device || {});
+
+      // Páginas
+      _renderPages(d.views_by_page || {});
+
+      // Usuarios recientes
+      _renderRecentUsers(d.recent_users || []);
+
+      // Timestamp
+      document.getElementById('last-updated').textContent =
+        'Actualizado: ' + new Date().toLocaleString('es-ES');
+    }
+
+    function _setText(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    function _relTime(iso) {
+      const diff = Date.now() - new Date(iso).getTime();
+      const mins  = Math.floor(diff / 60000);
+      const hours = Math.floor(mins / 60);
+      const days  = Math.floor(hours / 24);
+      if (days > 0)  return `hace ${days}d`;
+      if (hours > 0) return `hace ${hours}h`;
+      if (mins > 0)  return `hace ${mins}m`;
+      return 'ahora';
+    }
+
+    function _renderDailyChart(daily) {
+      const el = document.getElementById('chart-daily');
+      if (!daily.length) { el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:10px;">Sin datos aún</div>'; return; }
+
+      const maxViews = Math.max(...daily.map(d => d.views), 1);
+
+      // Llenar los 14 días aunque no haya datos
+      const days = {};
+      daily.forEach(d => { days[d.day] = d.views; });
+
+      let html = '';
+      for (let i = 13; i >= 0; i--) {
+        const date = new Date(Date.now() - i * 86400000);
+        const key  = date.toISOString().split('T')[0];
+        const views = days[key] || 0;
+        const pct   = Math.max((views / maxViews) * 100, 2);
+        const label = date.toLocaleDateString('es-ES', { day:'numeric', month:'numeric' });
+        html += `
+          <div class="chart-bar-col" title="${label}: ${views} visitas">
+            <div class="chart-bar" style="height:${pct}%;"></div>
+            <div class="chart-label">${date.getDate()}</div>
+          </div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    function _renderDevices(byDevice) {
+      const el = document.getElementById('device-breakdown');
+      const total = Object.values(byDevice).reduce((a, b) => a + b, 0) || 1;
+      const items = [
+        { key: 'mobile',  label: '📱 Móvil',    color: '#7c6aff' },
+        { key: 'desktop', label: '🖥️ Escritorio', color: '#4ade80' },
+        { key: 'unknown', label: '❓ Desconocido', color: '#52526a' },
+      ];
+      el.innerHTML = items.map(item => {
+        const count = byDevice[item.key] || 0;
+        const pct   = Math.round((count / total) * 100);
+        return `
+          <div class="device-row">
+            <div class="device-label">${item.label}</div>
+            <div class="device-bar-bg">
+              <div class="device-bar-fill" style="width:${pct}%;background:${item.color};"></div>
+            </div>
+            <div class="device-count">${count}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function _renderPages(byPage) {
+      const el = document.getElementById('page-breakdown');
+      const entries = Object.entries(byPage).sort((a, b) => b[1] - a[1]);
+      if (!entries.length) { el.innerHTML = '<div style="color:var(--text3);font-size:12px;">Sin datos aún</div>'; return; }
+      const icons = { landing: '🏠', app: '🎓', auth: '🔐', other: '📄' };
+      el.innerHTML = entries.map(([page, count]) => `
+        <div class="page-row">
+          <div class="page-name">${icons[page] || '📄'} ${page}</div>
+          <div class="page-count">${count}</div>
+        </div>`).join('');
+    }
+
+    function _renderRecentUsers(users) {
+      const el = document.getElementById('recent-users');
+      if (!users.length) { el.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:12px;">Sin usuarios aún</div>'; return; }
+
+      const now = Date.now();
+      el.innerHTML = `
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>USER ID</th>
+              <th>SEMESTRES</th>
+              <th>ÚLTIMA ACTIVIDAD</th>
+              <th>ESTADO</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(u => {
+              const diff  = now - new Date(u.updated_at).getTime();
+              const days  = Math.floor(diff / 86400000);
+              const isActive = days <= 7;
+              return `
+                <tr>
+                  <td class="uid-cell" title="${u.user_id}">${u.user_id.slice(0,12)}...</td>
+                  <td style="font-family:'Space Mono',monospace;font-size:11px;">${u.num_semestres ?? 0}</td>
+                  <td style="font-size:11px;color:var(--text2);">${_relTime(u.updated_at)}</td>
+                  <td>
+                    <span class="badge ${isActive ? 'badge-green' : 'badge-gray'}">
+                      ${isActive ? 'ACTIVO' : 'INACTIVO'}
+                    </span>
+                  </td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+    }
+  </script>
+</body>
+</html>
