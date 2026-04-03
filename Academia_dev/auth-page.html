@@ -10,187 +10,85 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
     :root {
-      --bg: #0a0a0f;
-      --surface: #111118;
-      --border: #2a2a38;
-      --text: #e8e8f0;
-      --text2: #9090a8;
-      --accent: #7c6aff;
+      --bg: #0a0a0f; --surface: #111118; --border: #2a2a38;
+      --text: #e8e8f0; --text2: #9090a8; --accent: #7c6aff;
       --shadow: 0 2px 16px rgba(0,0,0,.4);
     }
-
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Syne', sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      background: var(--bg); color: var(--text);
+      font-family: 'Syne', sans-serif; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
     }
-
-    .container {
-      width: 100%;
-      max-width: 400px;
-    }
-
+    .container { width: 100%; max-width: 400px; }
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 40px;
-      box-shadow: var(--shadow);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px; box-shadow: var(--shadow);
       animation: slideUp 0.6s ease-out;
     }
-
     @keyframes slideUp {
       from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-
-    .logo {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
-    .logo-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-    }
-
-    .logo-text {
-      font-size: 24px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-    }
-
+    .logo { text-align: center; margin-bottom: 32px; }
+    .logo-icon { font-size: 48px; margin-bottom: 12px; }
+    .logo-text { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
     .logo-text span {
       background: linear-gradient(135deg, #a78bfa, #7c6aff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-    .subtitle {
-      text-align: center;
-      color: var(--text2);
-      font-size: 13px;
-      margin-top: 8px;
-    }
-
+    .subtitle { text-align: center; color: var(--text2); font-size: 13px; margin-top: 8px; }
     .btn {
-      width: 100%;
-      padding: 12px;
+      width: 100%; padding: 12px;
       background: linear-gradient(135deg, #a78bfa, #7c6aff);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Syne', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      min-height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 12px;
+      color: white; border: none; border-radius: 8px;
+      font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      min-height: 48px; display: flex; align-items: center; justify-content: center;
+      gap: 10px; margin-bottom: 12px;
     }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(124, 106, 255, 0.3);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(124,106,255,0.3); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .btn-secondary {
-      background: var(--surface);
-      color: var(--text);
-      border: 1px solid var(--border);
-      gap: 8px;
+      background: var(--surface); color: var(--text); border: 1px solid var(--border);
     }
-
-    .btn-secondary:hover {
-      border-color: var(--accent);
-      color: var(--accent);
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); box-shadow: none; }
+    .btn-guest {
+      background: transparent; color: var(--text2);
+      border: 1px dashed #3a3a50; font-weight: 600; font-size: 13px;
     }
-
+    .btn-guest:hover { border-color: #5a5a72; color: var(--text); box-shadow: none; transform: none; }
+    .guest-warning {
+      background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3);
+      border-radius: 8px; padding: 10px 12px; font-size: 11.5px;
+      color: #fbbf24; line-height: 1.6; margin-bottom: 12px; display: none;
+    }
+    .guest-warning.show { display: block; }
     .error-msg {
-      background: rgba(248, 113, 113, 0.15);
-      border: 1px solid #f87171;
-      color: #f87171;
-      padding: 10px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      margin-bottom: 16px;
-      display: none;
+      background: rgba(248,113,113,0.15); border: 1px solid #f87171;
+      color: #f87171; padding: 10px 12px; border-radius: 6px;
+      font-size: 12px; margin-bottom: 16px; display: none;
     }
-
-    .error-msg.show {
-      display: block;
-    }
-
-    .success-msg {
-      background: rgba(74, 222, 128, 0.15);
-      border: 1px solid #4ade80;
-      color: #4ade80;
-      padding: 10px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      margin-bottom: 16px;
-      display: none;
-    }
-
-    .success-msg.show {
-      display: block;
-    }
-
+    .error-msg.show { display: block; }
     .spinner {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
+    @keyframes spin { to { transform: rotate(360deg); } }
     .divider {
-      text-align: center;
-      color: var(--text2);
-      font-size: 12px;
-      margin: 24px 0;
+      text-align: center; color: var(--text2); font-size: 12px;
+      margin: 20px 0; position: relative;
     }
-
-    .footer {
-      text-align: center;
-      font-size: 11px;
-      color: var(--text2);
-      margin-top: 20px;
+    .divider::before, .divider::after {
+      content: ''; position: absolute; top: 50%;
+      width: 38%; height: 1px; background: var(--border);
     }
-
-    .footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
+    .divider::before { left: 0; }
+    .divider::after  { right: 0; }
+    .footer { text-align: center; font-size: 11px; color: var(--text2); margin-top: 20px; }
+    .footer a { color: var(--accent); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
     @media (max-width: 480px) {
       .card { padding: 28px; }
       .logo-text { font-size: 20px; }
@@ -208,31 +106,33 @@
       </div>
 
       <div class="error-msg" id="errorMsg"></div>
-      <div class="success-msg" id="successMsg"></div>
 
       <button class="btn btn-secondary" onclick="handleGoogleLogin(this)">
-        <span style="font-size: 18px;">🔐</span>
+        <span style="font-size:18px;">🔐</span>
         <span>Ingresar con Google</span>
       </button>
 
       <div class="divider">— O —</div>
 
-      <button class="btn btn-secondary" onclick="alert('Email/Password pronto')">
-        <span style="font-size: 16px;">📧</span>
-        <span>Email (Próximamente)</span>
+      <div class="guest-warning" id="guestWarning">
+        ⚠️ En modo invitado tus datos se guardan <strong>solo en este dispositivo</strong>.
+        No habrá sincronización ni respaldo en la nube.
+        Podés crear una cuenta después para conservar todo.
+      </div>
+
+      <button class="btn btn-guest" id="guestBtn" onclick="handleGuestMode(this)">
+        👀 Probar sin cuenta
       </button>
 
-      <div class="footer">
-        Al continuar aceptas nuestros 
-        <a href="/terminos.html">Términos</a> y 
-        <a href="/privacidad.html">Privacidad</a>
+      <div class="footer" style="margin-top:16px;">
+        Al continuar aceptas nuestros
+        <a href="terminos.html">Términos</a> y
+        <a href="privacidad.html">Privacidad</a>
       </div>
     </div>
   </div>
 
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Auth -->
   <script src="js/auth.js"></script>
   <script src="js/db.js"></script>
   <script>
@@ -252,7 +152,6 @@
       btn.disabled = true;
       const originalHTML = btn.innerHTML;
       btn.innerHTML = '<div class="spinner"></div><span>Abriendo Google...</span>';
-
       const doLogin = () => {
         window.Auth.signInGoogle().then(result => {
           if (!result.success) {
@@ -261,10 +160,8 @@
             errorMsg.textContent = result.error;
             errorMsg.classList.add('show');
           }
-          // Si es exitoso, Google redirige automáticamente a app.html
         });
       };
-
       if (window.Auth && window.Auth.signInGoogle) {
         doLogin();
       } else {
@@ -281,12 +178,32 @@
       }
     }
 
-    // Verificar si ya está autenticado → ir directo a app.html
+    // Primer clic → muestra advertencia
+    // Segundo clic → entra como invitado
+    let _guestWarningShown = false;
+    function handleGuestMode(btn) {
+      if (!_guestWarningShown) {
+        _guestWarningShown = true;
+        document.getElementById('guestWarning').classList.add('show');
+        btn.innerHTML = '👀 Entrar de todas formas';
+        return;
+      }
+      localStorage.setItem('academia_guest_mode', '1');
+      localStorage.removeItem('_academia_last_user');
+      window.location.href = 'app.html';
+    }
+
+    // Verificar sesión al cargar
     window.addEventListener('load', () => {
+      // Si ya era invitado activo → directo a la app
+      if (localStorage.getItem('academia_guest_mode') === '1') {
+        window.location.href = 'app.html';
+        return;
+      }
+      // Si tiene sesión Google → directo a la app
       waitForAuth(async () => {
         const auth = await window.Auth.checkAuth();
         if (auth) {
-          console.log('✅ Ya autenticado, redirigiendo...');
           window.location.href = 'app.html';
         }
       });

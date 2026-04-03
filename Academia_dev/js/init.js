@@ -1,33 +1,46 @@
 
 function init() {
-  // ════════════════════════════════════════════════════════
-  // VERIFICACIÓN DE AUTENTICACIÓN — BLOQUEAR SI NO ESTÁ AUTENTICADO
-  // ════════════════════════════════════════════════════════
-  
-  // Crear overlay de loading mientras se verifica
+
+  // ── Detectar modo invitado ────────────────────────────────────
+  const isGuest = localStorage.getItem('academia_guest_mode') === '1';
+
+  // Overlay de loading
   const loadingOverlay = document.createElement('div');
   loadingOverlay.id = 'auth-check-overlay';
   loadingOverlay.style.cssText = `
-    position: fixed;
-    inset: 0;
-    background: #0a0a0f;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
+    position:fixed;inset:0;background:#0a0a0f;
+    display:flex;align-items:center;justify-content:center;z-index:9999;
   `;
   loadingOverlay.innerHTML = `
-    <div style="text-align: center;">
-      <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
-      <div style="color: #e8e8f0; font-size: 14px; font-family: Syne, sans-serif;">Verificando sesión...</div>
+    <div style="text-align:center;">
+      <div style="font-size:48px;margin-bottom:16px;">${isGuest ? '👀' : '🔐'}</div>
+      <div style="color:#e8e8f0;font-size:14px;font-family:Syne,sans-serif;">
+        ${isGuest ? 'Cargando modo invitado...' : 'Verificando sesión...'}
+      </div>
     </div>
   `;
   document.body.insertBefore(loadingOverlay, document.body.firstChild);
 
-  // Verificar auth ANTES de hacer nada
   (async () => {
     try {
-      // Si hay callback de OAuth en la URL, dar tiempo a Supabase para procesarlo
+
+      // ════════════════════════════════════════════════════════
+      // MODO INVITADO — saltar Supabase completamente
+      // ════════════════════════════════════════════════════════
+      if (isGuest) {
+        console.log('👀 Modo invitado activo — usando solo localStorage');
+
+        // Quitar overlay y continuar sin auth
+        const overlay = document.getElementById('auth-check-overlay');
+        if (overlay) overlay.remove();
+
+        continueInit(null); // auth = null en modo invitado
+        return;
+      }
+
+      // ════════════════════════════════════════════════════════
+      // MODO NORMAL — verificar autenticación con Supabase
+      // ════════════════════════════════════════════════════════
       const hasOAuthCallback = window.location.hash.includes('access_token') ||
                                window.location.search.includes('code=');
 
@@ -41,7 +54,7 @@ function init() {
       if (!auth) {
         console.log('❌ NO AUTENTICADO - Redirigiendo a login');
         window.location.href = 'auth-page.html';
-        return; // STOP aquí, no continuar
+        return;
       }
 
       console.log('✅ AUTENTICADO:', auth.email);
@@ -60,10 +73,9 @@ function init() {
         window.DB.init(auth.id);
         const dbData = await window.DB.load();
         if (dbData) {
-          // Sobrescribir localStorage con datos de Supabase (fuente de verdad)
+          // Supabase es la fuente de verdad
           if (dbData.semestres && dbData.semestres.length) {
             localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
-            // FIX: también actualizar State en memoria (fue cargado ANTES de este fetch)
             State.semestres.length = 0;
             dbData.semestres.forEach(s => State.semestres.push(s));
             if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
@@ -71,57 +83,62 @@ function init() {
           }
           if (dbData.settings && Object.keys(dbData.settings).length) {
             localStorage.setItem('academia_v3_settings', JSON.stringify(dbData.settings));
-            // FIX: también actualizar State.settings en memoria
             Object.assign(State.settings, dbData.settings);
           }
           console.log('✅ Datos sincronizados desde Supabase');
         } else {
-          // Usuario nuevo — migrar localStorage a Supabase
-          const localSems = localStorage.getItem('academia_v4_semestres');
-          const localSettings = localStorage.getItem('academia_v3_settings');
-          if (localSems || localSettings) {
-            console.log('📤 Migrando datos locales a Supabase...');
+          // Usuario nuevo — verificar si viene de modo invitado
+          const guestSems     = localStorage.getItem('academia_v4_semestres');
+          const guestSettings = localStorage.getItem('academia_v3_settings');
+          const hadGuestData  = guestSems || guestSettings;
+
+          if (hadGuestData) {
+            console.log('📤 Migrando datos de invitado a Supabase...');
             await window.DB.saveNow(
-              localSems ? JSON.parse(localSems) : [],
-              localSettings ? JSON.parse(localSettings) : {}
+              guestSems     ? JSON.parse(guestSems)     : [],
+              guestSettings ? JSON.parse(guestSettings) : {}
             );
+            // Limpiar flag de invitado — ahora tiene cuenta real
+            localStorage.removeItem('academia_guest_mode');
+            console.log('✅ Datos de invitado migrados a la cuenta');
           }
         }
       }
 
-      // Quitar overlay de loading
       const overlay = document.getElementById('auth-check-overlay');
       if (overlay) overlay.remove();
-      
-      // CONTINUAR CON INIT NORMAL
+
       continueInit(auth);
-      
+
     } catch (err) {
       console.error('❌ Error verificando auth:', err);
-      window.location.href = 'auth-page.html';
+      // En caso de error, si es invitado igual dejamos pasar
+      if (localStorage.getItem('academia_guest_mode') === '1') {
+        const overlay = document.getElementById('auth-check-overlay');
+        if (overlay) overlay.remove();
+        continueInit(null);
+      } else {
+        window.location.href = 'auth-page.html';
+      }
     }
   })();
 }
 
 function continueInit(auth) {
-  // ════════════════════════════════════════════════════════
-  // INIT NORMAL (solo si está autenticado)
-  // ════════════════════════════════════════════════════════
-  
+
   const now = new Date();
   document.getElementById('topbar-date').textContent = now.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
   document.getElementById('ov-date').textContent     = now.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
-  // Start live clock (12hr format, top-right of overview)
+
   function _updateOvClock() {
     const d = new Date();
     let h = d.getHours(); const m = d.getMinutes();
     const ampm = h >= 12 ? 'PM' : 'AM';
-    // Sun/moon/stars icon based on time
-    let icon = '☀️'; // default day
-    if (h >= 5 && h < 7)   icon = '🌅'; // dawn
-    else if (h >= 7 && h < 18)  icon = '☀️'; // day
-    else if (h >= 18 && h < 20) icon = '🌆'; // dusk
-    else if (h >= 20 || h < 5)  icon = '🌙'; // night
+    let icon = '☀️';
+    if      (h >= 5 && h < 7)   icon = '🌅';
+    else if (h >= 7 && h < 18)  icon = '☀️';
+    else if (h >= 18 && h < 20) icon = '🌆';
+    else if (h >= 20 || h < 5)  icon = '🌙';
     h = h % 12 || 12;
     const hStr = String(h).padStart(2,'0');
     const mStr = String(m).padStart(2,'0');
@@ -134,52 +151,47 @@ function continueInit(auth) {
   }
   _updateOvClock();
   setInterval(_updateOvClock, 10000);
-  const h = now.getHours();
-  
-  // Obtener nombre real del usuario autenticado (Google)
+
+  // Nombre del usuario (Google o "Invitado")
   if (auth && auth.name) {
-    window._currentUserName = auth.name.split(' ')[0]; // Primer nombre
+    window._currentUserName = auth.name.split(' ')[0];
+  } else {
+    window._currentUserName = 'Invitado';
   }
 
-  
   document.getElementById('ov-greeting').textContent = _getGreeting();
-
   document.documentElement.setAttribute('data-theme', State.settings.theme||'dark');
+
   const themeBtn = document.getElementById('theme-btn');
   if (themeBtn) themeBtn.textContent = State.settings.theme==='light' ? '🌙' : '☀️';
 
-  // Apply saved font
   _applyFont(State.settings.font || 'Syne');
-  // Apply saved accent color
   _applyAccentColor(State.settings.accentColor || '#7c6aff');
 
   const mgEl = document.getElementById('min-grade');
   if (mgEl) mgEl.value = State.settings.minGrade;
 
-  // ── Perfil: usar datos del usuario de Google ──────────────────
+  // Perfil
+  const isGuest = localStorage.getItem('academia_guest_mode') === '1';
   if (!State.settings.profile || !State.settings.profile.name) {
-    const googleName = auth?.name || auth?.email?.split('@')[0] || '';
+    const googleName = auth?.name || auth?.email?.split('@')[0] || (isGuest ? 'Invitado' : '');
     State.settings.profile = {
       name: googleName,
-      carrera: '',
-      registro: '',
-      facultad: '',
-      totalCredCarrera: 215
+      carrera: '', registro: '', facultad: '', totalCredCarrera: 215
     };
     State.settings.approvedCourses = [];
     saveState(['settings']);
   }
-  // Update greeting with real name
-  const firstName = (State.settings.profile?.name || '').split(' ')[0];
+
+  const firstName = (State.settings.profile?.name || window._currentUserName || '').split(' ')[0];
   if (firstName) {
     const grEl = document.getElementById('ov-greeting');
     if (grEl) {
       const gHour = new Date().getHours();
       const greet = gHour < 12 ? 'Buenos días' : gHour < 19 ? 'Buenas tardes' : 'Buenas noches';
-      grEl.textContent = `${greet}, ${firstName} 👋`;
+      grEl.textContent = `${greet}, ${firstName} ${isGuest ? '👀' : '👋'}`;
     }
   }
-  // ────────────────────────────────────────────────────────────────────────
 
   fillMatSels(); fillPomSel(); fillTopicMatSel(); fillNotesSel(); fillExamSel();
   renderOverview(); renderMaterias(); updateBadge(); updatePomDots(); pomReset(); initCal();
@@ -203,7 +215,6 @@ function continueInit(auth) {
     if (sr && sg && !sr.contains(e.target) && e.target !== sg) sr.style.display='none';
     const p  = document.getElementById('comp-popup');
     if (p && p.style.display==='block' && !p.contains(e.target)) closeCompPopup();
-
     const dd = document.getElementById('sem-sw-dd');
     const sb = document.querySelector('.sidebar-bottom');
     if (dd && dd.classList.contains('open') && sb && !sb.contains(e.target)) dd.classList.remove('open');
@@ -218,100 +229,82 @@ function continueInit(auth) {
     o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })
   );
 
-  // ── Auto-sync cuando el usuario vuelve a la pestaña o app ──────
-  let _lastSync = Date.now();
-  async function _syncFromSupabase(force = false) {
-    if (!window.DB || !window.DB._ready) return;
-    const now = Date.now();
-    if (!force && now - _lastSync < 5000) return; // no sync si fue hace menos de 5s
+  // ── Auto-sync — solo si NO es invitado ────────────────────────
+  if (!isGuest && window.DB) {
+    let _lastSync = Date.now();
 
-    // GUARD: si hubo modificaciones locales en los últimos 30s, NO sobreescribir.
-    // Esto evita que un sync instantáneo borre cambios que aún no llegaron a Supabase.
-    const msSinceLocalMod = now - (window._localModifiedAt || 0);
-    if (msSinceLocalMod < 30000) {
-      console.log('⏭️ Sync omitido: cambios locales recientes (' + Math.round(msSinceLocalMod/1000) + 's)');
-      return;
-    }
-
-    _lastSync = now;
-    const dbData = await window.DB.load();
-    if (!dbData) return;
-    let changed = false;
-    if (dbData.semestres && dbData.semestres.length) {
-      const localJson = localStorage.getItem('academia_v4_semestres');
-      const dbJson = JSON.stringify(dbData.semestres);
-      if (localJson !== dbJson) {
-        localStorage.setItem('academia_v4_semestres', dbJson);
-        changed = true;
+    async function _syncFromSupabase(force = false) {
+      if (!window.DB || !window.DB._ready) return;
+      const now = Date.now();
+      if (!force && now - _lastSync < 5000) return;
+      const msSinceLocalMod = now - (window._localModifiedAt || 0);
+      if (msSinceLocalMod < 30000) {
+        console.log('⏭️ Sync omitido: cambios locales recientes (' + Math.round(msSinceLocalMod/1000) + 's)');
+        return;
       }
-    }
-    if (dbData.settings && Object.keys(dbData.settings).length) {
-      const localJson = localStorage.getItem('academia_v3_settings');
-      const dbJson = JSON.stringify(dbData.settings);
-      if (localJson !== dbJson) {
-        localStorage.setItem('academia_v3_settings', dbJson);
-        changed = true;
-      }
-    }
-    if (changed) {
-      console.log('🔄 Datos actualizados desde Supabase — recargando UI...');
-      // FIX: actualizar State directo desde dbData (no re-parsear localStorage)
+      _lastSync = now;
+      const dbData = await window.DB.load();
+      if (!dbData) return;
+      let changed = false;
       if (dbData.semestres && dbData.semestres.length) {
-        State.semestres.length = 0;
-        dbData.semestres.forEach(s => State.semestres.push(s));
-        if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
-        getMat.bust();
+        const localJson = localStorage.getItem('academia_v4_semestres');
+        const dbJson = JSON.stringify(dbData.semestres);
+        if (localJson !== dbJson) { localStorage.setItem('academia_v4_semestres', dbJson); changed = true; }
       }
       if (dbData.settings && Object.keys(dbData.settings).length) {
-        Object.assign(State.settings, dbData.settings);
+        const localJson = localStorage.getItem('academia_v3_settings');
+        const dbJson = JSON.stringify(dbData.settings);
+        if (localJson !== dbJson) { localStorage.setItem('academia_v3_settings', dbJson); changed = true; }
       }
-      // FIX: re-renderizar TODO
-      try {
-        renderOverview     && renderOverview();
-        renderMaterias     && renderMaterias();
-        renderTasks        && renderTasks();
-        renderCalendar     && renderCalendar();
-        renderGrades       && renderGrades();
-        updateGPADisplay   && updateGPADisplay();
-        renderSemestresList && renderSemestresList();
-        fillMatSels        && fillMatSels();
-        // FIX: Flashcards — usar classList.contains('active'), no style.display
-        const _fcPage = document.getElementById('page-flashcards');
-        if (_fcPage && _fcPage.classList.contains('active')) {
-          renderFlashcards && renderFlashcards();
+      if (changed) {
+        console.log('🔄 Datos actualizados desde Supabase — recargando UI...');
+        if (dbData.semestres && dbData.semestres.length) {
+          State.semestres.length = 0;
+          dbData.semestres.forEach(s => State.semestres.push(s));
+          if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
+          getMat.bust();
         }
-      } catch(e) { console.warn('Sync re-render error', e); }
+        if (dbData.settings && Object.keys(dbData.settings).length) {
+          Object.assign(State.settings, dbData.settings);
+        }
+        try {
+          renderOverview     && renderOverview();
+          renderMaterias     && renderMaterias();
+          renderTasks        && renderTasks();
+          renderCalendar     && renderCalendar();
+          renderGrades       && renderGrades();
+          updateGPADisplay   && updateGPADisplay();
+          renderSemestresList && renderSemestresList();
+          fillMatSels        && fillMatSels();
+          const _fcPage = document.getElementById('page-flashcards');
+          if (_fcPage && _fcPage.classList.contains('active')) {
+            renderFlashcards && renderFlashcards();
+          }
+        } catch(e) { console.warn('Sync re-render error', e); }
+      }
     }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
+      }
+      if (document.visibilityState === 'visible') _syncFromSupabase();
+    });
+    window.addEventListener('pagehide', () => {
+      if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
+    });
+    window.addEventListener('focus', () => _syncFromSupabase());
+
+    setInterval(() => {
+      const canSync = (Date.now() - (window._localModifiedAt || 0)) > 30000;
+      if (canSync && window.DB && window.DB._ready) {
+        _lastSync = 0;
+        _syncFromSupabase();
+      }
+    }, 90000);
   }
 
-  // Sync al volver al tab/app
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      // FIX: flush save pendiente ANTES de que la página se oculte/cierre
-      if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
-    }
-    if (document.visibilityState === 'visible') _syncFromSupabase();
-  });
-  window.addEventListener('pagehide', () => {
-    // Último recurso: flush sincrónico antes de cerrar
-    if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
-  });
-  window.addEventListener('focus', () => _syncFromSupabase());
-
-  // Polling cada 90s para sincronización entre dispositivos (PC ↔ móvil)
-  // Solo sincroniza si no hay cambios locales recientes (evita conflictos)
-  setInterval(() => {
-    const canSync = (Date.now() - (window._localModifiedAt || 0)) > 30000;
-    if (canSync && window.DB && window.DB._ready) {
-      _lastSync = 0; // forzar que el guard de 5s no bloquee
-      _syncFromSupabase();
-    }
-  }, 90000);
-
-  // Mostrar onboarding si es primera vez
   _maybeShowOnboarding();
-
-  // Inicializar recordatorios / banners
   initNotifications();
 
 } // FIN continueInit()
