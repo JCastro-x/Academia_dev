@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Academia — Admin Panel</title>
-  
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon-admin.ico">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -30,7 +30,6 @@
     }
 
     /* ── AUTH SCREEN ── */
-    /*Probando*//*Probando*//*Probando*//*Probando*//*Probando*/
     #auth-screen {
       min-height: 100vh; display: flex;
       align-items: center; justify-content: center;
@@ -583,22 +582,26 @@
         <table class="users-table">
           <thead>
             <tr>
-              <th>USER ID</th>
+              <th>EMAIL</th>
               <th>SEMESTRES</th>
-              <th>ÚLTIMA ACTIVIDAD</th>
+              <th>ÚLTIMO ACCESO</th>
               <th>ESTADO</th>
             </tr>
           </thead>
           <tbody>
             ${users.map(u => {
-              const diff  = now - new Date(u.updated_at).getTime();
+              const lastSeen = u.updated_at || u.last_sign_in_at;
+              const diff  = now - new Date(lastSeen).getTime();
               const days  = Math.floor(diff / 86400000);
               const isActive = days <= 7;
+              const emailDisplay = u.email
+                ? (u.email.length > 26 ? u.email.slice(0,26) + '…' : u.email)
+                : (u.user_id ? u.user_id.slice(0,14) + '…' : '—');
               return `
                 <tr>
-                  <td class="uid-cell" title="${u.user_id}">${u.user_id.slice(0,12)}...</td>
-                  <td style="font-family:'Space Mono',monospace;font-size:11px;">${u.num_semestres ?? 0}</td>
-                  <td style="font-size:11px;color:var(--text2);">${_relTime(u.updated_at)}</td>
+                  <td class="uid-cell" title="${u.email || u.user_id}" style="max-width:180px;">${emailDisplay}</td>
+                  <td style="font-family:'Space Mono',monospace;font-size:11px;text-align:center;">${u.num_semestres ?? 0}</td>
+                  <td style="font-size:11px;color:var(--text2);">${lastSeen ? _relTime(lastSeen) : '—'}</td>
                   <td>
                     <span class="badge ${isActive ? 'badge-green' : 'badge-gray'}">
                       ${isActive ? 'ACTIVO' : 'INACTIVO'}

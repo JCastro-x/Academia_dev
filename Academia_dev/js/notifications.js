@@ -27,7 +27,7 @@ function scheduleTaskReminders() {
 
   const note = (title, body, tag, rn = true) =>
     navigator.serviceWorker.ready.then(r => r.showNotification(title, {
-      body, icon: '/assets/icons/icon-192.png', badge: '/assets/icons/icon-32.png',
+      body, icon: '/assets/icons/icon-192.png',
       tag, renotify: rn, data: { url: '/index.html' },
       actions: [{ action: 'open', title: 'Ver tareas' }]
     })).catch(() => {});
