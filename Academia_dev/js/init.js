@@ -183,23 +183,49 @@ function continueInit(auth) {
     saveState(['settings']);
   }
 
-  const firstName = (State.settings.profile?.name || window._currentUserName || '').split(' ')[0];
-  if (firstName) {
+  // ── Función que se ejecuta cuando los partials ya están en el DOM ──
+  function _onPartialsReady() {
+    const firstName = (State.settings.profile?.name || window._currentUserName || '').split(' ')[0];
+    const gHour = new Date().getHours();
+    const greet = gHour < 12 ? 'Buenos días' : gHour < 19 ? 'Buenas tardes' : 'Buenas noches';
+
+    // Greeting con nombre real
     const grEl = document.getElementById('ov-greeting');
-    if (grEl) {
-      const gHour = new Date().getHours();
-      const greet = gHour < 12 ? 'Buenos días' : gHour < 19 ? 'Buenas tardes' : 'Buenas noches';
-      grEl.textContent = `${greet}, ${firstName} ${isGuest ? '👀' : '👋'}`;
+    if (grEl) grEl.textContent = `${greet}, ${firstName || 'estudiante'} ${isGuest ? '👀' : '👋'}`;
+
+    // Fecha en topbar y overview (los elementos ya existen)
+    const now2 = new Date();
+    const dateEl = document.getElementById('ov-date');
+    if (dateEl) dateEl.textContent = now2.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+
+    const minGradeEl = document.getElementById('min-grade');
+    if (minGradeEl) {
+      minGradeEl.value = State.settings.minGrade;
+      minGradeEl.addEventListener('input', () => {
+        State.settings.minGrade = parseFloat(minGradeEl.value)||70;
+        saveState(['settings']);
+      });
     }
+
+    ['cfg-prev-avg','cfg-prev-cred'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', _updateConfigPreview);
+    });
+
+    fillMatSels(); fillPomSel(); fillTopicMatSel(); fillNotesSel(); fillExamSel();
+    renderOverview(); renderMaterias(); updateBadge(); updatePomDots(); pomReset(); initCal();
+    renderSemesterBadge();
+
+    document.querySelectorAll('.modal-overlay').forEach(o =>
+      o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })
+    );
   }
 
-  fillMatSels(); fillPomSel(); fillTopicMatSel(); fillNotesSel(); fillExamSel();
-  renderOverview(); renderMaterias(); updateBadge(); updatePomDots(); pomReset(); initCal();
-  renderSemesterBadge();
-
-  ['cfg-prev-avg','cfg-prev-cred'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', _updateConfigPreview);
-  });
+  // Si los partials ya están → render inmediato; si no → esperar el evento
+  if (document.getElementById('page-overview')) {
+    _onPartialsReady();
+  } else {
+    document.addEventListener('partials-loaded', _onPartialsReady, { once: true });
+  }
 
   document.addEventListener('keydown', e => {
     const modal = document.getElementById('modal-canvas');
@@ -219,15 +245,6 @@ function continueInit(auth) {
     const sb = document.querySelector('.sidebar-bottom');
     if (dd && dd.classList.contains('open') && sb && !sb.contains(e.target)) dd.classList.remove('open');
   });
-
-  mgEl?.addEventListener('input', () => {
-    State.settings.minGrade = parseFloat(mgEl.value)||70;
-    saveState(['settings']);
-  });
-
-  document.querySelectorAll('.modal-overlay').forEach(o =>
-    o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })
-  );
 
   // ── Auto-sync — solo si NO es invitado ────────────────────────
   if (!isGuest && window.DB) {
