@@ -1,0 +1,7 @@
+# Academia Dev — robots.txt
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /app.html
+
+Sitemap: https://academia-dev-jcx-team.vercel.app/sitemap.xml
