@@ -1,9 +1,11 @@
 /* ══════════════════════════════════════════════════════════════
-   ACADEMIA — MOBILE BUG FIXES  (v2 — selectores reales)
+   ACADEMIA — MOBILE BUG FIXES  v3
+   Poner en app.html DESPUÉS de mobile.css:
+   <link rel="stylesheet" href="css/mobile-fixes.css">
    ══════════════════════════════════════════════════════════════ */
 
 /* ──────────────────────────────────────────────────────────────
-   1. TOPBAR — una sola fila, sin overflow
+   1. TOPBAR — una fila, sin overflow
    ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .topbar {
@@ -14,27 +16,28 @@
     gap: 6px !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    overflow: visible !important;
+    overflow: visible !important;  /* NO hidden: recorta dropdowns */
   }
 
+  /* Título: crece pero se trunca */
   #page-title {
     flex: 1 1 0 !important;
     min-width: 0 !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
 
+  /* Bloque derecho: no se encoge */
   .topbar-right {
     flex-shrink: 0 !important;
     display: flex !important;
     align-items: center !important;
     gap: 4px !important;
-    min-width: 0 !important;
   }
 
-  /* Ocultar lo que no cabe */
+  /* Ocultar lo que sobra */
   #topbar-date,
   #theme-btn,
   #ui-sound-btn,
@@ -45,19 +48,10 @@
   }
 
   /* Búsqueda compacta */
-  .search-wrap {
-    width: 90px !important;
-    min-width: 0 !important;
-    flex-shrink: 1 !important;
-    position: relative !important;
-  }
-  #global-search {
-    width: 100% !important;
-    font-size: 12px !important;
-    box-sizing: border-box !important;
-  }
+  .search-wrap { width: 90px !important; flex-shrink: 1 !important; min-width: 0 !important; }
+  #global-search { width: 100% !important; font-size: 12px !important; box-sizing: border-box !important; }
 
-  /* ⚡ Agregar */
+  /* Botón ⚡ Agregar */
   .topbar-right .btn-primary {
     padding: 6px 10px !important;
     font-size: 11px !important;
@@ -68,21 +62,63 @@
 
 
 /* ──────────────────────────────────────────────────────────────
-   2. POMODORO — sin overflow horizontal
+   2. CALIFICACIONES — panel derecho (220px) no desborda
+      El JS genera: body.style = 'display:grid;grid-template-columns:1fr 220px;'
+      y panel.style = 'padding:16px 18px;border-left:1px solid...'
    ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  #page-pomodoro {
-    overflow-x: hidden !important;
+  /* El grid de 2 col → 1 col */
+  .grades-block > div[style*="grid-template-columns:1fr 220px"],
+  .grades-block > div[style*="grid-template-columns: 1fr 220px"] {
+    grid-template-columns: 1fr !important;
   }
 
-  /* Cards */
-  #page-pomodoro .card {
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    min-width: 0 !important;
+  /* Panel derecho: quitar border-left, añadir border-top */
+  .grades-block > div > div[style*="border-left:1px solid"],
+  .grades-block > div > div[style*="border-left: 1px solid"] {
+    border-left: none !important;
+    border-top: 1px solid var(--border) !important;
+    padding: 12px 14px !important;
   }
 
-  /* Slider de volumen */
+  /* Header de la materia: quitar flex rígido */
+  .grades-block > div[style*="border-left:4px solid"],
+  .grades-block > div[style*="border-left: 4px solid"] {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Zona min / ganada chips — wrap */
+  .usac-strip { flex-wrap: wrap !important; }
+
+  /* Proyección / mínimo: apilados en móvil */
+  .grades-block > div[style*="display:flex;gap:0"] {
+    flex-direction: column !important;
+  }
+  .grades-block > div[style*="display:flex;gap:0"] > div[style*="border-right"] {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  /* Grade rows */
+  .grade-row {
+    grid-template-columns: 1fr 60px 52px !important;
+    gap: 4px !important;
+  }
+  .grade-pct, .grade-bar { display: none !important; }
+  .grade-input { font-size: 14px !important; padding: 5px 6px !important; }
+  .grade-label { font-size: 11px !important; }
+}
+
+
+/* ──────────────────────────────────────────────────────────────
+   3. POMODORO — contenedor y slider sin overflow
+   ────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  #page-pomodoro { overflow-x: hidden !important; }
+  #page-pomodoro .card { overflow: hidden !important; box-sizing: border-box !important; min-width: 0 !important; }
+
+  /* Slider de volumen — SIEMPRE full width */
   #pom-vol,
   #page-pomodoro input[type="range"] {
     width: 100% !important;
@@ -91,36 +127,34 @@
     display: block !important;
   }
 
-  /* Grids de 2 col → 1 col (targeting inline styles) */
+  /* Grids de 2 columnas con inline style → columna */
   #page-pomodoro div[style*="grid-template-columns:1fr 1fr"],
   #page-pomodoro div[style*="grid-template-columns: 1fr 1fr"],
-  #page-pomodoro .card-body[style*="grid-template-columns"] {
+  #page-pomodoro div[style*="grid-template-columns:1fr 160px"],
+  #page-pomodoro div[style*="grid-template-columns:160px 1fr"] {
     display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important;
+    gap: 10px !important;
   }
 
-  /* Anillo SVG */
+  /* Anillo del pomodoro */
   .pom-ring, .pom-svg {
-    width: min(170px, 75vw) !important;
-    height: min(170px, 75vw) !important;
+    width: min(160px, 72vw) !important;
+    height: min(160px, 72vw) !important;
   }
 
   /* Timer principal */
-  .pom-time {
-    font-size: clamp(28px, 8vw, 38px) !important;
-  }
+  .pom-time { font-size: clamp(28px, 8vw, 38px) !important; }
 
-  /* Botón música full width */
+  /* Botón música */
   .pom-music-btn {
     width: 100% !important;
-    box-sizing: border-box !important;
     justify-content: center !important;
+    box-sizing: border-box !important;
   }
 
-  /* Status text del sonido */
-  #pom-music-status,
-  #sound-now-playing {
+  /* Status text */
+  #pom-music-status, #sound-now-playing {
     font-size: 11px !important;
     white-space: normal !important;
     word-break: break-word !important;
@@ -129,54 +163,47 @@
 
 
 /* ──────────────────────────────────────────────────────────────
-   3. CURSOS APROBADOS — columnas alineadas
+   4. CURSOS APROBADOS (perfil) — columnas alineadas
    ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  #approved-courses-list {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
+  #approved-courses-list { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
 
-  /* Si JS genera una <table> */
+  /* Si el JS genera <table> */
   #approved-courses-list table {
     width: 100% !important;
     border-collapse: collapse !important;
     table-layout: fixed !important;
   }
-
   #approved-courses-list td,
   #approved-courses-list th {
     font-size: 11px !important;
-    padding: 6px !important;
+    padding: 5px 4px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     vertical-align: middle !important;
   }
-
-  /* Columna nombre: la más ancha */
+  /* Primera col = nombre: la más ancha */
   #approved-courses-list td:first-child,
   #approved-courses-list th:first-child {
-    max-width: 120px !important;
+    max-width: 110px !important;
+    min-width: 80px !important;
   }
+  /* Columnas numéricas: fijas y centradas */
+  #approved-courses-list td:nth-child(2), #approved-courses-list th:nth-child(2) { width: 54px !important; text-align: center !important; }
+  #approved-courses-list td:nth-child(3), #approved-courses-list th:nth-child(3) { width: 36px !important; text-align: center !important; }
+  #approved-courses-list td:nth-child(4), #approved-courses-list th:nth-child(4) { width: 46px !important; text-align: center !important; }
 
-  /* Columnas numéricas: centro */
-  #approved-courses-list td:not(:first-child),
-  #approved-courses-list th:not(:first-child) {
-    text-align: center !important;
-    width: 50px !important;
-  }
-
-  /* Si JS genera divs en lugar de tabla */
+  /* Si el JS genera divs con grid */
   #approved-courses-list > div[style] {
     display: grid !important;
-    grid-template-columns: 1fr 54px 36px 48px !important;
+    grid-template-columns: 1fr 54px 36px 46px !important;
     gap: 4px !important;
     align-items: center !important;
-    padding: 7px 8px !important;
+    padding: 7px 6px !important;
     box-sizing: border-box !important;
+    border-bottom: 1px solid var(--border) !important;
   }
-
   #approved-courses-list > div > *:first-child {
     white-space: nowrap !important;
     overflow: hidden !important;
@@ -184,34 +211,30 @@
     font-size: 11px !important;
     min-width: 0 !important;
   }
-
   #approved-courses-list > div > *:not(:first-child) {
     text-align: center !important;
     font-size: 11px !important;
     white-space: nowrap !important;
   }
+
+  /* Stats del perfil — 3 col solo si caben, sino 1 col */
+  #page-perfil div[style*="grid-template-columns:repeat(3,1fr)"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+}
+@media (max-width: 380px) {
+  #page-perfil div[style*="grid-template-columns:repeat(3,1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 
 /* ──────────────────────────────────────────────────────────────
-   4. GENERAL — sin scroll horizontal
+   5. GENERAL — cero scroll horizontal
    ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  html, body {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
-  }
-  .app, .main, .content {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
-    box-sizing: border-box !important;
-  }
-  .page {
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
-  .card {
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
+  html, body { overflow-x: hidden !important; max-width: 100vw !important; }
+  .app, .main, .content { overflow-x: hidden !important; max-width: 100vw !important; box-sizing: border-box !important; }
+  .page, .card { min-width: 0 !important; box-sizing: border-box !important; }
 }
