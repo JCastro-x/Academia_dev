@@ -1,79 +1,107 @@
 /* ══════════════════════════════════════════════════════════════
-   ACADEMIA — MOBILE BUG FIXES  v3
-   Poner en app.html DESPUÉS de mobile.css:
+   ACADEMIA — MOBILE BUG FIXES  v4 (selectores 100% reales)
+   Agregar en app.html después de mobile.css:
    <link rel="stylesheet" href="css/mobile-fixes.css">
    ══════════════════════════════════════════════════════════════ */
 
+
 /* ──────────────────────────────────────────────────────────────
-   1. TOPBAR — una fila, sin overflow
+   1. TOPBAR — ocultar solo la flechita del sidebar toggle
    ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .topbar {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    padding: 8px 10px !important;
-    gap: 6px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;  /* NO hidden: recorta dropdowns */
-  }
-
-  /* Título: crece pero se trunca */
-  #page-title {
-    flex: 1 1 0 !important;
-    min-width: 0 !important;
-    font-size: 14px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  /* Bloque derecho: no se encoge */
-  .topbar-right {
-    flex-shrink: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-  }
-
-  /* Ocultar lo que sobra */
-  #topbar-date,
-  #theme-btn,
-  #ui-sound-btn,
-  .topbar-right button[onclick*="openAddClassModal"],
-  .topbar-right button[onclick*="openExamMode"],
-  .topbar-right button[onclick*="openConfigModal"] {
+  /* La flechita ‹ que aparece en móvil */
+  .sidebar-toggle,
+  #sidebar-toggle-btn {
     display: none !important;
-  }
-
-  /* Búsqueda compacta */
-  .search-wrap { width: 90px !important; flex-shrink: 1 !important; min-width: 0 !important; }
-  #global-search { width: 100% !important; font-size: 12px !important; box-sizing: border-box !important; }
-
-  /* Botón ⚡ Agregar */
-  .topbar-right .btn-primary {
-    padding: 6px 10px !important;
-    font-size: 11px !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
   }
 }
 
 
 /* ──────────────────────────────────────────────────────────────
-   2. CALIFICACIONES — panel derecho (220px) no desborda
-      El JS genera: body.style = 'display:grid;grid-template-columns:1fr 220px;'
-      y panel.style = 'padding:16px 18px;border-left:1px solid...'
+   2. POMODORO — grids de 2 col → 1 col en móvil
    ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* El grid de 2 col → 1 col */
+  #page-pomodoro { overflow-x: hidden !important; }
+  #page-pomodoro .card { min-width: 0 !important; box-sizing: border-box !important; }
+
+  /* FILA 1: Timer + Cronómetro (2 col → 1 col) */
+  #page-pomodoro > div[style*="grid-template-columns:1fr 1fr"]:first-child,
+  #page-pomodoro > div[style*="grid-template-columns: 1fr 1fr"]:first-child {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* FILA 2 (Ambiente Sonoro): el grid interior del card-body */
+  #page-pomodoro .card-body > div[style*="grid-template-columns:1fr 1fr"],
+  #page-pomodoro .card-body > div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* FILA 3: Stats + Historial (2 col → 1 col) */
+  #page-pomodoro > div[style*="grid-template-columns:1fr 1fr"]:last-child,
+  #page-pomodoro > div[style*="grid-template-columns: 1fr 1fr"]:last-child {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Selector de materia y tarea — no tan grandes */
+  #pom-subject, #pom-task-sel { font-size: 13px !important; }
+
+  /* Anillo del pomodoro */
+  .pom-ring, .pom-svg {
+    width: min(160px, 65vw) !important;
+    height: min(160px, 65vw) !important;
+  }
+
+  /* Timer */
+  .pom-time { font-size: clamp(26px, 8vw, 38px) !important; }
+
+  /* Sliders: siempre full width, nunca se salen */
+  #pom-vol, #noise-vol {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    flex: 1 !important;
+  }
+
+  /* Fila slider: no desborda */
+  #page-pomodoro div[style*="display:flex;align-items:center;gap:8px"] {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Botón Cargar MP3 y botón reproducir: full width */
+  #page-pomodoro .pom-music-btn[style*="width:100%"] {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+  }
+
+  /* Cronómetro: números grandes → más pequeños */
+  #chrono-work {
+    font-size: clamp(32px, 10vw, 52px) !important;
+    letter-spacing: 1px !important;
+  }
+  #chrono-break, #chrono-total {
+    font-size: clamp(20px, 6vw, 28px) !important;
+    letter-spacing: 0 !important;
+  }
+
+  /* Sub-bloques descanso/real: su grid 1fr 1fr ya queda bien en móvil */
+}
+
+
+/* ──────────────────────────────────────────────────────────────
+   3. CALIFICACIONES — panel derecho (220px) se apila
+   ────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* El JS genera: body.style = 'display:grid;grid-template-columns:1fr 220px;' */
   .grades-block > div[style*="grid-template-columns:1fr 220px"],
   .grades-block > div[style*="grid-template-columns: 1fr 220px"] {
     grid-template-columns: 1fr !important;
   }
 
-  /* Panel derecho: quitar border-left, añadir border-top */
+  /* Panel derecho — quitar border-left */
   .grades-block > div > div[style*="border-left:1px solid"],
   .grades-block > div > div[style*="border-left: 1px solid"] {
     border-left: none !important;
@@ -81,18 +109,9 @@
     padding: 12px 14px !important;
   }
 
-  /* Header de la materia: quitar flex rígido */
-  .grades-block > div[style*="border-left:4px solid"],
-  .grades-block > div[style*="border-left: 4px solid"] {
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-  }
-
-  /* Zona min / ganada chips — wrap */
-  .usac-strip { flex-wrap: wrap !important; }
-
-  /* Proyección / mínimo: apilados en móvil */
-  .grades-block > div[style*="display:flex;gap:0"] {
+  /* Proyección + mínimo: de flex horizontal → vertical */
+  .grades-block > div[style*="display:flex;gap:0"],
+  .grades-block > div[style*="display:flex;gap: 0"] {
     flex-direction: column !important;
   }
   .grades-block > div[style*="display:flex;gap:0"] > div[style*="border-right"] {
@@ -101,10 +120,7 @@
   }
 
   /* Grade rows */
-  .grade-row {
-    grid-template-columns: 1fr 60px 52px !important;
-    gap: 4px !important;
-  }
+  .grade-row { grid-template-columns: 1fr 60px 52px !important; gap: 4px !important; }
   .grade-pct, .grade-bar { display: none !important; }
   .grade-input { font-size: 14px !important; padding: 5px 6px !important; }
   .grade-label { font-size: 11px !important; }
@@ -112,97 +128,78 @@
 
 
 /* ──────────────────────────────────────────────────────────────
-   3. POMODORO — contenedor y slider sin overflow
+   4. CURSOS APROBADOS — texto truncado, columnas alineadas
+   El contenido es generado por JS (renderProfilePage) como HTML
+   dentro de #approved-courses-list. Cubrimos tabla y divs.
    ────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  #page-pomodoro { overflow-x: hidden !important; }
-  #page-pomodoro .card { overflow: hidden !important; box-sizing: border-box !important; min-width: 0 !important; }
-
-  /* Slider de volumen — SIEMPRE full width */
-  #pom-vol,
-  #page-pomodoro input[type="range"] {
+  #approved-courses-list {
+    overflow-x: hidden !important;
     width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    display: block !important;
-  }
-
-  /* Grids de 2 columnas con inline style → columna */
-  #page-pomodoro div[style*="grid-template-columns:1fr 1fr"],
-  #page-pomodoro div[style*="grid-template-columns: 1fr 1fr"],
-  #page-pomodoro div[style*="grid-template-columns:1fr 160px"],
-  #page-pomodoro div[style*="grid-template-columns:160px 1fr"] {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-  }
-
-  /* Anillo del pomodoro */
-  .pom-ring, .pom-svg {
-    width: min(160px, 72vw) !important;
-    height: min(160px, 72vw) !important;
-  }
-
-  /* Timer principal */
-  .pom-time { font-size: clamp(28px, 8vw, 38px) !important; }
-
-  /* Botón música */
-  .pom-music-btn {
-    width: 100% !important;
-    justify-content: center !important;
     box-sizing: border-box !important;
   }
 
-  /* Status text */
-  #pom-music-status, #sound-now-playing {
-    font-size: 11px !important;
-    white-space: normal !important;
-    word-break: break-word !important;
-  }
-}
-
-
-/* ──────────────────────────────────────────────────────────────
-   4. CURSOS APROBADOS (perfil) — columnas alineadas
-   ────────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  #approved-courses-list { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
-
-  /* Si el JS genera <table> */
+  /* ── Si JS genera <table> ── */
   #approved-courses-list table {
     width: 100% !important;
-    border-collapse: collapse !important;
     table-layout: fixed !important;
+    border-collapse: collapse !important;
   }
-  #approved-courses-list td,
-  #approved-courses-list th {
+  #approved-courses-list th,
+  #approved-courses-list td {
     font-size: 11px !important;
     padding: 5px 4px !important;
+    vertical-align: middle !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    vertical-align: middle !important;
   }
-  /* Primera col = nombre: la más ancha */
-  #approved-courses-list td:first-child,
-  #approved-courses-list th:first-child {
-    max-width: 110px !important;
-    min-width: 80px !important;
+  /* CURSO: la columna más ancha, con ellipsis */
+  #approved-courses-list th:nth-child(1),
+  #approved-courses-list td:nth-child(1) {
+    width: auto !important;
+    max-width: 100px !important;
   }
-  /* Columnas numéricas: fijas y centradas */
-  #approved-courses-list td:nth-child(2), #approved-courses-list th:nth-child(2) { width: 54px !important; text-align: center !important; }
-  #approved-courses-list td:nth-child(3), #approved-courses-list th:nth-child(3) { width: 36px !important; text-align: center !important; }
-  #approved-courses-list td:nth-child(4), #approved-courses-list th:nth-child(4) { width: 46px !important; text-align: center !important; }
+  /* CODIGO */
+  #approved-courses-list th:nth-child(2),
+  #approved-courses-list td:nth-child(2) {
+    width: 48px !important;
+    text-align: center !important;
+  }
+  /* CRED */
+  #approved-courses-list th:nth-child(3),
+  #approved-courses-list td:nth-child(3) {
+    width: 34px !important;
+    text-align: center !important;
+  }
+  /* NOTA */
+  #approved-courses-list th:nth-child(4),
+  #approved-courses-list td:nth-child(4) {
+    width: 44px !important;
+    text-align: center !important;
+  }
+  /* SEMESTRE (si existe 5ta col) */
+  #approved-courses-list th:nth-child(5),
+  #approved-courses-list td:nth-child(5) {
+    display: none !important;  /* ocultar en móvil, no cabe */
+  }
 
-  /* Si el JS genera divs con grid */
-  #approved-courses-list > div[style] {
+  /* Botones de acción en cada fila */
+  #approved-courses-list td:last-child,
+  #approved-courses-list th:last-child {
+    width: 52px !important;
+    text-align: center !important;
+  }
+
+  /* ── Si JS genera divs ── */
+  #approved-courses-list > div {
     display: grid !important;
-    grid-template-columns: 1fr 54px 36px 46px !important;
-    gap: 4px !important;
+    grid-template-columns: 1fr 48px 34px 44px auto !important;
+    gap: 3px !important;
     align-items: center !important;
-    padding: 7px 6px !important;
+    padding: 7px 4px !important;
     box-sizing: border-box !important;
-    border-bottom: 1px solid var(--border) !important;
+    width: 100% !important;
   }
   #approved-courses-list > div > *:first-child {
     white-space: nowrap !important;
@@ -215,17 +212,6 @@
     text-align: center !important;
     font-size: 11px !important;
     white-space: nowrap !important;
-  }
-
-  /* Stats del perfil — 3 col solo si caben, sino 1 col */
-  #page-perfil div[style*="grid-template-columns:repeat(3,1fr)"] {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 8px !important;
-  }
-}
-@media (max-width: 380px) {
-  #page-perfil div[style*="grid-template-columns:repeat(3,1fr)"] {
-    grid-template-columns: 1fr !important;
   }
 }
 
