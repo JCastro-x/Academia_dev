@@ -206,10 +206,10 @@ function _renderOverview() {
   }
 
   // Fondo + badge con el MISMO color según días restantes
-  const _RED    = { bg:'rgba(248,113,113,.18)', border:'#f87171', color:'#f87171', badgeBg:'rgba(248,113,113,.28)' };
-  const _YELLOW = { bg:'rgba(251,191,36,.13)',  border:'#fbbf24', color:'#fbbf24', badgeBg:'rgba(251,191,36,.25)'  };
-  const _GREEN  = { bg:'rgba(74,222,128,.10)',  border:'#4ade80', color:'#4ade80', badgeBg:'rgba(74,222,128,.20)'  };
-  const _NONE   = { bg:'',                      border:'',        color:'var(--text3)', badgeBg:'rgba(255,255,255,.06)' };
+  const _RED    = { bg:'rgba(248,113,113,.22)', border:'#f87171', color:'#fff',    badgeBg:'rgba(248,113,113,.85)', textBg:'#f87171' };
+  const _YELLOW = { bg:'rgba(251,191,36,.18)',  border:'#fbbf24', color:'#1a1a1a', badgeBg:'rgba(251,191,36,.88)',  textBg:'#fbbf24' };
+  const _GREEN  = { bg:'rgba(74,222,128,.15)',  border:'#4ade80', color:'#fff',    badgeBg:'rgba(74,222,128,.80)',  textBg:'#4ade80' };
+  const _NONE   = { bg:'',                      border:'',        color:'var(--text3)', badgeBg:'rgba(255,255,255,.10)', textBg:'transparent' };
 
   function _palette(dl) {
     if (dl === null) return _NONE;
@@ -246,26 +246,33 @@ function _renderOverview() {
     const dueD     = t.due ? new Date(t.due + 'T00:00:00') : null;
     const daysLeft = dueD  ? Math.ceil((dueD - today2) / 86400000) : null;
     const pal      = _palette(daysLeft);
-    const bgStyle  = pal.border ? 'background:' + pal.bg + ';border-left:3px solid ' + pal.border + ';' : '';
-    const badgeStyle = 'background:' + pal.badgeBg + ';color:' + pal.color + ';border:1px solid ' + (pal.border||'rgba(255,255,255,.15)') + ';font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;';
+    const bgStyle  = pal.border
+      ? 'background:' + pal.bg + ';border-left:4px solid ' + pal.border + ';'
+      : 'border-left:4px solid var(--border2);';
+    const badgeStyle = 'display:inline-flex;align-items:center;gap:5px;background:' + pal.badgeBg + ';color:' + pal.color + ';border-radius:10px;font-size:12px;font-weight:800;padding:6px 14px;white-space:nowrap;letter-spacing:.3px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.25);';
     const prog       = subtaskProgress(t);
-    const dueTimeStr = t.dueTime ? ' · ⏰ ' + t.dueTime : '';
-    const planStr    = t.datePlanned ? '<span style="font-size:11px;color:var(--text3);">📋 ' + fmtD(t.datePlanned) + (t.timePlanned?' '+t.timePlanned:'') + '</span>' : '';
+    const dueTimeStr = t.dueTime ? ' \u00b7 \u23f0 ' + t.dueTime : '';
+    const planStr    = t.datePlanned
+      ? '<span style="font-size:12px;color:var(--text3);">\ud83d\udccb ' + fmtD(t.datePlanned) + (t.timePlanned?' '+t.timePlanned:'') + '</span>'
+      : '';
     const prioClass  = t.priority === 'high'||t.priority === 'alta' ? 'prio-alta'
                      : t.priority === 'low' ||t.priority === 'baja' ? 'prio-baja'
                      : t.priority ? 'prio-media' : 'prio-none';
-    const mc   = m.color||'#7c6aff';
+    const mc   = m ? (m.color||'#7c6aff') : '#7c6aff';
     const type = (t.type||'TAREA').toUpperCase();
-    return '<div class="mc-task-item ' + prioClass + '" onclick="openTaskDetail(\'' + t.id + '\')" style="cursor:pointer;' + bgStyle + '">'
-      + '<div class="mc-task-info">'
-      + '<div class="mc-task-title" style="font-size:14px;font-weight:700;margin-bottom:5px;">' + t.title + '</div>'
-      + '<div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">'
-      + '<span style="background:' + mc + '33;color:' + mc + ';border:1px solid ' + mc + '66;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:800;letter-spacing:.4px;">' + type + '</span>'
-      + (t.due ? '<span style="font-family:\'Space Mono\',monospace;font-size:12px;font-weight:600;color:var(--text);">' + fmtD(t.due) + dueTimeStr + '</span>' : '')
+    const urgIcon = daysLeft === null ? '\ud83d\udccc' : daysLeft <= 0 ? '\ud83d\udd34' : daysLeft <= 3 ? '\ud83d\udfe0' : daysLeft <= 6 ? '\ud83d\udfe1' : '\ud83d\udfe2';
+    return '<div class="mc-task-item ov-task-row ' + prioClass + '" onclick="openTaskDetail(\'' + t.id + '\')" style="cursor:pointer;' + bgStyle + '">'
+      + '<div class="mc-task-info" style="flex:1;min-width:0;">'
+      + '<div class="mc-task-title" style="font-size:15px;font-weight:700;margin-bottom:7px;line-height:1.3;color:var(--text);">' + t.title + '</div>'
+      + '<div class="mc-task-meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+      + '<span style="background:' + mc + '33;color:' + mc + ';border:1px solid ' + mc + '55;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:800;letter-spacing:.5px;">' + type + '</span>'
+      + (t.due ? '<span style="font-family:\'Space Mono\',monospace;font-size:13px;font-weight:600;color:var(--text2);">\ud83d\udcc5 ' + fmtD(t.due) + dueTimeStr + '</span>' : '')
       + planStr
-      + (prog ? '<span style="font-size:11px;color:var(--text3);">' + prog.done + '/' + prog.total + ' sub.</span>' : '')
+      + (prog ? '<span style="font-size:12px;color:var(--text3);">\ud83d\udcce ' + prog.done + '/' + prog.total + ' sub.</span>' : '')
       + '</div></div>'
-      + '<span style="' + badgeStyle + '">' + _badgeText(daysLeft) + '</span>'
+      + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">'
+      + '<span style="' + badgeStyle + '">' + urgIcon + ' ' + _badgeText(daysLeft) + '</span>'
+      + '</div>'
       + '</div>';
   }
 
@@ -277,10 +284,12 @@ function _renderOverview() {
   // 2. Grupos por materia (estilo Moodle)
   Object.values(grouped).forEach(({ mat, tasks }) => {
     const cnt = tasks.length;
-    html += '<div style="padding:8px 16px 4px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);">'
-      + '<span style="font-size:15px;font-weight:800;color:' + (mat.color||'var(--accent)') + ';">' + (mat.icon||'📚') + ' ' + mat.name + '</span>'
-      + '<span style="font-size:10px;font-family:\'Space Mono\',monospace;color:var(--text3);">' + (mat.code||'') + '</span>'
-      + '<span style="font-size:10px;color:var(--text3);margin-left:auto;">' + cnt + ' pendiente' + (cnt!==1?'s':'') + '</span>'
+    const mc  = mat.color || 'var(--accent)';
+    html += '<div style="padding:10px 16px 6px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);border-left:4px solid ' + mc + ';background:rgba(255,255,255,.03);">'
+      + '<span style="font-size:16px;line-height:1;">' + (mat.icon||'📚') + '</span>'
+      + '<span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">' + mat.name + '</span>'
+      + (mat.code ? '<span style="font-size:10px;font-family:\'Space Mono\',monospace;color:var(--text3);background:var(--surface2);padding:2px 7px;border-radius:5px;">' + mat.code + '</span>' : '')
+      + '<span style="font-size:11px;color:var(--text3);margin-left:auto;background:var(--surface2);padding:2px 9px;border-radius:20px;">' + cnt + ' pendiente' + (cnt!==1?'s':'') + '</span>'
       + '</div>';
     html += sortByDue(tasks).map(_taskHtml).join('');
   });
@@ -310,3 +319,42 @@ function _renderOverview() {
 
   tl.innerHTML = html;
 }
+
+// ── Inject responsive styles for overview task panel (runs once) ──────────
+(function _injectOvTaskStyles() {
+  if (document.getElementById('ov-task-responsive-css')) return;
+  const s = document.createElement('style');
+  s.id = 'ov-task-responsive-css';
+  s.textContent = `
+    /* Overview task rows — base */
+    .ov-task-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      transition: background .15s;
+    }
+    .ov-task-row:hover { filter: brightness(1.07); }
+    .ov-task-row .mc-task-info { flex: 1; min-width: 0; }
+
+    /* Mobile: badge wraps below title */
+    @media (max-width: 540px) {
+      .ov-task-row {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 14px;
+      }
+      .ov-task-row .mc-task-info {
+        width: 100%;
+      }
+      .ov-task-row > div:last-child {
+        width: 100%;
+        align-items: flex-start !important;
+      }
+      .ov-task-row .mc-task-title {
+        font-size: 14px !important;
+      }
+    }
+  `;
+  document.head.appendChild(s);
+})();
