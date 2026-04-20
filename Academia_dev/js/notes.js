@@ -2314,14 +2314,14 @@ function _renderOverview() {
     return;
   }
 
-  // ── Paleta unificada: fondo de fila Y badge usan el mismo color base ──
+  // ── Paleta: fondo fila y badge mismo color, texto NEGRO para legibilidad ──
   function _pal(daysLeft) {
-    if (daysLeft === null) return { bg:'', border:'', badgeBg:'rgba(255,255,255,.10)', badgeColor:'var(--text3)', icon:'📌' };
-    if (daysLeft < 0)      return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#fff',    icon:'🔴' };
-    if (daysLeft === 0)    return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#fff',    icon:'🔴' };
-    if (daysLeft <= 3)     return { bg:'rgba(248,113,113,.16)', border:'#f87171', badgeBg:'rgba(248,113,113,.78)', badgeColor:'#fff',    icon:'🟠' };
-    if (daysLeft <= 6)     return { bg:'rgba(251,191,36,.14)',  border:'#fbbf24', badgeBg:'rgba(251,191,36,.85)', badgeColor:'#1a1100', icon:'🟡' };
-    return                        { bg:'rgba(74,222,128,.12)',  border:'#4ade80', badgeBg:'rgba(74,222,128,.78)', badgeColor:'#fff',    icon:'🟢' };
+    if (daysLeft === null) return { bg:'', border:'', badgeBg:'rgba(150,150,150,.25)', badgeColor:'var(--text2)', icon:'—' };
+    if (daysLeft < 0)      return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(220,50,50,.82)',  badgeColor:'#fff',    icon:'❗' };
+    if (daysLeft === 0)    return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(220,50,50,.82)',  badgeColor:'#fff',    icon:'🔴' };
+    if (daysLeft <= 3)     return { bg:'rgba(248,113,113,.16)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#111',   icon:'🟠' };
+    if (daysLeft <= 6)     return { bg:'rgba(251,191,36,.14)',  border:'#fbbf24', badgeBg:'rgba(251,191,36,.90)', badgeColor:'#111',   icon:'🟡' };
+    return                        { bg:'rgba(74,222,128,.12)',  border:'#4ade80', badgeBg:'rgba(52,190,100,.82)', badgeColor:'#111',   icon:'🟢' };
   }
 
   function _badgeText(dl) {
@@ -2330,6 +2330,15 @@ function _renderOverview() {
     if (dl === 0)     return 'Vence hoy';
     if (dl === 1)     return 'Falta 1 día';
     return                   `Faltan ${dl} días`;
+  }
+
+  // Fecha legible sin monospace: "lun. 22 abr."
+  const _DAYS  = ['dom','lun','mar','mié','jue','vie','sáb'];
+  const _MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function _fmtReadable(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return `${_DAYS[d.getDay()]}. ${d.getDate()} ${_MONTHS[d.getMonth()]}.`;
   }
 
   const sortByDue = arr => [...arr].sort((a,b) => {
@@ -2347,20 +2356,41 @@ function _renderOverview() {
     grouped[m.id].tasks.push(t);
   });
 
+  // Ordenar grupos por su tarea más próxima a vencer
+  const sortedGroups = Object.values(grouped).sort((a, b) => {
+    const minA = a.tasks.reduce((m, t) => t.due && t.due < m ? t.due : m, '9999-12-31');
+    const minB = b.tasks.reduce((m, t) => t.due && t.due < m ? t.due : m, '9999-12-31');
+    return minA < minB ? -1 : minA > minB ? 1 : 0;
+  });
+
   // Inyectar CSS responsive una sola vez
   if (!document.getElementById('ov-task-css')) {
     const s = document.createElement('style'); s.id = 'ov-task-css';
     s.textContent = `
-      .ov-task-row { display:flex; align-items:center; gap:12px; padding:11px 16px; transition:filter .15s; }
-      .ov-task-row:hover { filter:brightness(1.07); }
-      .ov-task-row .mc-task-info { flex:1; min-width:0; }
-      .ov-badge { display:inline-flex; align-items:center; gap:5px; border-radius:10px; font-size:12px; font-weight:800; padding:5px 12px; white-space:nowrap; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,.25); letter-spacing:.2px; }
-      .ov-mat-header { padding:8px 14px 5px; display:flex; align-items:center; gap:8px; border-top:1px solid var(--border); }
-      @media (max-width:540px) {
-        .ov-task-row { flex-wrap:wrap; gap:6px; padding:10px 12px; }
-        .ov-task-row .mc-task-info { width:100%; }
-        .ov-badge-wrap { width:100%; }
-        .ov-badge { font-size:11px; padding:4px 11px; }
+      .ov-task-row {
+        display: flex; align-items: center; gap: 12px;
+        padding: 11px 16px; transition: filter .15s;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      }
+      .ov-task-row:hover { filter: brightness(1.07); }
+      .ov-task-row .mc-task-info { flex: 1; min-width: 0; }
+      .ov-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        border-radius: 8px; font-size: 12px; font-weight: 700;
+        padding: 5px 12px; white-space: nowrap; flex-shrink: 0;
+        box-shadow: 0 1px 6px rgba(0,0,0,.22); letter-spacing: .1px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      }
+      .ov-mat-header {
+        padding: 9px 14px 6px; display: flex; align-items: center; gap: 8px;
+        border-top: 1px solid var(--border);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      }
+      @media (max-width: 540px) {
+        .ov-task-row { flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
+        .ov-task-row .mc-task-info { width: 100%; }
+        .ov-badge-wrap { width: 100%; }
+        .ov-badge { font-size: 11px; padding: 4px 10px; }
       }
     `;
     document.head.appendChild(s);
@@ -2377,19 +2407,19 @@ function _renderOverview() {
     const prog       = subtaskProgress(t);
     const dueTimeStr = t.dueTime ? ` · ⏰ ${t.dueTime}` : '';
     const planStr    = t.datePlanned
-      ? `<span style="font-size:11px;color:var(--text3);">📋 ${fmtD(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}</span>`
+      ? `<span style="font-size:11px;color:var(--text3);">📋 ${_fmtReadable(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}</span>`
       : '';
     const prioClass  = t.priority === 'high'||t.priority === 'alta' ? 'prio-alta'
                      : t.priority === 'low' ||t.priority === 'baja' ? 'prio-baja'
                      : t.priority ? 'prio-media' : 'prio-none';
     const mc   = m ? (m.color||'#7c6aff') : '#7c6aff';
-    const type = (t.type||'TAREA').toUpperCase();
+    const type = (t.type||'Tarea');
     return `<div class="mc-task-item ov-task-row ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}">
       <div class="mc-task-info">
-        <div class="mc-task-title" style="font-size:13px;font-weight:700;margin-bottom:5px;line-height:1.3;color:var(--text);">${t.title}</div>
+        <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">${t.title}</div>
         <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-          <span style="background:${mc}33;color:${mc};border:1px solid ${mc}55;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;letter-spacing:.3px;">${type}</span>
-          ${t.due?`<span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:500;color:var(--text2);">📅 ${fmtD(t.due)}${dueTimeStr}</span>`:''}
+          <span style="background:${mc}33;color:${mc};border:1px solid ${mc}55;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${type}</span>
+          ${t.due?`<span style="font-size:12px;color:var(--text2);">📅 ${_fmtReadable(t.due)}${dueTimeStr}</span>`:''}
           ${planStr}
           ${prog?`<span style="font-size:11px;color:var(--text3);">📎 ${prog.done}/${prog.total} sub.</span>`:''}
         </div>
@@ -2402,19 +2432,19 @@ function _renderOverview() {
 
   let html = '';
 
-  // 1. Tareas sin materia asignada (van primero)
+  // 1. Tareas sin materia (primero, ordenadas por fecha)
   if (noMatTasks.length) {
     html += sortByDue(noMatTasks).map(_taskHtml).join('');
   }
 
-  // 2. Grupos por materia — nombre en blanco, color como borde izquierdo (dinámico)
-  Object.values(grouped).forEach(({ mat, tasks }) => {
+  // 2. Grupos ordenados por fecha de vencimiento más próxima
+  sortedGroups.forEach(({ mat, tasks }) => {
     const cnt = tasks.length;
     const mc  = mat.color || 'var(--accent)';
     html += `<div class="ov-mat-header" style="border-left:3px solid ${mc};background:rgba(255,255,255,.025);">
-      <span style="font-size:15px;line-height:1;">${mat.icon||'📚'}</span>
-      <span style="font-size:13px;font-weight:800;color:var(--text);">${mat.name}</span>
-      ${mat.code?`<span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);background:var(--surface2);padding:1px 6px;border-radius:4px;">${mat.code}</span>`:''}
+      <span style="font-size:14px;line-height:1;">${mat.icon||'📚'}</span>
+      <span style="font-size:13px;font-weight:700;color:var(--text);">${mat.name}</span>
+      ${mat.code?`<span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 6px;border-radius:4px;">${mat.code}</span>`:''}
       <span style="font-size:10px;color:var(--text3);margin-left:auto;">${cnt} pendiente${cnt!==1?'s':''}</span>
     </div>`;
     html += sortByDue(tasks).map(_taskHtml).join('');
