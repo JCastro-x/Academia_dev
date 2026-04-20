@@ -2210,7 +2210,7 @@ function _renderOverview() {
   const pending = State.tasks.filter(t => !t.done);
   const overall = calcOverallGPA();
 
-  // ── Stats legacy (usados por otras partes de la app) ──────
+  // ── Stats legacy ──────────────────────────────────────────
   const ovMatsEl = _el('ov-mats');
   if (ovMatsEl) ovMatsEl.textContent = State.materias.filter(m=>!m.parentId).length;
   const avgEl  = _el('ov-avg');
@@ -2246,100 +2246,209 @@ function _renderOverview() {
       const isToday    = i === 0;
       const isSelected = ovFilterDay === dStr;
 
-      // Materias con tareas ese día (puntos de color)
-      const dayTasks = State.tasks.filter(t => !t.done && t.due === dStr);
-      const matIds   = [...new Set(dayTasks.map(t => t.matId))];
+      const dayTasks  = State.tasks.filter(t => !t.done && t.due === dStr);
+      const dayEvents = (State.events || []).filter(e => (e.date || e.start || '').slice(0,10) === dStr);
+      const matIds    = [...new Set(dayTasks.map(t => t.matId))];
       const dots = matIds.slice(0,5).map(mid => {
         const m = getMat(mid);
         return `<div class="agenda-dot" style="background:${m.color||'var(--accent)'};" title="${m.name||''}"></div>`;
       }).join('');
-      const extraDots = matIds.length > 5 ? `<div class="agenda-dot-more">+${matIds.length-5}</div>` : '';
-      const taskCount = dayTasks.length;
+      const extraDots  = matIds.length > 5 ? `<div class="agenda-dot-more">+${matIds.length-5}</div>` : '';
+      const totalCount = dayTasks.length + dayEvents.length;
 
       return `<div class="agenda-day-card${isToday?' today':''}${isSelected?' selected':''}" onclick="ovSetDayFilter('${dStr}')" title="${isToday?'Hoy · ':''} ${d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}">
         <div class="adc-dayname">${daysFull[d.getDay()]}</div>
         <div class="adc-daynum">${d.getDate()}</div>
         <div class="adc-month">${monthNames[d.getMonth()]}</div>
         <div class="adc-dots">${dots}${extraDots}</div>
-        ${taskCount > 0 ? `<div class="adc-count">${taskCount}</div>` : '<div class="adc-count" style="opacity:0;">0</div>'}
+        ${totalCount > 0 ? `<div class="adc-count">${totalCount}</div>` : '<div class="adc-count" style="opacity:0;">0</div>'}
         ${isToday ? '<div class="adc-today-label">HOY</div>' : ''}
       </div>`;
     }).join('') + `</div>`;
   }
 
   // ── Label de filtro activo ────────────────────────────────
-  const filterLbl    = document.getElementById('ov-agenda-filter-label');
+  const filterLbl      = document.getElementById('ov-agenda-filter-label');
   const clearFilterBtn = document.getElementById('ov-clear-filter-btn');
   if (ovFilterDay) {
     const fd = new Date(ovFilterDay + 'T00:00:00');
-    const lbl = fd.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
-    if (filterLbl) filterLbl.textContent = `📌 ${lbl}`;
+    if (filterLbl)    filterLbl.textContent  = `📌 ${fd.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}`;
     if (clearFilterBtn) clearFilterBtn.style.display = '';
   } else {
-    if (filterLbl) filterLbl.textContent = '';
+    if (filterLbl)    filterLbl.textContent  = '';
     if (clearFilterBtn) clearFilterBtn.style.display = 'none';
   }
 
-  // ── Panel de Tareas — ordenadas por fecha más cercana ─────
+  // ── Panel de Tareas ───────────────────────────────────────
   const tl = _el('ov-tasks-list');
   if (!tl) return;
   const today2 = new Date(); today2.setHours(0,0,0,0);
 
-  // Filtrar por día si hay filtro activo
   let taskPool = ovFilterDay
     ? pending.filter(t => t.due === ovFilterDay || t.datePlanned === ovFilterDay)
     : pending;
 
-  const sorted = [...taskPool].sort((a,b) => {
-    const da = a.due || '9999-12-31', db = b.due || '9999-12-31';
+  // Eventos del calendario ordenados por fecha
+  const allEvents = (State.events || []).filter(e => {
+    const eDate = (e.date || e.start || '').slice(0,10);
+    if (!eDate) return false;
+    if (ovFilterDay) return eDate === ovFilterDay;
+    return eDate >= today2.toISOString().slice(0,10);
+  }).sort((a,b) => {
+    const da = (a.date||a.start||'').slice(0,10), db = (b.date||b.start||'').slice(0,10);
     return da < db ? -1 : da > db ? 1 : 0;
   });
 
-  tl.innerHTML = sorted.length ? sorted.map(t => {
+  if (!taskPool.length && !allEvents.length) {
+    tl.innerHTML = ovFilterDay
+      ? `<div style="text-align:center;padding:40px;color:var(--text3);">
+          <div style="font-size:36px;margin-bottom:8px;">✅</div>
+          <div style="font-size:14px;font-weight:700;">Sin tareas para este día</div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="ovClearDayFilter()">Ver todas las pendientes</button>
+        </div>`
+      : `<div style="text-align:center;padding:40px;color:var(--text3);">
+          <div style="font-size:36px;margin-bottom:8px;">✅</div>
+          <div style="font-size:14px;font-weight:700;">¡Sin tareas pendientes!</div>
+          <div style="font-size:12px;margin-top:4px;color:var(--text3);">Siga adelante, Ingeniero 🎓</div>
+        </div>`;
+    return;
+  }
+
+  // ── Paleta unificada: fondo de fila Y badge usan el mismo color base ──
+  // Los valores de bg y badgeBg son idénticos — solo varía la opacidad del texto
+  function _pal(daysLeft) {
+    if (daysLeft === null) return { bg:'', border:'', badgeBg:'rgba(255,255,255,.10)', badgeColor:'var(--text3)', icon:'📌' };
+    if (daysLeft < 0)      return { bg:'rgba(248,113,113,.22)', border:'#f87171', badgeBg:'rgba(248,113,113,.88)', badgeColor:'#fff',    icon:'🔴' };
+    if (daysLeft === 0)    return { bg:'rgba(248,113,113,.22)', border:'#f87171', badgeBg:'rgba(248,113,113,.88)', badgeColor:'#fff',    icon:'🔴' };
+    if (daysLeft <= 3)     return { bg:'rgba(248,113,113,.18)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#fff',    icon:'🟠' };
+    if (daysLeft <= 6)     return { bg:'rgba(251,191,36,.18)',  border:'#fbbf24', badgeBg:'rgba(251,191,36,.90)', badgeColor:'#1a1100', icon:'🟡' };
+    return                        { bg:'rgba(74,222,128,.14)',  border:'#4ade80', badgeBg:'rgba(74,222,128,.82)', badgeColor:'#fff',    icon:'🟢' };
+  }
+
+  function _badgeText(dl) {
+    if (dl === null)  return 'Sin fecha';
+    if (dl < 0)       return `Venció hace ${-dl}d`;
+    if (dl === 0)     return 'Vence hoy';
+    if (dl === 1)     return 'Falta 1 día';
+    return                   `Faltan ${dl} días`;
+  }
+
+  const sortByDue = arr => [...arr].sort((a,b) => {
+    const da = a.due||'9999-12-31', db = b.due||'9999-12-31';
+    return da < db ? -1 : da > db ? 1 : 0;
+  });
+
+  // Agrupar tareas por materia
+  const grouped    = {};
+  const noMatTasks = [];
+  taskPool.forEach(t => {
     const m = getMat(t.matId);
-    const dueD = t.due ? new Date(t.due + 'T00:00:00') : null;
-    const daysLeft = dueD ? Math.ceil((dueD - today2) / 86400000) : null;
-    let bClass, bText;
-    if (daysLeft === null)         { bClass='ub-none';    bText='Sin fecha'; }
-    else if (daysLeft < 0)         { bClass='ub-overdue'; bText=`Venció hace ${-daysLeft}d`; }
-    else if (daysLeft === 0)       { bClass='ub-critical';bText='Vence hoy'; }
-    else if (daysLeft === 1)       { bClass='ub-critical';bText='Faltan 1 día'; }
-    else if (daysLeft < 5)         { bClass='ub-warning'; bText=`Faltan ${daysLeft} días`; }
-    else                           { bClass='ub-ok';      bText=`Faltan ${daysLeft} días`; }
-    const prog = subtaskProgress(t);
-    const prioClass = t.priority === 'high' || t.priority === 'alta' ? 'prio-alta'
-                    : t.priority === 'low'  || t.priority === 'baja' ? 'prio-baja'
-                    : t.priority ? 'prio-media' : 'prio-none';
+    if (!m || !m.id) { noMatTasks.push(t); return; }
+    if (!grouped[m.id]) grouped[m.id] = { mat: m, tasks: [] };
+    grouped[m.id].tasks.push(t);
+  });
+
+  // Inyectar CSS responsive una vez
+  if (!document.getElementById('ov-task-css')) {
+    const s = document.createElement('style'); s.id = 'ov-task-css';
+    s.textContent = `
+      .ov-task-row { display:flex; align-items:center; gap:14px; padding:14px 18px; transition:filter .15s; }
+      .ov-task-row:hover { filter:brightness(1.08); }
+      .ov-task-row .mc-task-info { flex:1; min-width:0; }
+      .ov-task-row .ov-badge { display:inline-flex; align-items:center; gap:6px; border-radius:12px; font-size:13px; font-weight:800; padding:7px 16px; white-space:nowrap; flex-shrink:0; box-shadow:0 2px 10px rgba(0,0,0,.30); letter-spacing:.2px; }
+      .ov-mat-header { padding:10px 16px 6px; display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); }
+      @media (max-width:540px) {
+        .ov-task-row { flex-wrap:wrap; gap:8px; padding:12px 14px; }
+        .ov-task-row .mc-task-info { width:100%; }
+        .ov-task-row .ov-badge-wrap { width:100%; }
+        .ov-task-row .ov-badge { font-size:12px; padding:6px 14px; }
+        .ov-task-title-text { font-size:14px !important; }
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function _taskHtml(t) {
+    const m        = getMat(t.matId);
+    const dueD     = t.due ? new Date(t.due + 'T00:00:00') : null;
+    const daysLeft = dueD  ? Math.ceil((dueD - today2) / 86400000) : null;
+    const pal      = _pal(daysLeft);
+    const bgStyle  = pal.border
+      ? `background:${pal.bg};border-left:4px solid ${pal.border};`
+      : 'border-left:4px solid var(--border2);';
+    const prog       = subtaskProgress(t);
     const dueTimeStr = t.dueTime ? ` · ⏰ ${t.dueTime}` : '';
-    const planStr    = t.datePlanned ? `<span style="font-size:10px;color:var(--text3);">📋 ${fmtD(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}</span>` : '';
-    return `<div class="mc-task-item ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;">
+    const planStr    = t.datePlanned
+      ? `<span style="font-size:12px;color:var(--text3);">📋 ${fmtD(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}</span>`
+      : '';
+    const prioClass  = t.priority === 'high'||t.priority === 'alta' ? 'prio-alta'
+                     : t.priority === 'low' ||t.priority === 'baja' ? 'prio-baja'
+                     : t.priority ? 'prio-media' : 'prio-none';
+    const mc   = m ? (m.color||'#7c6aff') : '#7c6aff';
+    const type = (t.type||'TAREA').toUpperCase();
+    return `<div class="mc-task-item ov-task-row ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}">
       <div class="mc-task-info">
-        <div class="mc-task-title">${m.icon||'📚'} ${t.title}</div>
-        <div class="mc-task-meta">
-          <span style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;border-radius:5px;padding:1px 7px;font-weight:700;">${m.code||m.name||'—'}</span>
-          <span>${t.type||'Tarea'}</span>
-          ${t.due?`<span style="font-family:'Space Mono',monospace;">${fmtD(t.due)}${dueTimeStr}</span>`:''}
+        <div class="mc-task-title ov-task-title-text" style="font-size:15px;font-weight:700;margin-bottom:7px;line-height:1.3;color:var(--text);">${t.title}</div>
+        <div class="mc-task-meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="background:${mc}33;color:${mc};border:1px solid ${mc}55;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:800;letter-spacing:.4px;">${type}</span>
+          ${t.due?`<span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:600;color:var(--text2);">📅 ${fmtD(t.due)}${dueTimeStr}</span>`:''}
           ${planStr}
-          ${prog?`<span>${prog.done}/${prog.total} sub.</span>`:''}
+          ${prog?`<span style="font-size:12px;color:var(--text3);">📎 ${prog.done}/${prog.total} sub.</span>`:''}
         </div>
       </div>
-      <span class="urgency-badge ${bClass}">${bText}</span>
+      <div class="ov-badge-wrap" style="flex-shrink:0;">
+        <span class="ov-badge" style="background:${pal.badgeBg};color:${pal.badgeColor};">${pal.icon} ${_badgeText(daysLeft)}</span>
+      </div>
     </div>`;
-  }).join('')
-  : ovFilterDay
-    ? `<div style="text-align:center;padding:40px;color:var(--text3);">
-        <div style="font-size:36px;margin-bottom:8px;">✅</div>
-        <div style="font-size:14px;font-weight:700;">Sin tareas para este día</div>
-        <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="ovClearDayFilter()">Ver todas las pendientes</button>
-      </div>`
-    : `<div style="text-align:center;padding:40px;color:var(--text3);">
-        <div style="font-size:36px;margin-bottom:8px;">✅</div>
-        <div style="font-size:14px;font-weight:700;">¡Sin tareas pendientes!</div>
-        <div style="font-size:12px;margin-top:4px;color:var(--text3);">Siga adelante, Ingeniero 🎓</div>
+  }
+
+  let html = '';
+
+  // 1. Tareas sin materia asignada (van primero)
+  if (noMatTasks.length) {
+    html += sortByDue(noMatTasks).map(_taskHtml).join('');
+  }
+
+  // 2. Grupos por materia — nombre en BLANCO, color como borde izquierdo (dinámico)
+  Object.values(grouped).forEach(({ mat, tasks }) => {
+    const cnt = tasks.length;
+    const mc  = mat.color || 'var(--accent)';
+    html += `<div class="ov-mat-header" style="border-left:4px solid ${mc};background:rgba(255,255,255,.03);">
+      <span style="font-size:17px;line-height:1;">${mat.icon||'📚'}</span>
+      <span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">${mat.name}</span>
+      ${mat.code?`<span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);background:var(--surface2);padding:2px 7px;border-radius:5px;">${mat.code}</span>`:''}
+      <span style="font-size:11px;color:var(--text3);margin-left:auto;background:var(--surface2);padding:2px 9px;border-radius:20px;">${cnt} pendiente${cnt!==1?'s':''}</span>
+    </div>`;
+    html += sortByDue(tasks).map(_taskHtml).join('');
+  });
+
+  // 3. Eventos del calendario (fondo azul, al final)
+  if (allEvents.length) {
+    html += `<div style="padding:8px 16px 4px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);">
+      <span style="font-size:15px;font-weight:800;color:#60a5fa;">📅 Eventos</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${allEvents.length} próximo${allEvents.length!==1?'s':''}</span>
+    </div>`;
+    allEvents.forEach(ev => {
+      const evMat  = ev.matId ? getMat(ev.matId) : null;
+      const evDate = (ev.date||ev.start||'').slice(0,10);
+      html += `<div class="mc-task-item" style="cursor:pointer;background:rgba(96,165,250,.13);border-left:3px solid #60a5fa;">
+        <div class="mc-task-info">
+          <div class="mc-task-title">📅 ${ev.title||'Evento'}</div>
+          <div class="mc-task-meta">
+            ${evMat?`<span style="background:${evMat.color||'#60a5fa'}22;color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}44;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;">${evMat.code||evMat.name}</span>`:''}
+            ${evDate?`<span style="font-family:'Space Mono',monospace;">${fmtD(evDate)}</span>`:''}
+            ${ev.time?`<span>⏰ ${ev.time}</span>`:''}
+            ${ev.type?`<span>${ev.type}</span>`:''}
+          </div>
+        </div>
+        <span class="urgency-badge" style="background:rgba(96,165,250,.2);color:#60a5fa;border-color:#60a5fa44;">Evento</span>
       </div>`;
+    });
+  }
+
+  tl.innerHTML = html;
 }
-// ══════════════════════════════════════════════════
-// ══════════════════════════════════════════════════
+
 let _sidebarCollapsed = false;
 
 function toggleSidebar() {
