@@ -2247,24 +2247,21 @@ function _renderOverview() {
       const isSelected = ovFilterDay === dStr;
 
       // Materias con tareas ese día (puntos de color)
-      const dayTasks = State.tasks.filter(t => !t.done && (t.due === dStr));
+      const dayTasks = State.tasks.filter(t => !t.done && t.due === dStr);
       const matIds   = [...new Set(dayTasks.map(t => t.matId))];
       const dots = matIds.slice(0,5).map(mid => {
         const m = getMat(mid);
         return `<div class="agenda-dot" style="background:${m.color||'var(--accent)'};" title="${m.name||''}"></div>`;
       }).join('');
       const extraDots = matIds.length > 5 ? `<div class="agenda-dot-more">+${matIds.length-5}</div>` : '';
-      // Eventos del calendario para este día
-      const dayEvents = (State.events || []).filter(e => (e.date || e.start || '').slice(0,10) === dStr);
       const taskCount = dayTasks.length;
-      const totalCount = taskCount + dayEvents.length;
 
       return `<div class="agenda-day-card${isToday?' today':''}${isSelected?' selected':''}" onclick="ovSetDayFilter('${dStr}')" title="${isToday?'Hoy · ':''} ${d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}">
         <div class="adc-dayname">${daysFull[d.getDay()]}</div>
         <div class="adc-daynum">${d.getDate()}</div>
         <div class="adc-month">${monthNames[d.getMonth()]}</div>
         <div class="adc-dots">${dots}${extraDots}</div>
-        ${totalCount > 0 ? `<div class="adc-count">${totalCount}</div>` : '<div class="adc-count" style="opacity:0;">0</div>'}
+        ${taskCount > 0 ? `<div class="adc-count">${taskCount}</div>` : '<div class="adc-count" style="opacity:0;">0</div>'}
         ${isToday ? '<div class="adc-today-label">HOY</div>' : ''}
       </div>`;
     }).join('') + `</div>`;
@@ -2283,91 +2280,46 @@ function _renderOverview() {
     if (clearFilterBtn) clearFilterBtn.style.display = 'none';
   }
 
-  // ── Panel de Tareas agrupadas por materia ─────────────────
+
+  
+  // ── Panel de Tareas — ordenadas por fecha más cercana ─────
   const tl = _el('ov-tasks-list');
   if (!tl) return;
   const today2 = new Date(); today2.setHours(0,0,0,0);
 
-  // Filtrar tareas
+  // Filtrar por día si hay filtro activo
   let taskPool = ovFilterDay
     ? pending.filter(t => t.due === ovFilterDay || t.datePlanned === ovFilterDay)
     : pending;
 
-  // Eventos del calendario (futuros o de hoy), filtrados igual
-  const allEvents = (State.events || []).filter(e => {
-    const eDate = (e.date || e.start || '').slice(0,10);
-    if (!eDate) return false;
-    if (ovFilterDay) return eDate === ovFilterDay;
-    return eDate >= today2.toISOString().slice(0,10);
-  }).sort((a,b) => {
-    const da = (a.date || a.start || '').slice(0,10);
-    const db = (b.date || b.start || '').slice(0,10);
-    return da < db ? -1 : da > db ? 1 : 0;
-  });
-
-  if (!taskPool.length && !allEvents.length) {
-    tl.innerHTML = ovFilterDay
-      ? `<div style="text-align:center;padding:40px;color:var(--text3);">
-          <div style="font-size:36px;margin-bottom:8px;">✅</div>
-          <div style="font-size:14px;font-weight:700;">Sin tareas para este día</div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="ovClearDayFilter()">Ver todas las pendientes</button>
-        </div>`
-      : `<div style="text-align:center;padding:40px;color:var(--text3);">
-          <div style="font-size:36px;margin-bottom:8px;">✅</div>
-          <div style="font-size:14px;font-weight:700;">¡Sin tareas pendientes!</div>
-          <div style="font-size:12px;margin-top:4px;color:var(--text3);">Siga adelante, Ingeniero 🎓</div>
-        </div>`;
-    return;
-  }
-
-  // Helper: fondo según días restantes (verde >7, amarillo 4-6, rojo <=3)
-  function _taskBg(daysLeft) {
-    if (daysLeft === null) return '';
-    if (daysLeft < 0)      return 'background:rgba(248,113,113,.18);border-left:3px solid #f87171;';
-    if (daysLeft <= 3)     return 'background:rgba(248,113,113,.14);border-left:3px solid #f87171;';
-    if (daysLeft <= 6)     return 'background:rgba(251,191,36,.12);border-left:3px solid #fbbf24;';
-    return                        'background:rgba(74,222,128,.10);border-left:3px solid #4ade80;';
-  }
-
-  // Ordenar por fecha
-  const sortByDue = arr => [...arr].sort((a,b) => {
+  const sorted = [...taskPool].sort((a,b) => {
     const da = a.due || '9999-12-31', db = b.due || '9999-12-31';
     return da < db ? -1 : da > db ? 1 : 0;
   });
 
-  // Agrupar tareas por materia
-  const grouped = {};
-  const noMatTasks = [];
-  taskPool.forEach(t => {
-    const m = getMat(t.matId);
-    if (!m || !m.id) { noMatTasks.push(t); return; }
-    if (!grouped[m.id]) grouped[m.id] = { mat: m, tasks: [] };
-    grouped[m.id].tasks.push(t);
-  });
-
-  function _taskHtml(t) {
+  tl.innerHTML = sorted.length ? sorted.map(t => {
     const m = getMat(t.matId);
     const dueD = t.due ? new Date(t.due + 'T00:00:00') : null;
     const daysLeft = dueD ? Math.ceil((dueD - today2) / 86400000) : null;
     let bClass, bText;
-    if (daysLeft === null)   { bClass='ub-none';    bText='Sin fecha'; }
-    else if (daysLeft < 0)   { bClass='ub-overdue'; bText=`Venció hace ${-daysLeft}d`; }
-    else if (daysLeft === 0) { bClass='ub-critical';bText='Vence hoy'; }
-    else if (daysLeft === 1) { bClass='ub-critical';bText='Faltan 1 día'; }
-    else if (daysLeft < 5)   { bClass='ub-warning'; bText=`Faltan ${daysLeft} días`; }
-    else                     { bClass='ub-ok';      bText=`Faltan ${daysLeft} días`; }
-    const bgStyle   = _taskBg(daysLeft);
-    const prog      = subtaskProgress(t);
+    if (daysLeft === null)         { bClass='ub-none';    bText='Sin fecha'; }
+    else if (daysLeft < 0)         { bClass='ub-overdue'; bText=`Venció hace ${-daysLeft}d`; }
+    else if (daysLeft === 0)       { bClass='ub-critical';bText='Vence hoy'; }
+    else if (daysLeft === 1)       { bClass='ub-critical';bText='Faltan 1 día'; }
+    else if (daysLeft < 5)         { bClass='ub-warning'; bText=`Faltan ${daysLeft} días`; }
+    else                           { bClass='ub-ok';      bText=`Faltan ${daysLeft} días`; }
+    const prog = subtaskProgress(t);
+    const prioClass = t.priority === 'high' || t.priority === 'alta' ? 'prio-alta'
+                    : t.priority === 'low'  || t.priority === 'baja' ? 'prio-baja'
+                    : t.priority ? 'prio-media' : 'prio-none';
     const dueTimeStr = t.dueTime ? ` · ⏰ ${t.dueTime}` : '';
     const planStr    = t.datePlanned ? `<span style="font-size:10px;color:var(--text3);">📋 ${fmtD(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}</span>` : '';
-    const prioClass  = t.priority === 'high' || t.priority === 'alta' ? 'prio-alta'
-                     : t.priority === 'low'  || t.priority === 'baja' ? 'prio-baja'
-                     : t.priority ? 'prio-media' : 'prio-none';
-    return `<div class="mc-task-item ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}">
+    return `<div class="mc-task-item ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;">
       <div class="mc-task-info">
-        <div class="mc-task-title">${t.title}</div>
+        <div class="mc-task-title">${m.icon||'📚'} ${t.title}</div>
         <div class="mc-task-meta">
-          <span class="${getTypeBadgeClass(t.type||'')}" style="font-size:10px;padding:1px 7px;border-radius:4px;font-weight:700;">${t.type||'TAREA'}</span>
+          <span style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;border-radius:5px;padding:1px 7px;font-weight:700;">${m.code||m.name||'—'}</span>
+          <span>${t.type||'Tarea'}</span>
           ${t.due?`<span style="font-family:'Space Mono',monospace;">${fmtD(t.due)}${dueTimeStr}</span>`:''}
           ${planStr}
           ${prog?`<span>${prog.done}/${prog.total} sub.</span>`:''}
@@ -2375,54 +2327,20 @@ function _renderOverview() {
       </div>
       <span class="urgency-badge ${bClass}">${bText}</span>
     </div>`;
-  }
-
-  let html = '';
-
-  // 1. Tareas sin materia asignada van primero
-  if (noMatTasks.length) {
-    html += sortByDue(noMatTasks).map(_taskHtml).join('');
-  }
-
-  // 2. Grupos por materia (encabezado + tareas)
-  Object.values(grouped).forEach(({ mat, tasks }) => {
-    const pendCount = tasks.length;
-    html += `<div style="padding:8px 16px 4px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);">
-      <span style="font-size:15px;font-weight:800;color:${mat.color||'var(--accent)'};">${mat.icon||'📚'} ${mat.name}</span>
-      <span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);">${mat.code||''}</span>
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${pendCount} pendiente${pendCount!==1?'s':''}</span>
-    </div>`;
-    html += sortByDue(tasks).map(_taskHtml).join('');
-  });
-
-  // 3. Eventos del calendario con fondo azul, ordenados por fecha
-  if (allEvents.length) {
-    html += `<div style="padding:8px 16px 4px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);">
-      <span style="font-size:15px;font-weight:800;color:#60a5fa;">📅 Eventos</span>
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${allEvents.length} próximo${allEvents.length!==1?'s':''}</span>
-    </div>`;
-    allEvents.forEach(ev => {
-      const evMat = ev.matId ? getMat(ev.matId) : null;
-      const evDate = (ev.date || ev.start || '').slice(0,10);
-      html += `<div class="mc-task-item" style="cursor:pointer;background:rgba(96,165,250,.13);border-left:3px solid #60a5fa;">
-        <div class="mc-task-info">
-          <div class="mc-task-title">📅 ${ev.title||'Evento'}</div>
-          <div class="mc-task-meta">
-            ${evMat?`<span style="background:${evMat.color||'#60a5fa'}22;color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}44;border-radius:5px;padding:1px 7px;font-weight:700;">${evMat.code||evMat.name}</span>`:''}
-            ${evDate?`<span style="font-family:'Space Mono',monospace;">${fmtD(evDate)}</span>`:''}
-            ${ev.time?`<span>⏰ ${ev.time}</span>`:''}
-            ${ev.type?`<span>${ev.type}</span>`:''}
-          </div>
-        </div>
-        <span class="urgency-badge" style="background:rgba(96,165,250,.2);color:#60a5fa;border-color:#60a5fa44;">Evento</span>
+  }).join('')
+  : ovFilterDay
+    ? `<div style="text-align:center;padding:40px;color:var(--text3);">
+        <div style="font-size:36px;margin-bottom:8px;">✅</div>
+        <div style="font-size:14px;font-weight:700;">Sin tareas para este día</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="ovClearDayFilter()">Ver todas las pendientes</button>
+      </div>`
+    : `<div style="text-align:center;padding:40px;color:var(--text3);">
+        <div style="font-size:36px;margin-bottom:8px;">✅</div>
+        <div style="font-size:14px;font-weight:700;">¡Sin tareas pendientes!</div>
+        <div style="font-size:12px;margin-top:4px;color:var(--text3);">Siga adelante, Ingeniero 🎓</div>
       </div>`;
-    });
-  }
-
-  tl.innerHTML = html;
 }
-// ══════════════════════════════════════════════════
-// ══════════════════════════════════════════════════
+
 let _sidebarCollapsed = false;
 
 function toggleSidebar() {
