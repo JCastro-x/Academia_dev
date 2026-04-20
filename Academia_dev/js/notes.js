@@ -2298,7 +2298,7 @@ function _renderOverview() {
     const da = (a.date||a.start||'').slice(0,10), db = (b.date||b.start||'').slice(0,10);
     return da < db ? -1 : da > db ? 1 : 0;
   });
-
+let prueba;
   if (!taskPool.length && !allEvents.length) {
     tl.innerHTML = ovFilterDay
       ? `<div style="text-align:center;padding:40px;color:var(--text3);">
