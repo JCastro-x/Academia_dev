@@ -9,7 +9,7 @@
   const SUPABASE_ANON_KEY = 'sb_publishable_O1RMAV7hbpvDwJj0ESgaCg_dd8lZur5';
 
   let supabaseClient = null;
-
+let prueba12;
   function initSupabase() {
     if (!window.supabase) {
       console.error('❌ Supabase library no cargada');
