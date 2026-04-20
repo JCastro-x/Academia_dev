@@ -205,24 +205,25 @@ function _renderOverview() {
     return;
   }
 
-  // Fondo por días restantes
-  function _taskBg(dl) {
-    if (dl === null) return '';
-    if (dl < 0)     return 'background:rgba(248,113,113,.18);border-left:3px solid #f87171;';
-    if (dl <= 3)    return 'background:rgba(248,113,113,.14);border-left:3px solid #f87171;';
-    if (dl <= 6)    return 'background:rgba(251,191,36,.12);border-left:3px solid #fbbf24;';
-    return                 'background:rgba(74,222,128,.10);border-left:3px solid #4ade80;';
+  // Fondo + badge con el MISMO color según días restantes
+  const _RED    = { bg:'rgba(248,113,113,.18)', border:'#f87171', color:'#f87171', badgeBg:'rgba(248,113,113,.28)' };
+  const _YELLOW = { bg:'rgba(251,191,36,.13)',  border:'#fbbf24', color:'#fbbf24', badgeBg:'rgba(251,191,36,.25)'  };
+  const _GREEN  = { bg:'rgba(74,222,128,.10)',  border:'#4ade80', color:'#4ade80', badgeBg:'rgba(74,222,128,.20)'  };
+  const _NONE   = { bg:'',                      border:'',        color:'var(--text3)', badgeBg:'rgba(255,255,255,.06)' };
+
+  function _palette(dl) {
+    if (dl === null) return _NONE;
+    if (dl <= 3)     return _RED;
+    if (dl <= 6)     return _YELLOW;
+    return                  _GREEN;
   }
 
-  // Badge urgencia con color que concuerda con el fondo
-  function _urgencyBadge(dl) {
-    if (dl === null)   return { cls:'ub-none',     text:'Sin fecha',              style:'' };
-    if (dl < 0)        return { cls:'',            text:'Venció hace '+(-dl)+'d', style:'background:rgba(248,113,113,.25);color:#f87171;border:1px solid #f8717155;' };
-    if (dl === 0)      return { cls:'',            text:'Vence hoy',              style:'background:rgba(248,113,113,.25);color:#f87171;border:1px solid #f8717155;' };
-    if (dl === 1)      return { cls:'',            text:'Faltan 1 día',           style:'background:rgba(248,113,113,.25);color:#f87171;border:1px solid #f8717155;' };
-    if (dl <= 3)       return { cls:'',            text:'Faltan '+dl+' días',     style:'background:rgba(248,113,113,.25);color:#f87171;border:1px solid #f8717155;' };
-    if (dl <= 6)       return { cls:'',            text:'Faltan '+dl+' días',     style:'background:rgba(251,191,36,.2);color:#fbbf24;border:1px solid #fbbf2455;' };
-    return                    { cls:'',            text:'Faltan '+dl+' días',     style:'background:rgba(74,222,128,.15);color:#4ade80;border:1px solid #4ade8055;' };
+  function _badgeText(dl) {
+    if (dl === null)  return 'Sin fecha';
+    if (dl < 0)       return 'Venció hace ' + (-dl) + 'd';
+    if (dl === 0)     return 'Vence hoy';
+    if (dl === 1)     return 'Falta 1 día';
+    return                   'Faltan ' + dl + ' días';
   }
 
   const sortByDue = arr => [...arr].sort((a,b) => {
@@ -244,8 +245,9 @@ function _renderOverview() {
     const m        = getMat(t.matId);
     const dueD     = t.due ? new Date(t.due + 'T00:00:00') : null;
     const daysLeft = dueD  ? Math.ceil((dueD - today2) / 86400000) : null;
-    const bgStyle    = _taskBg(daysLeft);
-    const ub         = _urgencyBadge(daysLeft);
+    const pal      = _palette(daysLeft);
+    const bgStyle  = pal.border ? 'background:' + pal.bg + ';border-left:3px solid ' + pal.border + ';' : '';
+    const badgeStyle = 'background:' + pal.badgeBg + ';color:' + pal.color + ';border:1px solid ' + (pal.border||'rgba(255,255,255,.15)') + ';font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;';
     const prog       = subtaskProgress(t);
     const dueTimeStr = t.dueTime ? ' · ⏰ ' + t.dueTime : '';
     const planStr    = t.datePlanned ? '<span style="font-size:11px;color:var(--text3);">📋 ' + fmtD(t.datePlanned) + (t.timePlanned?' '+t.timePlanned:'') + '</span>' : '';
@@ -263,7 +265,7 @@ function _renderOverview() {
       + planStr
       + (prog ? '<span style="font-size:11px;color:var(--text3);">' + prog.done + '/' + prog.total + ' sub.</span>' : '')
       + '</div></div>'
-      + '<span class="urgency-badge ' + ub.cls + '" style="' + ub.style + 'font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;">' + ub.text + '</span>'
+      + '<span style="' + badgeStyle + '">' + _badgeText(daysLeft) + '</span>'
       + '</div>';
   }
 
