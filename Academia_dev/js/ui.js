@@ -155,12 +155,12 @@ function _renderOverview() {
       const extraDots  = matIds.length > 5 ? '<div class="agenda-dot-more">+' + (matIds.length-5) + '</div>' : '';
       const totalCount = dayTasks.length + dayEvents.length;
 
-      return '<div class="agenda-day-card' + (isToday?' today':'') + (isSelected?' selected':'') + '" onclick="ovSetDayFilter(\'' + dStr + '\')" title="' + (isToday?'Hoy · ':'') + d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}) + '">'
+      return '<div class="agenda-day-card' + (isToday?' today':'') + (isSelected?' selected':'') + '" onclick="ovSetDayFilter(\'' + dStr + '\')" style="position:relative;" title="' + (isToday?'Hoy · ':'') + d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}) + '">'
         + '<div class="adc-dayname">' + daysFull[d.getDay()] + '</div>'
         + '<div class="adc-daynum">'  + d.getDate() + '</div>'
         + '<div class="adc-month">'   + monthNames[d.getMonth()] + '</div>'
         + '<div class="adc-dots">'    + dots + extraDots + '</div>'
-        + (totalCount > 0 ? '<div class="adc-count">' + totalCount + '</div>' : '<div class="adc-count" style="opacity:0;">0</div>')
+        + (totalCount > 0 ? '<div class="adc-count" style="position:absolute;top:6px;right:6px;min-width:18px;height:18px;background:#f87171;color:#fff;border-radius:9px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.4);">' + totalCount + '</div>' : '')
         + (isToday ? '<div class="adc-today-label">HOY</div>' : '')
         + '</div>';
     }).join('') + '</div>';
@@ -214,6 +214,17 @@ function _renderOverview() {
     return                 'background:rgba(74,222,128,.10);border-left:3px solid #4ade80;';
   }
 
+  // Badge urgencia con color que concuerda con el fondo
+  function _urgencyBadge(dl) {
+    if (dl === null)   return { cls:'ub-none',     text:'Sin fecha',              style:'' };
+    if (dl < 0)        return { cls:'',            text:'Venció hace '+(-dl)+'d', style:'background:rgba(248,113,113,.25);color:#f87171;border:1px solid #f8717155;' };
+    if (dl === 0)      return { cls:'',            text:'Vence hoy',              style:'background:rgba(248,113,113,.25);color:#f87171;border:1px solid #f8717155;' };
+    if (dl === 1)      return { cls:'',            text:'Faltan 1 día',           style:'background:rgba(248,113,113,.25);color:#f87171;border:1px solid #f8717155;' };
+    if (dl <= 3)       return { cls:'',            text:'Faltan '+dl+' días',     style:'background:rgba(248,113,113,.25);color:#f87171;border:1px solid #f8717155;' };
+    if (dl <= 6)       return { cls:'',            text:'Faltan '+dl+' días',     style:'background:rgba(251,191,36,.2);color:#fbbf24;border:1px solid #fbbf2455;' };
+    return                    { cls:'',            text:'Faltan '+dl+' días',     style:'background:rgba(74,222,128,.15);color:#4ade80;border:1px solid #4ade8055;' };
+  }
+
   const sortByDue = arr => [...arr].sort((a,b) => {
     const da = a.due||'9999-12-31', db = b.due||'9999-12-31';
     return da < db ? -1 : da > db ? 1 : 0;
@@ -233,31 +244,26 @@ function _renderOverview() {
     const m        = getMat(t.matId);
     const dueD     = t.due ? new Date(t.due + 'T00:00:00') : null;
     const daysLeft = dueD  ? Math.ceil((dueD - today2) / 86400000) : null;
-    let bClass, bText;
-    if (daysLeft === null)   { bClass='ub-none';     bText='Sin fecha'; }
-    else if (daysLeft < 0)   { bClass='ub-overdue';  bText='Venció hace ' + (-daysLeft) + 'd'; }
-    else if (daysLeft === 0) { bClass='ub-critical';  bText='Vence hoy'; }
-    else if (daysLeft === 1) { bClass='ub-critical';  bText='Faltan 1 día'; }
-    else if (daysLeft < 5)   { bClass='ub-warning';   bText='Faltan ' + daysLeft + ' días'; }
-    else                     { bClass='ub-ok';         bText='Faltan ' + daysLeft + ' días'; }
     const bgStyle    = _taskBg(daysLeft);
+    const ub         = _urgencyBadge(daysLeft);
     const prog       = subtaskProgress(t);
     const dueTimeStr = t.dueTime ? ' · ⏰ ' + t.dueTime : '';
-    const planStr    = t.datePlanned ? '<span style="font-size:10px;color:var(--text3);">📋 ' + fmtD(t.datePlanned) + (t.timePlanned?' '+t.timePlanned:'') + '</span>' : '';
+    const planStr    = t.datePlanned ? '<span style="font-size:11px;color:var(--text3);">📋 ' + fmtD(t.datePlanned) + (t.timePlanned?' '+t.timePlanned:'') + '</span>' : '';
     const prioClass  = t.priority === 'high'||t.priority === 'alta' ? 'prio-alta'
                      : t.priority === 'low' ||t.priority === 'baja' ? 'prio-baja'
                      : t.priority ? 'prio-media' : 'prio-none';
-    const mc = m.color||'#7c6aff';
+    const mc   = m.color||'#7c6aff';
+    const type = (t.type||'TAREA').toUpperCase();
     return '<div class="mc-task-item ' + prioClass + '" onclick="openTaskDetail(\'' + t.id + '\')" style="cursor:pointer;' + bgStyle + '">'
       + '<div class="mc-task-info">'
-      + '<div class="mc-task-title">' + t.title + '</div>'
-      + '<div class="mc-task-meta">'
-      + '<span style="background:' + mc + '22;color:' + mc + ';border:1px solid ' + mc + '44;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;">' + (t.type||'TAREA') + '</span>'
-      + (t.due ? '<span style="font-family:\'Space Mono\',monospace;">' + fmtD(t.due) + dueTimeStr + '</span>' : '')
+      + '<div class="mc-task-title" style="font-size:14px;font-weight:700;margin-bottom:5px;">' + t.title + '</div>'
+      + '<div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">'
+      + '<span style="background:' + mc + '33;color:' + mc + ';border:1px solid ' + mc + '66;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:800;letter-spacing:.4px;">' + type + '</span>'
+      + (t.due ? '<span style="font-family:\'Space Mono\',monospace;font-size:12px;font-weight:600;color:var(--text);">' + fmtD(t.due) + dueTimeStr + '</span>' : '')
       + planStr
-      + (prog ? '<span>' + prog.done + '/' + prog.total + ' sub.</span>' : '')
+      + (prog ? '<span style="font-size:11px;color:var(--text3);">' + prog.done + '/' + prog.total + ' sub.</span>' : '')
       + '</div></div>'
-      + '<span class="urgency-badge ' + bClass + '">' + bText + '</span>'
+      + '<span class="urgency-badge ' + ub.cls + '" style="' + ub.style + 'font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;">' + ub.text + '</span>'
       + '</div>';
   }
 
