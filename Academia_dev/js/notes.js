@@ -2298,7 +2298,7 @@ function _renderOverview() {
     const da = (a.date||a.start||'').slice(0,10), db = (b.date||b.start||'').slice(0,10);
     return da < db ? -1 : da > db ? 1 : 0;
   });
-let prueba;
+
   if (!taskPool.length && !allEvents.length) {
     tl.innerHTML = ovFilterDay
       ? `<div style="text-align:center;padding:40px;color:var(--text3);">
@@ -2315,14 +2315,13 @@ let prueba;
   }
 
   // ── Paleta unificada: fondo de fila Y badge usan el mismo color base ──
-  // Los valores de bg y badgeBg son idénticos — solo varía la opacidad del texto
   function _pal(daysLeft) {
     if (daysLeft === null) return { bg:'', border:'', badgeBg:'rgba(255,255,255,.10)', badgeColor:'var(--text3)', icon:'📌' };
-    if (daysLeft < 0)      return { bg:'rgba(248,113,113,.22)', border:'#f87171', badgeBg:'rgba(248,113,113,.88)', badgeColor:'#fff',    icon:'🔴' };
-    if (daysLeft === 0)    return { bg:'rgba(248,113,113,.22)', border:'#f87171', badgeBg:'rgba(248,113,113,.88)', badgeColor:'#fff',    icon:'🔴' };
-    if (daysLeft <= 3)     return { bg:'rgba(248,113,113,.18)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#fff',    icon:'🟠' };
-    if (daysLeft <= 6)     return { bg:'rgba(251,191,36,.18)',  border:'#fbbf24', badgeBg:'rgba(251,191,36,.90)', badgeColor:'#1a1100', icon:'🟡' };
-    return                        { bg:'rgba(74,222,128,.14)',  border:'#4ade80', badgeBg:'rgba(74,222,128,.82)', badgeColor:'#fff',    icon:'🟢' };
+    if (daysLeft < 0)      return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#fff',    icon:'🔴' };
+    if (daysLeft === 0)    return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#fff',    icon:'🔴' };
+    if (daysLeft <= 3)     return { bg:'rgba(248,113,113,.16)', border:'#f87171', badgeBg:'rgba(248,113,113,.78)', badgeColor:'#fff',    icon:'🟠' };
+    if (daysLeft <= 6)     return { bg:'rgba(251,191,36,.14)',  border:'#fbbf24', badgeBg:'rgba(251,191,36,.85)', badgeColor:'#1a1100', icon:'🟡' };
+    return                        { bg:'rgba(74,222,128,.12)',  border:'#4ade80', badgeBg:'rgba(74,222,128,.78)', badgeColor:'#fff',    icon:'🟢' };
   }
 
   function _badgeText(dl) {
@@ -2348,21 +2347,20 @@ let prueba;
     grouped[m.id].tasks.push(t);
   });
 
-  // Inyectar CSS responsive una vez
+  // Inyectar CSS responsive una sola vez
   if (!document.getElementById('ov-task-css')) {
     const s = document.createElement('style'); s.id = 'ov-task-css';
     s.textContent = `
-      .ov-task-row { display:flex; align-items:center; gap:14px; padding:14px 18px; transition:filter .15s; }
-      .ov-task-row:hover { filter:brightness(1.08); }
+      .ov-task-row { display:flex; align-items:center; gap:12px; padding:11px 16px; transition:filter .15s; }
+      .ov-task-row:hover { filter:brightness(1.07); }
       .ov-task-row .mc-task-info { flex:1; min-width:0; }
-      .ov-task-row .ov-badge { display:inline-flex; align-items:center; gap:6px; border-radius:12px; font-size:13px; font-weight:800; padding:7px 16px; white-space:nowrap; flex-shrink:0; box-shadow:0 2px 10px rgba(0,0,0,.30); letter-spacing:.2px; }
-      .ov-mat-header { padding:10px 16px 6px; display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); }
+      .ov-badge { display:inline-flex; align-items:center; gap:5px; border-radius:10px; font-size:12px; font-weight:800; padding:5px 12px; white-space:nowrap; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,.25); letter-spacing:.2px; }
+      .ov-mat-header { padding:8px 14px 5px; display:flex; align-items:center; gap:8px; border-top:1px solid var(--border); }
       @media (max-width:540px) {
-        .ov-task-row { flex-wrap:wrap; gap:8px; padding:12px 14px; }
+        .ov-task-row { flex-wrap:wrap; gap:6px; padding:10px 12px; }
         .ov-task-row .mc-task-info { width:100%; }
-        .ov-task-row .ov-badge-wrap { width:100%; }
-        .ov-task-row .ov-badge { font-size:12px; padding:6px 14px; }
-        .ov-task-title-text { font-size:14px !important; }
+        .ov-badge-wrap { width:100%; }
+        .ov-badge { font-size:11px; padding:4px 11px; }
       }
     `;
     document.head.appendChild(s);
@@ -2374,12 +2372,12 @@ let prueba;
     const daysLeft = dueD  ? Math.ceil((dueD - today2) / 86400000) : null;
     const pal      = _pal(daysLeft);
     const bgStyle  = pal.border
-      ? `background:${pal.bg};border-left:4px solid ${pal.border};`
-      : 'border-left:4px solid var(--border2);';
+      ? `background:${pal.bg};border-left:3px solid ${pal.border};`
+      : 'border-left:3px solid var(--border2);';
     const prog       = subtaskProgress(t);
     const dueTimeStr = t.dueTime ? ` · ⏰ ${t.dueTime}` : '';
     const planStr    = t.datePlanned
-      ? `<span style="font-size:12px;color:var(--text3);">📋 ${fmtD(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}</span>`
+      ? `<span style="font-size:11px;color:var(--text3);">📋 ${fmtD(t.datePlanned)}${t.timePlanned?' '+t.timePlanned:''}</span>`
       : '';
     const prioClass  = t.priority === 'high'||t.priority === 'alta' ? 'prio-alta'
                      : t.priority === 'low' ||t.priority === 'baja' ? 'prio-baja'
@@ -2388,12 +2386,12 @@ let prueba;
     const type = (t.type||'TAREA').toUpperCase();
     return `<div class="mc-task-item ov-task-row ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}">
       <div class="mc-task-info">
-        <div class="mc-task-title ov-task-title-text" style="font-size:15px;font-weight:700;margin-bottom:7px;line-height:1.3;color:var(--text);">${t.title}</div>
-        <div class="mc-task-meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="background:${mc}33;color:${mc};border:1px solid ${mc}55;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:800;letter-spacing:.4px;">${type}</span>
-          ${t.due?`<span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:600;color:var(--text2);">📅 ${fmtD(t.due)}${dueTimeStr}</span>`:''}
+        <div class="mc-task-title" style="font-size:13px;font-weight:700;margin-bottom:5px;line-height:1.3;color:var(--text);">${t.title}</div>
+        <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+          <span style="background:${mc}33;color:${mc};border:1px solid ${mc}55;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;letter-spacing:.3px;">${type}</span>
+          ${t.due?`<span style="font-family:'Space Mono',monospace;font-size:12px;font-weight:500;color:var(--text2);">📅 ${fmtD(t.due)}${dueTimeStr}</span>`:''}
           ${planStr}
-          ${prog?`<span style="font-size:12px;color:var(--text3);">📎 ${prog.done}/${prog.total} sub.</span>`:''}
+          ${prog?`<span style="font-size:11px;color:var(--text3);">📎 ${prog.done}/${prog.total} sub.</span>`:''}
         </div>
       </div>
       <div class="ov-badge-wrap" style="flex-shrink:0;">
@@ -2409,15 +2407,15 @@ let prueba;
     html += sortByDue(noMatTasks).map(_taskHtml).join('');
   }
 
-  // 2. Grupos por materia — nombre en BLANCO, color como borde izquierdo (dinámico)
+  // 2. Grupos por materia — nombre en blanco, color como borde izquierdo (dinámico)
   Object.values(grouped).forEach(({ mat, tasks }) => {
     const cnt = tasks.length;
     const mc  = mat.color || 'var(--accent)';
-    html += `<div class="ov-mat-header" style="border-left:4px solid ${mc};background:rgba(255,255,255,.03);">
-      <span style="font-size:17px;line-height:1;">${mat.icon||'📚'}</span>
-      <span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">${mat.name}</span>
-      ${mat.code?`<span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);background:var(--surface2);padding:2px 7px;border-radius:5px;">${mat.code}</span>`:''}
-      <span style="font-size:11px;color:var(--text3);margin-left:auto;background:var(--surface2);padding:2px 9px;border-radius:20px;">${cnt} pendiente${cnt!==1?'s':''}</span>
+    html += `<div class="ov-mat-header" style="border-left:3px solid ${mc};background:rgba(255,255,255,.025);">
+      <span style="font-size:15px;line-height:1;">${mat.icon||'📚'}</span>
+      <span style="font-size:13px;font-weight:800;color:var(--text);">${mat.name}</span>
+      ${mat.code?`<span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);background:var(--surface2);padding:1px 6px;border-radius:4px;">${mat.code}</span>`:''}
+      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${cnt} pendiente${cnt!==1?'s':''}</span>
     </div>`;
     html += sortByDue(tasks).map(_taskHtml).join('');
   });
