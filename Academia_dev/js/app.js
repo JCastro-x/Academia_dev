@@ -2954,12 +2954,13 @@ function toggleTheme() {
 
 function _applyFont(fontName) {
   const fontMap = {
+    'Sistema': "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
     'Syne': "'Syne', sans-serif",
     'Inter': "'Inter', sans-serif",
     'JetBrains Mono': "'JetBrains Mono', monospace",
     'Playfair Display': "'Playfair Display', serif"
   };
-  const fontVal = fontMap[fontName] || "'Syne', sans-serif";
+  const fontVal = fontMap[fontName] || "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
   document.documentElement.style.setProperty('--app-font', fontVal);
 }
 

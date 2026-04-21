@@ -2314,14 +2314,14 @@ function _renderOverview() {
     return;
   }
 
-  // ── Paleta: fondo fila y badge mismo color, texto NEGRO para legibilidad ──
+  // ── Paleta: rojo <3d, amarillo 4-5d, verde ≥6d — texto negro para legibilidad ──
   function _pal(daysLeft) {
     if (daysLeft === null) return { bg:'', border:'', badgeBg:'rgba(150,150,150,.25)', badgeColor:'var(--text2)', icon:'—' };
-    if (daysLeft < 0)      return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(220,50,50,.82)',  badgeColor:'#fff',    icon:'❗' };
-    if (daysLeft === 0)    return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(220,50,50,.82)',  badgeColor:'#fff',    icon:'🔴' };
-    if (daysLeft <= 3)     return { bg:'rgba(248,113,113,.16)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#111',   icon:'🟠' };
-    if (daysLeft <= 6)     return { bg:'rgba(251,191,36,.14)',  border:'#fbbf24', badgeBg:'rgba(251,191,36,.90)', badgeColor:'#111',   icon:'🟡' };
-    return                        { bg:'rgba(74,222,128,.12)',  border:'#4ade80', badgeBg:'rgba(52,190,100,.82)', badgeColor:'#111',   icon:'🟢' };
+    if (daysLeft < 0)      return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(210,40,40,.85)',   badgeColor:'#fff',  icon:'❗' };
+    if (daysLeft === 0)    return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(210,40,40,.85)',   badgeColor:'#fff',  icon:'🔴' };
+    if (daysLeft <= 3)     return { bg:'rgba(248,113,113,.16)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#111',  icon:'🟠' };
+    if (daysLeft <= 5)     return { bg:'rgba(251,191,36,.14)',  border:'#fbbf24', badgeBg:'rgba(251,191,36,.90)',  badgeColor:'#111',  icon:'🟡' };
+    return                        { bg:'rgba(74,222,128,.12)',  border:'#4ade80', badgeBg:'rgba(40,180,90,.82)',   badgeColor:'#111',  icon:'🟢' };
   }
 
   function _badgeText(dl) {
@@ -2332,8 +2332,8 @@ function _renderOverview() {
     return                   `Faltan ${dl} días`;
   }
 
-  // Fecha legible sin monospace: "lun. 22 abr."
-  const _DAYS  = ['dom','lun','mar','mié','jue','vie','sáb'];
+  // Fecha legible: "mié. 22 abr."
+  const _DAYS   = ['dom','lun','mar','mié','jue','vie','sáb'];
   const _MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   function _fmtReadable(dateStr) {
     if (!dateStr) return '';
@@ -2386,6 +2386,13 @@ function _renderOverview() {
         border-top: 1px solid var(--border);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       }
+      .ov-prog-bar-wrap {
+        width: 100%; height: 5px; background: rgba(255,255,255,.10);
+        border-radius: 3px; margin-top: 6px; overflow: hidden;
+      }
+      .ov-prog-bar-fill {
+        height: 100%; border-radius: 3px; transition: width .4s ease;
+      }
       @media (max-width: 540px) {
         .ov-task-row { flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
         .ov-task-row .mc-task-info { width: 100%; }
@@ -2414,6 +2421,17 @@ function _renderOverview() {
                      : t.priority ? 'prio-media' : 'prio-none';
     const mc   = m ? (m.color||'#7c6aff') : '#7c6aff';
     const type = (t.type||'Tarea');
+    // Barra de progreso de subtareas
+    const progBar = prog && prog.total > 0 ? (() => {
+      const pct  = Math.round((prog.done / prog.total) * 100);
+      const barC = pct >= 100 ? '#4ade80' : pct >= 50 ? '#fbbf24' : '#f87171';
+      return `<div class="ov-prog-bar-wrap">
+        <div class="ov-prog-bar-fill" style="width:${pct}%;background:${barC};"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px;">
+        📎 ${prog.done}/${prog.total} subtareas · ${pct}%
+      </div>`;
+    })() : '';
     return `<div class="mc-task-item ov-task-row ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}">
       <div class="mc-task-info">
         <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">${t.title}</div>
@@ -2421,8 +2439,8 @@ function _renderOverview() {
           <span style="background:${mc}33;color:${mc};border:1px solid ${mc}55;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${type}</span>
           ${t.due?`<span style="font-size:12px;color:var(--text2);">📅 ${_fmtReadable(t.due)}${dueTimeStr}</span>`:''}
           ${planStr}
-          ${prog?`<span style="font-size:11px;color:var(--text3);">📎 ${prog.done}/${prog.total} sub.</span>`:''}
         </div>
+        ${progBar}
       </div>
       <div class="ov-badge-wrap" style="flex-shrink:0;">
         <span class="ov-badge" style="background:${pal.badgeBg};color:${pal.badgeColor};">${pal.icon} ${_badgeText(daysLeft)}</span>
@@ -2450,26 +2468,39 @@ function _renderOverview() {
     html += sortByDue(tasks).map(_taskHtml).join('');
   });
 
-  // 3. Eventos del calendario (fondo azul, al final)
+  // 3. Eventos ordenados por fecha más próxima
   if (allEvents.length) {
-    html += `<div style="padding:8px 16px 4px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);">
-      <span style="font-size:15px;font-weight:800;color:#60a5fa;">📅 Eventos</span>
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${allEvents.length} próximo${allEvents.length!==1?'s':''}</span>
+    const sortedEvs = [...allEvents].sort((a,b) => {
+      const da = (a.date||a.start||'').slice(0,10);
+      const db = (b.date||b.start||'').slice(0,10);
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+    html += `<div class="ov-mat-header" style="border-left:3px solid #60a5fa;background:rgba(96,165,250,.05);">
+      <span style="font-size:14px;">📅</span>
+      <span style="font-size:13px;font-weight:700;color:var(--text);">Eventos</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${sortedEvs.length} próximo${sortedEvs.length!==1?'s':''}</span>
     </div>`;
-    allEvents.forEach(ev => {
-      const evMat  = ev.matId ? getMat(ev.matId) : null;
-      const evDate = (ev.date||ev.start||'').slice(0,10);
-      html += `<div class="mc-task-item" style="cursor:pointer;background:rgba(96,165,250,.13);border-left:3px solid #60a5fa;">
+    sortedEvs.forEach(ev => {
+      const evMat    = ev.matId ? getMat(ev.matId) : null;
+      const evDate   = (ev.date||ev.start||'').slice(0,10);
+      const evDueD   = evDate ? new Date(evDate + 'T00:00:00') : null;
+      const evDLeft  = evDueD ? Math.ceil((evDueD - today2) / 86400000) : null;
+      const evPal    = _pal(evDLeft);
+      const evBgStyle = evPal.border
+        ? `background:${evPal.bg};border-left:3px solid ${evPal.border};`
+        : 'background:rgba(96,165,250,.08);border-left:3px solid #60a5fa;';
+      html += `<div class="mc-task-item ov-task-row" style="cursor:default;${evBgStyle}">
         <div class="mc-task-info">
-          <div class="mc-task-title">📅 ${ev.title||'Evento'}</div>
-          <div class="mc-task-meta">
-            ${evMat?`<span style="background:${evMat.color||'#60a5fa'}22;color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}44;border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;">${evMat.code||evMat.name}</span>`:''}
-            ${evDate?`<span style="font-family:'Space Mono',monospace;">${fmtD(evDate)}</span>`:''}
-            ${ev.time?`<span>⏰ ${ev.time}</span>`:''}
-            ${ev.type?`<span>${ev.type}</span>`:''}
+          <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">📅 ${ev.title||'Evento'}</div>
+          <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+            ${evMat?`<span style="background:${evMat.color||'#60a5fa'}33;color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}55;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${evMat.code||evMat.name}</span>`:''}
+            ${evDate?`<span style="font-size:12px;color:var(--text2);">📅 ${_fmtReadable(evDate)}${ev.time?' · ⏰ '+ev.time:''}</span>`:''}
+            ${ev.type?`<span style="font-size:11px;color:var(--text3);">${ev.type}</span>`:''}
           </div>
         </div>
-        <span class="urgency-badge" style="background:rgba(96,165,250,.2);color:#60a5fa;border-color:#60a5fa44;">Evento</span>
+        <div class="ov-badge-wrap" style="flex-shrink:0;">
+          <span class="ov-badge" style="background:${evPal.border?evPal.badgeBg:'rgba(96,165,250,.75)'};color:${evPal.border?evPal.badgeColor:'#111'};">${evPal.border?evPal.icon:'📅'} ${evDLeft!==null?_badgeText(evDLeft):'Evento'}</span>
+        </div>
       </div>`;
     });
   }
@@ -2526,7 +2557,13 @@ function renderProfilePage() {
   // Sync personalization selects
   const fontSel  = document.getElementById('cfg-font-select');
   const soundSel = document.getElementById('cfg-sound-select');
-  if (fontSel)  fontSel.value  = State.settings.font || 'Syne';
+  // Inject "Sistema" option first time if not present
+  if (fontSel && !fontSel.querySelector('option[value="Sistema"]')) {
+    const opt = document.createElement('option');
+    opt.value = 'Sistema'; opt.textContent = 'Sistema (fuente del dispositivo)';
+    fontSel.insertBefore(opt, fontSel.firstChild);
+  }
+  if (fontSel)  fontSel.value  = State.settings.font || 'Sistema';
   if (soundSel) soundSel.value = State.settings.soundVariant || 'classic';
   // Sync accent color picker
   const accent = State.settings.accentColor || '#7c6aff';
