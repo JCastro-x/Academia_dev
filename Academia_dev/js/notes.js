@@ -2368,7 +2368,7 @@ function _renderOverview() {
     const s = document.createElement('style'); s.id = 'ov-task-css';
     s.textContent = `
       .ov-task-row {
-        display: flex; align-items: center; gap: 12px;
+        display: flex; align-items: flex-start; gap: 12px;
         padding: 11px 16px; transition: filter .15s;
       }
       .ov-task-row:hover { filter: brightness(1.07); }
@@ -2378,6 +2378,10 @@ function _renderOverview() {
         border-radius: 8px; font-size: 12px; font-weight: 700;
         padding: 5px 12px; white-space: nowrap; flex-shrink: 0;
         box-shadow: 0 1px 6px rgba(0,0,0,.22); letter-spacing: .1px;
+      }
+      .ov-badge-wrap {
+        flex-shrink: 0; display: flex; flex-direction: column;
+        align-items: flex-end; gap: 4px; min-width: 120px;
       }
       .ov-mat-header {
         padding: 9px 14px 6px; display: flex; align-items: center; gap: 8px;
@@ -2393,10 +2397,9 @@ function _renderOverview() {
       @media (max-width: 600px) {
         .ov-task-row { flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
         .ov-task-row .mc-task-info { width: 100%; }
-        .ov-badge-wrap { width: 100%; display: flex; }
-        .ov-badge { font-size: 11px; padding: 4px 10px; flex: 1; justify-content: center; }
+        .ov-badge-wrap { width: 100%; flex-direction: row; align-items: center; justify-content: space-between; min-width: 0; }
+        .ov-badge { font-size: 11px; padding: 4px 10px; }
         .ov-mat-header { padding: 8px 12px 5px; flex-wrap: wrap; gap: 5px; }
-        .ov-mat-header span:last-child { margin-left: 0 !important; }
       }
       @media (max-width: 400px) {
         .ov-task-row { padding: 9px 10px; }
@@ -2404,6 +2407,24 @@ function _renderOverview() {
       }
     `;
     document.head.appendChild(s);
+  }
+
+  // Colores por tipo de tarea (independientes de prioridad y de la materia)
+  const _typeColorMap = {
+    'tarea':    { bg:'rgba(34,211,238,.15)',  border:'#22d3ee', text:'#22d3ee'  },
+    'parcial':  { bg:'rgba(251,146,60,.18)',  border:'#fb923c', text:'#fb923c'  },
+    'proyecto': { bg:'rgba(167,139,250,.18)', border:'#a78bfa', text:'#a78bfa'  },
+    'examen':   { bg:'rgba(244,114,182,.18)', border:'#f472b6', text:'#f472b6'  },
+    'lab':      { bg:'rgba(74,222,128,.15)',  border:'#4ade80', text:'#4ade80'  },
+    'quiz':     { bg:'rgba(251,191,36,.15)',  border:'#fbbf24', text:'#e9a800'  },
+    'practica': { bg:'rgba(99,102,241,.15)',  border:'#818cf8', text:'#818cf8'  },
+    'práctica': { bg:'rgba(99,102,241,.15)',  border:'#818cf8', text:'#818cf8'  },
+    'trabajo':  { bg:'rgba(20,184,166,.15)',  border:'#2dd4bf', text:'#2dd4bf'  },
+    'informe':  { bg:'rgba(16,185,129,.15)',  border:'#34d399', text:'#34d399'  },
+  };
+  function _typeStyle(type, fallbackColor) {
+    const key = (type||'tarea').toLowerCase().trim();
+    return _typeColorMap[key] || { bg: fallbackColor+'22', border: fallbackColor+'88', text: fallbackColor };
   }
 
   function _taskHtml(t) {
@@ -2424,6 +2445,7 @@ function _renderOverview() {
                      : t.priority ? 'prio-media' : 'prio-none';
     const mc   = m ? (m.color||'#7c6aff') : '#7c6aff';
     const type = (t.type||'Tarea');
+    const tc   = _typeStyle(type, mc);
     // Barra de progreso de subtareas
     const progBar = prog && prog.total > 0 ? (() => {
       const pct  = Math.round((prog.done / prog.total) * 100);
@@ -2435,17 +2457,21 @@ function _renderOverview() {
         📎 ${prog.done}/${prog.total} subtareas · ${pct}%
       </div>`;
     })() : '';
+    // Fecha de entrega grande apilada encima del badge (lado derecho)
+    const dueDateBig = t.due
+      ? `<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:right;margin-bottom:4px;white-space:nowrap;line-height:1.2;">📅 ${_fmtReadable(t.due)}${dueTimeStr}</div>`
+      : '';
     return `<div class="mc-task-item ov-task-row ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}">
       <div class="mc-task-info">
         <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">${t.title}</div>
         <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-          <span style="background:${mc}33;color:${mc};border:1px solid ${mc}55;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${type}</span>
-          ${t.due?`<span style="font-size:12px;color:var(--text2);">📅 ${_fmtReadable(t.due)}${dueTimeStr}</span>`:''}
+          <span style="background:${tc.bg};color:${tc.text};border:1px solid ${tc.border};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${type}</span>
           ${planStr}
         </div>
         ${progBar}
       </div>
-      <div class="ov-badge-wrap" style="flex-shrink:0;">
+      <div class="ov-badge-wrap" style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        ${dueDateBig}
         <span class="ov-badge" style="background:${pal.badgeBg};color:${pal.badgeColor};">${pal.icon} ${_badgeText(daysLeft)}</span>
       </div>
     </div>`;
@@ -2488,22 +2514,24 @@ function _renderOverview() {
       const evDate   = (ev.date||ev.start||'').slice(0,10);
       const evDueD   = evDate ? new Date(evDate + 'T00:00:00') : null;
       const evDLeft  = evDueD ? Math.ceil((evDueD - today2) / 86400000) : null;
-      // Eventos siempre con fondo azul, independientemente de los días que faltan
+      // Eventos siempre con fondo azul independientemente de los días que faltan
       const evBgStyle = 'background:rgba(96,165,250,.10);border-left:3px solid #60a5fa;';
-      // Badge badge azul, texto del badge varía según urgencia pero fondo siempre azul
       const badgeBg   = 'rgba(59,130,246,.85)';
       const badgeColor = '#fff';
       const evIcon    = evDLeft !== null && evDLeft < 0 ? '❗' : evDLeft === 0 ? '🔴' : '📅';
+      const evDateBig = evDate
+        ? `<div style="font-size:12px;font-weight:700;color:#93c5fd;text-align:right;margin-bottom:4px;white-space:nowrap;line-height:1.2;">📅 ${_fmtReadable(evDate)}${ev.time?' · ⏰ '+ev.time:''}</div>`
+        : '';
       html += `<div class="mc-task-item ov-task-row" style="cursor:default;${evBgStyle}">
         <div class="mc-task-info">
           <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">📅 ${ev.title||'Evento'}</div>
           <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
             ${evMat?`<span style="background:${evMat.color||'#60a5fa'}33;color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}55;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${evMat.code||evMat.name}</span>`:''}
-            ${evDate?`<span style="font-size:12px;color:var(--text2);">📅 ${_fmtReadable(evDate)}${ev.time?' · ⏰ '+ev.time:''}</span>`:''}
-            ${ev.type?`<span style="font-size:11px;color:var(--text3);">${ev.type}</span>`:''}
+            ${ev.type?`<span style="font-size:11px;color:#93c5fd;">${ev.type}</span>`:''}
           </div>
         </div>
-        <div class="ov-badge-wrap" style="flex-shrink:0;">
+        <div class="ov-badge-wrap" style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          ${evDateBig}
           <span class="ov-badge" style="background:${badgeBg};color:${badgeColor};">${evIcon} ${evDLeft!==null?_badgeText(evDLeft):'Evento'}</span>
         </div>
       </div>`;
