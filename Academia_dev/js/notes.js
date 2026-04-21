@@ -2384,9 +2384,11 @@ function _renderOverview() {
         align-items: flex-end; gap: 4px; min-width: 120px;
       }
       .ov-mat-header {
-        padding: 9px 14px 6px; display: flex; align-items: center; gap: 8px;
-        border-top: 1px solid var(--border);
+        padding: 10px 16px 8px; display: flex; align-items: center; gap: 8px;
+        border-top: 2px solid var(--border);
+        margin-top: 6px;
       }
+      .ov-mat-header:first-child { border-top: none; margin-top: 0; }
       .ov-prog-bar-wrap {
         width: 100%; height: 5px; background: rgba(255,255,255,.10);
         border-radius: 3px; margin-top: 6px; overflow: hidden;
@@ -2489,10 +2491,10 @@ function _renderOverview() {
       const db = (b.date||b.start||'').slice(0,10);
       return da < db ? -1 : da > db ? 1 : 0;
     });
-    html += `<div class="ov-mat-header" style="border-left:3px solid #60a5fa;background:rgba(96,165,250,.05);">
-      <span style="font-size:14px;">📅</span>
-      <span style="font-size:13px;font-weight:700;color:var(--text);">Eventos</span>
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${sortedEvs.length} próximo${sortedEvs.length!==1?'s':''}</span>
+    html += `<div class="ov-mat-header" style="border-left:4px solid #60a5fa;background:rgba(96,165,250,.08);">
+      <span style="font-size:15px;">📅</span>
+      <span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Eventos</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:auto;background:rgba(96,165,250,.15);padding:2px 8px;border-radius:10px;">${sortedEvs.length} próximo${sortedEvs.length!==1?'s':''}</span>
     </div>`;
     sortedEvs.forEach(ev => {
       const evMat    = ev.matId ? getMat(ev.matId) : null;
@@ -2532,11 +2534,11 @@ function _renderOverview() {
   sortedGroups.forEach(({ mat, tasks }) => {
     const cnt = tasks.length;
     const mc  = mat.color || 'var(--accent)';
-    html += `<div class="ov-mat-header" style="border-left:3px solid ${mc};background:rgba(255,255,255,.025);">
-      <span style="font-size:14px;line-height:1;">${mat.icon||'📚'}</span>
-      <span style="font-size:13px;font-weight:700;color:var(--text);">${mat.name}</span>
-      ${mat.code?`<span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 6px;border-radius:4px;">${mat.code}</span>`:''}
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${cnt} pendiente${cnt!==1?'s':''}</span>
+    html += `<div class="ov-mat-header" style="border-left:4px solid ${mc};background:${mc}12;">
+      <span style="font-size:15px;line-height:1;">${mat.icon||'📚'}</span>
+      <span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">${mat.name}</span>
+      ${mat.code?`<span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 7px;border-radius:4px;font-family:'Space Mono',monospace;">${mat.code}</span>`:''}
+      <span style="font-size:10px;color:var(--text3);margin-left:auto;background:${mc}22;padding:2px 8px;border-radius:10px;">${cnt} pendiente${cnt!==1?'s':''}</span>
     </div>`;
     html += sortByDue(tasks).map(_taskHtml).join('');
   });
