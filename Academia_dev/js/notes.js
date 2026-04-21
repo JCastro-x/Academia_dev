@@ -2222,7 +2222,7 @@ function _renderOverview() {
 
   updateGPADisplay();
 
-  const urgentCount = pending.filter(t => t.due && (new Date(t.due)-new Date())/86400000 <= 2 && (new Date(t.due)-new Date())/86400000 >= 0).length;
+  const urgentCount = pending.filter(t => t.due && (new Date(t.due)-new Date())/86400000 < 3 && (new Date(t.due)-new Date())/86400000 >= 0).length;
   const profileSub  = State.settings?.profile?.carrera ? ` · ${State.settings.profile.carrera}` : '';
   const subEl = _el('ov-sub');
   if (subEl) subEl.textContent =
@@ -2314,12 +2314,12 @@ function _renderOverview() {
     return;
   }
 
-  // ── Paleta: rojo <3d, amarillo 4-5d, verde ≥6d — texto negro para legibilidad ──
+  // ── Paleta: rojo <3d (0,1,2), amarillo 3-5d, verde ≥6d ──
   function _pal(daysLeft) {
     if (daysLeft === null) return { bg:'', border:'', badgeBg:'rgba(150,150,150,.25)', badgeColor:'var(--text2)', icon:'—' };
     if (daysLeft < 0)      return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(210,40,40,.85)',   badgeColor:'#fff',  icon:'❗' };
     if (daysLeft === 0)    return { bg:'rgba(248,113,113,.20)', border:'#f87171', badgeBg:'rgba(210,40,40,.85)',   badgeColor:'#fff',  icon:'🔴' };
-    if (daysLeft <= 3)     return { bg:'rgba(248,113,113,.16)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#111',  icon:'🟠' };
+    if (daysLeft < 3)      return { bg:'rgba(248,113,113,.16)', border:'#f87171', badgeBg:'rgba(248,113,113,.82)', badgeColor:'#111',  icon:'🟠' };
     if (daysLeft <= 5)     return { bg:'rgba(251,191,36,.14)',  border:'#fbbf24', badgeBg:'rgba(251,191,36,.90)',  badgeColor:'#111',  icon:'🟡' };
     return                        { bg:'rgba(74,222,128,.12)',  border:'#4ade80', badgeBg:'rgba(40,180,90,.82)',   badgeColor:'#111',  icon:'🟢' };
   }
@@ -2370,7 +2370,6 @@ function _renderOverview() {
       .ov-task-row {
         display: flex; align-items: center; gap: 12px;
         padding: 11px 16px; transition: filter .15s;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       }
       .ov-task-row:hover { filter: brightness(1.07); }
       .ov-task-row .mc-task-info { flex: 1; min-width: 0; }
@@ -2379,12 +2378,10 @@ function _renderOverview() {
         border-radius: 8px; font-size: 12px; font-weight: 700;
         padding: 5px 12px; white-space: nowrap; flex-shrink: 0;
         box-shadow: 0 1px 6px rgba(0,0,0,.22); letter-spacing: .1px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       }
       .ov-mat-header {
         padding: 9px 14px 6px; display: flex; align-items: center; gap: 8px;
         border-top: 1px solid var(--border);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       }
       .ov-prog-bar-wrap {
         width: 100%; height: 5px; background: rgba(255,255,255,.10);
@@ -2393,11 +2390,17 @@ function _renderOverview() {
       .ov-prog-bar-fill {
         height: 100%; border-radius: 3px; transition: width .4s ease;
       }
-      @media (max-width: 540px) {
+      @media (max-width: 600px) {
         .ov-task-row { flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
         .ov-task-row .mc-task-info { width: 100%; }
-        .ov-badge-wrap { width: 100%; }
-        .ov-badge { font-size: 11px; padding: 4px 10px; }
+        .ov-badge-wrap { width: 100%; display: flex; }
+        .ov-badge { font-size: 11px; padding: 4px 10px; flex: 1; justify-content: center; }
+        .ov-mat-header { padding: 8px 12px 5px; flex-wrap: wrap; gap: 5px; }
+        .ov-mat-header span:last-child { margin-left: 0 !important; }
+      }
+      @media (max-width: 400px) {
+        .ov-task-row { padding: 9px 10px; }
+        .ov-badge { font-size: 10px; }
       }
     `;
     document.head.appendChild(s);
@@ -2485,10 +2488,12 @@ function _renderOverview() {
       const evDate   = (ev.date||ev.start||'').slice(0,10);
       const evDueD   = evDate ? new Date(evDate + 'T00:00:00') : null;
       const evDLeft  = evDueD ? Math.ceil((evDueD - today2) / 86400000) : null;
-      const evPal    = _pal(evDLeft);
-      const evBgStyle = evPal.border
-        ? `background:${evPal.bg};border-left:3px solid ${evPal.border};`
-        : 'background:rgba(96,165,250,.08);border-left:3px solid #60a5fa;';
+      // Eventos siempre con fondo azul, independientemente de los días que faltan
+      const evBgStyle = 'background:rgba(96,165,250,.10);border-left:3px solid #60a5fa;';
+      // Badge badge azul, texto del badge varía según urgencia pero fondo siempre azul
+      const badgeBg   = 'rgba(59,130,246,.85)';
+      const badgeColor = '#fff';
+      const evIcon    = evDLeft !== null && evDLeft < 0 ? '❗' : evDLeft === 0 ? '🔴' : '📅';
       html += `<div class="mc-task-item ov-task-row" style="cursor:default;${evBgStyle}">
         <div class="mc-task-info">
           <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">📅 ${ev.title||'Evento'}</div>
@@ -2499,7 +2504,7 @@ function _renderOverview() {
           </div>
         </div>
         <div class="ov-badge-wrap" style="flex-shrink:0;">
-          <span class="ov-badge" style="background:${evPal.border?evPal.badgeBg:'rgba(96,165,250,.75)'};color:${evPal.border?evPal.badgeColor:'#111'};">${evPal.border?evPal.icon:'📅'} ${evDLeft!==null?_badgeText(evDLeft):'Evento'}</span>
+          <span class="ov-badge" style="background:${badgeBg};color:${badgeColor};">${evIcon} ${evDLeft!==null?_badgeText(evDLeft):'Evento'}</span>
         </div>
       </div>`;
     });

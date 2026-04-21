@@ -71,7 +71,7 @@ async function idbDeleteImage(key) {
 
 const DEFAULT_MATERIAS = [];
 
-const DEFAULT_SETTINGS = { minGrade: 70, theme: 'dark', semester: '1er Año · 2do Sem', font: 'Syne', soundVariant: 'classic', accentColor: '#7c6aff' };
+const DEFAULT_SETTINGS = { minGrade: 70, theme: 'dark', semester: '1er Año · 2do Sem', font: 'Sistema', soundVariant: 'classic', accentColor: '#7c6aff' };
 
 function dbGet(key, fallback = null) {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }
@@ -3164,7 +3164,7 @@ function continueInit(auth) {
   if (themeBtn) themeBtn.textContent = State.settings.theme==='light' ? '🌙' : '☀️';
 
   // Apply saved font
-  _applyFont(State.settings.font || 'Syne');
+  _applyFont(State.settings.font || 'Sistema');
   // Apply saved accent color
   _applyAccentColor(State.settings.accentColor || '#7c6aff');
 
