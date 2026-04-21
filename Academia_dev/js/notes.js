@@ -2411,16 +2411,19 @@ function _renderOverview() {
 
   // Colores por tipo de tarea (independientes de prioridad y de la materia)
   const _typeColorMap = {
-    'tarea':    { bg:'rgba(34,211,238,.15)',  border:'#22d3ee', text:'#22d3ee'  },
-    'parcial':  { bg:'rgba(251,146,60,.18)',  border:'#fb923c', text:'#fb923c'  },
-    'proyecto': { bg:'rgba(167,139,250,.18)', border:'#a78bfa', text:'#a78bfa'  },
-    'examen':   { bg:'rgba(244,114,182,.18)', border:'#f472b6', text:'#f472b6'  },
-    'lab':      { bg:'rgba(74,222,128,.15)',  border:'#4ade80', text:'#4ade80'  },
-    'quiz':     { bg:'rgba(251,191,36,.15)',  border:'#fbbf24', text:'#e9a800'  },
-    'practica': { bg:'rgba(99,102,241,.15)',  border:'#818cf8', text:'#818cf8'  },
-    'práctica': { bg:'rgba(99,102,241,.15)',  border:'#818cf8', text:'#818cf8'  },
-    'trabajo':  { bg:'rgba(20,184,166,.15)',  border:'#2dd4bf', text:'#2dd4bf'  },
-    'informe':  { bg:'rgba(16,185,129,.15)',  border:'#34d399', text:'#34d399'  },
+    'tarea':          { bg:'rgba(34,211,238,.15)',  border:'#22d3ee', text:'#22d3ee'  },
+    'parcial':        { bg:'rgba(251,146,60,.18)',  border:'#fb923c', text:'#fb923c'  },
+    'proyecto':       { bg:'rgba(167,139,250,.18)', border:'#a78bfa', text:'#a78bfa'  },
+    'examen':         { bg:'rgba(244,114,182,.18)', border:'#f472b6', text:'#f472b6'  },
+    'examen final':   { bg:'rgba(244,114,182,.22)', border:'#f472b6', text:'#f472b6'  },
+    'lab':            { bg:'rgba(74,222,128,.15)',  border:'#4ade80', text:'#4ade80'  },
+    'quiz':           { bg:'rgba(251,191,36,.15)',  border:'#fbbf24', text:'#e9a800'  },
+    'taller':         { bg:'rgba(20,184,166,.15)',  border:'#2dd4bf', text:'#2dd4bf'  },
+    'hoja de trabajo':{ bg:'rgba(99,102,241,.15)',  border:'#818cf8', text:'#818cf8'  },
+    'practica':       { bg:'rgba(99,102,241,.15)',  border:'#818cf8', text:'#818cf8'  },
+    'práctica':       { bg:'rgba(99,102,241,.15)',  border:'#818cf8', text:'#818cf8'  },
+    'trabajo':        { bg:'rgba(20,184,166,.15)',  border:'#2dd4bf', text:'#2dd4bf'  },
+    'informe':        { bg:'rgba(16,185,129,.15)',  border:'#34d399', text:'#34d399'  },
   };
   function _typeStyle(type, fallbackColor) {
     const key = (type||'tarea').toLowerCase().trim();
@@ -2432,9 +2435,9 @@ function _renderOverview() {
     const dueD     = t.due ? new Date(t.due + 'T00:00:00') : null;
     const daysLeft = dueD  ? Math.ceil((dueD - today2) / 86400000) : null;
     const pal      = _pal(daysLeft);
-    const bgStyle  = pal.border
-      ? `background:${pal.bg};border-left:3px solid ${pal.border};`
-      : 'border-left:3px solid var(--border2);';
+    // Fondo neutro fijo — solo el borde izquierdo lleva el color de urgencia
+    const borderColor = pal.border || 'var(--border2)';
+    const bgStyle  = `background:var(--surface2,rgba(255,255,255,.04));border-left:3px solid ${borderColor};`;
     const prog       = subtaskProgress(t);
     const dueTimeStr = t.dueTime ? ` · ⏰ ${t.dueTime}` : '';
     const planStr    = t.datePlanned
@@ -2479,25 +2482,7 @@ function _renderOverview() {
 
   let html = '';
 
-  // 1. Tareas sin materia (primero, ordenadas por fecha)
-  if (noMatTasks.length) {
-    html += sortByDue(noMatTasks).map(_taskHtml).join('');
-  }
-
-  // 2. Grupos ordenados por fecha de vencimiento más próxima
-  sortedGroups.forEach(({ mat, tasks }) => {
-    const cnt = tasks.length;
-    const mc  = mat.color || 'var(--accent)';
-    html += `<div class="ov-mat-header" style="border-left:3px solid ${mc};background:rgba(255,255,255,.025);">
-      <span style="font-size:14px;line-height:1;">${mat.icon||'📚'}</span>
-      <span style="font-size:13px;font-weight:700;color:var(--text);">${mat.name}</span>
-      ${mat.code?`<span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 6px;border-radius:4px;">${mat.code}</span>`:''}
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${cnt} pendiente${cnt!==1?'s':''}</span>
-    </div>`;
-    html += sortByDue(tasks).map(_taskHtml).join('');
-  });
-
-  // 3. Eventos ordenados por fecha más próxima
+  // 1. EVENTOS primero — ordenados por fecha más próxima (mayor urgencia arriba)
   if (allEvents.length) {
     const sortedEvs = [...allEvents].sort((a,b) => {
       const da = (a.date||a.start||'').slice(0,10);
@@ -2537,6 +2522,24 @@ function _renderOverview() {
       </div>`;
     });
   }
+
+  // 2. Tareas sin materia (ordenadas por fecha)
+  if (noMatTasks.length) {
+    html += sortByDue(noMatTasks).map(_taskHtml).join('');
+  }
+
+  // 3. Grupos de tareas ordenados por fecha de vencimiento más próxima
+  sortedGroups.forEach(({ mat, tasks }) => {
+    const cnt = tasks.length;
+    const mc  = mat.color || 'var(--accent)';
+    html += `<div class="ov-mat-header" style="border-left:3px solid ${mc};background:rgba(255,255,255,.025);">
+      <span style="font-size:14px;line-height:1;">${mat.icon||'📚'}</span>
+      <span style="font-size:13px;font-weight:700;color:var(--text);">${mat.name}</span>
+      ${mat.code?`<span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 6px;border-radius:4px;">${mat.code}</span>`:''}
+      <span style="font-size:10px;color:var(--text3);margin-left:auto;">${cnt} pendiente${cnt!==1?'s':''}</span>
+    </div>`;
+    html += sortByDue(tasks).map(_taskHtml).join('');
+  });
 
   tl.innerHTML = html;
 }
