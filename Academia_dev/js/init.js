@@ -191,7 +191,7 @@ function continueInit(auth) {
 
     // Greeting con nombre real
     const grEl = document.getElementById('ov-greeting');
-    if (grEl) grEl.textContent = `${greet}, ${firstName || 'estudiante'} ${isGuest ? '👀' : '👋'}`;
+    if (grEl) grEl.textContent = `${greet}, ${firstName || 'estudiante'} ${isGuest ? '👀' : ''}`;
 
     // Fecha en topbar y overview (los elementos ya existen)
     const now2 = new Date();
