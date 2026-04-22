@@ -3,23 +3,21 @@
         <!-- Header: greeting + reloj+fecha (top-right) -->
         <div class="mc-header">
           <div class="mc-greeting">
-            <!-- Oculto: el JS externo sigue escribiendo aquí -->
             <div style="display:none;" id="ov-date"></div>
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
               <div style="font-size:20px;font-weight:800;letter-spacing:-.4px;line-height:1.2;" id="ov-greeting"></div>
               <span id="ov-wave-hand" class="ov-wave-emoji" style="font-size:22px;line-height:1;">👋</span>
             </div>
-            <!-- Oculto: el JS externo sigue escribiendo aquí -->
             <div style="display:none;" id="ov-sub"></div>
           </div>
 
-          <!-- Reloj + Fecha — top right, todo en una fila -->
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+          <!-- Reloj + separador + Fecha corta -->
+          <div class="ov-clock-block">
             <div id="ov-clock-icon" style="font-size:22px;line-height:1;">☀️</div>
             <div id="ov-clock" style="font-family:'Space Mono',monospace;font-size:36px;font-weight:700;color:var(--text);letter-spacing:2px;line-height:1;">—</div>
-            <div id="ov-clock-ampm" style="font-family:'Space Mono',monospace;font-size:13px;color:var(--accent2);letter-spacing:3px;text-transform:uppercase;line-height:1;">—</div>
-            <div style="font-family:'Space Mono',monospace;font-size:22px;color:var(--border2);opacity:0.45;line-height:1;font-weight:300;">|</div>
-            <div id="ov-date-short" style="font-family:'Space Mono',monospace;font-size:13px;color:var(--accent2);letter-spacing:1px;line-height:1;">📅 —</div>
+            <div id="ov-clock-ampm" style="font-family:'Space Mono',monospace;font-size:13px;color:var(--accent2);letter-spacing:3px;text-transform:uppercase;line-height:1;align-self:flex-end;margin-bottom:2px;">—</div>
+            <div class="ov-clock-sep">|</div>
+            <div id="ov-date-short" style="font-family:'Space Mono',monospace;font-size:13px;color:var(--accent2);letter-spacing:1px;line-height:1.3;align-self:flex-end;margin-bottom:2px;">—</div>
           </div>
         </div>
 
@@ -66,20 +64,4 @@
         <span id="ov-week-range"   style="display:none;"></span>
         <span id="load-panel-toggle" style="display:none;"></span>
         <span id="ov-pending"  style="display:none;">0</span>
-
-        <!-- Script: fecha corta junto al reloj -->
-        <script>
-        (function () {
-          var DAYS   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-          var MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-          function updateDateShort() {
-            var el = document.getElementById('ov-date-short');
-            if (!el) return;
-            var now = new Date();
-            el.textContent = '📅 ' + DAYS[now.getDay()] + ' ' + now.getDate() + ' de ' + MONTHS[now.getMonth()];
-          }
-          updateDateShort();
-          setInterval(updateDateShort, 60000);
-        })();
-        </script>
       </div>
