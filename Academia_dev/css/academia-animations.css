@@ -1,286 +1,308 @@
 /* ═══════════════════════════════════════════════════════════════
-   ACADEMIA — Animations & Visual Enhancements  v3
-   Orden en app.html:
+   ACADEMIA — Animations & Visual Enhancements  v4
+   Agregar en app.html:
      <link rel="stylesheet" href="css/academia-animations.css">
      <script src="js/animations-patch.js" defer></script>
    ═══════════════════════════════════════════════════════════════ */
 
-
-/* ── KEYFRAMES ──────────────────────────────────────────────── */
-@keyframes fadeInUp {
-  from { opacity:0; transform:translateY(16px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes fadeInDown {
-  from { opacity:0; transform:translateY(-12px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes fadeInLeft {
-  from { opacity:0; transform:translateX(-18px); }
-  to   { opacity:1; transform:translateX(0); }
-}
-@keyframes fadeInRight {
-  from { opacity:0; transform:translateX(14px); }
-  to   { opacity:1; transform:translateX(0); }
-}
-@keyframes scaleIn {
-  from { opacity:0; transform:scale(0.93); }
-  to   { opacity:1; transform:scale(1); }
-}
+/* ── KEYFRAMES ─────────────────────────────────────────────── */
+@keyframes fadeInUp    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeInDown  { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeInLeft  { from{opacity:0;transform:translateX(-18px)} to{opacity:1;transform:translateX(0)} }
+@keyframes fadeInRight { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:translateX(0)} }
+@keyframes scaleIn     { from{opacity:0;transform:scale(0.93)} to{opacity:1;transform:scale(1)} }
+@keyframes popIn       { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
 @keyframes waveHand {
-  0%   { transform:rotate(0deg); }
-  12%  { transform:rotate(20deg); }
-  24%  { transform:rotate(-8deg); }
-  36%  { transform:rotate(20deg); }
-  48%  { transform:rotate(-4deg); }
-  60%  { transform:rotate(16deg); }
-  78%  { transform:rotate(0deg); }
-  100% { transform:rotate(0deg); }
+  0%{transform:rotate(0deg)} 12%{transform:rotate(20deg)} 24%{transform:rotate(-8deg)}
+  36%{transform:rotate(20deg)} 48%{transform:rotate(-4deg)} 60%{transform:rotate(16deg)}
+  78%{transform:rotate(0deg)} 100%{transform:rotate(0deg)}
 }
 @keyframes sunEntrance {
-  0%   { transform:scale(0.55) rotate(-25deg); opacity:0; filter:brightness(0.6) drop-shadow(0 0 0px rgba(255,200,50,0)); }
-  55%  { transform:scale(1.25) rotate(12deg);  opacity:1; filter:brightness(1.55) drop-shadow(0 0 16px rgba(255,200,50,.75)); }
-  72%  { transform:scale(0.92) rotate(-5deg);  filter:brightness(1.05) drop-shadow(0 0 6px rgba(255,200,50,.35)); }
-  86%  { transform:scale(1.08) rotate(3deg);   filter:brightness(1.25) drop-shadow(0 0 11px rgba(255,200,50,.55)); }
-  100% { transform:scale(1)    rotate(0deg);   opacity:1; filter:brightness(1) drop-shadow(0 0 6px rgba(255,200,50,.3)); }
+  0%{transform:scale(.55) rotate(-25deg);opacity:0;filter:brightness(.6) drop-shadow(0 0 0 rgba(255,200,50,0))}
+  55%{transform:scale(1.25) rotate(12deg);opacity:1;filter:brightness(1.55) drop-shadow(0 0 16px rgba(255,200,50,.75))}
+  72%{transform:scale(.92) rotate(-5deg);filter:brightness(1.05) drop-shadow(0 0 6px rgba(255,200,50,.35))}
+  86%{transform:scale(1.08) rotate(3deg);filter:brightness(1.25) drop-shadow(0 0 11px rgba(255,200,50,.55))}
+  100%{transform:scale(1) rotate(0deg);opacity:1;filter:brightness(1) drop-shadow(0 0 6px rgba(255,200,50,.3))}
 }
 @keyframes sunIdlePulse {
-  0%,100% { filter:brightness(1)   drop-shadow(0 0 5px rgba(255,200,50,.28)); }
-  50%      { filter:brightness(1.2) drop-shadow(0 0 11px rgba(255,200,50,.55)); }
+  0%,100%{filter:brightness(1) drop-shadow(0 0 5px rgba(255,200,50,.28))}
+  50%{filter:brightness(1.2) drop-shadow(0 0 11px rgba(255,200,50,.55))}
 }
-@keyframes badgePop {
-  0%   { transform:scale(1); }
-  50%  { transform:scale(1.28); }
-  100% { transform:scale(1); }
+@keyframes todayPulse {
+  0%,100%{box-shadow:0 0 0 1px rgba(124,106,255,.3),0 0 14px rgba(124,106,255,.28)}
+  50%{box-shadow:0 0 0 2px rgba(124,106,255,.45),0 0 22px rgba(124,106,255,.4)}
 }
-@keyframes btnRipple {
-  from { transform:scale(0); opacity:.35; }
-  to   { transform:scale(2.8); opacity:0; }
+@keyframes badgePop  { 0%{transform:scale(1)} 50%{transform:scale(1.3)} 100%{transform:scale(1)} }
+@keyframes checkBounce { 0%{transform:scale(1)} 40%{transform:scale(1.35)} 70%{transform:scale(.88)} 100%{transform:scale(1)} }
+@keyframes btnRipple { from{transform:scale(0);opacity:.35} to{transform:scale(2.8);opacity:0} }
+@keyframes progShimmer {
+  0%{background-position:-200% 0} 100%{background-position:200% 0}
 }
 
-
-/* ═══════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════
    1. TRANSICIÓN DE PÁGINAS
-   ═══════════════════════════════════════════════════════════════ */
-.page.active {
-  animation: fadeInUp 0.3s cubic-bezier(.22,.68,0,1.1) both;
+   ══════════════════════════════════════════════════════════════ */
+.page.active { animation:fadeInUp .3s cubic-bezier(.22,.68,0,1.1) both }
+
+.page.active > .card:nth-child(1)   {animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .04s both}
+.page.active > .card:nth-child(2)   {animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .09s both}
+.page.active > .card:nth-child(3)   {animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .14s both}
+.page.active > .card:nth-child(4)   {animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .19s both}
+.page.active > .card:nth-child(n+5) {animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .23s both}
+
+.page.active > div:first-child:not(.card):not(.mc-header):not(.smart-grid):not(.grid-2) {
+  animation:fadeInDown .3s ease .02s both
 }
 
-/* Cards hijas escalonadas */
-.page.active > .card:nth-child(1)   { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .04s both; }
-.page.active > .card:nth-child(2)   { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .09s both; }
-.page.active > .card:nth-child(3)   { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .14s both; }
-.page.active > .card:nth-child(4)   { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .19s both; }
-.page.active > .card:nth-child(n+5) { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .23s both; }
+/* Mat-cards y hub-cards */
+.page.active .mat-card,.page.active .hub-card{animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both}
+.page.active .mat-card:nth-child(1),.page.active .hub-card:nth-child(1){animation-delay:.06s}
+.page.active .mat-card:nth-child(2),.page.active .hub-card:nth-child(2){animation-delay:.12s}
+.page.active .mat-card:nth-child(3),.page.active .hub-card:nth-child(3){animation-delay:.18s}
+.page.active .mat-card:nth-child(4),.page.active .hub-card:nth-child(4){animation-delay:.24s}
+.page.active .mat-card:nth-child(n+5),.page.active .hub-card:nth-child(n+5){animation-delay:.28s}
 
-/* Primer bloque no-card (título/sub-header de la página) */
-.page.active > div:first-child:not(.card):not(.mc-header):not(.smart-grid) {
-  animation: fadeInDown .3s ease .02s both;
+/* Semestres */
+.page.active #semestres-list .card{animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both}
+.page.active #semestres-list .card:nth-child(1){animation-delay:.06s}
+.page.active #semestres-list .card:nth-child(2){animation-delay:.11s}
+.page.active #semestres-list .card:nth-child(3){animation-delay:.16s}
+.page.active #semestres-list .card:nth-child(n+4){animation-delay:.21s}
+
+/* Calificaciones */
+.page.active #grades-cards-grid .card{animation:scaleIn .33s cubic-bezier(.22,.68,0,1.15) both}
+.page.active #grades-cards-grid .card:nth-child(1){animation-delay:.05s}
+.page.active #grades-cards-grid .card:nth-child(2){animation-delay:.10s}
+.page.active #grades-cards-grid .card:nth-child(3){animation-delay:.15s}
+.page.active #grades-cards-grid .card:nth-child(n+4){animation-delay:.20s}
+
+/* Estadísticas */
+.page.active .stat-mini{animation:popIn .3s cubic-bezier(.22,.68,0,1.2) both}
+.page.active #stats-summary .stat-mini:nth-child(1){animation-delay:.04s}
+.page.active #stats-summary .stat-mini:nth-child(2){animation-delay:.09s}
+.page.active #stats-summary .stat-mini:nth-child(3){animation-delay:.14s}
+.page.active #stats-summary .stat-mini:nth-child(4){animation-delay:.19s}
+.page.active .chart-wrap{animation:fadeInUp .4s ease both}
+.page.active .grid-2 > .chart-wrap:nth-child(1){animation-delay:.1s}
+.page.active .grid-2 > .chart-wrap:nth-child(2){animation-delay:.18s}
+
+/* Flashcards */
+.page.active .fc-folders-grid .card,.page.active .fc-materias-grid .card{animation:scaleIn .33s cubic-bezier(.22,.68,0,1.15) both}
+.page.active .fc-folders-grid .card:nth-child(1),.page.active .fc-materias-grid .card:nth-child(1){animation-delay:.05s}
+.page.active .fc-folders-grid .card:nth-child(2),.page.active .fc-materias-grid .card:nth-child(2){animation-delay:.10s}
+.page.active .fc-folders-grid .card:nth-child(3),.page.active .fc-materias-grid .card:nth-child(3){animation-delay:.15s}
+.page.active .fc-folders-grid .card:nth-child(n+4),.page.active .fc-materias-grid .card:nth-child(n+4){animation-delay:.20s}
+
+/* Perfil stat-cards */
+.page.active .stat-card{animation:popIn .3s cubic-bezier(.22,.68,0,1.2) both}
+.page.active .stat-card:nth-child(1){animation-delay:.06s}
+.page.active .stat-card:nth-child(2){animation-delay:.12s}
+.page.active .stat-card:nth-child(3){animation-delay:.18s}
+
+/* ══════════════════════════════════════════════════════════════
+   2. OVERVIEW
+   ══════════════════════════════════════════════════════════════ */
+.page.active .mc-greeting   {animation:fadeInLeft  .42s cubic-bezier(.22,.68,0,1.15) .05s both}
+.page.active .ov-clock-block{animation:fadeInRight .42s cubic-bezier(.22,.68,0,1.15) .10s both}
+
+#ov-wave-hand,.ov-wave-emoji{
+  display:inline-block;transform-origin:70% 82%;
+  animation:waveHand 1.5s ease-in-out .55s both;cursor:default
 }
-
-/* Grids de materias y hub */
-.page.active .mat-card { animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both; }
-.page.active .hub-card { animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both; }
-.page.active .mat-card:nth-child(1), .page.active .hub-card:nth-child(1) { animation-delay:.06s; }
-.page.active .mat-card:nth-child(2), .page.active .hub-card:nth-child(2) { animation-delay:.12s; }
-.page.active .mat-card:nth-child(3), .page.active .hub-card:nth-child(3) { animation-delay:.18s; }
-.page.active .mat-card:nth-child(4), .page.active .hub-card:nth-child(4) { animation-delay:.24s; }
-.page.active .mat-card:nth-child(n+5), .page.active .hub-card:nth-child(n+5) { animation-delay:.28s; }
-
-
-/* ═══════════════════════════════════════════════════════════════
-   2. OVERVIEW — animaciones de entrada
-   ═══════════════════════════════════════════════════════════════ */
-.page.active .mc-greeting  { animation:fadeInLeft  .42s cubic-bezier(.22,.68,0,1.15) .05s both; }
-.page.active .ov-clock-block { animation:fadeInRight .42s cubic-bezier(.22,.68,0,1.15) .10s both; }
-
-/* Mano */
-#ov-wave-hand, .ov-wave-emoji {
-  display:inline-block;
-  transform-origin:70% 82%;
-  animation:waveHand 1.5s ease-in-out .55s both;
-  cursor:default;
+#ov-clock-icon{
+  animation:sunEntrance .8s cubic-bezier(.22,.68,0,1.1) .28s both,
+    sunIdlePulse 3.4s ease-in-out 1.2s infinite
 }
+.ov-clock-block{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.ov-clock-sep{font-family:'Space Mono',monospace;font-size:26px;color:var(--border2);opacity:.45;font-weight:300;line-height:1;user-select:none}
 
-/* Sol */
-#ov-clock-icon {
-  animation:
-    sunEntrance  .8s cubic-bezier(.22,.68,0,1.1) .28s both,
-    sunIdlePulse 3.4s ease-in-out 1.2s infinite;
+/* ══════════════════════════════════════════════════════════════
+   3. BOTONES
+   ══════════════════════════════════════════════════════════════ */
+.btn{
+  transition:background .16s ease,color .16s ease,border-color .16s ease,
+    transform .14s cubic-bezier(.4,0,.2,1),box-shadow .16s ease;
+  position:relative;overflow:hidden
 }
+.btn:hover:not(:disabled)  {transform:translateY(-1px)}
+.btn:active:not(:disabled) {transform:translateY(1px) scale(.96) rotate(-.4deg);transition:transform .08s cubic-bezier(.4,0,.2,1)}
+.btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.12);border-radius:inherit;transform:scale(0);opacity:0;pointer-events:none;transition:none}
+.btn:active::after{animation:btnRipple .4s ease-out forwards}
+.btn-primary:hover:not(:disabled)  {box-shadow:0 4px 18px rgba(124,106,255,.38)}
+.btn-primary:active:not(:disabled) {box-shadow:0 1px 6px rgba(124,106,255,.22)}
+.btn-danger:hover:not(:disabled)   {box-shadow:0 4px 14px rgba(248,113,113,.32)}
+.btn-ghost:hover:not(:disabled)    {transform:translateY(-1px);background:var(--surface2)}
 
-/* Bloque del reloj */
-.ov-clock-block {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-.ov-clock-sep {
-  font-family:'Space Mono',monospace;
-  font-size:26px;
-  color:var(--border2);
-  opacity:.45;
-  font-weight:300;
-  line-height:1;
-  user-select:none;
-}
+/* ══════════════════════════════════════════════════════════════
+   4. CARDS HOVER
+   ══════════════════════════════════════════════════════════════ */
+.hub-card{transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s ease,border-color .18s ease;cursor:pointer}
+.hub-card:hover {transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.35);border-color:rgba(124,106,255,.3)}
+.hub-card:active{transform:translateY(-1px) scale(.98);transition:transform .08s ease}
 
+.mat-card{transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s ease}
+.mat-card:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,.3)}
 
-/* ═══════════════════════════════════════════════════════════════
-   3. BOTONES — micro-interacciones
-   ═══════════════════════════════════════════════════════════════ */
+.sem-hub-card{transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s ease !important}
+.sem-hub-card:hover{transform:translateY(-3px) !important;box-shadow:0 10px 28px rgba(0,0,0,.38) !important}
+.sem-hub-card:active{transform:scale(.98) !important}
 
-/* Base: transición suave en todos los .btn */
-.btn {
-  transition:
-    background   .16s ease,
-    color        .16s ease,
-    border-color .16s ease,
-    transform    .14s cubic-bezier(.4,0,.2,1),
-    box-shadow   .16s ease;
-  position: relative;
-  overflow: hidden;
-}
+#grades-cards-grid .card{transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s ease;cursor:pointer}
+#grades-cards-grid .card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.28);border-color:var(--border2)}
 
-/* Hover — leve elevación */
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
+.stat-mini{transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s ease}
+.stat-mini:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 5px 18px rgba(0,0,0,.25)}
 
-/* Press — baja, se achica levemente y rota muy poquito */
-.btn:active:not(:disabled) {
-  transform: translateY(1px) scale(0.96) rotate(-0.4deg);
-  transition: transform .08s cubic-bezier(.4,0,.2,1);
-}
+.stat-card{transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s ease}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.28)}
 
-/* Ripple al hacer click */
-.btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(255,255,255,.12);
-  border-radius: inherit;
-  transform: scale(0);
-  opacity: 0;
-  pointer-events: none;
-  transition: none;
-}
-.btn:active::after {
-  animation: btnRipple .4s ease-out forwards;
-}
+.chart-wrap{transition:transform .18s ease,box-shadow .18s ease}
+.chart-wrap:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(0,0,0,.22)}
 
-/* Botón primario — glow en hover */
-.btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 18px rgba(124,106,255,.38);
-}
-.btn-primary:active:not(:disabled) {
-  box-shadow: 0 1px 6px rgba(124,106,255,.22);
-}
+.fc-folders-grid .card,.fc-materias-grid .card{transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s ease,border-color .18s ease;cursor:pointer}
+.fc-folders-grid .card:hover,.fc-materias-grid .card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.32);border-color:rgba(124,106,255,.28)}
+.fc-folders-grid .card:active,.fc-materias-grid .card:active{transform:translateY(-1px) scale(.98)}
 
-/* Botón danger — glow rojo */
-.btn-danger:hover:not(:disabled) {
-  box-shadow: 0 4px 14px rgba(248,113,113,.32);
-}
+.notes-folder-item{transition:background .14s ease,padding-left .14s ease !important}
+.notes-folder-item:hover{padding-left:15px !important}
 
-/* Botón ghost — no sube tanto */
-.btn-ghost:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: var(--surface2);
-}
+/* ══════════════════════════════════════════════════════════════
+   5. TAREAS
+   ══════════════════════════════════════════════════════════════ */
+.task-item{transition:background .15s ease,padding-left .15s ease;border-radius:6px;padding-left:6px}
+.task-item:hover:not(.done){background:var(--surface2);padding-left:10px}
 
+.task-check{transition:transform .18s cubic-bezier(.4,0,.2,1),background .18s ease,border-color .18s ease;cursor:pointer}
+.task-check:hover {transform:scale(1.12);border-color:var(--accent) !important}
+.task-check:active{animation:checkBounce .3s ease}
 
-/* ═══════════════════════════════════════════════════════════════
-   4. CARDS — hover sutil
-   ═══════════════════════════════════════════════════════════════ */
-.hub-card {
-  transition: transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s ease, border-color .18s ease;
-}
-.hub-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 28px rgba(0,0,0,.35);
-  border-color: rgba(124,106,255,.3);
-}
-.hub-card:active {
-  transform: translateY(-1px) scale(0.98);
-  transition: transform .08s ease;
-}
+.mc-task-item{transition:background .15s ease,padding-left .15s ease !important}
+.mc-task-item:hover{padding-left:18px !important}
 
-.mat-card {
-  transition: transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s ease;
-}
-.mat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(0,0,0,.3);
-}
+/* ══════════════════════════════════════════════════════════════
+   6. CALENDARIO
+   ══════════════════════════════════════════════════════════════ */
+.cal-cell{transition:border-color .16s ease,background .16s ease,transform .16s cubic-bezier(.4,0,.2,1),box-shadow .16s ease !important}
+.cal-cell:hover:not(.past):not(.empty){border-color:var(--accent) !important;background:rgba(124,106,255,.07) !important;transform:scale(1.02);box-shadow:0 3px 12px rgba(0,0,0,.2)}
+.cal-cell:active:not(.past):not(.empty){transform:scale(.97);transition:transform .08s ease !important}
+.cal-cell.today{animation:todayPulse 3s ease-in-out infinite}
 
+/* ══════════════════════════════════════════════════════════════
+   7. CALIFICACIONES
+   ══════════════════════════════════════════════════════════════ */
+.grade-row{transition:background .14s ease,border-radius .14s ease,padding .14s ease;border-radius:6px;padding:2px 4px}
+.grade-row:hover{background:var(--surface2);padding:2px 8px}
 
-/* ═══════════════════════════════════════════════════════════════
-   5. SIDEBAR NAV — hover mejorado
-   ═══════════════════════════════════════════════════════════════ */
-.nav-item {
-  position: relative;
-  overflow: hidden;
-  transition:
-    background   .18s ease,
-    color        .18s ease,
-    border-color .18s ease,
-    transform    .18s cubic-bezier(.4,0,.2,1);
-}
-.nav-item::before {
-  content: '';
-  position: absolute;
-  left:0; top:18%; bottom:18%;
-  width: 3px;
-  background: var(--accent);
-  border-radius: 0 3px 3px 0;
-  transform: scaleY(0) translateX(-3px);
-  transform-origin: center;
-  transition: transform .22s cubic-bezier(.4,0,.2,1), opacity .18s;
-  opacity: 0;
-}
-.nav-item:hover::before,
-.nav-item.active::before { transform:scaleY(1) translateX(0); opacity:1; }
+.grade-input{transition:border-color .18s ease,box-shadow .18s ease,transform .14s ease}
+.grade-input:focus{transform:scale(1.04)}
+.grade-input:hover:not(:focus){border-color:var(--accent2) !important}
 
-.nav-item:hover { background:var(--surface2); color:var(--text); transform:translateX(3px); border-color:rgba(124,106,255,.12); }
-.nav-item.active,
-.nav-item.active:hover { transform:translateX(0); }
+/* ══════════════════════════════════════════════════════════════
+   8. TEMAS
+   ══════════════════════════════════════════════════════════════ */
+.topic-item{transition:background .14s ease,padding-left .14s ease;border-radius:6px;padding-left:4px}
+.topic-item:hover{background:var(--surface2);padding-left:8px}
 
-.nav-item:hover .icon { transform:scale(1.15); }
-.nav-item .icon       { transition:transform .18s cubic-bezier(.4,0,.2,1); }
+.topic-seen-btn{transition:transform .18s cubic-bezier(.4,0,.2,1),background .18s ease,border-color .18s ease !important}
+.topic-seen-btn:hover {transform:scale(1.15) !important}
+.topic-seen-btn:active{transform:scale(.9) !important}
 
-.nav-item:hover .nav-badge { animation:badgePop .25s cubic-bezier(.4,0,.2,1); }
+.planner-item{transition:background .14s ease,padding-left .14s ease !important}
+.planner-item:hover{padding-left:18px !important}
 
-.nav-sec-collapsible { transition:color .15s, letter-spacing .15s; }
-.nav-sec-collapsible:hover { color:var(--accent2) !important; letter-spacing:2px; }
+.planner-topic-header{transition:background .14s ease,padding-left .14s ease !important}
+.planner-topic-header:hover{padding-left:18px !important}
 
+/* ══════════════════════════════════════════════════════════════
+   9. SIDEBAR
+   ══════════════════════════════════════════════════════════════ */
+.nav-item{position:relative;overflow:hidden;transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s cubic-bezier(.4,0,.2,1)}
+.nav-item::before{content:'';position:absolute;left:0;top:18%;bottom:18%;width:3px;background:var(--accent);border-radius:0 3px 3px 0;transform:scaleY(0) translateX(-3px);transform-origin:center;transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .18s;opacity:0}
+.nav-item:hover::before,.nav-item.active::before{transform:scaleY(1) translateX(0);opacity:1}
+.nav-item:hover{background:var(--surface2);color:var(--text);transform:translateX(3px);border-color:rgba(124,106,255,.12)}
+.nav-item.active,.nav-item.active:hover{transform:translateX(0)}
+.nav-item:hover .icon{transform:scale(1.15)}
+.nav-item .icon{transition:transform .18s cubic-bezier(.4,0,.2,1)}
+.nav-item:hover .nav-badge{animation:badgePop .25s cubic-bezier(.4,0,.2,1)}
+.nav-sec-collapsible{transition:color .15s,letter-spacing .15s}
+.nav-sec-collapsible:hover{color:var(--accent2) !important;letter-spacing:2px}
 
-/* ═══════════════════════════════════════════════════════════════
-   6. INPUTS — focus con borde accent
-   ═══════════════════════════════════════════════════════════════ */
-.form-input, .form-select, input[type="text"], input[type="number"], textarea, select {
-  transition: border-color .18s ease, box-shadow .18s ease;
-}
-.form-input:focus, .form-select:focus,
-input[type="text"]:focus, input[type="number"]:focus,
-textarea:focus, select:focus {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(124,106,255,.15) !important;
-  outline: none;
-}
+/* ══════════════════════════════════════════════════════════════
+   10. INPUTS FOCUS
+   ══════════════════════════════════════════════════════════════ */
+.form-input,.form-select,input[type="text"],input[type="number"],textarea,select{transition:border-color .18s ease,box-shadow .18s ease}
+.form-input:focus,.form-select:focus,input[type="text"]:focus,input[type="number"]:focus,textarea:focus,select:focus{border-color:var(--accent) !important;box-shadow:0 0 0 3px rgba(124,106,255,.15) !important;outline:none}
 
+/* ══════════════════════════════════════════════════════════════
+   11. PROGRESS BARS — shimmer
+   ══════════════════════════════════════════════════════════════ */
+.prog-fill{transition:width .6s cubic-bezier(.4,0,.2,1) !important;position:relative;overflow:hidden}
+.prog-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.18) 50%,transparent 100%);background-size:200% 100%;animation:progShimmer 2.4s ease-in-out infinite}
 
-/* ═══════════════════════════════════════════════════════════════
-   7. MOBILE
-   ═══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   12. MODALES
+   ══════════════════════════════════════════════════════════════ */
+.modal{animation:fadeInUp .24s cubic-bezier(.22,.68,0,1.1) both !important}
+.modal-close{transition:background .15s ease,color .15s ease,transform .15s ease}
+.modal-close:hover{background:var(--surface3) !important;color:var(--text) !important;transform:scale(1.1) rotate(8deg)}
+
+/* ══════════════════════════════════════════════════════════════
+   13. PERFIL — color picker
+   ══════════════════════════════════════════════════════════════ */
+.color-opt,.accent-color-opt{transition:transform .18s cubic-bezier(.4,0,.2,1),box-shadow .18s ease !important}
+.color-opt:hover,.accent-color-opt:hover{transform:scale(1.2) !important;box-shadow:0 3px 12px rgba(0,0,0,.35) !important}
+.color-opt:active,.accent-color-opt:active{transform:scale(.92) !important}
+.color-opt.selected,.accent-color-opt.selected{transform:scale(1.15) !important;box-shadow:0 0 0 2px rgba(255,255,255,.7),0 3px 14px rgba(0,0,0,.4) !important}
+
+.icon-opt{transition:background .15s ease,border-color .15s ease,transform .15s ease !important}
+.icon-opt:hover {transform:scale(1.1) !important}
+.icon-opt:active{transform:scale(.93) !important}
+
+/* ══════════════════════════════════════════════════════════════
+   14. HORARIO
+   ══════════════════════════════════════════════════════════════ */
+.horario-cell{transition:transform .14s ease,box-shadow .14s ease !important}
+.horario-cell:hover{transform:scale(1.03) !important;box-shadow:0 3px 10px rgba(0,0,0,.22) !important}
+.horario-table td{transition:background .14s ease !important}
+
+/* ══════════════════════════════════════════════════════════════
+   15. POMODORO & FLASHCARDS
+   ══════════════════════════════════════════════════════════════ */
+.pom-ring{transition:transform .2s cubic-bezier(.4,0,.2,1)}
+.pom-ring:hover{transform:scale(1.02)}
+
+.pom-music-btn{transition:border-color .18s ease,color .18s ease,background .18s ease,transform .14s ease !important}
+.pom-music-btn:hover {transform:translateY(-1px) !important}
+.pom-music-btn:active{transform:scale(.95) translateY(0) !important}
+
+.fc-rating-btn{transition:background .16s ease,color .16s ease,border-color .16s ease,transform .14s cubic-bezier(.4,0,.2,1),box-shadow .16s ease !important}
+.fc-rating-btn:hover:not(:disabled) {transform:translateY(-2px) scale(1.04) !important}
+.fc-rating-btn:active:not(:disabled){transform:scale(.94) !important}
+.fc-rating-easy:hover:not(:disabled){box-shadow:0 4px 14px rgba(74,222,128,.32) !important}
+.fc-rating-med:hover:not(:disabled) {box-shadow:0 4px 14px rgba(251,191,36,.28) !important}
+.fc-rating-hard:hover:not(:disabled){box-shadow:0 4px 14px rgba(248,113,113,.28) !important}
+
+/* ══════════════════════════════════════════════════════════════
+   16. TAGS
+   ══════════════════════════════════════════════════════════════ */
+.tag-chip{transition:background .14s ease,color .14s ease,border-color .14s ease,transform .14s ease !important}
+.tag-chip:hover {transform:scale(1.06) !important}
+.tag-chip:active{transform:scale(.94) !important}
+
+/* ══════════════════════════════════════════════════════════════
+   17. MOBILE — desactivar transforms problemáticos
+   ══════════════════════════════════════════════════════════════ */
 @media (max-width:768px) {
-  .nav-item:hover  { transform:none; }
-  .nav-item::before { display:none; }
-  .ov-clock-block  { gap:7px; }
-  .ov-clock-sep    { display:none; }
-  #ov-date-short   { font-size:22px !important; letter-spacing:1px !important; }
-  .btn:hover:not(:disabled) { transform:none; }
-  .hub-card:hover  { transform:none; }
-  .mat-card:hover  { transform:none; }
+  .nav-item:hover{transform:none}.nav-item::before{display:none}
+  .ov-clock-block{gap:7px}.ov-clock-sep{display:none}
+  #ov-date-short{font-size:22px !important;letter-spacing:1px !important}
+  .btn:hover:not(:disabled){transform:none}
+  .hub-card:hover,.mat-card:hover,.sem-hub-card:hover,.chart-wrap:hover,.stat-mini:hover,.stat-card:hover{transform:none !important}
+  .cal-cell:hover{transform:none}
+  .task-item:hover{padding-left:6px}
+  .planner-item:hover{padding-left:14px !important}
+  .topic-item:hover{padding-left:4px}
+  .notes-folder-item:hover{padding-left:10px !important}
+  .fc-folders-grid .card:hover,.fc-materias-grid .card:hover{transform:none}
+  .horario-cell:hover{transform:none !important}
 }
