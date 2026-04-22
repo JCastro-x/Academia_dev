@@ -2628,7 +2628,7 @@ function saveProfile() {
     if (grEl && grEl.textContent) {
       const hour = new Date().getHours();
       const g = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
-      grEl.textContent = `${g}, ${p.name.split(' ')[0]} 👋`;
+      grEl.textContent = `${g}, ${p.name.split(' ')[0]} `;
     }
   }
   alert('✅ Perfil guardado correctamente');

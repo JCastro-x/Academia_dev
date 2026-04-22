@@ -764,5 +764,5 @@ function _getGreeting() {
   // Obtener nombre del usuario autenticado (Google) o fallback
   const userName = window._currentUserName || State.settings?.profile?.name?.split(' ')[0] || 'Ingeniero';
   const salud = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
-  return `${salud}, ${userName} 👋`;
+  return `${salud}, ${userName} `;
 }
