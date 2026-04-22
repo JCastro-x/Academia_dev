@@ -1,0 +1,193 @@
+/* ═══════════════════════════════════════════════════════════════
+   ACADEMIA — Animations & Visual Enhancements
+   Agregar en app.html después de mobile-fixes.css:
+   <link rel="stylesheet" href="css/academia-animations.css">
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ───────────────────────────────────────────────────────────────
+   1. GREETING — Entrada del header con slide + fade
+   ─────────────────────────────────────────────────────────────── */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.mc-greeting {
+  animation: slideInLeft 0.45s cubic-bezier(.22,.68,0,1.15) both;
+}
+.mc-header > div:last-child {
+  animation: slideInRight 0.45s cubic-bezier(.22,.68,0,1.15) 0.08s both;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   2. MANO — wave al entrar
+   Aplica a #ov-wave-hand (span separado en overview.html)
+   o a cualquier .wave-emoji generado por JS
+   ─────────────────────────────────────────────────────────────── */
+@keyframes waveHand {
+  0%   { transform: rotate(0deg); }
+  12%  { transform: rotate(20deg); }
+  24%  { transform: rotate(-8deg); }
+  36%  { transform: rotate(20deg); }
+  48%  { transform: rotate(-4deg); }
+  60%  { transform: rotate(16deg); }
+  75%  { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+#ov-wave-hand,
+.ov-wave-emoji {
+  display: inline-block;
+  transform-origin: 70% 82%;
+  animation: waveHand 1.5s ease-in-out 0.55s both;
+  cursor: default;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   3. SOL — brilla y pulsa al entrar
+   ─────────────────────────────────────────────────────────────── */
+@keyframes sunEntrance {
+  0%   { transform: scale(0.6) rotate(-20deg); opacity: 0; filter: brightness(0.7) drop-shadow(0 0 0px rgba(255,200,50,0)); }
+  50%  { transform: scale(1.22) rotate(10deg); opacity: 1; filter: brightness(1.5) drop-shadow(0 0 14px rgba(255,200,50,.7)); }
+  70%  { transform: scale(0.95) rotate(-4deg); filter: brightness(1.1) drop-shadow(0 0 8px rgba(255,200,50,.4)); }
+  85%  { transform: scale(1.07) rotate(2deg);  filter: brightness(1.25) drop-shadow(0 0 10px rgba(255,200,50,.5)); }
+  100% { transform: scale(1) rotate(0deg);    opacity: 1; filter: brightness(1) drop-shadow(0 0 6px rgba(255,200,50,.35)); }
+}
+
+@keyframes sunIdlePulse {
+  0%,100% { filter: brightness(1)    drop-shadow(0 0 5px rgba(255,200,50,.3)); }
+  50%      { filter: brightness(1.18) drop-shadow(0 0 10px rgba(255,200,50,.55)); }
+}
+
+#ov-clock-icon {
+  animation:
+    sunEntrance   0.8s cubic-bezier(.22,.68,0,1.1) 0.3s both,
+    sunIdlePulse  3.2s ease-in-out 1.2s infinite;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   4. FECHA — resalte sutil sin exagerar
+   ─────────────────────────────────────────────────────────────── */
+#ov-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168,146,255,.09);
+  border: 1px solid rgba(168,146,255,.22);
+  border-radius: 5px;
+  padding: 2px 9px 2px 7px;
+  backdrop-filter: blur(4px);
+  animation: slideInLeft 0.4s ease both;
+}
+
+[data-theme="light"] #ov-date {
+  background: rgba(107,88,232,.07);
+  border-color: rgba(107,88,232,.18);
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   5. SIDEBAR NAV — hover mejorado con barra lateral deslizante
+   ─────────────────────────────────────────────────────────────── */
+
+/* Barra de acento izquierda */
+.nav-item {
+  position: relative;
+  overflow: hidden;
+  /* transición extendida para incluir transform */
+  transition:
+    background  .18s ease,
+    color       .18s ease,
+    border-color .18s ease,
+    transform   .18s cubic-bezier(.4,0,.2,1);
+}
+
+/* Línea de acento que se desliza desde la izquierda */
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 18%; bottom: 18%;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+  transform: scaleY(0) translateX(-3px);
+  transform-origin: center;
+  transition: transform .22s cubic-bezier(.4,0,.2,1), opacity .18s;
+  opacity: 0;
+}
+
+.nav-item:hover::before {
+  transform: scaleY(1) translateX(0);
+  opacity: 1;
+}
+
+/* Shift horizontal sutil + background más cálido en hover */
+.nav-item:hover {
+  background: var(--surface2);
+  color: var(--text);
+  transform: translateX(3px);
+  border-color: rgba(124,106,255,.12);
+}
+
+/* Ítem activo: barra siempre visible */
+.nav-item.active::before {
+  transform: scaleY(1) translateX(0);
+  opacity: 1;
+}
+.nav-item.active {
+  transform: translateX(0);
+}
+
+/* Hover sobre activo: no se mueve */
+.nav-item.active:hover {
+  transform: translateX(0);
+}
+
+/* El ícono se escala levemente en hover */
+.nav-item:hover .icon {
+  transform: scale(1.15);
+  transition: transform .18s cubic-bezier(.4,0,.2,1);
+}
+.nav-item .icon {
+  transition: transform .18s cubic-bezier(.4,0,.2,1);
+}
+
+/* Badge de tareas — pequeño bounce en hover de la nav-item */
+.nav-item:hover .nav-badge {
+  animation: badgePop .25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes badgePop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   6. SECCIONES DEL NAV — hover en los títulos colapsables
+   ─────────────────────────────────────────────────────────────── */
+.nav-sec-collapsible {
+  transition: color .15s, letter-spacing .15s;
+}
+.nav-sec-collapsible:hover {
+  color: var(--accent2) !important;
+  letter-spacing: 2px;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   7. MOBILE — desactivar transform en items para no romper layout
+   ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .nav-item:hover  { transform: none; }
+  .nav-item::before { display: none; }
+  #ov-date { font-size: 9px; padding: 1px 7px; }
+}
