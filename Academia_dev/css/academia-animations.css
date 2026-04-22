@@ -1,174 +1,237 @@
 /* ═══════════════════════════════════════════════════════════════
-   ACADEMIA — Animations & Visual Enhancements  v2
+   ACADEMIA — Animations & Visual Enhancements  v3
    Orden en app.html:
      <link rel="stylesheet" href="css/academia-animations.css">
      <script src="js/animations-patch.js" defer></script>
    ═══════════════════════════════════════════════════════════════ */
 
 
-/* ───────────────────────────────────────────────────────────────
-   KEYFRAMES BASE
-   ─────────────────────────────────────────────────────────────── */
+/* ── KEYFRAMES ──────────────────────────────────────────────── */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 @keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity:0; transform:translateY(-12px); }
+  to   { opacity:1; transform:translateY(0); }
 }
 @keyframes fadeInLeft {
-  from { opacity: 0; transform: translateX(-18px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity:0; transform:translateX(-18px); }
+  to   { opacity:1; transform:translateX(0); }
 }
 @keyframes fadeInRight {
-  from { opacity: 0; transform: translateX(14px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from { opacity:0; transform:translateX(14px); }
+  to   { opacity:1; transform:translateX(0); }
 }
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.93); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity:0; transform:scale(0.93); }
+  to   { opacity:1; transform:scale(1); }
 }
-
-
-/* ───────────────────────────────────────────────────────────────
-   1. TRANSICIÓN DE PÁGINAS — cada .page.active anima sus hijos
-      El truco: animations-patch.js fuerza un reflow entre
-      remove-active y add-active para que re-dispare siempre.
-   ─────────────────────────────────────────────────────────────── */
-
-/* Contenedor de la página: leve fade al entrar */
-.page.active {
-  animation: fadeInUp 0.32s cubic-bezier(.22,.68,0,1.1) both;
-}
-
-/* Cards — escalonadas por posición */
-.page.active > .card:nth-child(1)  { animation: fadeInUp 0.38s cubic-bezier(.22,.68,0,1.1) 0.04s both; }
-.page.active > .card:nth-child(2)  { animation: fadeInUp 0.38s cubic-bezier(.22,.68,0,1.1) 0.09s both; }
-.page.active > .card:nth-child(3)  { animation: fadeInUp 0.38s cubic-bezier(.22,.68,0,1.1) 0.14s both; }
-.page.active > .card:nth-child(4)  { animation: fadeInUp 0.38s cubic-bezier(.22,.68,0,1.1) 0.19s both; }
-.page.active > .card:nth-child(5)  { animation: fadeInUp 0.38s cubic-bezier(.22,.68,0,1.1) 0.24s both; }
-.page.active > .card:nth-child(n+6){ animation: fadeInUp 0.38s cubic-bezier(.22,.68,0,1.1) 0.28s both; }
-
-/* Grids de tarjetas (materias, hub, etc.) */
-.page.active .mat-card,
-.page.active .hub-card {
-  animation: scaleIn 0.36s cubic-bezier(.22,.68,0,1.15) both;
-}
-.page.active .mat-card:nth-child(1),
-.page.active .hub-card:nth-child(1) { animation-delay: 0.06s; }
-.page.active .mat-card:nth-child(2),
-.page.active .hub-card:nth-child(2) { animation-delay: 0.12s; }
-.page.active .mat-card:nth-child(3),
-.page.active .hub-card:nth-child(3) { animation-delay: 0.18s; }
-.page.active .mat-card:nth-child(4),
-.page.active .hub-card:nth-child(4) { animation-delay: 0.24s; }
-.page.active .mat-card:nth-child(n+5),
-.page.active .hub-card:nth-child(n+5) { animation-delay: 0.28s; }
-
-/* Títulos de sección (h1, page-title implícito) */
-.page.active > div:first-child:not(.card):not(.mc-header) {
-  animation: fadeInDown 0.3s ease 0.02s both;
-}
-
-
-/* ───────────────────────────────────────────────────────────────
-   2. OVERVIEW — header mc-header
-   ─────────────────────────────────────────────────────────────── */
-.page.active .mc-greeting {
-  animation: fadeInLeft 0.42s cubic-bezier(.22,.68,0,1.15) 0.05s both;
-}
-.page.active .ov-clock-block {
-  animation: fadeInRight 0.42s cubic-bezier(.22,.68,0,1.15) 0.1s both;
-}
-
-
-/* ───────────────────────────────────────────────────────────────
-   3. MANO 👋 — wave al entrar
-   ─────────────────────────────────────────────────────────────── */
 @keyframes waveHand {
-  0%   { transform: rotate(0deg); }
-  12%  { transform: rotate(20deg); }
-  24%  { transform: rotate(-8deg); }
-  36%  { transform: rotate(20deg); }
-  48%  { transform: rotate(-4deg); }
-  60%  { transform: rotate(16deg); }
-  78%  { transform: rotate(0deg); }
-  100% { transform: rotate(0deg); }
+  0%   { transform:rotate(0deg); }
+  12%  { transform:rotate(20deg); }
+  24%  { transform:rotate(-8deg); }
+  36%  { transform:rotate(20deg); }
+  48%  { transform:rotate(-4deg); }
+  60%  { transform:rotate(16deg); }
+  78%  { transform:rotate(0deg); }
+  100% { transform:rotate(0deg); }
 }
-
-#ov-wave-hand,
-.ov-wave-emoji {
-  display: inline-block;
-  transform-origin: 70% 82%;
-  animation: waveHand 1.5s ease-in-out 0.55s both;
-  cursor: default;
-}
-
-
-/* ───────────────────────────────────────────────────────────────
-   4. SOL ☀️ — brilla al entrar + pulso idle
-   ─────────────────────────────────────────────────────────────── */
 @keyframes sunEntrance {
-  0%   { transform: scale(0.55) rotate(-25deg); opacity: 0; filter: brightness(0.6) drop-shadow(0 0 0px rgba(255,200,50,0)); }
-  55%  { transform: scale(1.25) rotate(12deg);  opacity: 1; filter: brightness(1.55) drop-shadow(0 0 16px rgba(255,200,50,.75)); }
-  72%  { transform: scale(0.92) rotate(-5deg);  filter: brightness(1.05) drop-shadow(0 0 6px rgba(255,200,50,.35)); }
-  86%  { transform: scale(1.08) rotate(3deg);   filter: brightness(1.25) drop-shadow(0 0 11px rgba(255,200,50,.55)); }
-  100% { transform: scale(1)    rotate(0deg);   opacity: 1; filter: brightness(1) drop-shadow(0 0 6px rgba(255,200,50,.3)); }
+  0%   { transform:scale(0.55) rotate(-25deg); opacity:0; filter:brightness(0.6) drop-shadow(0 0 0px rgba(255,200,50,0)); }
+  55%  { transform:scale(1.25) rotate(12deg);  opacity:1; filter:brightness(1.55) drop-shadow(0 0 16px rgba(255,200,50,.75)); }
+  72%  { transform:scale(0.92) rotate(-5deg);  filter:brightness(1.05) drop-shadow(0 0 6px rgba(255,200,50,.35)); }
+  86%  { transform:scale(1.08) rotate(3deg);   filter:brightness(1.25) drop-shadow(0 0 11px rgba(255,200,50,.55)); }
+  100% { transform:scale(1)    rotate(0deg);   opacity:1; filter:brightness(1) drop-shadow(0 0 6px rgba(255,200,50,.3)); }
 }
 @keyframes sunIdlePulse {
-  0%,100% { filter: brightness(1)    drop-shadow(0 0 5px rgba(255,200,50,.28)); }
-  50%      { filter: brightness(1.2)  drop-shadow(0 0 11px rgba(255,200,50,.55)); }
+  0%,100% { filter:brightness(1)   drop-shadow(0 0 5px rgba(255,200,50,.28)); }
+  50%      { filter:brightness(1.2) drop-shadow(0 0 11px rgba(255,200,50,.55)); }
+}
+@keyframes badgePop {
+  0%   { transform:scale(1); }
+  50%  { transform:scale(1.28); }
+  100% { transform:scale(1); }
+}
+@keyframes btnRipple {
+  from { transform:scale(0); opacity:.35; }
+  to   { transform:scale(2.8); opacity:0; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════
+   1. TRANSICIÓN DE PÁGINAS
+   ═══════════════════════════════════════════════════════════════ */
+.page.active {
+  animation: fadeInUp 0.3s cubic-bezier(.22,.68,0,1.1) both;
+}
+
+/* Cards hijas escalonadas */
+.page.active > .card:nth-child(1)   { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .04s both; }
+.page.active > .card:nth-child(2)   { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .09s both; }
+.page.active > .card:nth-child(3)   { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .14s both; }
+.page.active > .card:nth-child(4)   { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .19s both; }
+.page.active > .card:nth-child(n+5) { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) .23s both; }
+
+/* Primer bloque no-card (título/sub-header de la página) */
+.page.active > div:first-child:not(.card):not(.mc-header):not(.smart-grid) {
+  animation: fadeInDown .3s ease .02s both;
+}
+
+/* Grids de materias y hub */
+.page.active .mat-card { animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both; }
+.page.active .hub-card { animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both; }
+.page.active .mat-card:nth-child(1), .page.active .hub-card:nth-child(1) { animation-delay:.06s; }
+.page.active .mat-card:nth-child(2), .page.active .hub-card:nth-child(2) { animation-delay:.12s; }
+.page.active .mat-card:nth-child(3), .page.active .hub-card:nth-child(3) { animation-delay:.18s; }
+.page.active .mat-card:nth-child(4), .page.active .hub-card:nth-child(4) { animation-delay:.24s; }
+.page.active .mat-card:nth-child(n+5), .page.active .hub-card:nth-child(n+5) { animation-delay:.28s; }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   2. OVERVIEW — animaciones de entrada
+   ═══════════════════════════════════════════════════════════════ */
+.page.active .mc-greeting  { animation:fadeInLeft  .42s cubic-bezier(.22,.68,0,1.15) .05s both; }
+.page.active .ov-clock-block { animation:fadeInRight .42s cubic-bezier(.22,.68,0,1.15) .10s both; }
+
+/* Mano */
+#ov-wave-hand, .ov-wave-emoji {
+  display:inline-block;
+  transform-origin:70% 82%;
+  animation:waveHand 1.5s ease-in-out .55s both;
+  cursor:default;
+}
+
+/* Sol */
 #ov-clock-icon {
   animation:
-    sunEntrance  0.8s cubic-bezier(.22,.68,0,1.1) 0.28s both,
+    sunEntrance  .8s cubic-bezier(.22,.68,0,1.1) .28s both,
     sunIdlePulse 3.4s ease-in-out 1.2s infinite;
 }
 
-
-/* ───────────────────────────────────────────────────────────────
-   5. FECHA — bloque derecho del reloj
-   ─────────────────────────────────────────────────────────────── */
+/* Bloque del reloj */
 .ov-clock-block {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
 }
 .ov-clock-sep {
-  font-family: 'Space Mono', monospace;
-  font-size: 22px;
-  color: var(--border2);
-  opacity: 0.5;
-  font-weight: 300;
-  line-height: 1;
-  align-self: flex-end;
-  margin-bottom: 1px;
-  user-select: none;
+  font-family:'Space Mono',monospace;
+  font-size:26px;
+  color:var(--border2);
+  opacity:.45;
+  font-weight:300;
+  line-height:1;
+  user-select:none;
 }
 
 
-/* ───────────────────────────────────────────────────────────────
-   6. SIDEBAR NAV — hover mejorado
-   ─────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   3. BOTONES — micro-interacciones
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Base: transición suave en todos los .btn */
+.btn {
+  transition:
+    background   .16s ease,
+    color        .16s ease,
+    border-color .16s ease,
+    transform    .14s cubic-bezier(.4,0,.2,1),
+    box-shadow   .16s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover — leve elevación */
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Press — baja, se achica levemente y rota muy poquito */
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.96) rotate(-0.4deg);
+  transition: transform .08s cubic-bezier(.4,0,.2,1);
+}
+
+/* Ripple al hacer click */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.12);
+  border-radius: inherit;
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
+.btn:active::after {
+  animation: btnRipple .4s ease-out forwards;
+}
+
+/* Botón primario — glow en hover */
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 18px rgba(124,106,255,.38);
+}
+.btn-primary:active:not(:disabled) {
+  box-shadow: 0 1px 6px rgba(124,106,255,.22);
+}
+
+/* Botón danger — glow rojo */
+.btn-danger:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(248,113,113,.32);
+}
+
+/* Botón ghost — no sube tanto */
+.btn-ghost:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: var(--surface2);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   4. CARDS — hover sutil
+   ═══════════════════════════════════════════════════════════════ */
+.hub-card {
+  transition: transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s ease, border-color .18s ease;
+}
+.hub-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  border-color: rgba(124,106,255,.3);
+}
+.hub-card:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: transform .08s ease;
+}
+
+.mat-card {
+  transition: transform .18s cubic-bezier(.4,0,.2,1), box-shadow .18s ease;
+}
+.mat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0,0,0,.3);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   5. SIDEBAR NAV — hover mejorado
+   ═══════════════════════════════════════════════════════════════ */
 .nav-item {
   position: relative;
   overflow: hidden;
   transition:
-    background  .18s ease,
-    color       .18s ease,
+    background   .18s ease,
+    color        .18s ease,
     border-color .18s ease,
-    transform   .18s cubic-bezier(.4,0,.2,1);
+    transform    .18s cubic-bezier(.4,0,.2,1);
 }
-
-/* Barra de acento deslizante */
 .nav-item::before {
   content: '';
   position: absolute;
-  left: 0; top: 18%; bottom: 18%;
+  left:0; top:18%; bottom:18%;
   width: 3px;
   background: var(--accent);
   border-radius: 0 3px 3px 0;
@@ -178,53 +241,46 @@
   opacity: 0;
 }
 .nav-item:hover::before,
-.nav-item.active::before {
-  transform: scaleY(1) translateX(0);
-  opacity: 1;
-}
+.nav-item.active::before { transform:scaleY(1) translateX(0); opacity:1; }
 
-.nav-item:hover {
-  background: var(--surface2);
-  color: var(--text);
-  transform: translateX(3px);
-  border-color: rgba(124,106,255,.12);
-}
-.nav-item.active { transform: translateX(0); }
-.nav-item.active:hover { transform: translateX(0); }
+.nav-item:hover { background:var(--surface2); color:var(--text); transform:translateX(3px); border-color:rgba(124,106,255,.12); }
+.nav-item.active,
+.nav-item.active:hover { transform:translateX(0); }
 
-.nav-item:hover .icon {
-  transform: scale(1.15);
-  transition: transform .18s cubic-bezier(.4,0,.2,1);
-}
-.nav-item .icon {
-  transition: transform .18s cubic-bezier(.4,0,.2,1);
-}
+.nav-item:hover .icon { transform:scale(1.15); }
+.nav-item .icon       { transition:transform .18s cubic-bezier(.4,0,.2,1); }
 
-.nav-item:hover .nav-badge {
-  animation: badgePop .25s cubic-bezier(.4,0,.2,1);
-}
-@keyframes badgePop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.28); }
-  100% { transform: scale(1); }
-}
+.nav-item:hover .nav-badge { animation:badgePop .25s cubic-bezier(.4,0,.2,1); }
 
-.nav-sec-collapsible {
-  transition: color .15s, letter-spacing .15s;
+.nav-sec-collapsible { transition:color .15s, letter-spacing .15s; }
+.nav-sec-collapsible:hover { color:var(--accent2) !important; letter-spacing:2px; }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   6. INPUTS — focus con borde accent
+   ═══════════════════════════════════════════════════════════════ */
+.form-input, .form-select, input[type="text"], input[type="number"], textarea, select {
+  transition: border-color .18s ease, box-shadow .18s ease;
 }
-.nav-sec-collapsible:hover {
-  color: var(--accent2) !important;
-  letter-spacing: 2px;
+.form-input:focus, .form-select:focus,
+input[type="text"]:focus, input[type="number"]:focus,
+textarea:focus, select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.15) !important;
+  outline: none;
 }
 
 
-/* ───────────────────────────────────────────────────────────────
-   7. MOBILE — desactivar lo que rompe layout
-   ─────────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .nav-item:hover  { transform: none; }
-  .nav-item::before { display: none; }
-  .ov-clock-block { gap: 7px; }
-  .ov-clock-sep { display: none; }
-  #ov-date-short { font-size: 11px; }
+/* ═══════════════════════════════════════════════════════════════
+   7. MOBILE
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width:768px) {
+  .nav-item:hover  { transform:none; }
+  .nav-item::before { display:none; }
+  .ov-clock-block  { gap:7px; }
+  .ov-clock-sep    { display:none; }
+  #ov-date-short   { font-size:22px !important; letter-spacing:1px !important; }
+  .btn:hover:not(:disabled) { transform:none; }
+  .hub-card:hover  { transform:none; }
+  .mat-card:hover  { transform:none; }
 }
