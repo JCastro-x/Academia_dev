@@ -160,29 +160,43 @@
               <div>
                 <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:10px;">🌊 SONIDOS AMBIENTALES</div>
                 <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+                  <!-- Fila 1: Ruidos de concentración -->
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="pom-music-btn" id="noise-white-btn" onclick="toggleNoise('white')" title="Ruido blanco">
+                    <button class="pom-music-btn" id="noise-white-btn" onclick="toggleNoise('white')" title="Ruido blanco — espectro plano">
                       <span id="noise-white-icon">▶</span> Blanco
                     </button>
-                    <button class="pom-music-btn" id="noise-brown-btn" onclick="toggleNoise('brown')" title="Ruido café">
-                      <span id="noise-brown-icon">▶</span> Café
+                    <button class="pom-music-btn" id="noise-pink-btn" onclick="toggleNoise('pink')" title="Ruido rosa — 1/f, más natural">
+                      <span id="noise-pink-icon">▶</span> 🌸 Rosa
                     </button>
-                    <button class="pom-music-btn" id="noise-rain-btn" onclick="toggleNoise('rain')" title="Lluvia suave">
-                      <span id="noise-rain-icon">▶</span> Lluvia
+                    <button class="pom-music-btn" id="noise-brown-btn" onclick="toggleNoise('brown')" title="Ruido tierra — grave y profundo">
+                      <span id="noise-brown-icon">▶</span> 🟤 Tierra
                     </button>
                   </div>
+                  <!-- Fila 2: Naturaleza -->
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="pom-music-btn" id="noise-fire-btn" onclick="toggleNoise('fire')" title="Fuego crepitando">
-                      <span id="noise-fire-icon">▶</span> 🔥 Fuego
+                    <button class="pom-music-btn" id="noise-rain-btn" onclick="toggleNoise('rain')" title="Lluvia suave">
+                      <span id="noise-rain-icon">▶</span> 🌧 Lluvia
                     </button>
-                    <button class="pom-music-btn" id="noise-cafe-btn" onclick="toggleNoise('cafe')" title="Café con gente">
-                      <span id="noise-cafe-icon">▶</span> ☕ Café
+                    <button class="pom-music-btn" id="noise-storm-btn" onclick="toggleNoise('storm')" title="Tormenta con truenos">
+                      <span id="noise-storm-icon">▶</span> ⛈ Tormenta
                     </button>
                     <button class="pom-music-btn" id="noise-forest-btn" onclick="toggleNoise('forest')" title="Bosque con pájaros">
                       <span id="noise-forest-icon">▶</span> 🌿 Bosque
                     </button>
                     <button class="pom-music-btn" id="noise-ocean-btn" onclick="toggleNoise('ocean')" title="Olas del mar">
                       <span id="noise-ocean-icon">▶</span> 🌊 Océano
+                    </button>
+                  </div>
+                  <!-- Fila 3: Atmósferas -->
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="pom-music-btn" id="noise-fire-btn" onclick="toggleNoise('fire')" title="Fuego crepitando">
+                      <span id="noise-fire-icon">▶</span> 🔥 Fuego
+                    </button>
+                    <button class="pom-music-btn" id="noise-cafe-btn" onclick="toggleNoise('cafe')" title="Cafetería con murmullos">
+                      <span id="noise-cafe-icon">▶</span> ☕ Cafetería
+                    </button>
+                    <button class="pom-music-btn" id="noise-lofi-btn" onclick="toggleNoise('lofi')" title="Lo-Fi — beats suaves con vinilo">
+                      <span id="noise-lofi-icon">▶</span> 🎵 Lo-Fi
                     </button>
                   </div>
                 </div>

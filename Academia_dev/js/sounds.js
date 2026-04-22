@@ -162,99 +162,211 @@ function _uiClick(type) {
   } catch(e) {}
 }
 
-// ── WHITE / BROWN / RAIN NOISE ────────────────────────────────
+// ── AMBIENT NOISE BUFFERS — seamless loop, no pops ───────────
+// All buffers: 12 seconds + 300ms crossfade at loop boundary
+// Crossfade technique: end of buffer blends into beginning
+// so the Web Audio loop point (sample 0) is always smooth.
 function _buildNoiseBuffer(ctx, type) {
-  const sr = ctx.sampleRate;
-  const bufSize = sr * 3; // 3 sec loop
-  const buf = ctx.createBuffer(1, bufSize, sr);
-  const data = buf.getChannelData(0);
+  const sr      = ctx.sampleRate;
+  const bufSize = sr * 12;           // 12-second loop
+  const FADE    = Math.floor(sr * 0.30); // 300ms crossfade zone
+  const buf     = ctx.createBuffer(1, bufSize, sr);
+  const data    = buf.getChannelData(0);
+
+  // ── Pink noise helper (1/f noise — warmer than white, less boomy than brown)
+  function _pink(state) {
+    // Paul Kellet's pink noise algorithm
+    const w = Math.random() * 2 - 1;
+    state[0] = 0.99886*state[0] + w*0.0555179;
+    state[1] = 0.99332*state[1] + w*0.0750759;
+    state[2] = 0.96900*state[2] + w*0.1538520;
+    state[3] = 0.86650*state[3] + w*0.3104856;
+    state[4] = 0.55000*state[4] + w*0.5329522;
+    state[5] = -0.7616*state[5] - w*0.0168980;
+    const pink = state[0]+state[1]+state[2]+state[3]+state[4]+state[5]+state[6]+w*0.5362;
+    state[6] = w*0.115926;
+    return pink * 0.11;
+  }
 
   if (type === 'white') {
-    for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    // Pure white noise — flat spectrum
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.85;
+
+  } else if (type === 'pink') {
+    // Pink noise — 1/f, more natural, great for focus
+    const st = [0,0,0,0,0,0,0];
+    for (let i = 0; i < bufSize; i++) data[i] = _pink(st);
 
   } else if (type === 'brown') {
+    // Brown/red noise — very low, deep rumble, like distant thunder or HVAC
     let last = 0;
     for (let i = 0; i < bufSize; i++) {
-      const w = Math.random() * 2 - 1;
-      data[i] = (last + 0.02 * w) / 1.02;
-      last = data[i]; data[i] *= 3.5;
+      const w   = Math.random() * 2 - 1;
+      last      = (last + 0.02 * w) / 1.02;
+      data[i]   = last * 3.8;
     }
 
   } else if (type === 'rain') {
+    // Rain: pink noise base + gentle amplitude sway (period matches buffer length)
+    const st = [0,0,0,0,0,0,0];
     for (let i = 0; i < bufSize; i++) {
-      const w = Math.random() * 2 - 1;
-      const env = 0.6 + 0.4 * Math.sin(i * 0.0003) * Math.sin(i * 0.00007);
-      data[i] = w * env;
+      const p    = _pink(st);
+      // Sway period = bufSize → starts & ends at same value
+      const sway = 0.70 + 0.30 * Math.sin((i / bufSize) * 2 * Math.PI * 3);
+      data[i]    = p * sway * 1.4;
+    }
+
+  } else if (type === 'storm') {
+    // Thunderstorm: heavy rain + low rumbles
+    const st = [0,0,0,0,0,0,0];
+    let rumble = 0;
+    for (let i = 0; i < bufSize; i++) {
+      const w     = Math.random() * 2 - 1;
+      rumble      = (rumble + 0.012 * w) / 1.012;
+      const pink  = _pink(st);
+      // Mix heavy rain (pink) with thunder rumble (brown)
+      data[i]     = pink * 1.6 + rumble * 6;
+      // Occasional distant thunder roll
+      if (Math.random() < 0.00003) {
+        const rollLen = Math.floor(sr * (1.5 + Math.random() * 2));
+        for (let k = 0; k < rollLen && i + k < bufSize; k++) {
+          const env = Math.exp(-k / (rollLen * 0.35)) * Math.sin(k * 0.003);
+          data[i + k] += env * (Math.random() * 2 - 1) * 0.6;
+        }
+      }
     }
 
   } else if (type === 'fire') {
-    // Crackling fire: low rumble + random sharp crackles
+    // Fire: brown noise base + random crackles, gentle breathing
     let last = 0;
+    // Pre-place crackle events so they don't cluster near end
+    const crackles = [];
     for (let i = 0; i < bufSize; i++) {
-      const w = Math.random() * 2 - 1;
-      // Brown base
-      data[i] = (last + 0.015 * w) / 1.015;
-      last = data[i]; data[i] *= 4;
-      // Random crackles
-      if (Math.random() < 0.0008) data[i] += (Math.random() - 0.5) * 2.5;
-      // Slow breathing envelope
-      const breathe = 0.7 + 0.3 * Math.sin(i * 0.00015) * Math.sin(i * 0.00004);
+      if (Math.random() < 0.00055) crackles.push(i);
+    }
+    for (let i = 0; i < bufSize; i++) {
+      const w     = Math.random() * 2 - 1;
+      last        = (last + 0.014 * w) / 1.014;
+      data[i]     = last * 4.5;
+    }
+    // Smooth breathe: use sin with period = bufSize/3 → multiple full cycles, starts/ends same
+    for (let i = 0; i < bufSize; i++) {
+      const breathe = 0.72 + 0.28 * Math.sin((i / bufSize) * 2 * Math.PI * 5);
       data[i] *= breathe;
     }
-
-  } else if (type === 'cafe') {
-    // Coffee shop: low murmur base + occasional distant clinking
-    let last = 0;
-    for (let i = 0; i < bufSize; i++) {
-      const w = Math.random() * 2 - 1;
-      data[i] = (last + 0.01 * w) / 1.01;
-      last = data[i]; data[i] *= 2.5;
-      // Occasional "clink" sounds
-      if (Math.random() < 0.00015) {
-        const clinkLen = Math.floor(sr * 0.05);
-        for (let k = 0; k < clinkLen && i + k < bufSize; k++) {
-          data[i + k] += Math.sin(k * 0.8) * Math.exp(-k * 0.05) * 0.4;
+    // Add crackles
+    crackles.forEach(ci => {
+      if (ci + 300 < bufSize) {
+        const amp = 0.4 + Math.random() * 0.8;
+        for (let k = 0; k < 180 && ci+k < bufSize; k++) {
+          data[ci+k] += Math.sin(k * 1.1) * Math.exp(-k * 0.06) * amp;
         }
       }
-      // Room tone modulation
-      const room = 0.5 + 0.5 * Math.abs(Math.sin(i * 0.00002));
-      data[i] *= room;
+    });
+
+  } else if (type === 'cafe') {
+    // Coffee shop: warm pink noise murmur, subtle room hum, soft clinks
+    // Room modulation uses FULL CYCLES of sin → seamless at loop point
+    const st = [0,0,0,0,0,0,0];
+    for (let i = 0; i < bufSize; i++) {
+      const p    = _pink(st) * 0.9;
+      // Room swell: 4 full cycles over the buffer → starts & ends at same value (sin(0)=sin(8π)=0)
+      const room = 0.55 + 0.45 * Math.sin((i / bufSize) * 2 * Math.PI * 4);
+      data[i]    = p * room;
+    }
+    // Add subtle glass/cup clinks — keep them away from the fade zone
+    for (let i = 0; i < bufSize - FADE - sr; i++) {
+      if (Math.random() < 0.00006) {
+        const freq = 800 + Math.random() * 1200;
+        const clinkLen = Math.floor(sr * (0.08 + Math.random() * 0.07));
+        for (let k = 0; k < clinkLen && i+k < bufSize; k++) {
+          const env = Math.exp(-k / (clinkLen * 0.3));
+          data[i+k] += Math.sin(2 * Math.PI * freq * k / sr) * env * 0.18;
+        }
+      }
     }
 
   } else if (type === 'forest') {
-    // Forest: wind base + chirping birds
-    let last = 0;
+    // Forest: wind (pink) + bird chirps — wind sways in full cycles
+    const st = [0,0,0,0,0,0,0];
     for (let i = 0; i < bufSize; i++) {
-      const w = Math.random() * 2 - 1;
-      data[i] = (last + 0.018 * w) / 1.018;
-      last = data[i]; data[i] *= 1.8;
-      // Wind sway
-      const wind = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(i * 0.00008) * Math.sin(i * 0.000023));
-      data[i] *= wind;
-      // Bird chirps
-      if (Math.random() < 0.0002) {
-        const chirpLen = Math.floor(sr * 0.12);
-        const chirpFreq = 2200 + Math.random() * 1400;
-        for (let k = 0; k < chirpLen && i + k < bufSize; k++) {
-          const t = k / sr;
-          const env2 = Math.exp(-k / (chirpLen * 0.4));
-          data[i + k] += Math.sin(2 * Math.PI * chirpFreq * t) * env2 * 0.25;
+      const p    = _pink(st);
+      // Wind: 2 full cycles → seamless
+      const wind = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 2)
+                                      * Math.sin((i / bufSize) * 2 * Math.PI * 7));
+      data[i] = p * wind * 1.3;
+    }
+    // Bird chirps — keep away from crossfade zone
+    for (let i = 0; i < bufSize - FADE - sr; i++) {
+      if (Math.random() < 0.00012) {
+        const chirpLen  = Math.floor(sr * (0.08 + Math.random() * 0.14));
+        const chirpFreq = 1800 + Math.random() * 1800;
+        const vibrato   = 8 + Math.random() * 14;
+        for (let k = 0; k < chirpLen && i+k < bufSize; k++) {
+          const t   = k / sr;
+          const env = Math.exp(-k / (chirpLen * 0.45));
+          const f   = chirpFreq + Math.sin(2 * Math.PI * vibrato * t) * 60;
+          data[i+k] += Math.sin(2 * Math.PI * f * t) * env * 0.22;
         }
       }
     }
 
   } else if (type === 'ocean') {
-    // Ocean waves: rhythmic swell + splash texture
+    // Ocean: layered waves using sin-modulated pink noise — period matches buffer
+    const st = [0,0,0,0,0,0,0];
+    let smooth = 0;
     for (let i = 0; i < bufSize; i++) {
-      const w = Math.random() * 2 - 1;
-      // Wave rhythm ~6s cycle
-      const wave = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(i * 0.00011));
-      const splash = 0.4 + 0.6 * Math.abs(Math.sin(i * 0.00011));
-      data[i] = w * wave * splash * 0.8;
-      // Low-freq rumble
-      if (i > 0) data[i] = data[i] * 0.3 + data[i - 1] * 0.7;
+      const p = _pink(st);
+      // Two wave rhythms, both full cycles over buffer → seamless
+      const wave1 = 0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 3);   // 3 swells
+      const wave2 = 0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 7.1); // 7 splashes
+      smooth = smooth * 0.72 + p * 0.28;
+      data[i] = (smooth * 0.5 + p * 0.5) * (wave1 * 0.65 + wave2 * 0.35) * 2.2;
+    }
+
+  } else if (type === 'lofi') {
+    // Lo-Fi: warm vinyl atmosphere — pink noise + subtle drone + occasional crackle
+    const st = [0,0,0,0,0,0,0];
+    // Build base layer
+    for (let i = 0; i < bufSize; i++) {
+      const p     = _pink(st);
+      // Gentle "room" modulation — full cycles
+      const room  = 0.60 + 0.40 * Math.sin((i / bufSize) * 2 * Math.PI * 2);
+      data[i]     = p * room * 0.85;
+    }
+    // Add warm drone tones (bass/mid harmony — Cm-ish for study mood)
+    // Frequencies: C2=65Hz, G2=98Hz, Eb3=156Hz, Bb3=233Hz
+    const droneFreqs = [65.4, 98.0, 155.6, 233.1];
+    const droneAmps  = [0.055, 0.040, 0.028, 0.018];
+    droneFreqs.forEach((freq, fi) => {
+      // Slow LFO per tone — full cycles to avoid loop click
+      const lfoRate = 0.08 + fi * 0.03; // very slow: 0.08–0.17 Hz
+      for (let i = 0; i < bufSize; i++) {
+        const t   = i / sr;
+        const lfo = 0.6 + 0.4 * Math.sin((i / bufSize) * 2 * Math.PI * Math.round(lfoRate * 12));
+        data[i]  += Math.sin(2 * Math.PI * freq * t) * droneAmps[fi] * lfo;
+      }
+    });
+    // Vinyl crackle — sparse, away from fade zone
+    for (let i = 200; i < bufSize - FADE - 500; i++) {
+      if (Math.random() < 0.00012) {
+        const amp = 0.05 + Math.random() * 0.12;
+        for (let k = 0; k < 60 && i+k < bufSize; k++) {
+          data[i+k] += (Math.random() * 2 - 1) * amp * Math.exp(-k * 0.12);
+        }
+      }
     }
   }
+
+  // ── SEAMLESS LOOP CROSSFADE ────────────────────────────────
+  // Blend end of buffer → beginning so loop point is silent
+  const head = new Float32Array(FADE);
+  for (let i = 0; i < FADE; i++) head[i] = data[i];
+  for (let i = 0; i < FADE; i++) {
+    const t = i / FADE; // 0→1 (end of buffer fades into start)
+    data[bufSize - FADE + i] = data[bufSize - FADE + i] * (1 - t) + head[i] * t;
+  }
+
   return buf;
 }
 
@@ -263,7 +375,6 @@ function toggleNoise(type) {
   if (!ctx) return;
   if (_noiseType === type && _noiseNode) { _stopNoise(); return; }
   _stopNoise();
-  _uiClick('click');
 
   const _start = () => {
     try {
@@ -273,38 +384,69 @@ function toggleNoise(type) {
       _noiseGain = ctx.createGain();
       _noiseGain.gain.value = _noiseVol;
 
-      // Apply type-specific filters
-      if (type === 'rain') {
-        const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1200; f.Q.value=0.7;
-        src.connect(f); f.connect(_noiseGain);
+      // Apply type-specific filters for color & realism
+      const connect = (node) => { node.connect(_noiseGain); };
+
+      if (type === 'white') {
+        // Slight high-shelf cut — softens harshness
+        const f = ctx.createBiquadFilter(); f.type='highshelf'; f.frequency.value=6000; f.gain.value=-6;
+        src.connect(f); connect(f);
+      } else if (type === 'pink') {
+        // Pink is already warm — gentle low-shelf boost
+        const f = ctx.createBiquadFilter(); f.type='lowshelf'; f.frequency.value=300; f.gain.value=2;
+        src.connect(f); connect(f);
       } else if (type === 'brown') {
-        const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=800;
-        src.connect(f); f.connect(_noiseGain);
+        // Deep lowpass for that heavy, cozy rumble
+        const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=500; f.Q.value=0.6;
+        src.connect(f); connect(f);
+      } else if (type === 'rain') {
+        // Bandpass centered on rain frequencies
+        const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1000; f.Q.value=0.5;
+        src.connect(f); connect(f);
+      } else if (type === 'storm') {
+        // Heavy lowpass for storm rumble
+        const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1800; f.Q.value=0.4;
+        src.connect(f); connect(f);
       } else if (type === 'fire') {
-        const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=600; f.Q.value=0.5;
-        src.connect(f); f.connect(_noiseGain);
+        // Lowpass for warm crackling
+        const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=700; f.Q.value=0.45;
+        src.connect(f); connect(f);
       } else if (type === 'cafe') {
-        const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=800; f.Q.value=0.4;
-        src.connect(f); f.connect(_noiseGain);
+        // Soft bandpass for muffled room sound
+        const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=700; f.Q.value=0.35;
+        const f2 = ctx.createBiquadFilter(); f2.type='highshelf'; f2.frequency.value=4000; f2.gain.value=-8;
+        src.connect(f); f.connect(f2); f2.connect(_noiseGain);
       } else if (type === 'forest') {
-        const f = ctx.createBiquadFilter(); f.type='lowshelf'; f.frequency.value=200; f.gain.value=-4;
-        src.connect(f); f.connect(_noiseGain);
+        // Low-shelf cut (less rumble) + airy highs
+        const f = ctx.createBiquadFilter(); f.type='lowshelf'; f.frequency.value=250; f.gain.value=-5;
+        src.connect(f); connect(f);
       } else if (type === 'ocean') {
-        const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1400;
-        src.connect(f); f.connect(_noiseGain);
+        // Lowpass keeps waves deep and smooth
+        const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1200; f.Q.value=0.5;
+        src.connect(f); connect(f);
+      } else if (type === 'lofi') {
+        // Lo-fi: warm lowpass + slight mid scoop (telephone/vinyl feel)
+        const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3500; lp.Q.value=0.7;
+        const mid = ctx.createBiquadFilter(); mid.type='peaking'; mid.frequency.value=800; mid.gain.value=-3; mid.Q.value=1.5;
+        src.connect(lp); lp.connect(mid); mid.connect(_noiseGain);
       } else {
         src.connect(_noiseGain);
       }
 
       _noiseGain.connect(ctx.destination);
+      // Slow fade-in to avoid pop on start
       _noiseGain.gain.setValueAtTime(0, ctx.currentTime);
-      _noiseGain.gain.linearRampToValueAtTime(_noiseVol, ctx.currentTime + 0.8);
+      _noiseGain.gain.linearRampToValueAtTime(_noiseVol, ctx.currentTime + 1.2);
       src.start();
       _noiseNode = src; _noiseType = type;
       _updateNoiseButtons();
 
       // Update "now playing" label
-      const labels = { white:'Ruido Blanco', brown:'Ruido Café', rain:'Lluvia', fire:'🔥 Fuego', cafe:'☕ Café', forest:'🌿 Bosque', ocean:'🌊 Océano' };
+      const labels = {
+        white:'Ruido Blanco', pink:'Ruido Rosa', brown:'Ruido Tierra',
+        rain:'Lluvia', storm:'⛈ Tormenta', fire:'🔥 Fuego',
+        cafe:'☕ Cafetería', forest:'🌿 Bosque', ocean:'🌊 Océano', lofi:'🎵 Lo-Fi'
+      };
       const np = document.getElementById('sound-now-playing');
       if (np) np.textContent = '▶ ' + (labels[type] || type);
     } catch(e) { console.warn('Noise error', e); }
@@ -331,7 +473,7 @@ function _stopNoise() {
 }
 
 function _updateNoiseButtons() {
-  ['white','brown','rain','fire','cafe','forest','ocean'].forEach(t => {
+  ['white','pink','brown','rain','storm','fire','cafe','forest','ocean','lofi'].forEach(t => {
     const btn  = document.getElementById('noise-' + t + '-btn');
     const icon = document.getElementById('noise-' + t + '-icon');
     if (btn)  btn.classList.toggle('playing', _noiseType === t);
@@ -353,7 +495,7 @@ document.addEventListener('click', e => {
   const btn = e.target.closest('.btn, .nav-item, .mobile-nav-item, .task-check, .notes-folder-item');
   if (!btn) return;
   // Skip noise buttons (they handle their own sound)
-  const skipIds = ['noise-white-btn','noise-brown-btn','noise-rain-btn','noise-fire-btn','noise-cafe-btn','noise-forest-btn','noise-ocean-btn','ui-sound-btn'];
+  const skipIds = ['noise-white-btn','noise-pink-btn','noise-brown-btn','noise-rain-btn','noise-storm-btn','noise-fire-btn','noise-cafe-btn','noise-forest-btn','noise-ocean-btn','noise-lofi-btn','ui-sound-btn'];
   if (skipIds.some(id => btn.id === id)) return;
   // Skip pom-btn (has its own sounds)
   if (btn.id === 'pom-btn') return;
