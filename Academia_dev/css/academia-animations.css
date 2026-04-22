@@ -74,23 +74,15 @@
 
 
 /* ───────────────────────────────────────────────────────────────
-   4. FECHA — resalte sutil sin exagerar
+   4. FECHA — ahora inline junto al reloj (#ov-date-short)
    ─────────────────────────────────────────────────────────────── */
-#ov-date {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(168,146,255,.09);
-  border: 1px solid rgba(168,146,255,.22);
-  border-radius: 5px;
-  padding: 2px 9px 2px 7px;
-  backdrop-filter: blur(4px);
-  animation: slideInLeft 0.4s ease both;
-}
 
-[data-theme="light"] #ov-date {
-  background: rgba(107,88,232,.07);
-  border-color: rgba(107,88,232,.18);
+/* El elemento legacy #ov-date queda oculto — sin estilos visuales */
+
+/* Fecha corta: aparece con fade desde la derecha */
+#ov-date-short {
+  animation: slideInRight 0.5s cubic-bezier(.22,.68,0,1.15) 0.18s both;
+  white-space: nowrap;
 }
 
 
@@ -189,5 +181,5 @@
 @media (max-width: 768px) {
   .nav-item:hover  { transform: none; }
   .nav-item::before { display: none; }
-  #ov-date { font-size: 9px; padding: 1px 7px; }
+  #ov-date-short { font-size: 11px; letter-spacing: 0.5px; }
 }

@@ -1,0 +1,100 @@
+/* ═══════════════════════════════════════════════════════════════
+   ACADEMIA — Logout Button Fix + Sidebar Tweaks
+   <link rel="stylesheet" href="css/logout-fix.css">
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ───────────────────────────────────────────────────────────────
+   BOTÓN CERRAR SESIÓN — cubre todos los patrones posibles
+   ─────────────────────────────────────────────────────────────── */
+
+button[onclick*="handleLogout"],
+button[onclick*="signOut"],
+button[onclick*="logout"],
+button[onclick*="cerrarSesion"],
+button[onclick*="cerrar_sesion"],
+a[onclick*="signOut"],
+#btn-logout,
+#logout-btn,
+#sign-out-btn,
+#cerrar-sesion-btn,
+#page-config   .btn-danger,
+#page-ajustes  .btn-danger,
+#page-perfil   .btn-danger,
+#page-settings .btn-danger,
+#modal-config  .btn-danger,
+.content .btn-danger[style*="width:100%"],
+.content button.btn-danger {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  width: auto !important;
+  max-width: 100% !important;
+  padding: 7px 16px !important;
+  background: rgba(248, 113, 113, .10) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(248, 113, 113, .25) !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  font-family: var(--app-font) !important;
+  cursor: pointer !important;
+  transition: background .15s, border-color .15s, transform .15s !important;
+}
+
+button[onclick*="handleLogout"]:hover,
+button[onclick*="signOut"]:hover,
+button[onclick*="logout"]:hover,
+button[onclick*="cerrarSesion"]:hover,
+#btn-logout:hover,
+#logout-btn:hover,
+#sign-out-btn:hover,
+#page-config   .btn-danger:hover,
+#page-ajustes  .btn-danger:hover,
+#page-perfil   .btn-danger:hover,
+#page-settings .btn-danger:hover,
+#modal-config  .btn-danger:hover,
+.content .btn-danger[style*="width:100%"]:hover,
+.content button.btn-danger:hover {
+  background: rgba(248, 113, 113, .20) !important;
+  border-color: rgba(248, 113, 113, .45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.card-body button[onclick*="handleLogout"],
+.card-body button[onclick*="signOut"],
+.card-body button[onclick*="logout"],
+.card-body button[onclick*="cerrarSesion"],
+.card-body #btn-logout,
+.card-body #logout-btn {
+  width: auto !important;
+}
+
+
+/* ───────────────────────────────────────────────────────────────
+   SIDEBAR — botón de logout pequeño y discreto
+   ─────────────────────────────────────────────────────────────── */
+#sidebar-logout-btn {
+  width: 100% !important;
+  padding: 5px 10px !important;
+  background: transparent !important;
+  border: 1px solid rgba(248, 113, 113, .18) !important;
+  border-radius: 7px !important;
+  color: rgba(248, 113, 113, .6) !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  font-family: var(--app-font) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: border-color .15s, color .15s, background .15s !important;
+  transform: none !important;
+}
+
+#sidebar-logout-btn:hover {
+  background: rgba(248, 113, 113, .08) !important;
+  border-color: rgba(248, 113, 113, .4) !important;
+  color: #f87171 !important;
+  transform: none !important;
+}
