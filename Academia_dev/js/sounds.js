@@ -163,19 +163,18 @@ function _uiClick(type) {
 }
 
 // ── AMBIENT NOISE BUFFERS — seamless loop, no pops ───────────
-// All buffers: 12 seconds + 300ms crossfade at loop boundary
-// Crossfade technique: end of buffer blends into beginning
-// so the Web Audio loop point (sample 0) is always smooth.
+// 45-second buffers + 1-second equal-power crossfade at loop boundary.
+// Equal-power crossfade (cos/sin curve) avoids the amplitude dip
+// that linear crossfade causes, making the loop point inaudible.
 function _buildNoiseBuffer(ctx, type) {
   const sr      = ctx.sampleRate;
-  const bufSize = sr * 12;           // 12-second loop
-  const FADE    = Math.floor(sr * 0.30); // 300ms crossfade zone
+  const bufSize = sr * 45;           // 45-second loop — loop point barely occurs
+  const FADE    = Math.floor(sr * 1.0); // 1-second equal-power crossfade
   const buf     = ctx.createBuffer(1, bufSize, sr);
   const data    = buf.getChannelData(0);
 
   // ── Pink noise helper (1/f noise — warmer than white, less boomy than brown)
   function _pink(state) {
-    // Paul Kellet's pink noise algorithm
     const w = Math.random() * 2 - 1;
     state[0] = 0.99886*state[0] + w*0.0555179;
     state[1] = 0.99332*state[1] + w*0.0750759;
@@ -189,47 +188,40 @@ function _buildNoiseBuffer(ctx, type) {
   }
 
   if (type === 'white') {
-    // Pure white noise — flat spectrum
     for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.85;
 
   } else if (type === 'pink') {
-    // Pink noise — 1/f, more natural, great for focus
     const st = [0,0,0,0,0,0,0];
     for (let i = 0; i < bufSize; i++) data[i] = _pink(st);
 
   } else if (type === 'brown') {
-    // Brown/red noise — very low, deep rumble, like distant thunder or HVAC
     let last = 0;
     for (let i = 0; i < bufSize; i++) {
-      const w   = Math.random() * 2 - 1;
-      last      = (last + 0.02 * w) / 1.02;
-      data[i]   = last * 3.8;
+      const w = Math.random() * 2 - 1;
+      last    = (last + 0.02 * w) / 1.02;
+      data[i] = last * 3.8;
     }
 
   } else if (type === 'rain') {
-    // Rain: pink noise base + gentle amplitude sway (period matches buffer length)
     const st = [0,0,0,0,0,0,0];
     for (let i = 0; i < bufSize; i++) {
       const p    = _pink(st);
-      // Sway period = bufSize → starts & ends at same value
-      const sway = 0.70 + 0.30 * Math.sin((i / bufSize) * 2 * Math.PI * 3);
+      // Full integer cycles over buffer → value at end == value at start
+      const sway = 0.70 + 0.30 * Math.sin((i / bufSize) * 2 * Math.PI * 7);
       data[i]    = p * sway * 1.4;
     }
 
   } else if (type === 'storm') {
-    // Thunderstorm: heavy rain + low rumbles
     const st = [0,0,0,0,0,0,0];
     let rumble = 0;
     for (let i = 0; i < bufSize; i++) {
-      const w     = Math.random() * 2 - 1;
-      rumble      = (rumble + 0.012 * w) / 1.012;
-      const pink  = _pink(st);
-      // Mix heavy rain (pink) with thunder rumble (brown)
-      data[i]     = pink * 1.6 + rumble * 6;
-      // Occasional distant thunder roll
-      if (Math.random() < 0.00003) {
+      const w   = Math.random() * 2 - 1;
+      rumble    = (rumble + 0.012 * w) / 1.012;
+      const p   = _pink(st);
+      data[i]   = p * 1.6 + rumble * 6;
+      if (Math.random() < 0.000008) {
         const rollLen = Math.floor(sr * (1.5 + Math.random() * 2));
-        for (let k = 0; k < rollLen && i + k < bufSize; k++) {
+        for (let k = 0; k < rollLen && i + k < bufSize - FADE; k++) {
           const env = Math.exp(-k / (rollLen * 0.35)) * Math.sin(k * 0.003);
           data[i + k] += env * (Math.random() * 2 - 1) * 0.6;
         }
@@ -237,72 +229,41 @@ function _buildNoiseBuffer(ctx, type) {
     }
 
   } else if (type === 'fire') {
-    // Fire: brown noise base + random crackles, gentle breathing
     let last = 0;
-    // Pre-place crackle events so they don't cluster near end
-    const crackles = [];
     for (let i = 0; i < bufSize; i++) {
-      if (Math.random() < 0.00055) crackles.push(i);
+      const w = Math.random() * 2 - 1;
+      last    = (last + 0.014 * w) / 1.014;
+      data[i] = last * 4.5;
     }
+    // Smooth breathe — integer cycles
     for (let i = 0; i < bufSize; i++) {
-      const w     = Math.random() * 2 - 1;
-      last        = (last + 0.014 * w) / 1.014;
-      data[i]     = last * 4.5;
-    }
-    // Smooth breathe: use sin with period = bufSize/3 → multiple full cycles, starts/ends same
-    for (let i = 0; i < bufSize; i++) {
-      const breathe = 0.72 + 0.28 * Math.sin((i / bufSize) * 2 * Math.PI * 5);
+      const breathe = 0.72 + 0.28 * Math.sin((i / bufSize) * 2 * Math.PI * 11);
       data[i] *= breathe;
     }
-    // Add crackles
-    crackles.forEach(ci => {
-      if (ci + 300 < bufSize) {
+    // Crackles — keep away from crossfade zone
+    for (let i = 0; i < bufSize - FADE - 500; i++) {
+      if (Math.random() < 0.00016) {
         const amp = 0.4 + Math.random() * 0.8;
-        for (let k = 0; k < 180 && ci+k < bufSize; k++) {
-          data[ci+k] += Math.sin(k * 1.1) * Math.exp(-k * 0.06) * amp;
-        }
-      }
-    });
-
-  } else if (type === 'cafe') {
-    // Coffee shop: warm pink noise murmur, subtle room hum, soft clinks
-    // Room modulation uses FULL CYCLES of sin → seamless at loop point
-    const st = [0,0,0,0,0,0,0];
-    for (let i = 0; i < bufSize; i++) {
-      const p    = _pink(st) * 0.9;
-      // Room swell: 4 full cycles over the buffer → starts & ends at same value (sin(0)=sin(8π)=0)
-      const room = 0.55 + 0.45 * Math.sin((i / bufSize) * 2 * Math.PI * 4);
-      data[i]    = p * room;
-    }
-    // Add subtle glass/cup clinks — keep them away from the fade zone
-    for (let i = 0; i < bufSize - FADE - sr; i++) {
-      if (Math.random() < 0.00006) {
-        const freq = 800 + Math.random() * 1200;
-        const clinkLen = Math.floor(sr * (0.08 + Math.random() * 0.07));
-        for (let k = 0; k < clinkLen && i+k < bufSize; k++) {
-          const env = Math.exp(-k / (clinkLen * 0.3));
-          data[i+k] += Math.sin(2 * Math.PI * freq * k / sr) * env * 0.18;
+        for (let k = 0; k < 180 && i+k < bufSize - FADE; k++) {
+          data[i+k] += Math.sin(k * 1.1) * Math.exp(-k * 0.06) * amp;
         }
       }
     }
 
   } else if (type === 'forest') {
-    // Forest: wind (pink) + bird chirps — wind sways in full cycles
     const st = [0,0,0,0,0,0,0];
     for (let i = 0; i < bufSize; i++) {
       const p    = _pink(st);
-      // Wind: 2 full cycles → seamless
-      const wind = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 2)
-                                      * Math.sin((i / bufSize) * 2 * Math.PI * 7));
+      const wind = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 5)
+                                      * Math.sin((i / bufSize) * 2 * Math.PI * 17));
       data[i] = p * wind * 1.3;
     }
-    // Bird chirps — keep away from crossfade zone
     for (let i = 0; i < bufSize - FADE - sr; i++) {
-      if (Math.random() < 0.00012) {
+      if (Math.random() < 0.000035) {
         const chirpLen  = Math.floor(sr * (0.08 + Math.random() * 0.14));
         const chirpFreq = 1800 + Math.random() * 1800;
         const vibrato   = 8 + Math.random() * 14;
-        for (let k = 0; k < chirpLen && i+k < bufSize; k++) {
+        for (let k = 0; k < chirpLen && i+k < bufSize - FADE; k++) {
           const t   = k / sr;
           const env = Math.exp(-k / (chirpLen * 0.45));
           const f   = chirpFreq + Math.sin(2 * Math.PI * vibrato * t) * 60;
@@ -312,59 +273,27 @@ function _buildNoiseBuffer(ctx, type) {
     }
 
   } else if (type === 'ocean') {
-    // Ocean: layered waves using sin-modulated pink noise — period matches buffer
     const st = [0,0,0,0,0,0,0];
     let smooth = 0;
     for (let i = 0; i < bufSize; i++) {
-      const p = _pink(st);
-      // Two wave rhythms, both full cycles over buffer → seamless
-      const wave1 = 0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 3);   // 3 swells
-      const wave2 = 0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 7.1); // 7 splashes
-      smooth = smooth * 0.72 + p * 0.28;
-      data[i] = (smooth * 0.5 + p * 0.5) * (wave1 * 0.65 + wave2 * 0.35) * 2.2;
-    }
-
-  } else if (type === 'lofi') {
-    // Lo-Fi: warm vinyl atmosphere — pink noise + subtle drone + occasional crackle
-    const st = [0,0,0,0,0,0,0];
-    // Build base layer
-    for (let i = 0; i < bufSize; i++) {
       const p     = _pink(st);
-      // Gentle "room" modulation — full cycles
-      const room  = 0.60 + 0.40 * Math.sin((i / bufSize) * 2 * Math.PI * 2);
-      data[i]     = p * room * 0.85;
-    }
-    // Add warm drone tones (bass/mid harmony — Cm-ish for study mood)
-    // Frequencies: C2=65Hz, G2=98Hz, Eb3=156Hz, Bb3=233Hz
-    const droneFreqs = [65.4, 98.0, 155.6, 233.1];
-    const droneAmps  = [0.055, 0.040, 0.028, 0.018];
-    droneFreqs.forEach((freq, fi) => {
-      // Slow LFO per tone — full cycles to avoid loop click
-      const lfoRate = 0.08 + fi * 0.03; // very slow: 0.08–0.17 Hz
-      for (let i = 0; i < bufSize; i++) {
-        const t   = i / sr;
-        const lfo = 0.6 + 0.4 * Math.sin((i / bufSize) * 2 * Math.PI * Math.round(lfoRate * 12));
-        data[i]  += Math.sin(2 * Math.PI * freq * t) * droneAmps[fi] * lfo;
-      }
-    });
-    // Vinyl crackle — sparse, away from fade zone
-    for (let i = 200; i < bufSize - FADE - 500; i++) {
-      if (Math.random() < 0.00012) {
-        const amp = 0.05 + Math.random() * 0.12;
-        for (let k = 0; k < 60 && i+k < bufSize; k++) {
-          data[i+k] += (Math.random() * 2 - 1) * amp * Math.exp(-k * 0.12);
-        }
-      }
+      // Integer cycles → seamless
+      const wave1 = 0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 9);
+      const wave2 = 0.5 + 0.5 * Math.sin((i / bufSize) * 2 * Math.PI * 23);
+      smooth      = smooth * 0.72 + p * 0.28;
+      data[i]     = (smooth * 0.5 + p * 0.5) * (wave1 * 0.65 + wave2 * 0.35) * 2.2;
     }
   }
 
-  // ── SEAMLESS LOOP CROSSFADE ────────────────────────────────
-  // Blend end of buffer → beginning so loop point is silent
+  // ── EQUAL-POWER SEAMLESS LOOP CROSSFADE ───────────────────
+  // Equal-power (cos/sin) avoids amplitude dip — makes loop inaudible
   const head = new Float32Array(FADE);
   for (let i = 0; i < FADE; i++) head[i] = data[i];
   for (let i = 0; i < FADE; i++) {
-    const t = i / FADE; // 0→1 (end of buffer fades into start)
-    data[bufSize - FADE + i] = data[bufSize - FADE + i] * (1 - t) + head[i] * t;
+    const alpha   = i / FADE;                   // 0 → 1
+    const cosW    = Math.cos(alpha * Math.PI / 2); // 1 → 0
+    const sinW    = Math.sin(alpha * Math.PI / 2); // 0 → 1
+    data[bufSize - FADE + i] = data[bufSize - FADE + i] * cosW + head[i] * sinW;
   }
 
   return buf;
@@ -404,31 +333,14 @@ function toggleNoise(type) {
         const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1000; f.Q.value=0.5;
         src.connect(f); connect(f);
       } else if (type === 'storm') {
-        // Heavy lowpass for storm rumble
         const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1800; f.Q.value=0.4;
         src.connect(f); connect(f);
-      } else if (type === 'fire') {
-        // Lowpass for warm crackling
-        const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=700; f.Q.value=0.45;
-        src.connect(f); connect(f);
-      } else if (type === 'cafe') {
-        // Soft bandpass for muffled room sound
-        const f = ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=700; f.Q.value=0.35;
-        const f2 = ctx.createBiquadFilter(); f2.type='highshelf'; f2.frequency.value=4000; f2.gain.value=-8;
-        src.connect(f); f.connect(f2); f2.connect(_noiseGain);
       } else if (type === 'forest') {
-        // Low-shelf cut (less rumble) + airy highs
         const f = ctx.createBiquadFilter(); f.type='lowshelf'; f.frequency.value=250; f.gain.value=-5;
         src.connect(f); connect(f);
       } else if (type === 'ocean') {
-        // Lowpass keeps waves deep and smooth
         const f = ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1200; f.Q.value=0.5;
         src.connect(f); connect(f);
-      } else if (type === 'lofi') {
-        // Lo-fi: warm lowpass + slight mid scoop (telephone/vinyl feel)
-        const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3500; lp.Q.value=0.7;
-        const mid = ctx.createBiquadFilter(); mid.type='peaking'; mid.frequency.value=800; mid.gain.value=-3; mid.Q.value=1.5;
-        src.connect(lp); lp.connect(mid); mid.connect(_noiseGain);
       } else {
         src.connect(_noiseGain);
       }
@@ -445,7 +357,7 @@ function toggleNoise(type) {
       const labels = {
         white:'Ruido Blanco', pink:'Ruido Rosa', brown:'Ruido Tierra',
         rain:'Lluvia', storm:'⛈ Tormenta', fire:'🔥 Fuego',
-        cafe:'☕ Cafetería', forest:'🌿 Bosque', ocean:'🌊 Océano', lofi:'🎵 Lo-Fi'
+        forest:'🌿 Bosque', ocean:'🌊 Océano'
       };
       const np = document.getElementById('sound-now-playing');
       if (np) np.textContent = '▶ ' + (labels[type] || type);
@@ -473,7 +385,7 @@ function _stopNoise() {
 }
 
 function _updateNoiseButtons() {
-  ['white','pink','brown','rain','storm','fire','cafe','forest','ocean','lofi'].forEach(t => {
+  ['white','pink','brown','rain','storm','fire','forest','ocean'].forEach(t => {
     const btn  = document.getElementById('noise-' + t + '-btn');
     const icon = document.getElementById('noise-' + t + '-icon');
     if (btn)  btn.classList.toggle('playing', _noiseType === t);
@@ -495,7 +407,7 @@ document.addEventListener('click', e => {
   const btn = e.target.closest('.btn, .nav-item, .mobile-nav-item, .task-check, .notes-folder-item');
   if (!btn) return;
   // Skip noise buttons (they handle their own sound)
-  const skipIds = ['noise-white-btn','noise-pink-btn','noise-brown-btn','noise-rain-btn','noise-storm-btn','noise-fire-btn','noise-cafe-btn','noise-forest-btn','noise-ocean-btn','noise-lofi-btn','ui-sound-btn'];
+  const skipIds = ['noise-white-btn','noise-pink-btn','noise-brown-btn','noise-rain-btn','noise-storm-btn','noise-fire-btn','noise-forest-btn','noise-ocean-btn','ui-sound-btn'];
   if (skipIds.some(id => btn.id === id)) return;
   // Skip pom-btn (has its own sounds)
   if (btn.id === 'pom-btn') return;
