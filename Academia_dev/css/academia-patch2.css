@@ -1,0 +1,331 @@
+/* ═══════════════════════════════════════════════════════════════
+   ACADEMIA — Patch v5.3
+   Agrega DESPUÉS de academia-patch.css en app.html:
+   <link rel="stylesheet" href="css/academia-patch2.css">
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FIX — DAY STRIP: sin scale, sin overflow                  ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* Contenedor que lleva el overflow */
+#ov-day-strip {
+  overflow: visible !important;   /* liberamos para que el shadow no se corte */
+  padding: 6px 2px 12px;          /* espacio para el shadow */
+}
+
+/* Chip base — sin scale en ningún estado */
+#ov-day-strip > div,
+.day-chip {
+  transition:
+    background     .28s ease,
+    border-color   .28s ease,
+    box-shadow     .34s cubic-bezier(.25,.8,.25,1),
+    transform      .34s cubic-bezier(.25,.8,.25,1) !important;
+  will-change: transform, box-shadow;
+}
+
+/* Hover: solo sube + shadow — NUNCA scale */
+#ov-day-strip > div:hover,
+.day-chip:hover {
+  transform: translateY(-6px) !important;
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.45),
+    0 0 0 1px rgba(124,106,255,.35) !important;
+  border-color: rgba(124,106,255,.42) !important;
+  background: var(--surface3) !important;
+}
+
+#ov-day-strip > div:active,
+.day-chip:active {
+  transform: translateY(-1px) !important;
+  transition-duration: .10s !important;
+}
+
+/* Chip "hoy" — pulso constante, solo shadow sin scale */
+#ov-day-strip > div.today,
+.day-chip.today {
+  animation: dayChipToday 3s ease-in-out infinite !important;
+}
+@keyframes dayChipToday {
+  0%,100% { box-shadow: 0 0 0 1px rgba(124,106,255,.4), 0 4px 16px rgba(124,106,255,.25); }
+  50%      { box-shadow: 0 0 0 2px rgba(124,106,255,.6), 0 4px 24px rgba(124,106,255,.42); }
+}
+
+/* Chip "hoy" hover — acumula con el pulso */
+#ov-day-strip > div.today:hover,
+.day-chip.today:hover {
+  transform: translateY(-6px) !important;
+  box-shadow:
+    0 0 0 2px rgba(124,106,255,.6),
+    0 16px 36px rgba(124,106,255,.35) !important;
+  animation: none !important;  /* detener el loop para que no haya conflicto */
+}
+
+/* Número del día dentro del chip — transición de color */
+#ov-day-strip > div [style*="font-weight"],
+.day-chip [style*="font-weight"] {
+  transition: color .26s ease;
+}
+#ov-day-strip > div:hover [style*="font-weight"],
+.day-chip:hover [style*="font-weight"] {
+  color: var(--accent2);
+}
+
+/* Badge de evento dentro del chip (bola de color) */
+#ov-day-strip > div [style*="border-radius:50%"],
+.day-chip [style*="border-radius:50%"] {
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
+}
+#ov-day-strip > div:hover [style*="border-radius:50%"],
+.day-chip:hover [style*="border-radius:50%"] {
+  transform: scale(1.38);
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Badge numérico (número de eventos) */
+#ov-day-strip > div [style*="background:var(--accent)"],
+.day-chip [style*="background:var(--accent)"] {
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
+}
+#ov-day-strip > div:hover [style*="background:var(--accent)"],
+.day-chip:hover [style*="background:var(--accent)"] {
+  transform: scale(1.15);
+  box-shadow: 0 0 12px rgba(124,106,255,.5);
+}
+
+/* Entrada de los chips al cargar el overview */
+@keyframes dayChipIn {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.page.active #ov-day-strip > div:nth-child(1) { animation: dayChipIn .36s ease .05s both; }
+.page.active #ov-day-strip > div:nth-child(2) { animation: dayChipIn .36s ease .09s both; }
+.page.active #ov-day-strip > div:nth-child(3) { animation: dayChipIn .36s ease .13s both; }
+.page.active #ov-day-strip > div:nth-child(4) { animation: dayChipIn .36s ease .17s both; }
+.page.active #ov-day-strip > div:nth-child(5) { animation: dayChipIn .36s ease .21s both; }
+.page.active #ov-day-strip > div:nth-child(6) { animation: dayChipIn .36s ease .25s both; }
+.page.active #ov-day-strip > div:nth-child(7) { animation: dayChipIn .36s ease .29s both; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  TAREAS — cascada de entrada individual                    ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* Keyframe cascada: cada item cae desde arriba con spring */
+@keyframes taskCascade {
+  0%   { opacity:0; transform:translateY(-16px) scaleY(.92); }
+  55%  { opacity:1; transform:translateY(3px) scaleY(1.01); }
+  75%  { transform:translateY(-1px) scaleY(1); }
+  100% { opacity:1; transform:translateY(0) scaleY(1); }
+}
+
+/* Aplicado a task-items recién renderizados */
+.tasks-cascade .task-item,
+#tasks-list    .task-item,
+#ov-tasks-list .task-item {
+  animation: taskCascade .40s cubic-bezier(.22,.68,0,1.1) both;
+  transform-origin: top center;
+}
+
+/* Stagger automático — hasta 12 ítems con delay creciente */
+#tasks-list    .task-item:nth-child(1),
+#ov-tasks-list .task-item:nth-child(1)  { animation-delay:.03s; }
+#tasks-list    .task-item:nth-child(2),
+#ov-tasks-list .task-item:nth-child(2)  { animation-delay:.07s; }
+#tasks-list    .task-item:nth-child(3),
+#ov-tasks-list .task-item:nth-child(3)  { animation-delay:.11s; }
+#tasks-list    .task-item:nth-child(4),
+#ov-tasks-list .task-item:nth-child(4)  { animation-delay:.15s; }
+#tasks-list    .task-item:nth-child(5),
+#ov-tasks-list .task-item:nth-child(5)  { animation-delay:.19s; }
+#tasks-list    .task-item:nth-child(6),
+#ov-tasks-list .task-item:nth-child(6)  { animation-delay:.22s; }
+#tasks-list    .task-item:nth-child(7),
+#ov-tasks-list .task-item:nth-child(7)  { animation-delay:.25s; }
+#tasks-list    .task-item:nth-child(8),
+#ov-tasks-list .task-item:nth-child(8)  { animation-delay:.28s; }
+#tasks-list    .task-item:nth-child(n+9),
+#ov-tasks-list .task-item:nth-child(n+9){ animation-delay:.31s; }
+
+/* Separador de fecha/sección de tareas */
+#tasks-list    .task-section,
+#ov-tasks-list .task-section {
+  animation: fadeInLeft .32s ease both;
+}
+#tasks-list    .task-section:nth-child(1),
+#ov-tasks-list .task-section:nth-child(1) { animation-delay:.02s; }
+#tasks-list    .task-section:nth-child(2),
+#ov-tasks-list .task-section:nth-child(2) { animation-delay:.08s; }
+#tasks-list    .task-section:nth-child(3),
+#ov-tasks-list .task-section:nth-child(3) { animation-delay:.13s; }
+
+/* Hover en task-item — barra lateral izquierda animada */
+.task-item {
+  position: relative;
+  overflow: hidden;
+}
+.task-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 10%; bottom: 10%;
+  width: 2.5px;
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+  border-radius: 0 2px 2px 0;
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1), opacity .22s ease;
+  opacity: 0;
+}
+.task-item:hover::before {
+  transform: scaleY(1);
+  opacity: 1;
+}
+
+/* Prioridad badge — escala al hover */
+.task-prio,
+[class*="prio-"],
+.task-item [style*="color:var(--red)"],
+.task-item [style*="color:var(--yellow)"],
+.task-item [style*="color:var(--green)"] {
+  transition: transform .26s cubic-bezier(.34,1.56,.64,1);
+  display: inline-block;
+}
+.task-item:hover .task-prio,
+.task-item:hover [class*="prio-"] { transform: scale(1.2) rotate(-5deg); }
+
+/* Acciones de la tarea (editar/borrar) — aparecen con slide */
+.task-actions,
+.task-item .task-btns {
+  transition: opacity .26s ease, transform .28s cubic-bezier(.25,.8,.25,1);
+  opacity: 0;
+  transform: translateX(8px);
+}
+.task-item:hover .task-actions,
+.task-item:hover .task-btns {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Subtareas — cascada interna */
+@keyframes subTaskIn {
+  from { opacity:0; transform:translateX(-10px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+.task-item .subtask-item:nth-child(1) { animation: subTaskIn .28s ease .05s both; }
+.task-item .subtask-item:nth-child(2) { animation: subTaskIn .28s ease .09s both; }
+.task-item .subtask-item:nth-child(3) { animation: subTaskIn .28s ease .13s both; }
+.task-item .subtask-item:nth-child(n+4){ animation: subTaskIn .28s ease .16s both; }
+
+.subtask-item {
+  transition: background .20s ease, padding-left .24s cubic-bezier(.25,.8,.25,1) !important;
+}
+.subtask-item:hover { background: var(--surface2) !important; padding-left: 14px !important; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FLASHCARDS — lista individual en cascada                  ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+@keyframes fcCardCascade {
+  0%   { opacity:0; transform:translateY(20px) scale(.95); }
+  58%  { opacity:1; transform:translateY(-3px) scale(1.005); }
+  78%  { transform:translateY(1px) scale(1); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+
+#fc-list .fc-list-item {
+  animation: fcCardCascade .44s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+#fc-list .fc-list-item:nth-child(1)  { animation-delay:.03s !important; }
+#fc-list .fc-list-item:nth-child(2)  { animation-delay:.07s !important; }
+#fc-list .fc-list-item:nth-child(3)  { animation-delay:.11s !important; }
+#fc-list .fc-list-item:nth-child(4)  { animation-delay:.15s !important; }
+#fc-list .fc-list-item:nth-child(5)  { animation-delay:.18s !important; }
+#fc-list .fc-list-item:nth-child(6)  { animation-delay:.21s !important; }
+#fc-list .fc-list-item:nth-child(7)  { animation-delay:.24s !important; }
+#fc-list .fc-list-item:nth-child(8)  { animation-delay:.27s !important; }
+#fc-list .fc-list-item:nth-child(n+9){ animation-delay:.30s !important; }
+
+/* Respuesta — aparece con fade al hover de la tarjeta */
+.fc-item-answer {
+  transition: opacity .30s ease, max-height .34s cubic-bezier(.25,.8,.25,1);
+  opacity: .7;
+}
+.fc-list-item:hover .fc-item-answer { opacity: 1; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  NOTAS — cards individuales en cascada (folder grid)       ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+@keyframes noteCardCascade {
+  0%   { opacity:0; transform:translateX(-18px) translateY(8px); }
+  55%  { opacity:1; transform:translateX(2px) translateY(-1px); }
+  78%  { transform:translateX(-1px) translateY(0); }
+  100% { opacity:1; transform:translateX(0) translateY(0); }
+}
+
+#notes-folder-grid .card {
+  animation: noteCardCascade .42s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+#notes-folder-grid .card:nth-child(1)  { animation-delay:.03s !important; }
+#notes-folder-grid .card:nth-child(2)  { animation-delay:.08s !important; }
+#notes-folder-grid .card:nth-child(3)  { animation-delay:.13s !important; }
+#notes-folder-grid .card:nth-child(4)  { animation-delay:.17s !important; }
+#notes-folder-grid .card:nth-child(5)  { animation-delay:.21s !important; }
+#notes-folder-grid .card:nth-child(6)  { animation-delay:.24s !important; }
+#notes-folder-grid .card:nth-child(n+7){ animation-delay:.27s !important; }
+
+/* Hub de carpetas — cascada diferente (sube desde abajo) */
+@keyframes noteHubCascade {
+  0%   { opacity:0; transform:translateY(22px) scale(.96); }
+  58%  { opacity:1; transform:translateY(-3px) scale(1); }
+  78%  { transform:translateY(1px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+
+#notes-hub-grid .card {
+  animation: noteHubCascade .44s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+#notes-hub-grid .card:nth-child(1)  { animation-delay:.04s !important; }
+#notes-hub-grid .card:nth-child(2)  { animation-delay:.09s !important; }
+#notes-hub-grid .card:nth-child(3)  { animation-delay:.14s !important; }
+#notes-hub-grid .card:nth-child(4)  { animation-delay:.19s !important; }
+#notes-hub-grid .card:nth-child(n+5){ animation-delay:.23s !important; }
+
+/* Sidebar list items de notas — cascada vertical */
+@keyframes noteSidebarIn {
+  from { opacity:0; transform:translateX(-12px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+.notes-list-item:nth-child(1)  { animation: noteSidebarIn .30s ease .03s both; }
+.notes-list-item:nth-child(2)  { animation: noteSidebarIn .30s ease .07s both; }
+.notes-list-item:nth-child(3)  { animation: noteSidebarIn .30s ease .11s both; }
+.notes-list-item:nth-child(4)  { animation: noteSidebarIn .30s ease .14s both; }
+.notes-list-item:nth-child(5)  { animation: noteSidebarIn .30s ease .17s both; }
+.notes-list-item:nth-child(n+6){ animation: noteSidebarIn .30s ease .20s both; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  MOBILE — limpiar overrides de escala                      ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+@media (max-width: 768px) {
+  #ov-day-strip { padding: 4px 2px 10px; }
+  #ov-day-strip > div:hover, .day-chip:hover { transform: none !important; }
+
+  .task-item:hover::before { display: none; }
+  .task-actions, .task-item .task-btns { opacity:1; transform:none; }
+
+  #fc-list .fc-list-item { animation-duration: .32s !important; }
+  #notes-folder-grid .card { animation-duration: .32s !important; }
+  #notes-hub-grid .card    { animation-duration: .34s !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ov-day-strip > div, .day-chip,
+  .task-item, #fc-list .fc-list-item,
+  #notes-folder-grid .card, #notes-hub-grid .card,
+  .notes-list-item { animation: none !important; }
+}
