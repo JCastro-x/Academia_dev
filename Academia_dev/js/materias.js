@@ -810,70 +810,60 @@ function renderSemestresList() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// EDIT CLASS MODAL — zona editor con inputs editables
+// EDIT CLASS MODAL
 // ══════════════════════════════════════════════════════════════
-let _editClassMatId = null;
-let _editZoneCount  = 0;
+// Reusa newColorSel / newIconSel / zoneRowCount de app.js (ya declarados)
+// No declara ninguna variable global nueva con let/const para evitar
+// errores de redeclaración si el loader evalúa el archivo más de una vez.
 
 function openEditClassModal(matId) {
+  window._editClassMatId = matId;
   const mat = getMat(matId);
   if (!mat) return;
-  _editClassMatId = matId;
-  _editZoneCount  = 0;
 
-  // Basic fields
-  _setVal('ec-name',       mat.name);
-  _setVal('ec-code',       mat.code);
-  _setVal('ec-credits',    mat.credits);
-  _setVal('ec-catedratico',mat.catedratico || '');
-  _setVal('ec-seccion',    mat.seccion     || '');
-  _setVal('ec-horario',    mat.horario     || '');
+  const sv = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  sv('ec-name', mat.name);
+  sv('ec-code', mat.code);
+  sv('ec-credits', mat.credits);
+  sv('ec-catedratico', mat.catedratico);
+  sv('ec-seccion', mat.seccion);
+  sv('ec-horario', mat.horario);
 
-  // Días checkboxes
   document.querySelectorAll('#ec-dias-checks input[type=checkbox]')
     .forEach(cb => { cb.checked = (mat.dias || '').includes(cb.value); });
 
-  // Color & icon
-  _ecColorSel = mat.color;
-  _ecIconSel  = mat.icon || '📚';
-  document.querySelectorAll('#modal-editclass .color-opt').forEach(el =>
-    el.classList.toggle('selected', el.dataset.color === _ecColorSel));
-  document.querySelectorAll('#modal-editclass .icon-opt').forEach(el =>
-    el.classList.toggle('selected', el.dataset.icon  === _ecIconSel));
+  newColorSel = mat.color || '#7c6aff';
+  newIconSel  = mat.icon  || '📚';
+  document.querySelectorAll('#modal-editclass .color-opt')
+    .forEach(el => el.classList.toggle('selected', el.dataset.color === newColorSel));
+  document.querySelectorAll('#modal-editclass .icon-opt')
+    .forEach(el => el.classList.toggle('selected', el.dataset.icon  === newIconSel));
 
-  // Build zone editor
   const builder = document.getElementById('ec-zones-builder');
+  if (!builder) return;
   builder.innerHTML = '';
-  mat.zones.filter(z => !z.isLabZone).forEach(z => {
-    _addEditZoneRow(z.label, z.subs);
-  });
+  zoneRowCount = 0;
+  mat.zones.filter(z => !z.isLabZone).forEach(z => _addEditZoneRow(z.label, z.subs));
 
   document.getElementById('modal-editclass').classList.add('open');
 }
 
-function _setVal(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.value = val;
-}
-
-let _ecColorSel = '#7c6aff', _ecIconSel = '📚';
-
 function ecSelectColor(el) {
-  _ecColorSel = el.dataset.color;
+  newColorSel = el.dataset.color;
   document.querySelectorAll('#modal-editclass .color-opt')
     .forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
 }
 function ecSelectIcon(el) {
-  _ecIconSel = el.dataset.icon;
+  newIconSel = el.dataset.icon;
   document.querySelectorAll('#modal-editclass .icon-opt')
     .forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
 }
 
 function _addEditZoneRow(labelVal, subsArr) {
-  _editZoneCount++;
-  const id   = 'ecz-' + _editZoneCount;
+  zoneRowCount++;
+  const id   = 'ecz-' + zoneRowCount;
   const subs = subsArr || [];
   const div  = document.createElement('div');
   div.id = id;
@@ -882,11 +872,9 @@ function _addEditZoneRow(labelVal, subsArr) {
   const buildSubsHtml = (list) => list.map((s, i) => `
     <div class="zone-sub-row" id="${id}-sub-${i}" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
       <input type="text"   class="form-input ec-sub-label" placeholder="Nombre del apartado"
-             value="${(s.label||'').replace(/"/g,'&quot;')}"
-             style="flex:1;font-size:12px;">
+             value="${(s.label||'').replace(/"/g,'&quot;')}" style="flex:1;font-size:12px;">
       <input type="number" class="form-input ec-sub-pts"   placeholder="Pts"
-             value="${s.maxPts != null ? s.maxPts : ''}"
-             min="0" max="999" step="0.5"
+             value="${s.maxPts != null ? s.maxPts : ''}" min="0" max="999" step="0.5"
              style="width:70px;font-size:12px;text-align:center;"
              oninput="ecUpdateZoneTotal('${id}')">
       <button class="btn btn-danger btn-sm"
@@ -904,20 +892,37 @@ function _addEditZoneRow(labelVal, subsArr) {
       <div style="font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;color:var(--text2);">
         Total: <strong id="${id}-total" style="color:var(--accent2);">${totalPts.toFixed(1)}</strong> pts
       </div>
-      <button class="btn btn-danger btn-sm"
-              onclick="document.getElementById('${id}').remove()"
-              style="padding:3px 8px;flex-shrink:0;">✕</button>
+      <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()"
+              style="padding:3px 8px;">✕</button>
     </div>
     <div id="${id}-subs">${buildSubsHtml(subs)}</div>
-    <button class="btn btn-ghost btn-sm"
-            onclick="ecAddZoneSub('${id}')"
+    <button class="btn btn-ghost btn-sm" onclick="ecAddZoneSub('${id}')"
             style="margin-top:4px;font-size:11px;">+ Apartado</button>`;
 
   document.getElementById('ec-zones-builder').appendChild(div);
 }
 
 function ecAddZoneRow() {
-  _addEditZoneRow('', []);
+  zoneRowCount++;
+  const id  = 'ecz-' + zoneRowCount;
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = 'border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:var(--surface2);';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <input type="text" class="form-input ec-zone-name" placeholder="Nombre de la zona"
+             style="flex:1;font-size:13px;font-weight:600;">
+      <div style="font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;color:var(--text2);">
+        Total: <strong id="${id}-total" style="color:var(--accent2);">0.0</strong> pts
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()"
+              style="padding:3px 8px;">✕</button>
+    </div>
+    <div id="${id}-subs"></div>
+    <button class="btn btn-ghost btn-sm" onclick="ecAddZoneSub('${id}')"
+            style="margin-top:4px;font-size:11px;">+ Apartado</button>`;
+  document.getElementById('ec-zones-builder').appendChild(div);
+  ecAddZoneSub(id);
 }
 
 function ecAddZoneSub(zoneId) {
@@ -931,13 +936,13 @@ function ecAddZoneSub(zoneId) {
   row.innerHTML = `
     <input type="text"   class="form-input ec-sub-label" placeholder="Nombre del apartado"
            style="flex:1;font-size:12px;">
-    <input type="number" class="form-input ec-sub-pts"   placeholder="Pts"
+    <input type="number" class="form-input ec-sub-pts" placeholder="Pts"
            min="0" max="999" step="0.5"
            style="width:70px;font-size:12px;text-align:center;"
            oninput="ecUpdateZoneTotal('${zoneId}')">
     <button class="btn btn-danger btn-sm"
             onclick="this.closest('.zone-sub-row').remove();ecUpdateZoneTotal('${zoneId}')"
-            style="padding:3px 7px;flex-shrink:0;">✕</button>`;
+            style="padding:3px 7px;">✕</button>`;
   subsDiv.appendChild(row);
 }
 
@@ -946,16 +951,13 @@ function ecUpdateZoneTotal(zoneId) {
   const totalEl = document.getElementById(zoneId + '-total');
   if (!subsDiv || !totalEl) return;
   let total = 0;
-  subsDiv.querySelectorAll('.ec-sub-pts').forEach(inp => {
-    total += parseFloat(inp.value) || 0;
-  });
+  subsDiv.querySelectorAll('.ec-sub-pts').forEach(inp => { total += parseFloat(inp.value) || 0; });
   totalEl.textContent = total.toFixed(1);
 }
 
 function saveEditClass() {
-  const mat = getMat(_editClassMatId);
+  const mat = getMat(window._editClassMatId);
   if (!mat) return;
-
   const name = document.getElementById('ec-name')?.value.trim();
   const code = document.getElementById('ec-code')?.value.trim();
   if (!name || !code) { alert('Ingresa nombre y código.'); return; }
@@ -966,38 +968,31 @@ function saveEditClass() {
   mat.catedratico = document.getElementById('ec-catedratico')?.value.trim() || '';
   mat.seccion     = document.getElementById('ec-seccion')?.value.trim()     || '';
   mat.horario     = document.getElementById('ec-horario')?.value.trim()     || '';
-  mat.color       = _ecColorSel;
-  mat.icon        = _ecIconSel;
-  const dias = Array.from(document.querySelectorAll('#ec-dias-checks input[type=checkbox]:checked'))
+  mat.color       = newColorSel;
+  mat.icon        = newIconSel;
+  mat.dias = Array.from(document.querySelectorAll('#ec-dias-checks input:checked'))
     .map(cb => cb.value).join(', ');
-  mat.dias = dias;
 
-  // Rebuild zones from editor (keep isLabZone zones intact)
-  const labZones  = mat.zones.filter(z => z.isLabZone);
-  const newZones  = [];
-
+  const labZones = mat.zones.filter(z => z.isLabZone);
+  const newZones = [];
   document.getElementById('ec-zones-builder').querySelectorAll('div[id^="ecz-"]').forEach(row => {
-    const lbl  = row.querySelector('.ec-zone-name')?.value.trim();
+    const lbl = row.querySelector('.ec-zone-name')?.value.trim();
     if (!lbl) return;
     const key  = lbl.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20);
     const subs = [];
-    let   totalPts = 0;
+    let totalPts = 0;
     row.querySelectorAll('.zone-sub-row').forEach((sr, i) => {
       const subLabel = sr.querySelector('.ec-sub-label')?.value.trim() || lbl + ' ' + (i + 1);
       const subPts   = parseFloat(sr.querySelector('.ec-sub-pts')?.value) || 0;
-      // Preserve existing grade key if it matches position, else create new
       const existingZone = mat.zones.find(z => z.label === lbl);
       const existingKey  = existingZone?.subs?.[i]?.key || (key + '_' + (i + 1));
       subs.push({ key: existingKey, label: subLabel, maxPts: subPts });
       totalPts += subPts;
     });
-    if (subs.length) {
-      newZones.push({ key, label: lbl, maxPts: totalPts, color: _ecColorSel, subs });
-    }
+    if (subs.length) newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
   });
 
   if (!newZones.length) { alert('Agrega al menos una zona con apartados.'); return; }
-
   mat.zones = [...newZones, ...labZones];
 
   getMat.bust();

@@ -61,53 +61,27 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODAL: EDITAR CLASE / ZONAS
-══════════════════════════════════════════════════════════════ -->
+<!-- ═══ MODAL: EDITAR CLASE ═══ -->
 <div class="modal-overlay" id="modal-editclass">
-  <div class="modal" style="max-width:620px;max-height:90vh;overflow-y:auto;">
+  <div class="modal" style="max-width:600px;max-height:90vh;overflow-y:auto;">
     <div class="modal-header">
       <span class="modal-title">✏️ Editar Clase</span>
       <button class="modal-close" onclick="closeModal('modal-editclass')">✕</button>
     </div>
     <div class="modal-body" style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
-
-      <!-- Nombre y código -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div>
-          <label class="form-label">Nombre de la clase</label>
-          <input type="text" id="ec-name" class="form-input" placeholder="Ej: Cálculo 1">
-        </div>
-        <div>
-          <label class="form-label">Código</label>
-          <input type="text" id="ec-code" class="form-input" placeholder="Ej: MAT101">
-        </div>
+        <div><label class="form-label">Nombre</label><input type="text" id="ec-name" class="form-input" placeholder="Ej: Cálculo 1"></div>
+        <div><label class="form-label">Código</label><input type="text" id="ec-code" class="form-input" placeholder="Ej: MAT101"></div>
       </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-        <div>
-          <label class="form-label">Créditos</label>
-          <input type="text" id="ec-credits" class="form-input" placeholder="Ej: 5 cred">
-        </div>
-        <div>
-          <label class="form-label">Sección</label>
-          <input type="text" id="ec-seccion" class="form-input" placeholder="Ej: A">
-        </div>
-        <div>
-          <label class="form-label">Horario</label>
-          <input type="text" id="ec-horario" class="form-input" placeholder="Ej: 7:00–9:00">
-        </div>
+        <div><label class="form-label">Créditos</label><input type="text" id="ec-credits" class="form-input" placeholder="5 cred"></div>
+        <div><label class="form-label">Sección</label><input type="text" id="ec-seccion" class="form-input" placeholder="A"></div>
+        <div><label class="form-label">Horario</label><input type="text" id="ec-horario" class="form-input" placeholder="7:00–9:00"></div>
       </div>
-
+      <div><label class="form-label">Catedrático</label><input type="text" id="ec-catedratico" class="form-input" placeholder="Nombre del catedrático"></div>
       <div>
-        <label class="form-label">Catedrático</label>
-        <input type="text" id="ec-catedratico" class="form-input" placeholder="Nombre del catedrático">
-      </div>
-
-      <!-- Días -->
-      <div>
-        <label class="form-label">Días de clase</label>
-        <div id="ec-dias-checks" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+        <label class="form-label">Días</label>
+        <div id="ec-dias-checks" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" value="Lun"> Lun</label>
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" value="Mar"> Mar</label>
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" value="Mié"> Mié</label>
@@ -116,8 +90,6 @@
           <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" value="Sáb"> Sáb</label>
         </div>
       </div>
-
-      <!-- Color -->
       <div>
         <label class="form-label">Color</label>
         <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;">
@@ -133,21 +105,16 @@
           <div class="color-opt" data-color="#38bdf8" onclick="ecSelectColor(this)" style="background:#38bdf8;width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;"></div>
         </div>
       </div>
-
-      <!-- ══ ZONAS ══ -->
       <div style="border-top:1px solid var(--border);padding-top:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div>
             <div style="font-size:13px;font-weight:700;">📊 Distribución de Puntos (Zonas)</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">
-              Edita las zonas y sus apartados. Los puntos son totalmente editables.
-            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Edita las zonas y sus apartados. Los laboratorios enlazados se mantienen automáticamente.</div>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="ecAddZoneRow()" style="font-size:11px;white-space:nowrap;">+ Zona</button>
         </div>
         <div id="ec-zones-builder"></div>
       </div>
-
     </div>
     <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border);">
       <button class="btn btn-ghost" onclick="closeModal('modal-editclass')">Cancelar</button>
