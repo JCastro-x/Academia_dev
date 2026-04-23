@@ -843,7 +843,7 @@ function openEditClassModal(matId) {
   if (!builder) return;
   builder.innerHTML = '';
   zoneRowCount = 0;
-  mat.zones.filter(z => !z.isLabZone).forEach(z => _addEditZoneRow(z.label, z.subs));
+  mat.zones.filter(z => !z.isLabZone).forEach(z => _addEditZoneRow(z.label, z.subs, z.maxPts));
 
   document.getElementById('modal-editclass').classList.add('open');
 }
@@ -861,7 +861,7 @@ function ecSelectIcon(el) {
   el.classList.add('selected');
 }
 
-function _addEditZoneRow(labelVal, subsArr) {
+function _addEditZoneRow(labelVal, subsArr, zoneMaxPts) {
   zoneRowCount++;
   const id   = 'ecz-' + zoneRowCount;
   const subs = subsArr || [];
@@ -882,8 +882,8 @@ function _addEditZoneRow(labelVal, subsArr) {
               style="padding:3px 7px;flex-shrink:0;">✕</button>
     </div>`).join('');
 
-  const totalPts = subs.reduce((a, s) => a + (parseFloat(s.maxPts) || 0), 0);
-
+  const subsSum  = subs.reduce((a, s) => a + (parseFloat(s.maxPts) || 0), 0);
+  const totalPts = (zoneMaxPts != null && zoneMaxPts > 0) ? zoneMaxPts : subsSum;
   div.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <input type="text" class="form-input ec-zone-name" placeholder="Nombre de la zona"
@@ -1000,9 +1000,14 @@ function saveEditClass() {
       totalPts += subPts;
     });
     // Use the total input directly if it was manually set and differs from sub-sum
-    const totalInput = row.querySelector('[id$="-total"]');
-    const manualTotal = parseFloat(totalInput?.value);
-    if (!isNaN(manualTotal) && manualTotal > 0) totalPts = manualTotal;
+    const totalInput  = row.querySelector('[id$="-total"]');
+const manualTotal = parseFloat(totalInput?.value);
+// Usar manualTotal si es válido; si no, totalPts ya viene de la suma de subs
+if (!isNaN(manualTotal) && manualTotal > 0) totalPts = manualTotal;
+// Garantizar que el zone.maxPts nunca quede en 0 si hay subs con pts
+if (totalPts === 0 && subs.length > 0) {
+  totalPts = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
+}
     // Always push the zone, even without apartados (totalPts from manual input is valid alone)
     newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
   });
