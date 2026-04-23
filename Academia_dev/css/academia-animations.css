@@ -1,19 +1,31 @@
 /* ═══════════════════════════════════════════════════════════════
-   ACADEMIA — Animations & Visual Enhancements  v5  🚀
-   Reemplaza academia-animations.css (v4).
-   Requiere: base.css cargado antes (variables --accent, --surface, etc.)
+   ACADEMIA — Animations & Visual Enhancements  v5.1  ✨
+   Reemplaza academia-animations.css.
+   Requiere: base.css antes (variables --accent, --surface…).
+   ═══════════════════════════════════════════════════════════════
+
+   FILOSOFÍA DE TIMING v5.1:
+   - Transitions de color/opacidad : .22s ease
+   - Transitions de transform/shadow: .32s cubic-bezier(.25,.8,.25,1)
+   - Pop-ins de items nuevos       : .55s spring cubic-bezier(.34,1.56,.64,1)
+   - Página / secciones            : .40s cubic-bezier(.22,.68,0,1.1)
+   - Loops ambientales             : 4-10s ease-in-out infinite
    ═══════════════════════════════════════════════════════════════ */
 
 
-/* ══════════════════════════════════════════════════════════════
-   KEYFRAMES — v4 originals
-   ══════════════════════════════════════════════════════════════ */
-@keyframes fadeInUp    { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-@keyframes fadeInDown  { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
-@keyframes fadeInLeft  { from{opacity:0;transform:translateX(-18px)} to{opacity:1;transform:translateX(0)} }
-@keyframes fadeInRight { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:translateX(0)} }
-@keyframes scaleIn     { from{opacity:0;transform:scale(0.93)} to{opacity:1;transform:scale(1)} }
-@keyframes popIn       { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  KEYFRAMES                                                   ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* ─── Entradas de página ─── */
+@keyframes fadeInUp    { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeInDown  { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeInLeft  { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes fadeInRight { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+@keyframes scaleIn     { from{opacity:0;transform:scale(0.91)} to{opacity:1;transform:scale(1)} }
+@keyframes popIn       { from{opacity:0;transform:scale(0.78)} to{opacity:1;transform:scale(1)} }
+
+/* ─── Gestos de bienvenida ─── */
 @keyframes waveHand {
   0%{transform:rotate(0deg)} 12%{transform:rotate(20deg)} 24%{transform:rotate(-8deg)}
   36%{transform:rotate(20deg)} 48%{transform:rotate(-4deg)} 60%{transform:rotate(16deg)}
@@ -28,240 +40,252 @@
 }
 @keyframes sunIdlePulse {
   0%,100%{filter:brightness(1) drop-shadow(0 0 5px rgba(255,200,50,.28))}
-  50%     {filter:brightness(1.2) drop-shadow(0 0 11px rgba(255,200,50,.55))}
+  50%    {filter:brightness(1.2) drop-shadow(0 0 12px rgba(255,200,50,.55))}
 }
+
+/* ─── Pulsos y glows ─── */
 @keyframes todayPulse {
   0%,100%{box-shadow:0 0 0 1px rgba(124,106,255,.3),0 0 14px rgba(124,106,255,.28)}
-  50%    {box-shadow:0 0 0 2px rgba(124,106,255,.45),0 0 22px rgba(124,106,255,.4)}
+  50%    {box-shadow:0 0 0 2px rgba(124,106,255,.5),0 0 24px rgba(124,106,255,.42)}
 }
-@keyframes badgePop   { 0%{transform:scale(1)} 50%{transform:scale(1.3)} 100%{transform:scale(1)} }
-@keyframes checkBounce{ 0%{transform:scale(1)} 40%{transform:scale(1.35)} 70%{transform:scale(.88)} 100%{transform:scale(1)} }
-@keyframes btnRipple  { from{transform:scale(0);opacity:.35} to{transform:scale(2.8);opacity:0} }
-@keyframes progShimmer{ 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+@keyframes accentGlowPulse {
+  0%,100%{box-shadow:0 0 0 rgba(124,106,255,0),0 4px 20px rgba(0,0,0,.3)}
+  50%    {box-shadow:0 0 30px rgba(124,106,255,.38),0 4px 20px rgba(0,0,0,.3)}
+}
+@keyframes softBlink {
+  0%,100%{opacity:1} 50%{opacity:.5}
+}
+@keyframes pomGlow {
+  0%,100%{filter:drop-shadow(0 0 4px rgba(124,106,255,.3))}
+  50%    {filter:drop-shadow(0 0 20px rgba(124,106,255,.75))}
+}
+@keyframes statPop {
+  0%  {transform:scale(1)}
+  35% {transform:scale(1.07) translateY(-4px)}
+  60% {transform:scale(.97)}
+  80% {transform:scale(1.02)}
+  100%{transform:scale(1)}
+}
+@keyframes badgePop  { 0%{transform:scale(1)} 50%{transform:scale(1.35)} 100%{transform:scale(1)} }
+@keyframes checkBounce { 0%{transform:scale(1)} 40%{transform:scale(1.38)} 70%{transform:scale(.86)} 100%{transform:scale(1)} }
 
-
-/* ══════════════════════════════════════════════════════════════
-   KEYFRAMES — v5 nuevos ✨
-   ══════════════════════════════════════════════════════════════ */
-
-/* Flotación suave para iconos decorativos y empty states */
+/* ─── Movimiento fluido ─── */
 @keyframes floatY {
-  0%,100%{transform:translateY(0px) rotate(0deg)}
-  30%    {transform:translateY(-10px) rotate(-2deg)}
-  60%    {transform:translateY(-5px) rotate(1deg)}
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  30%    {transform:translateY(-12px) rotate(-2deg)}
+  65%    {transform:translateY(-5px) rotate(1.5deg)}
+}
+@keyframes orbFloat {
+  0%,100%{transform:translate(0,0) scale(1)}
+  33%    {transform:translate(20px,-14px) scale(1.07)}
+  66%    {transform:translate(-12px,8px) scale(.93)}
 }
 
-/* Pop con rebote tipo spring — para ítems añadidos dinámicamente */
+/* ─── Animaciones de entrada pop ─── */
 @keyframes bounceIn {
-  0%  {opacity:0;transform:scale(0.4) translateY(10px)}
-  55% {opacity:1;transform:scale(1.08) translateY(-3px)}
-  75% {transform:scale(0.96) translateY(1px)}
-  90% {transform:scale(1.02)}
+  0%  {opacity:0;transform:scale(0.35) translateY(12px)}
+  55% {opacity:1;transform:scale(1.09) translateY(-4px)}
+  75% {transform:scale(.96) translateY(1px)}
+  90% {transform:scale(1.03)}
   100%{transform:scale(1) translateY(0)}
 }
-
-/* Slide desde arriba — para notificaciones / banners */
 @keyframes slideInTop {
-  from{opacity:0;transform:translateY(-20px) scale(.97)}
+  from{opacity:0;transform:translateY(-22px) scale(.96)}
   to  {opacity:1;transform:translateY(0) scale(1)}
 }
-
-/* Entrada lateral para toasts */
 @keyframes slideInRight {
-  from{opacity:0;transform:translateX(24px)}
-  to  {opacity:1;transform:translateX(0)}
+  from{opacity:0;transform:translateX(26px) scale(.97)}
+  to  {opacity:1;transform:translateX(0) scale(1)}
+}
+@keyframes slideInBottom {
+  from{opacity:0;transform:translateY(22px) scale(.96)}
+  to  {opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes alertPop {
+  0%  {opacity:0;transform:scale(.7) translateY(-10px)}
+  60% {opacity:1;transform:scale(1.04) translateY(2px)}
+  80% {transform:scale(.98)}
+  100%{transform:scale(1) translateY(0)}
+}
+@keyframes modalSpring {
+  0%  {opacity:0;transform:scale(.83) translateY(28px)}
+  58% {opacity:1;transform:scale(1.025) translateY(-5px)}
+  78% {transform:scale(.99) translateY(1px)}
+  92% {transform:scale(1.005)}
+  100%{transform:scale(1) translateY(0)}
+}
+@keyframes rotateIn {
+  from{opacity:0;transform:rotate(-90deg) scale(.6)}
+  to  {opacity:1;transform:rotate(0) scale(1)}
 }
 
-/* Shimmer sweep — para botones y cards en hover */
+/* ─── Shimmer sweep ─── */
 @keyframes shimmerSweep {
   0%  {left:-100%;opacity:0}
-  20% {opacity:1}
-  100%{left:120%;opacity:0}
+  18% {opacity:1}
+  100%{left:130%;opacity:0}
 }
-
-/* Gradiente animado — para el logo y textos destacados */
 @keyframes gradientText {
   0%,100%{background-position:0% 50%}
   50%    {background-position:100% 50%}
 }
-
-/* Parpadeo suave — para badges de urgencia */
-@keyframes softBlink {
-  0%,100%{opacity:1}
-  50%    {opacity:.55}
+@keyframes progShimmer {
+  0%  {background-position:-200% 0}
+  100%{background-position:200% 0}
 }
 
-/* Orbe flotante — para fondos ambientales */
-@keyframes orbFloat {
-  0%,100%{transform:translate(0,0) scale(1)}
-  33%    {transform:translate(18px,-12px) scale(1.06)}
-  66%    {transform:translate(-10px,8px) scale(.94)}
-}
-
-/* Pulso de glow en cards/stat-cards */
-@keyframes accentGlowPulse {
-  0%,100%{box-shadow:0 0 0 rgba(124,106,255,0),0 4px 20px rgba(0,0,0,.3)}
-  50%    {box-shadow:0 0 28px rgba(124,106,255,.35),0 4px 20px rgba(0,0,0,.3)}
-}
-
-/* Tarea completada — línea que cruza el texto */
+/* ─── Elementos de lista ─── */
 @keyframes strikeSlide {
   from{transform:scaleX(0);transform-origin:left}
   to  {transform:scaleX(1);transform-origin:left}
 }
-
-/* Underline que se expande en focus de inputs */
-@keyframes underlineExpand {
-  from{transform:scaleX(0)}
-  to  {transform:scaleX(1)}
+@keyframes btnRipple {
+  from{transform:scale(0);opacity:.38}
+  to  {transform:scale(3);opacity:0}
 }
-
-/* Confetti pop para logros (stat-cards) */
-@keyframes statPop {
-  0%  {transform:scale(1)}
-  40% {transform:scale(1.06) translateY(-3px)}
-  65% {transform:scale(.97)}
-  85% {transform:scale(1.02)}
-  100%{transform:scale(1)}
-}
-
-/* Pulso de anillo — para el timer pomodoro corriendo */
-@keyframes pomGlow {
-  0%,100%{filter:drop-shadow(0 0 4px rgba(124,106,255,.3))}
-  50%    {filter:drop-shadow(0 0 18px rgba(124,106,255,.7))}
-}
-
-/* Entrada spring para modales — más dramática que v4 */
-@keyframes modalSpring {
-  0%  {opacity:0;transform:scale(.85) translateY(24px)}
-  60% {opacity:1;transform:scale(1.02) translateY(-4px)}
-  80% {transform:scale(.99) translateY(1px)}
-  100%{transform:scale(1) translateY(0)}
-}
-
-/* Hub card shimmer interno */
-@keyframes hubShimmer {
-  0%  {transform:translateX(-100%) skewX(-10deg);opacity:0}
-  30% {opacity:1}
-  100%{transform:translateX(200%) skewX(-10deg);opacity:0}
-}
-
-/* Bounce para iconos del sidebar en hover */
-@keyframes iconBounce {
-  0%,100%{transform:translateY(0) scale(1)}
-  35%    {transform:translateY(-4px) scale(1.18)}
-  55%    {transform:translateY(1px) scale(.95)}
-  75%    {transform:translateY(-2px) scale(1.05)}
-}
-
-/* Aparecer con rotate — para el ✕ del modal y botones de acción */
-@keyframes rotateIn {
-  from{opacity:0;transform:rotate(-90deg) scale(.6)}
-  to  {opacity:1;transform:rotate(0deg) scale(1)}
-}
-
-/* Skeleton shimmer para estados de carga */
 @keyframes skeletonPulse {
   0%  {background-position:-400px 0}
   100%{background-position:400px 0}
 }
-
-
-/* ══════════════════════════════════════════════════════════════
-   1. TRANSICIÓN DE PÁGINAS
-   ══════════════════════════════════════════════════════════════ */
-.page.active { animation:fadeInUp .32s cubic-bezier(.22,.68,0,1.1) both }
-
-.page.active > .card:nth-child(1)   { animation:fadeInUp .4s cubic-bezier(.22,.68,0,1.1) .04s both }
-.page.active > .card:nth-child(2)   { animation:fadeInUp .4s cubic-bezier(.22,.68,0,1.1) .09s both }
-.page.active > .card:nth-child(3)   { animation:fadeInUp .4s cubic-bezier(.22,.68,0,1.1) .14s both }
-.page.active > .card:nth-child(4)   { animation:fadeInUp .4s cubic-bezier(.22,.68,0,1.1) .19s both }
-.page.active > .card:nth-child(n+5) { animation:fadeInUp .4s cubic-bezier(.22,.68,0,1.1) .23s both }
-
-.page.active > div:first-child:not(.card):not(.mc-header):not(.smart-grid):not(.grid-2) {
-  animation:fadeInDown .32s ease .02s both
+@keyframes iconBounce {
+  0%,100%{transform:translateY(0) scale(1)}
+  35%    {transform:translateY(-5px) scale(1.2)}
+  55%    {transform:translateY(1px) scale(.94)}
+  75%    {transform:translateY(-2px) scale(1.06)}
 }
 
-/* Mat-cards y hub-cards */
-.page.active .mat-card, .page.active .hub-card { animation:scaleIn .36s cubic-bezier(.22,.68,0,1.15) both }
-.page.active .mat-card:nth-child(1),.page.active .hub-card:nth-child(1){ animation-delay:.05s }
-.page.active .mat-card:nth-child(2),.page.active .hub-card:nth-child(2){ animation-delay:.11s }
-.page.active .mat-card:nth-child(3),.page.active .hub-card:nth-child(3){ animation-delay:.17s }
-.page.active .mat-card:nth-child(4),.page.active .hub-card:nth-child(4){ animation-delay:.23s }
-.page.active .mat-card:nth-child(n+5),.page.active .hub-card:nth-child(n+5){ animation-delay:.28s }
+/* ─── Alertas ─── */
+@keyframes notifSlide {
+  from{opacity:0;transform:translateY(-100%) scale(.95)}
+  to  {opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes notifSlideOut {
+  from{opacity:1;transform:translateY(0) scale(1)}
+  to  {opacity:0;transform:translateY(-80%) scale(.95)}
+}
+@keyframes toastIn {
+  from{opacity:0;transform:translateX(100%) scale(.95)}
+  to  {opacity:1;transform:translateX(0) scale(1)}
+}
+@keyframes pulseRing {
+  0%  {transform:scale(1);opacity:1}
+  70% {transform:scale(2.2);opacity:0}
+  100%{transform:scale(2.2);opacity:0}
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  1. TRANSICIÓN DE PÁGINAS                                    ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.page.active { animation:fadeInUp .38s cubic-bezier(.22,.68,0,1.1) both }
+
+.page.active > .card:nth-child(1)   { animation:fadeInUp .42s cubic-bezier(.22,.68,0,1.1) .04s both }
+.page.active > .card:nth-child(2)   { animation:fadeInUp .42s cubic-bezier(.22,.68,0,1.1) .09s both }
+.page.active > .card:nth-child(3)   { animation:fadeInUp .42s cubic-bezier(.22,.68,0,1.1) .14s both }
+.page.active > .card:nth-child(4)   { animation:fadeInUp .42s cubic-bezier(.22,.68,0,1.1) .19s both }
+.page.active > .card:nth-child(n+5) { animation:fadeInUp .42s cubic-bezier(.22,.68,0,1.1) .24s both }
+
+.page.active > div:first-child:not(.card):not(.mc-header):not(.smart-grid):not(.grid-2) {
+  animation:fadeInDown .35s ease .02s both
+}
+
+/* Mat / Hub cards — stagger suave */
+.page.active .mat-card,
+.page.active .hub-card { animation:scaleIn .40s cubic-bezier(.22,.68,0,1.15) both }
+.page.active .mat-card:nth-child(1),.page.active .hub-card:nth-child(1) { animation-delay:.05s }
+.page.active .mat-card:nth-child(2),.page.active .hub-card:nth-child(2) { animation-delay:.12s }
+.page.active .mat-card:nth-child(3),.page.active .hub-card:nth-child(3) { animation-delay:.18s }
+.page.active .mat-card:nth-child(4),.page.active .hub-card:nth-child(4) { animation-delay:.24s }
+.page.active .mat-card:nth-child(n+5),.page.active .hub-card:nth-child(n+5) { animation-delay:.29s }
 
 /* Semestres */
-.page.active #semestres-list .card { animation:scaleIn .36s cubic-bezier(.22,.68,0,1.15) both }
-.page.active #semestres-list .card:nth-child(1){ animation-delay:.05s }
-.page.active #semestres-list .card:nth-child(2){ animation-delay:.11s }
-.page.active #semestres-list .card:nth-child(3){ animation-delay:.16s }
-.page.active #semestres-list .card:nth-child(n+4){ animation-delay:.21s }
+.page.active #semestres-list .card { animation:scaleIn .38s cubic-bezier(.22,.68,0,1.15) both }
+.page.active #semestres-list .card:nth-child(1) { animation-delay:.05s }
+.page.active #semestres-list .card:nth-child(2) { animation-delay:.11s }
+.page.active #semestres-list .card:nth-child(3) { animation-delay:.17s }
+.page.active #semestres-list .card:nth-child(n+4){ animation-delay:.22s }
 
 /* Calificaciones */
-.page.active #grades-cards-grid .card { animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both }
+.page.active #grades-cards-grid .card { animation:scaleIn .36s cubic-bezier(.22,.68,0,1.15) both }
 .page.active #grades-cards-grid .card:nth-child(1){ animation-delay:.04s }
 .page.active #grades-cards-grid .card:nth-child(2){ animation-delay:.09s }
 .page.active #grades-cards-grid .card:nth-child(3){ animation-delay:.14s }
 .page.active #grades-cards-grid .card:nth-child(n+4){ animation-delay:.19s }
 
+/* Notas — hub y folder */
+.page.active #notes-hub-grid .card,
+.page.active #notes-folder-grid .card { animation:scaleIn .36s cubic-bezier(.22,.68,0,1.15) both }
+.page.active #notes-hub-grid .card:nth-child(1),
+.page.active #notes-folder-grid .card:nth-child(1) { animation-delay:.04s }
+.page.active #notes-hub-grid .card:nth-child(2),
+.page.active #notes-folder-grid .card:nth-child(2) { animation-delay:.09s }
+.page.active #notes-hub-grid .card:nth-child(3),
+.page.active #notes-folder-grid .card:nth-child(3) { animation-delay:.14s }
+.page.active #notes-hub-grid .card:nth-child(n+4),
+.page.active #notes-folder-grid .card:nth-child(n+4) { animation-delay:.19s }
+
+/* Flashcards — materias, folders, list items */
+.page.active .fc-materias-grid .card,
+.page.active .fc-folders-grid .card  { animation:scaleIn .36s cubic-bezier(.22,.68,0,1.15) both }
+.page.active .fc-materias-grid .card:nth-child(1),
+.page.active .fc-folders-grid .card:nth-child(1)  { animation-delay:.04s }
+.page.active .fc-materias-grid .card:nth-child(2),
+.page.active .fc-folders-grid .card:nth-child(2)  { animation-delay:.09s }
+.page.active .fc-materias-grid .card:nth-child(3),
+.page.active .fc-folders-grid .card:nth-child(3)  { animation-delay:.14s }
+.page.active .fc-materias-grid .card:nth-child(n+4),
+.page.active .fc-folders-grid .card:nth-child(n+4) { animation-delay:.19s }
+
+.page.active #fc-list .fc-list-item { animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both }
+.page.active #fc-list .fc-list-item:nth-child(1){ animation-delay:.03s }
+.page.active #fc-list .fc-list-item:nth-child(2){ animation-delay:.07s }
+.page.active #fc-list .fc-list-item:nth-child(3){ animation-delay:.11s }
+.page.active #fc-list .fc-list-item:nth-child(n+4){ animation-delay:.15s }
+
 /* Estadísticas */
-.page.active .stat-mini { animation:popIn .3s cubic-bezier(.22,.68,0,1.2) both }
+.page.active .stat-mini { animation:popIn .34s cubic-bezier(.22,.68,0,1.2) both }
 .page.active #stats-summary .stat-mini:nth-child(1){ animation-delay:.04s }
 .page.active #stats-summary .stat-mini:nth-child(2){ animation-delay:.09s }
 .page.active #stats-summary .stat-mini:nth-child(3){ animation-delay:.14s }
 .page.active #stats-summary .stat-mini:nth-child(4){ animation-delay:.19s }
-.page.active .chart-wrap { animation:fadeInUp .42s ease both }
+.page.active .chart-wrap { animation:fadeInUp .44s ease both }
 .page.active .grid-2 > .chart-wrap:nth-child(1){ animation-delay:.10s }
-.page.active .grid-2 > .chart-wrap:nth-child(2){ animation-delay:.18s }
+.page.active .grid-2 > .chart-wrap:nth-child(2){ animation-delay:.20s }
 
-/* Flashcards */
-.page.active .fc-folders-grid .card,
-.page.active .fc-materias-grid .card { animation:scaleIn .34s cubic-bezier(.22,.68,0,1.15) both }
-.page.active .fc-folders-grid .card:nth-child(1),
-.page.active .fc-materias-grid .card:nth-child(1){ animation-delay:.05s }
-.page.active .fc-folders-grid .card:nth-child(2),
-.page.active .fc-materias-grid .card:nth-child(2){ animation-delay:.10s }
-.page.active .fc-folders-grid .card:nth-child(3),
-.page.active .fc-materias-grid .card:nth-child(3){ animation-delay:.15s }
-.page.active .fc-folders-grid .card:nth-child(n+4),
-.page.active .fc-materias-grid .card:nth-child(n+4){ animation-delay:.20s }
-
-/* Perfil stat-cards */
-.page.active .stat-card { animation:popIn .32s cubic-bezier(.22,.68,0,1.2) both }
+/* Perfil */
+.page.active .stat-card { animation:popIn .36s cubic-bezier(.22,.68,0,1.2) both }
 .page.active .stat-card:nth-child(1){ animation-delay:.06s }
-.page.active .stat-card:nth-child(2){ animation-delay:.12s }
-.page.active .stat-card:nth-child(3){ animation-delay:.18s }
+.page.active .stat-card:nth-child(2){ animation-delay:.13s }
+.page.active .stat-card:nth-child(3){ animation-delay:.20s }
+
+/* Header de FC (stats row) */
+.page.active .fc-header-bar { animation:fadeInDown .38s ease .02s both }
+.page.active .fc-stats-row  { animation:fadeInUp  .34s ease .10s both }
+
+/* Folder all-card */
+.page.active .fc-folder-all-card { animation:scaleIn .36s cubic-bezier(.22,.68,0,1.15) .04s both }
 
 
-/* ══════════════════════════════════════════════════════════════
-   2. OVERVIEW  — header, reloj, agenda
-   ══════════════════════════════════════════════════════════════ */
-.page.active .mc-header    { animation:fadeInLeft  .44s cubic-bezier(.22,.68,0,1.15) .03s both }
-.page.active .ov-clock-block{ animation:fadeInRight .44s cubic-bezier(.22,.68,0,1.15) .08s both }
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  2. OVERVIEW — header, reloj, orbes                         ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.page.active .mc-header     { animation:fadeInLeft  .46s cubic-bezier(.22,.68,0,1.15) .03s both }
+.page.active .ov-clock-block{ animation:fadeInRight .46s cubic-bezier(.22,.68,0,1.15) .08s both }
 
-/* Saludo animado */
 #ov-wave-hand, .ov-wave-emoji {
-  display:inline-block; transform-origin:70% 82%;
-  animation:waveHand 1.6s ease-in-out .55s both; cursor:default;
+  display:inline-block;transform-origin:70% 82%;
+  animation:waveHand 1.6s ease-in-out .6s both;cursor:default;
 }
-
-/* Sol / ícono de hora */
 #ov-clock-icon {
-  animation:sunEntrance .85s cubic-bezier(.22,.68,0,1.1) .28s both,
-            sunIdlePulse 3.4s ease-in-out 1.2s infinite;
+  animation:sunEntrance .9s cubic-bezier(.22,.68,0,1.1) .3s both,
+            sunIdlePulse 3.5s ease-in-out 1.4s infinite;
 }
-
-/* Reloj — separador y bloque */
 .ov-clock-block { display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end }
 .ov-clock-sep   { font-family:'Space Mono',monospace;font-size:26px;color:var(--border2);opacity:.45;font-weight:300;line-height:1;user-select:none }
 
-/* Orbes ambientales en el header del overview */
-.mc-header {
-  position:relative;
-  overflow:visible;
-}
-.mc-header::before,
-.mc-header::after {
+/* Orbes ambientales del header */
+.mc-header { position:relative; overflow:visible; }
+.mc-header::before, .mc-header::after {
   content:'';
   position:absolute;
   border-radius:50%;
@@ -270,265 +294,694 @@
   will-change:transform;
 }
 .mc-header::before {
-  width:280px; height:280px;
-  top:-80px; right:-60px;
+  width:300px; height:300px;
+  top:-90px; right:-70px;
   background:radial-gradient(circle, rgba(124,106,255,.09) 0%, transparent 70%);
-  animation:orbFloat 9s ease-in-out infinite;
+  animation:orbFloat 10s ease-in-out infinite;
 }
 .mc-header::after {
-  width:180px; height:180px;
-  bottom:-40px; left:20%;
+  width:200px; height:200px;
+  bottom:-50px; left:25%;
   background:radial-gradient(circle, rgba(168,146,255,.06) 0%, transparent 70%);
-  animation:orbFloat 12s ease-in-out 3s infinite reverse;
+  animation:orbFloat 13s ease-in-out 3.5s infinite reverse;
 }
-.mc-header > * { position:relative; z-index:1; }
+.mc-header > * { position:relative;z-index:1; }
 
-/* Card agenda y tareas — hover suave */
-#agenda-card:hover,
-#tasks-panel-card:hover {
-  border-color:rgba(124,106,255,.2) !important;
-  box-shadow:0 4px 24px rgba(124,106,255,.08) !important;
+/* Cards del overview — hover suave */
+#agenda-card, #tasks-panel-card {
+  transition:border-color .32s ease, box-shadow .32s ease !important;
+}
+#agenda-card:hover, #tasks-panel-card:hover {
+  border-color:rgba(124,106,255,.22) !important;
+  box-shadow:0 6px 28px rgba(124,106,255,.09) !important;
 }
 
+/* Badge pendientes */
+#ov-pending-badge:not(:empty) { animation:softBlink 2.8s ease-in-out infinite; }
 
-/* ══════════════════════════════════════════════════════════════
-   3. BOTONES
-   ══════════════════════════════════════════════════════════════ */
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  3. BOTONES                                                  ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 .btn {
-  transition:background .16s ease, color .16s ease, border-color .16s ease,
-    transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease;
+  transition:background .22s ease, color .22s ease, border-color .22s ease,
+    transform .32s cubic-bezier(.25,.8,.25,1), box-shadow .32s ease;
   position:relative; overflow:hidden;
 }
 .btn:hover:not(:disabled)  { transform:translateY(-2px) }
-.btn:active:not(:disabled) { transform:translateY(0px) scale(.97); transition-duration:.07s }
+.btn:active:not(:disabled) { transform:translateY(0) scale(.96); transition-duration:.1s }
 
-/* Ripple effect (requiere JS o funciona solo) */
+/* Ripple */
 .btn .ripple {
-  position:absolute; border-radius:50%; background:rgba(255,255,255,.28);
+  position:absolute; border-radius:50%;
+  background:rgba(255,255,255,.26);
   pointer-events:none; transform:scale(0);
-  animation:btnRipple .5s linear;
+  animation:btnRipple .6s linear;
 }
 
-/* === BTN PRIMARY — shimmer sweep en hover === */
+/* === BTN PRIMARY — shimmer + glow === */
 .btn-primary {
   background:linear-gradient(135deg, var(--accent), #9b6fff);
   border:none; color:#fff; font-weight:700;
-  box-shadow:0 2px 10px rgba(124,106,255,.25);
-  transition:background .18s ease, transform .15s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .18s ease;
+  box-shadow:0 2px 12px rgba(124,106,255,.28);
+  transition:background .22s ease, transform .32s cubic-bezier(.25,.8,.25,1),
+    box-shadow .32s ease;
 }
 .btn-primary::before {
   content:'';
   position:absolute;
-  top:0; left:-100%;
+  top:0; left:-110%;
   width:55%; height:100%;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.24), transparent);
   transform:skewX(-18deg);
-  transition:none;
   pointer-events:none;
 }
 .btn-primary:hover:not(:disabled) {
-  box-shadow:0 6px 22px rgba(124,106,255,.45);
-  background:linear-gradient(135deg, #8a78ff, #a870ff);
+  box-shadow:0 8px 28px rgba(124,106,255,.5);
+  background:linear-gradient(135deg, #8a78ff, #aa72ff);
 }
 .btn-primary:hover:not(:disabled)::before {
-  animation:shimmerSweep .55s ease forwards;
+  animation:shimmerSweep .62s ease forwards;
 }
 .btn-primary:active:not(:disabled) {
-  box-shadow:0 2px 8px rgba(124,106,255,.3);
+  box-shadow:0 2px 8px rgba(124,106,255,.32);
 }
 
-/* === BTN DANGER — glow rojo === */
+/* === BTN DANGER === */
 .btn-danger:hover:not(:disabled) {
-  box-shadow:0 5px 18px rgba(248,113,113,.38);
+  box-shadow:0 6px 22px rgba(248,113,113,.42);
   background:rgba(248,113,113,.22);
   border-color:var(--red);
   color:var(--red);
 }
 
 /* === BTN GHOST === */
-.btn-ghost:hover:not(:disabled) {
-  background:var(--surface3);
-  border-color:var(--border2);
+.btn-ghost {
+  transition:background .22s ease, color .22s ease, border-color .22s ease,
+    transform .32s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease;
+}
+.btn-ghost:hover:not(:disabled) { background:var(--surface3); border-color:var(--border2); }
+
+/* Botón back (← Volver, ← General, etc.) */
+.btn-ghost.btn-sm:hover:not(:disabled) {
+  padding-left:14px;
+  transition:padding-left .28s cubic-bezier(.25,.8,.25,1), background .22s ease,
+    transform .28s cubic-bezier(.25,.8,.25,1) !important;
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   4. CARDS — general + hub + mat + sem
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  4. CARDS — base, hub, mat, sem, notas, grades              ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 
-/* Card base — hover sutil */
+/* Card base — hover ultra suave */
 .card {
-  transition:border-color .22s ease, box-shadow .22s ease, transform .22s cubic-bezier(.34,1.56,.64,1) !important;
+  transition:border-color .32s ease, box-shadow .32s ease, transform .35s cubic-bezier(.25,.8,.25,1) !important;
 }
 .card:hover {
-  border-color:rgba(124,106,255,.18) !important;
-  box-shadow:0 6px 28px rgba(0,0,0,.28) !important;
+  border-color:rgba(124,106,255,.2) !important;
+  box-shadow:0 8px 32px rgba(0,0,0,.3) !important;
 }
 
-/* === HUB CARDS (general.html) — efecto WOW === */
+/* === HUB CARDS (general.html) — WOW principal === */
 .hub-card {
   position:relative !important;
   overflow:hidden !important;
-  transition:transform .24s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .24s ease, border-color .24s ease !important;
   cursor:pointer;
+  transition:transform .36s cubic-bezier(.25,.8,.25,1),
+    box-shadow .36s ease, border-color .36s ease !important;
 }
-
-/* Orbe interno que aparece en hover */
+/* Orbe radial que emerge al hover */
 .hub-card::before {
   content:'';
   position:absolute;
-  width:200%; height:200%;
-  top:-50%; left:-50%;
-  background:radial-gradient(circle at 60% 40%, rgba(124,106,255,.18), transparent 55%);
+  width:220%; height:220%;
+  top:-60%; left:-60%;
+  background:radial-gradient(circle at 58% 38%, rgba(124,106,255,.2), transparent 52%);
   opacity:0;
-  transition:opacity .35s ease;
+  transition:opacity .4s ease;
   pointer-events:none;
 }
 /* Shimmer sweep */
 .hub-card::after {
   content:'';
   position:absolute;
-  top:0; left:-100%;
-  width:50%; height:100%;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent);
-  transform:skewX(-12deg);
+  top:0; left:-110%;
+  width:52%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+  transform:skewX(-14deg);
   pointer-events:none;
 }
-
 .hub-card:hover {
-  transform:translateY(-8px) scale(1.025) !important;
-  box-shadow:0 20px 52px rgba(124,106,255,.28), 0 4px 16px rgba(0,0,0,.4) !important;
-  border-color:rgba(124,106,255,.45) !important;
+  transform:translateY(-9px) scale(1.026) !important;
+  box-shadow:0 22px 58px rgba(124,106,255,.3), 0 6px 20px rgba(0,0,0,.42) !important;
+  border-color:rgba(124,106,255,.48) !important;
 }
 .hub-card:hover::before { opacity:1; }
-.hub-card:hover::after  { animation:shimmerSweep .55s ease forwards; }
-.hub-card:active        { transform:translateY(-2px) scale(1.01) !important; }
+.hub-card:hover::after  { animation:shimmerSweep .65s ease forwards; }
+.hub-card:active        { transform:translateY(-3px) scale(1.01) !important; transition-duration:.14s !important; }
 
-/* Ícono del hub-card — crece al hover */
 .hub-icon {
-  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  transition:transform .38s cubic-bezier(.34,1.56,.64,1);
   display:block;
 }
-.hub-card:hover .hub-icon { transform:scale(1.25) rotate(-5deg); }
+.hub-card:hover .hub-icon { transform:scale(1.28) rotate(-6deg); }
 
-/* === MAT CARDS — lift + glow desde el color de la materia === */
+/* Texto dentro del hub card */
+.hub-label { transition:color .28s ease; }
+.hub-card:hover .hub-label { color:var(--accent2); }
+
+/* === MAT CARDS === */
 .mat-card {
-  position:relative !important;
-  overflow:hidden !important;
-  transition:transform .22s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .22s ease, border-color .22s ease !important;
+  position:relative !important; overflow:hidden !important;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease, border-color .34s ease !important;
 }
 .mat-card::before {
   content:'';
-  position:absolute;
-  inset:0;
-  background:linear-gradient(135deg, rgba(124,106,255,.06), transparent 60%);
+  position:absolute; inset:0;
+  background:linear-gradient(135deg, rgba(124,106,255,.07), transparent 60%);
   opacity:0;
-  transition:opacity .25s ease;
+  transition:opacity .34s ease;
   pointer-events:none;
 }
 .mat-card:hover {
-  transform:translateY(-5px) scale(1.015) !important;
-  box-shadow:0 14px 40px rgba(0,0,0,.38), 0 0 0 1px rgba(124,106,255,.3) !important;
+  transform:translateY(-6px) scale(1.018) !important;
+  box-shadow:0 16px 44px rgba(0,0,0,.4), 0 0 0 1px rgba(124,106,255,.32) !important;
 }
 .mat-card:hover::before { opacity:1; }
-.mat-card:active { transform:translateY(-1px) scale(1.005) !important; }
+.mat-card:active { transform:translateY(-2px) scale(1.005) !important; transition-duration:.14s !important; }
 
-/* === SEMESTRES CARDS === */
+/* === SEMESTRES === */
 #semestres-list .card {
-  position:relative;
-  overflow:hidden;
-  transition:transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, border-color .22s ease !important;
+  position:relative; overflow:hidden;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease, border-color .34s ease !important;
 }
 #semestres-list .card::before {
   content:'';
-  position:absolute;
-  inset:0;
-  background:radial-gradient(ellipse at 80% 20%, rgba(124,106,255,.1), transparent 65%);
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at 80% 20%, rgba(124,106,255,.11), transparent 60%);
   opacity:0;
-  transition:opacity .25s ease;
+  transition:opacity .34s ease;
   pointer-events:none;
 }
 #semestres-list .card:hover {
-  transform:translateY(-4px) !important;
-  box-shadow:0 12px 36px rgba(0,0,0,.35), 0 0 0 1px rgba(124,106,255,.25) !important;
-  border-color:rgba(124,106,255,.3) !important;
+  transform:translateY(-5px) !important;
+  box-shadow:0 14px 40px rgba(0,0,0,.38), 0 0 0 1px rgba(124,106,255,.28) !important;
+  border-color:rgba(124,106,255,.32) !important;
 }
 #semestres-list .card:hover::before { opacity:1; }
 
-/* === GRADE CARDS (calificaciones) === */
+/* === GRADE CARDS === */
 #grades-cards-grid .card {
   position:relative; overflow:hidden;
-  transition:transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, border-color .22s ease !important;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease, border-color .34s ease !important;
+}
+#grades-cards-grid .card::before {
+  content:'';
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at 20% 80%, rgba(124,106,255,.08), transparent 60%);
+  opacity:0;
+  transition:opacity .34s ease;
+  pointer-events:none;
 }
 #grades-cards-grid .card:hover {
-  transform:translateY(-5px) scale(1.015) !important;
-  box-shadow:0 14px 40px rgba(0,0,0,.38) !important;
-  border-color:rgba(124,106,255,.32) !important;
+  transform:translateY(-6px) scale(1.016) !important;
+  box-shadow:0 16px 44px rgba(0,0,0,.4) !important;
+  border-color:rgba(124,106,255,.34) !important;
+}
+#grades-cards-grid .card:hover::before { opacity:1; }
+
+/* === NOTAS — HUB CARDS (carpetas) === */
+#notes-hub-grid .card {
+  position:relative; overflow:hidden;
+  cursor:pointer;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease, border-color .34s ease !important;
+}
+#notes-hub-grid .card::before {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(135deg, rgba(124,106,255,.09), transparent 55%);
+  opacity:0;
+  transition:opacity .32s ease;
+  pointer-events:none;
+}
+#notes-hub-grid .card:hover {
+  transform:translateY(-7px) scale(1.022) !important;
+  box-shadow:0 18px 48px rgba(0,0,0,.4), 0 0 0 1px rgba(124,106,255,.3) !important;
+  border-color:rgba(124,106,255,.42) !important;
+}
+#notes-hub-grid .card:hover::before { opacity:1; }
+#notes-hub-grid .card:active { transform:translateY(-2px) scale(1.005) !important; transition-duration:.14s !important; }
+
+/* Ícono de carpeta en el hub — crece al hover */
+#notes-hub-grid .card .notes-folder-icon,
+#notes-hub-grid .card [style*="font-size:24px"],
+#notes-hub-grid .card [style*="font-size:28px"],
+#notes-hub-grid .card [style*="font-size:32px"] {
+  display:inline-block;
+  transition:transform .38s cubic-bezier(.34,1.56,.64,1);
+}
+#notes-hub-grid .card:hover .notes-folder-icon,
+#notes-hub-grid .card:hover [style*="font-size:24px"],
+#notes-hub-grid .card:hover [style*="font-size:28px"],
+#notes-hub-grid .card:hover [style*="font-size:32px"] {
+  transform:scale(1.25) rotate(-5deg);
+}
+
+/* === NOTAS — FOLDER CARDS (notas individuales en grid) === */
+#notes-folder-grid .card {
+  position:relative; overflow:hidden;
+  cursor:pointer;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease, border-color .34s ease !important;
+}
+/* Línea de acento en la parte superior */
+#notes-folder-grid .card::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity:0;
+  transition:opacity .32s ease;
+  pointer-events:none;
+}
+/* Shimmer sutil al hover */
+#notes-folder-grid .card::after {
+  content:'';
+  position:absolute;
+  top:0; left:-110%;
+  width:50%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(124,106,255,.05), transparent);
+  transform:skewX(-14deg);
+  pointer-events:none;
+}
+#notes-folder-grid .card:hover {
+  transform:translateY(-7px) scale(1.02) !important;
+  box-shadow:0 16px 44px rgba(0,0,0,.4), 0 0 0 1px rgba(124,106,255,.3) !important;
+  border-color:rgba(124,106,255,.38) !important;
+}
+#notes-folder-grid .card:hover::before { opacity:1; }
+#notes-folder-grid .card:hover::after  { animation:shimmerSweep .58s ease forwards; }
+#notes-folder-grid .card:active { transform:translateY(-2px) scale(1.005) !important; transition-duration:.14s !important; }
+
+/* Título de nota en la card — se aclara en hover */
+#notes-folder-grid .card [style*="font-weight:700"],
+#notes-folder-grid .card [style*="font-weight: 700"] {
+  transition:color .28s ease;
+}
+#notes-folder-grid .card:hover [style*="font-weight:700"],
+#notes-folder-grid .card:hover [style*="font-weight: 700"] {
+  color:var(--accent2);
+}
+
+/* Punto de estado (amarillo/verde/rojo) en notas */
+#notes-folder-grid .card [style*="border-radius:50%"],
+#notes-hub-grid .card [style*="border-radius:50%"] {
+  transition:transform .32s cubic-bezier(.34,1.56,.64,1), box-shadow .32s ease;
+}
+#notes-folder-grid .card:hover [style*="border-radius:50%"],
+#notes-hub-grid .card:hover [style*="border-radius:50%"] {
+  transform:scale(1.4);
+  box-shadow:0 0 8px currentColor;
+}
+
+/* Badge de materia/carpeta dentro de la note card */
+#notes-folder-grid .card [style*="font-weight:800"],
+#notes-folder-grid .card .fc-item-subject {
+  transition:opacity .28s ease, transform .28s ease;
 }
 
 /* === STAT CARD (perfil) === */
 .stat-card {
   position:relative; overflow:hidden;
-  transition:transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease !important;
-  will-change:transform;
+  transition:transform .36s cubic-bezier(.25,.8,.25,1), box-shadow .36s ease !important;
 }
 .stat-card::before {
   content:'';
-  position:absolute;
-  inset:0;
-  background:radial-gradient(circle at 30% 70%, rgba(var(--c-raw, 124,106,255),.15), transparent 60%);
+  position:absolute; inset:0;
+  background:radial-gradient(circle at 30% 70%, rgba(124,106,255,.14), transparent 60%);
   opacity:0;
-  transition:opacity .28s ease;
+  transition:opacity .34s ease;
   pointer-events:none;
 }
 .stat-card:hover {
-  transform:translateY(-5px) scale(1.025) !important;
-  box-shadow:0 14px 38px rgba(0,0,0,.4) !important;
+  transform:translateY(-6px) scale(1.026) !important;
+  box-shadow:0 16px 42px rgba(0,0,0,.42) !important;
 }
 .stat-card:hover::before { opacity:1; }
+.stat-card.just-updated  { animation:statPop .55s cubic-bezier(.34,1.56,.64,1) both; }
 
-/* Animación WOW cuando un stat-card se activa/actualiza */
-.stat-card.just-updated {
-  animation:statPop .5s cubic-bezier(.34,1.56,.64,1) both;
+/* Valor del stat-card — glow al hover */
+.stat-val {
+  transition:text-shadow .32s ease;
+}
+.stat-card:hover .stat-val {
+  text-shadow:0 0 16px rgba(124,106,255,.5);
 }
 
 /* === CHART WRAP === */
 .chart-wrap {
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, border-color .2s ease !important;
+  transition:transform .32s cubic-bezier(.25,.8,.25,1), box-shadow .32s ease, border-color .32s ease !important;
 }
 .chart-wrap:hover {
-  transform:translateY(-3px) !important;
-  box-shadow:0 10px 32px rgba(0,0,0,.32) !important;
-  border-color:rgba(124,106,255,.2) !important;
+  transform:translateY(-4px) !important;
+  box-shadow:0 12px 36px rgba(0,0,0,.34) !important;
+  border-color:rgba(124,106,255,.22) !important;
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   5. TAREAS — items, just-added, just-completed
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  5. FLASHCARDS — todos los sub-elementos                    ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* Header bar de flashcards */
+.fc-header-bar {
+  transition:box-shadow .32s ease;
+}
+.fc-back-btn {
+  transition:background .22s ease, color .22s ease, transform .30s cubic-bezier(.25,.8,.25,1),
+    padding-left .28s cubic-bezier(.25,.8,.25,1);
+}
+.fc-back-btn:hover {
+  padding-left:14px;
+  color:var(--accent2);
+  background:var(--surface2);
+}
+
+/* Stats row chips */
+.fc-stat {
+  transition:color .22s ease, transform .28s cubic-bezier(.34,1.56,.64,1);
+  display:inline-block;
+}
+.fc-stat:hover { transform:scale(1.1) translateY(-1px); }
+.fc-stat-dom:hover { color:var(--green) !important; }
+.fc-stat-prac:hover{ color:var(--yellow) !important; }
+.fc-stat-new:hover { color:var(--accent2) !important; }
+
+/* FC title icon */
+.fc-title-icon {
+  transition:transform .38s cubic-bezier(.34,1.56,.64,1);
+  display:inline-block;
+}
+.fc-title-icon:hover { transform:scale(1.2) rotate(-8deg); }
+
+/* === FC MATERIA CARDS === */
+.fc-materias-grid .card {
+  position:relative; overflow:hidden;
+  cursor:pointer;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease, border-color .34s ease !important;
+}
+.fc-materias-grid .card::before {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(135deg, rgba(124,106,255,.09), transparent 55%);
+  opacity:0;
+  transition:opacity .32s ease;
+  pointer-events:none;
+}
+.fc-materias-grid .card:hover {
+  transform:translateY(-7px) scale(1.022) !important;
+  box-shadow:0 18px 48px rgba(0,0,0,.42) !important;
+  border-color:rgba(124,106,255,.38) !important;
+}
+.fc-materias-grid .card:hover::before { opacity:1; }
+
+/* Ícono de materia en la card */
+.fc-materias-grid .card [style*="font-size:28px"],
+.fc-materias-grid .card [style*="font-size:32px"],
+.fc-materias-grid .card [style*="font-size:24px"] {
+  transition:transform .38s cubic-bezier(.34,1.56,.64,1);
+  display:inline-block;
+}
+.fc-materias-grid .card:hover [style*="font-size:28px"],
+.fc-materias-grid .card:hover [style*="font-size:32px"],
+.fc-materias-grid .card:hover [style*="font-size:24px"] {
+  transform:scale(1.28) rotate(-6deg);
+}
+
+/* === FC FOLDER CARDS === */
+.fc-folders-grid .card {
+  position:relative; overflow:hidden;
+  cursor:pointer;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease, border-color .34s ease !important;
+}
+.fc-folders-grid .card::after {
+  content:'';
+  position:absolute;
+  top:0; left:-110%;
+  width:50%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+  transform:skewX(-14deg);
+  pointer-events:none;
+}
+.fc-folders-grid .card:hover {
+  transform:translateY(-6px) scale(1.018) !important;
+  box-shadow:0 16px 44px rgba(0,0,0,.4) !important;
+  border-color:rgba(124,106,255,.35) !important;
+}
+.fc-folders-grid .card:hover::after { animation:shimmerSweep .58s ease forwards; }
+
+/* Folder all-card */
+.fc-folder-all-card {
+  position:relative; overflow:hidden;
+  cursor:pointer;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease,
+    border-color .34s ease, background .28s ease;
+}
+.fc-folder-all-card:hover {
+  transform:translateY(-5px) !important;
+  border-color:rgba(124,106,255,.4) !important;
+  box-shadow:0 12px 36px rgba(124,106,255,.2) !important;
+  background:rgba(124,106,255,.07) !important;
+}
+
+/* === FC LIST ITEMS (tarjetas en grid) === */
+.fc-list-item {
+  transition:border-color .32s ease, transform .34s cubic-bezier(.25,.8,.25,1),
+    box-shadow .34s ease !important;
+}
+.fc-list-item::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:2px;
+  background:linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity:0;
+  transition:opacity .32s ease;
+}
+.fc-list-item:hover {
+  border-color:var(--accent) !important;
+  transform:translateY(-5px) !important;
+  box-shadow:0 12px 32px rgba(0,0,0,.3) !important;
+}
+.fc-list-item:hover::before { opacity:1; }
+
+/* Acciones dentro de la fc-list-item — slide down suave */
+.fc-item-actions {
+  opacity:0;
+  transform:translateY(-4px);
+  transition:opacity .28s ease, transform .28s cubic-bezier(.25,.8,.25,1);
+}
+.fc-list-item:hover .fc-item-actions {
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* Botones dentro de las acciones */
+.fc-item-actions .btn {
+  transition:background .22s ease, border-color .22s ease, color .22s ease,
+    transform .28s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.fc-item-actions .btn:hover {
+  background:var(--accent-glow) !important;
+  border-color:var(--accent) !important;
+  color:var(--accent2) !important;
+  transform:scale(1.12) !important;
+}
+.fc-item-actions .btn-danger:hover {
+  background:var(--red-dim) !important;
+  border-color:rgba(248,113,113,.4) !important;
+  color:var(--red) !important;
+  transform:scale(1.12) !important;
+}
+
+/* Chip de materia dentro de la tarjeta */
+.fc-item-subject {
+  transition:background .28s ease, border-color .28s ease, transform .28s cubic-bezier(.25,.8,.25,1);
+}
+.fc-list-item:hover .fc-item-subject {
+  background:rgba(124,106,255,.2);
+  border-color:rgba(124,106,255,.45);
+  transform:scale(1.04);
+}
+
+/* Pregunta — se aclara */
+.fc-item-question {
+  transition:color .28s ease;
+}
+.fc-list-item:hover .fc-item-question { color:var(--text); }
+
+/* Tags dentro de la tarjeta */
+.fc-tag {
+  transition:color .22s ease, border-color .22s ease, transform .26s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.fc-tag:hover {
+  color:var(--accent2) !important;
+  border-color:var(--accent) !important;
+  transform:scale(1.08) translateY(-1px) !important;
+}
+
+/* Rating buttons */
+.fc-rating-btn {
+  transition:background .22s ease, color .22s ease, border-color .22s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .30s ease !important;
+}
+.fc-rating-btn:hover:not(:disabled)  { transform:translateY(-4px) scale(1.06) !important; }
+.fc-rating-btn:active:not(:disabled) { transform:scale(.93) !important; transition-duration:.1s !important; }
+.fc-rating-easy:hover:not(:disabled) { box-shadow:0 6px 20px rgba(74,222,128,.4) !important; }
+.fc-rating-med:hover:not(:disabled)  { box-shadow:0 6px 20px rgba(251,191,36,.34) !important; }
+.fc-rating-hard:hover:not(:disabled) { box-shadow:0 6px 20px rgba(248,113,113,.34) !important; }
+
+/* Flip card */
+.fc-card {
+  transition:transform 0.65s cubic-bezier(.4,0,.2,1) !important;
+  will-change:transform;
+}
+.fc-card.flipped { transform:rotateY(180deg) !important; }
+.fc-card-wrapper:hover .fc-card:not(.flipped) { transform:scale(1.01) !important; }
+
+/* Botón Modo Estudio flotante */
+#fc-study-trigger button {
+  background:linear-gradient(135deg, var(--accent), #9b6fff) !important;
+  border:none !important; color:#fff !important; font-weight:800 !important;
+  transition:transform .34s cubic-bezier(.25,.8,.25,1), box-shadow .34s ease !important;
+  animation:floatY 3.5s ease-in-out infinite;
+}
+#fc-study-trigger button:hover {
+  transform:translateY(-5px) scale(1.06) !important;
+  box-shadow:0 14px 36px rgba(124,106,255,.55) !important;
+  animation:none;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  6. NOTAS — sidebar, list, folder items, editor             ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* Folder items en sidebar */
+.notes-folder-item {
+  transition:background .24s ease, padding-left .30s cubic-bezier(.25,.8,.25,1),
+    border-left-color .24s ease !important;
+}
+.notes-folder-item:hover { padding-left:18px !important; background:var(--surface2); }
+.notes-folder-item.active {
+  background:var(--accent-glow);
+  border-left:3px solid var(--accent);
+  box-shadow:inset 3px 0 0 var(--accent);
+}
+
+/* Ícono de la carpeta en sidebar */
+.notes-folder-icon {
+  transition:transform .34s cubic-bezier(.34,1.56,.64,1);
+  display:inline-block;
+}
+.notes-folder-item:hover .notes-folder-icon { transform:scale(1.2) rotate(-5deg); }
+
+/* Contador de notas */
+.notes-folder-count {
+  transition:background .24s ease, color .24s ease, border-color .24s ease,
+    transform .28s cubic-bezier(.34,1.56,.64,1);
+}
+.notes-folder-item:hover .notes-folder-count {
+  background:var(--accent-glow);
+  color:var(--accent2);
+  border-color:rgba(124,106,255,.3);
+  transform:scale(1.1);
+}
+
+/* List items en sidebar */
+.notes-list-item {
+  transition:background .24s ease, padding-left .30s cubic-bezier(.25,.8,.25,1) !important;
+  position:relative;
+}
+.notes-list-item:hover { padding-left:20px !important; background:var(--surface2); }
+.notes-list-item.active { background:var(--accent-glow); border-right:3px solid var(--accent); }
+
+/* Título del list item */
+.nli-title {
+  transition:color .24s ease;
+}
+.notes-list-item:hover .nli-title { color:var(--accent2); }
+
+/* RTE botones de formato */
+.rte-btn {
+  transition:background .20s ease, color .20s ease, border-color .20s ease,
+    transform .26s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.rte-btn:hover  { transform:scale(1.12) !important; background:var(--surface2) !important; }
+.rte-btn:active { transform:scale(.88) !important; transition-duration:.08s !important; }
+.rte-btn.active { box-shadow:0 0 10px rgba(124,106,255,.28) !important; }
+
+/* Lightbox */
+.notes-lightbox {
+  transition:opacity .32s ease;
+}
+.notes-lightbox-content {
+  transition:transform .38s cubic-bezier(.25,.8,.25,1);
+}
+
+/* Note editor modal flotante */
+#note-editor-modal {
+  transition:transform .36s cubic-bezier(.25,.8,.25,1), opacity .28s ease !important;
+  box-shadow:0 28px 90px rgba(0,0,0,.65) !important;
+}
+
+/* Indicador de autosave */
+#notes-autosave-indicator {
+  transition:color .32s ease, opacity .32s ease;
+}
+
+/* Icon picker de carpetas */
+.folder-icon-opt {
+  transition:border-color .22s ease, transform .30s cubic-bezier(.34,1.56,.64,1),
+    background .22s ease;
+}
+.folder-icon-opt:hover  { transform:scale(1.28) rotate(-5deg) !important; background:var(--surface2); }
+.folder-icon-opt.active { transform:scale(1.12) !important; }
+
+/* Color picker de carpetas */
+.folder-color-opt {
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
+}
+.folder-color-opt:hover  { transform:scale(1.35) !important; box-shadow:0 3px 12px rgba(0,0,0,.4) !important; }
+.folder-color-opt.active { transform:scale(1.15) !important; box-shadow:0 0 0 3px rgba(255,255,255,.6) !important; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  7. TAREAS — items, estados, checks                         ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 .task-item {
-  transition:background .15s ease, padding-left .18s ease, border-color .15s ease,
-    box-shadow .18s ease, transform .18s cubic-bezier(.4,0,.2,1);
+  transition:background .24s ease, padding-left .30s cubic-bezier(.25,.8,.25,1),
+    border-color .24s ease, box-shadow .30s ease, transform .32s cubic-bezier(.25,.8,.25,1);
   border-radius:8px; padding-left:6px; position:relative;
 }
 .task-item:hover {
   background:var(--surface2);
-  padding-left:10px;
-  box-shadow:inset 3px 0 0 var(--accent);
+  padding-left:12px;
+  box-shadow:inset 3px 0 0 var(--accent), 0 3px 14px rgba(0,0,0,.2);
 }
 
-/* ✨ Clase para ítems añadidos por JS */
-.just-added {
-  animation:bounceIn .55s cubic-bezier(.34,1.56,.64,1) both !important;
+/* Checkbox */
+input[type="checkbox"] {
+  transition:transform .24s cubic-bezier(.34,1.56,.64,1), accent-color .22s ease;
 }
+input[type="checkbox"]:checked { animation:checkBounce .35s cubic-bezier(.34,1.56,.64,1); }
 
-/* ✅ Clase para tarea completada */
-.task-item.just-completed {
-  animation:fadeInDown .3s ease both;
-}
+/* Clases JS */
+.just-added    { animation:bounceIn .58s cubic-bezier(.34,1.56,.64,1) both !important; }
+.just-removed  { animation:fadeInDown .32s ease reverse both !important; pointer-events:none; }
+
+/* Tacha al completar */
 .task-item.just-completed .task-label {
   position:relative;
 }
@@ -536,129 +989,112 @@
   content:'';
   position:absolute;
   left:0; top:50%;
-  height:2px;
+  height:1.5px;
   width:100%;
   background:var(--text3);
   transform-origin:left;
-  animation:strikeSlide .3s ease .1s both;
-}
-
-/* Checkbox con bounce */
-input[type="checkbox"] {
-  transition:transform .15s cubic-bezier(.34,1.56,.64,1), accent-color .15s ease;
-}
-input[type="checkbox"]:checked {
-  animation:checkBounce .3s cubic-bezier(.34,1.56,.64,1);
-}
-
-/* Badge pendientes — parpadeo urgente si hay muchos */
-#ov-pending-badge:not(:empty) {
-  animation:softBlink 2.5s ease-in-out infinite;
+  animation:strikeSlide .35s ease .1s both;
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   6. CALENDARIO
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  8. CALENDARIO                                              ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 .cal-cell {
-  transition:border-color .18s ease, background .18s ease,
-    transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease !important;
+  transition:border-color .28s ease, background .28s ease,
+    transform .32s cubic-bezier(.25,.8,.25,1), box-shadow .32s ease !important;
 }
 .cal-cell:hover:not(.past):not(.empty) {
   border-color:var(--accent) !important;
-  background:rgba(124,106,255,.08) !important;
-  transform:scale(1.04) !important;
-  box-shadow:0 4px 16px rgba(124,106,255,.22) !important;
+  background:rgba(124,106,255,.09) !important;
+  transform:scale(1.05) !important;
+  box-shadow:0 5px 18px rgba(124,106,255,.24) !important;
 }
 .cal-cell:active:not(.past):not(.empty) {
-  transform:scale(.97) !important;
-  transition:transform .08s ease !important;
+  transform:scale(.96) !important;
+  transition-duration:.1s !important;
 }
-.cal-cell.today { animation:todayPulse 3s ease-in-out infinite; }
+.cal-cell.today { animation:todayPulse 3.2s ease-in-out infinite; }
 
-/* Eventos del calendario — pop */
 .cal-event {
-  transition:transform .15s cubic-bezier(.34,1.56,.64,1), opacity .15s ease;
+  transition:transform .28s cubic-bezier(.25,.8,.25,1), opacity .22s ease;
 }
-.cal-event:hover {
-  transform:scaleX(1.03) translateX(2px);
-  opacity:.9;
-}
+.cal-event:hover { transform:scaleX(1.04) translateX(3px); }
 
 
-/* ══════════════════════════════════════════════════════════════
-   7. CALIFICACIONES
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  9. CALIFICACIONES — rows, inputs, zonas                    ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 .grade-row {
-  transition:background .14s ease, border-radius .14s ease, padding .14s ease,
-    box-shadow .16s ease;
-  border-radius:6px; padding:2px 4px; position:relative;
+  transition:background .22s ease, border-radius .22s ease,
+    padding .28s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease;
+  border-radius:6px; padding:2px 4px;
 }
 .grade-row:hover {
   background:var(--surface2);
-  padding:2px 8px;
+  padding:2px 10px;
   box-shadow:inset 2px 0 0 var(--accent);
 }
 
 .grade-input {
-  transition:border-color .18s ease, box-shadow .2s ease, transform .15s cubic-bezier(.34,1.56,.64,1) !important;
+  transition:border-color .24s ease, box-shadow .28s ease, transform .30s cubic-bezier(.25,.8,.25,1) !important;
 }
 .grade-input:focus {
-  transform:scale(1.06) !important;
-  box-shadow:0 0 0 3px rgba(124,106,255,.2), 0 2px 10px rgba(124,106,255,.15) !important;
+  transform:scale(1.07) !important;
+  box-shadow:0 0 0 3px rgba(124,106,255,.22), 0 3px 12px rgba(124,106,255,.18) !important;
 }
 .grade-input:hover:not(:focus) { border-color:var(--accent2) !important; }
 
-/* Zonas de calificación — highlight on hover */
-.usac-won:hover      { transform:scale(1.02); }
-.usac-zona-min-ok:hover { transform:translateX(3px); }
-.usac-zona-min-no:hover { transform:translateX(3px); }
-.usac-falta-examen:hover{ transform:translateX(3px); }
+/* Badges de zona */
 .usac-won, .usac-zona-min-ok, .usac-zona-min-no, .usac-falta-examen {
-  transition:transform .18s cubic-bezier(.34,1.56,.64,1) !important;
+  transition:transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
 }
+.usac-zona-min-ok:hover { transform:translateX(5px) !important; }
+.usac-zona-min-no:hover { transform:translateX(5px) !important; }
+.usac-falta-examen:hover{ transform:translateX(5px) !important; }
+.usac-won:hover { transform:scale(1.02) !important; }
 
 
-/* ══════════════════════════════════════════════════════════════
-   8. TEMAS & PLANNER
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  10. TEMAS & PLANNER                                        ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 .topic-item {
-  transition:background .14s ease, padding-left .18s ease, box-shadow .14s ease;
+  transition:background .22s ease, padding-left .28s cubic-bezier(.25,.8,.25,1),
+    box-shadow .28s ease;
   border-radius:6px; padding-left:4px;
 }
 .topic-item:hover {
   background:var(--surface2);
-  padding-left:10px;
+  padding-left:12px;
   box-shadow:inset 2px 0 0 var(--accent);
 }
 
 .topic-seen-btn {
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1), background .18s ease, border-color .18s ease !important;
+  transition:transform .30s cubic-bezier(.34,1.56,.64,1), background .22s ease,
+    border-color .22s ease !important;
 }
-.topic-seen-btn:hover  { transform:scale(1.2) rotate(5deg) !important; }
-.topic-seen-btn:active { transform:scale(.88) !important; }
+.topic-seen-btn:hover  { transform:scale(1.22) rotate(6deg) !important; }
+.topic-seen-btn:active { transform:scale(.86) !important; transition-duration:.1s !important; }
 
 .planner-item {
-  transition:background .14s ease, padding-left .18s ease !important;
+  transition:background .22s ease, padding-left .28s cubic-bezier(.25,.8,.25,1) !important;
 }
-.planner-item:hover { padding-left:18px !important; }
+.planner-item:hover { padding-left:20px !important; }
 
 .planner-topic-header {
-  transition:background .14s ease, padding-left .18s ease !important;
+  transition:background .22s ease, padding-left .28s cubic-bezier(.25,.8,.25,1) !important;
 }
-.planner-topic-header:hover { padding-left:18px !important; }
+.planner-topic-header:hover { padding-left:20px !important; }
 
 
-/* ══════════════════════════════════════════════════════════════
-   9. SIDEBAR — nav items, logo, badge
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  11. SIDEBAR — nav, logo, badge, sem-badge                  ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 .nav-item {
   position:relative; overflow:hidden;
-  transition:background .18s ease, color .18s ease, border-color .18s ease,
-    transform .18s cubic-bezier(.34,1.56,.64,1);
+  transition:background .24s ease, color .24s ease, border-color .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1);
 }
-
-/* Indicador lateral izquierdo */
 .nav-item::before {
   content:'';
   position:absolute;
@@ -668,91 +1104,100 @@ input[type="checkbox"]:checked {
   border-radius:0 3px 3px 0;
   transform:scaleY(0) translateX(-3px);
   transform-origin:center;
-  transition:transform .22s cubic-bezier(.34,1.56,.64,1), opacity .18s;
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1), opacity .24s;
   opacity:0;
 }
 .nav-item:hover::before, .nav-item.active::before {
   transform:scaleY(1) translateX(0);
   opacity:1;
 }
-.nav-item:hover { background:var(--surface2); color:var(--text); transform:translateX(3px); border-color:rgba(124,106,255,.12); }
+.nav-item:hover {
+  background:var(--surface2); color:var(--text);
+  transform:translateX(4px);
+  border-color:rgba(124,106,255,.14);
+}
 .nav-item.active, .nav-item.active:hover { transform:translateX(0); }
 
-/* Ícono del nav — bounce en hover */
-.nav-item .icon { transition:transform .22s cubic-bezier(.34,1.56,.64,1); }
-.nav-item:hover .icon { animation:iconBounce .4s cubic-bezier(.34,1.56,.64,1) both; }
+/* Ícono con bounce */
+.nav-item .icon { transition:transform .26s cubic-bezier(.34,1.56,.64,1); }
+.nav-item:hover .icon { animation:iconBounce .42s cubic-bezier(.34,1.56,.64,1) both; }
 
-/* Badge con pop */
-.nav-item:hover .nav-badge { animation:badgePop .28s cubic-bezier(.34,1.56,.64,1); }
-.nav-badge { animation:softBlink 3s ease-in-out infinite; }
+/* Badge */
+.nav-badge { animation:softBlink 3.2s ease-in-out infinite; }
+.nav-item:hover .nav-badge { animation:badgePop .32s cubic-bezier(.34,1.56,.64,1); }
 
-/* Section label hover */
+/* Section label */
 .nav-sec-collapsible {
-  transition:color .15s, letter-spacing .15s;
+  transition:color .22s ease, letter-spacing .28s ease;
   cursor:pointer; user-select:none;
 }
-.nav-sec-collapsible:hover { color:var(--accent2) !important; letter-spacing:2px; }
+.nav-sec-collapsible:hover { color:var(--accent2) !important; letter-spacing:2.5px; }
 
-/* Logo — gradiente animado en el texto accent */
+/* Logo — gradiente fluido animado */
 .logo-name span {
   background:linear-gradient(90deg, var(--accent), var(--accent2), #c084fc, var(--accent));
   background-size:300% 100%;
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
   background-clip:text;
-  animation:gradientText 5s ease-in-out infinite;
+  animation:gradientText 5.5s ease-in-out infinite;
   display:inline;
 }
 
-/* Sidebar bottom badge — hover */
+/* Sem badge */
 .sem-badge {
-  transition:border-color .18s ease, background .18s ease, transform .18s cubic-bezier(.34,1.56,.64,1) !important;
+  transition:border-color .28s ease, background .28s ease,
+    transform .32s cubic-bezier(.25,.8,.25,1), box-shadow .32s ease !important;
 }
 .sem-badge:hover {
   border-color:var(--accent) !important;
-  transform:translateY(-1px) !important;
-  box-shadow:0 4px 14px rgba(124,106,255,.2) !important;
+  transform:translateY(-2px) !important;
+  box-shadow:0 5px 18px rgba(124,106,255,.24) !important;
 }
 
 /* Sem switch items */
-.sem-sw-item { transition:background .12s ease, padding-left .14s ease !important; }
-.sem-sw-item:hover { padding-left:18px !important; }
-.sem-sw-item.sem-active { border-left:2px solid var(--accent); }
+.sem-sw-item {
+  transition:background .22s ease, padding-left .26s cubic-bezier(.25,.8,.25,1) !important;
+}
+.sem-sw-item:hover { padding-left:20px !important; }
+.sem-sw-item.sem-active {
+  border-left:2px solid var(--accent);
+  background:var(--accent-glow);
+}
 
 
-/* ══════════════════════════════════════════════════════════════
-   10. INPUTS & FORMS — focus glow mejorado
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  12. INPUTS & FORMS                                         ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 .form-input, .form-select,
 input[type="text"], input[type="number"], textarea, select {
-  transition:border-color .18s ease, box-shadow .2s ease, background .18s ease;
+  transition:border-color .24s ease, box-shadow .28s ease, background .24s ease;
 }
 .form-input:focus, .form-select:focus,
 input[type="text"]:focus, input[type="number"]:focus,
 textarea:focus, select:focus {
   border-color:var(--accent) !important;
-  box-shadow:0 0 0 3px rgba(124,106,255,.18), 0 2px 12px rgba(124,106,255,.12) !important;
+  box-shadow:0 0 0 3px rgba(124,106,255,.18), 0 2px 14px rgba(124,106,255,.12) !important;
   outline:none;
 }
 .form-input:hover:not(:focus), .form-select:hover:not(:focus),
 input[type="text"]:hover:not(:focus), input[type="number"]:hover:not(:focus),
-textarea:hover:not(:focus) {
-  border-color:var(--border2);
-}
+textarea:hover:not(:focus) { border-color:var(--border2); }
 
-/* Search bar */
+/* Search bar — se expande fluido */
 .search-input-bar {
-  transition:border-color .18s ease, box-shadow .2s ease, width .25s cubic-bezier(.34,1.56,.64,1) !important;
+  transition:border-color .24s ease, box-shadow .28s ease, width .32s cubic-bezier(.25,.8,.25,1) !important;
 }
 .search-input-bar:focus {
-  width:200px !important;
-  box-shadow:0 0 0 3px rgba(124,106,255,.15) !important;
+  width:210px !important;
+  box-shadow:0 0 0 3px rgba(124,106,255,.16) !important;
   border-color:var(--accent) !important;
 }
 
-/* Select filters en tareas/flashcards */
+/* Selects de filtro */
 .form-select {
-  transition:border-color .18s ease, box-shadow .2s ease, transform .15s cubic-bezier(.34,1.56,.64,1) !important;
+  transition:border-color .24s ease, box-shadow .28s ease,
+    transform .28s cubic-bezier(.25,.8,.25,1) !important;
 }
 .form-select:hover:not(:focus) {
   border-color:var(--border2);
@@ -760,11 +1205,11 @@ textarea:hover:not(:focus) {
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   11. PROGRESS BARS — shimmer + transición
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  13. PROGRESS BARS                                          ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 .prog-fill {
-  transition:width .65s cubic-bezier(.4,0,.2,1) !important;
+  transition:width .7s cubic-bezier(.4,0,.2,1) !important;
   position:relative; overflow:hidden;
 }
 .prog-fill::after {
@@ -772,14 +1217,13 @@ textarea:hover:not(:focus) {
   position:absolute; inset:0;
   background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.22) 50%, transparent 100%);
   background-size:200% 100%;
-  animation:progShimmer 2.4s ease-in-out infinite;
+  animation:progShimmer 2.6s ease-in-out infinite;
 }
 
-/* Barra de progreso del estudio de flashcards */
 #fc-study-bar {
   background:linear-gradient(90deg, var(--accent), var(--accent2));
   border-radius:4px;
-  transition:width .4s cubic-bezier(.4,0,.2,1);
+  transition:width .44s cubic-bezier(.4,0,.2,1);
   position:relative; overflow:hidden;
 }
 #fc-study-bar::after {
@@ -787,39 +1231,36 @@ textarea:hover:not(:focus) {
   position:absolute; inset:0;
   background:linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
   background-size:200% 100%;
-  animation:progShimmer 2s ease-in-out infinite;
+  animation:progShimmer 2.2s ease-in-out infinite;
+}
+
+#profile-career-bar {
+  transition:width .85s cubic-bezier(.4,0,.2,1) !important;
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   12. MODALES — entrada spring + backdrop
-   ══════════════════════════════════════════════════════════════ */
-.modal-overlay {
-  transition:backdrop-filter .25s ease;
-}
-.modal-overlay.open {
-  animation:fadeInDown .2s ease both;
-}
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  14. MODALES — entrada spring, backdrop, footer             ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.modal-overlay.open { animation:fadeInDown .22s ease both; }
 
 /* Modal con spring bounce */
-.modal {
-  animation:modalSpring .38s cubic-bezier(.34,1.56,.64,1) both !important;
-}
+.modal { animation:modalSpring .44s cubic-bezier(.34,1.56,.64,1) both !important; }
 
-/* Botón cerrar */
+/* Cerrar */
 .modal-close {
-  transition:background .15s ease, color .15s ease, transform .2s cubic-bezier(.34,1.56,.64,1) !important;
+  transition:background .22s ease, color .22s ease, transform .28s cubic-bezier(.34,1.56,.64,1) !important;
 }
 .modal-close:hover {
   background:var(--surface3) !important;
   color:var(--text) !important;
-  transform:scale(1.15) rotate(12deg) !important;
+  transform:scale(1.18) rotate(14deg) !important;
 }
 
-/* Modal tabs */
+/* Tabs del modal */
 .modal-tab {
   position:relative;
-  transition:color .16s ease !important;
+  transition:color .22s ease !important;
 }
 .modal-tab::after {
   content:'';
@@ -827,350 +1268,267 @@ textarea:hover:not(:focus) {
   bottom:0; left:50%; right:50%;
   height:2px;
   background:var(--accent);
-  transition:left .2s ease, right .2s ease;
+  transition:left .28s ease, right .28s ease;
 }
 .modal-tab.active::after { left:0; right:0; }
 
-/* Botones del modal-footer */
-.modal-footer .btn, [class*="modal"] .btn, .form-actions .btn {
-  transition:background .16s ease, color .16s ease, border-color .16s ease,
-    transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease !important;
+/* Botones dentro de modales */
+.modal-footer .btn, .form-actions .btn,
+[class*="modal"] .form-actions .btn {
+  transition:background .22s ease, color .22s ease, border-color .22s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .30s ease !important;
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   13. PERFIL — stat cards, color picker, progress bar carrera
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  15. ALERTAS & NOTIFICACIONES — todo tipo                   ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 
-/* Color chips — scale + glow */
-.color-opt, .accent-color-opt {
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease !important;
+/* Banner in-app (arriba de la pantalla) */
+.notification-banner,
+[class*="notif-banner"],
+[class*="alert-banner"] {
+  animation:notifSlide .38s cubic-bezier(.34,1.56,.64,1) both;
 }
-.color-opt:hover, .accent-color-opt:hover {
-  transform:scale(1.28) !important;
-  box-shadow:0 4px 16px rgba(0,0,0,.45) !important;
-}
-.color-opt:active, .accent-color-opt:active { transform:scale(.9) !important; }
-.color-opt.selected, .accent-color-opt.selected {
-  transform:scale(1.18) !important;
-  box-shadow:0 0 0 2px rgba(255,255,255,.7), 0 4px 16px rgba(0,0,0,.45) !important;
-}
+.notification-banner.hiding { animation:notifSlideOut .28s ease both; }
 
-/* Icon picker */
-.icon-opt {
-  transition:background .15s ease, border-color .15s ease, transform .2s cubic-bezier(.34,1.56,.64,1) !important;
-}
-.icon-opt:hover  { transform:scale(1.15) rotate(5deg) !important; }
-.icon-opt:active { transform:scale(.92) !important; }
-
-/* Barra de progreso de carrera — animada al cargar */
-#profile-career-bar {
-  transition:width .8s cubic-bezier(.4,0,.2,1) !important;
+/* Toast lateral */
+.toast,
+[class*="toast-"] {
+  animation:toastIn .38s cubic-bezier(.34,1.56,.64,1) both;
 }
 
-/* Cursos aprobados — hover en filas */
-#approved-courses-list > div,
-#approved-courses-list tr {
-  transition:background .14s ease !important;
-}
-#approved-courses-list tr:hover td {
-  background:var(--surface2) !important;
+/* Pop de cualquier alerta/dialog */
+.alert-popup,
+[class*="alert-pop"] {
+  animation:alertPop .44s cubic-bezier(.34,1.56,.64,1) both;
 }
 
-
-/* ══════════════════════════════════════════════════════════════
-   14. HORARIO
-   ══════════════════════════════════════════════════════════════ */
-.horario-cell {
-  transition:transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease !important;
-}
-.horario-cell:hover {
-  transform:scale(1.04) !important;
-  box-shadow:0 4px 14px rgba(0,0,0,.28) !important;
-}
-.horario-table td { transition:background .14s ease !important; }
-.horario-table tr:hover td { background:var(--surface2); }
-
-
-/* ══════════════════════════════════════════════════════════════
-   15. POMODORO
-   ══════════════════════════════════════════════════════════════ */
-.pom-ring {
-  transition:transform .22s cubic-bezier(.34,1.56,.64,1);
-}
-.pom-ring:hover { transform:scale(1.03); }
-
-/* Glow cuando el pomodoro está corriendo */
-.pom-ring.running .pom-prog,
-.pom-svg.running .pom-prog {
-  animation:pomGlow 2.5s ease-in-out infinite;
-  filter:drop-shadow(0 0 6px rgba(124,106,255,.5));
-}
-
-/* Botones de música */
-.pom-music-btn {
-  transition:border-color .18s ease, color .18s ease, background .18s ease,
-    transform .16s cubic-bezier(.34,1.56,.64,1) !important;
-}
-.pom-music-btn:hover  { transform:translateY(-2px) !important; }
-.pom-music-btn:active { transform:scale(.95) translateY(0) !important; }
-.pom-music-btn.playing {
-  background:rgba(124,106,255,.15) !important;
-  border-color:var(--accent) !important;
-  color:var(--accent2) !important;
-  box-shadow:0 0 12px rgba(124,106,255,.2) !important;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   16. FLASHCARDS
-   ══════════════════════════════════════════════════════════════ */
-.fc-rating-btn {
-  transition:background .16s ease, color .16s ease, border-color .16s ease,
-    transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease !important;
-}
-.fc-rating-btn:hover:not(:disabled)  { transform:translateY(-3px) scale(1.05) !important; }
-.fc-rating-btn:active:not(:disabled) { transform:scale(.93) !important; }
-.fc-rating-easy:hover:not(:disabled) { box-shadow:0 5px 18px rgba(74,222,128,.38) !important; }
-.fc-rating-med:hover:not(:disabled)  { box-shadow:0 5px 18px rgba(251,191,36,.32) !important; }
-.fc-rating-hard:hover:not(:disabled) { box-shadow:0 5px 18px rgba(248,113,113,.32) !important; }
-
-/* Botón "Modo Estudio" flotante */
-#fc-study-trigger button {
-  background:linear-gradient(135deg, var(--accent), #9b6fff) !important;
-  border:none !important;
-  color:#fff !important;
-  font-weight:800 !important;
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease !important;
-}
-#fc-study-trigger button:hover {
-  transform:translateY(-3px) scale(1.04) !important;
-  box-shadow:0 12px 32px rgba(124,106,255,.5) !important;
-}
-
-/* Flip card — más dramático */
-.fc-card { transition:transform 0.6s cubic-bezier(.4,0,.2,1) !important; }
-.fc-card.flipped { transform:rotateY(180deg) !important; }
-.fc-card-wrapper:hover .fc-card:not(.flipped) {
-  transform:scale(1.01);
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   17. TAGS & CHIPS
-   ══════════════════════════════════════════════════════════════ */
-.tag-chip {
-  transition:background .14s ease, color .14s ease, border-color .14s ease,
-    transform .16s cubic-bezier(.34,1.56,.64,1) !important;
-}
-.tag-chip:hover  { transform:scale(1.08) translateY(-1px) !important; }
-.tag-chip:active { transform:scale(.94) !important; }
-
-/* FC tags */
-.fc-tag {
-  transition:color .12s, border-color .12s, transform .16s cubic-bezier(.34,1.56,.64,1) !important;
-}
-.fc-tag:hover {
-  color:var(--accent2) !important;
-  border-color:var(--accent) !important;
-  transform:translateY(-1px) !important;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   18. EMPTY STATES — iconos flotantes
-   ══════════════════════════════════════════════════════════════ */
-.empty-state {
-  animation:fadeInUp .4s ease both;
-}
-.empty-icon {
-  display:inline-block;
-  animation:floatY 4s ease-in-out infinite;
-  will-change:transform;
-}
-.empty-title {
-  animation:fadeInUp .35s ease .1s both;
-}
-.empty-desc {
-  animation:fadeInUp .35s ease .18s both;
-}
-.empty-state .btn {
-  animation:fadeInUp .35s ease .26s both;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   19. NOTAS — folder items, list items
-   ══════════════════════════════════════════════════════════════ */
-.notes-folder-item {
-  transition:background .14s ease, padding-left .16s ease, border-left-color .16s ease !important;
-}
-.notes-folder-item:hover { padding-left:16px !important; }
-
-.notes-list-item {
-  transition:background .14s ease, padding-left .16s ease !important;
-}
-.notes-list-item:hover { padding-left:18px !important; }
-.notes-list-item.active { border-right:3px solid var(--accent); }
-
-/* RTE botones de formato */
-.rte-btn {
-  transition:background .12s ease, color .12s ease, border-color .12s ease,
-    transform .14s cubic-bezier(.34,1.56,.64,1) !important;
-}
-.rte-btn:hover  { transform:scale(1.1) !important; }
-.rte-btn:active { transform:scale(.9) !important; }
-.rte-btn.active { box-shadow:0 0 8px rgba(124,106,255,.25) !important; }
-
-
-/* ══════════════════════════════════════════════════════════════
-   20. TOPBAR & GPA CHIP
-   ══════════════════════════════════════════════════════════════ */
-.topbar {
-  transition:background .25s ease, border-color .25s ease;
-}
-
-.gpa-topbar {
-  transition:border-color .18s ease, background .18s ease, box-shadow .18s ease,
-    transform .18s cubic-bezier(.34,1.56,.64,1) !important;
-}
-.gpa-topbar:hover {
-  border-color:rgba(124,106,255,.35) !important;
-  background:rgba(124,106,255,.08) !important;
-  box-shadow:0 0 12px rgba(124,106,255,.15) !important;
-  transform:translateY(-1px) !important;
-}
-
-/* Sidebar toggle button */
-.sidebar-toggle {
-  transition:left .22s cubic-bezier(.4,0,.2,1), background .15s ease, color .15s ease,
-    transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease !important;
-}
-.sidebar-toggle:hover {
-  background:var(--accent-glow) !important;
-  color:var(--accent2) !important;
-  border-color:var(--accent) !important;
-  transform:scale(1.15) !important;
-  box-shadow:0 4px 14px rgba(124,106,255,.3) !important;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   21. OVERLAYS ESPECIALES
-   ══════════════════════════════════════════════════════════════ */
-
-/* Comp popup */
+/* Comp popup (% comprensión) */
 #comp-popup {
-  animation:slideInTop .25s cubic-bezier(.34,1.56,.64,1) both;
+  animation:alertPop .38s cubic-bezier(.34,1.56,.64,1) both;
+}
+#comp-popup .btn-primary {
+  width:100%;
+  margin-top:10px;
 }
 
-/* Exam mode overlay — countdown pulse cuando queda poco */
+/* Exam mode overlay */
+.exam-mode-overlay.active { animation:fadeInDown .32s ease both; }
 .exam-countdown {
   transition:color .5s ease, text-shadow .5s ease;
 }
 .exam-countdown.low-time {
   color:var(--red) !important;
   animation:softBlink 1s ease-in-out infinite;
-  text-shadow:0 0 20px rgba(248,113,113,.4);
+  text-shadow:0 0 24px rgba(248,113,113,.45);
+}
+
+/* Botones del exam overlay */
+#exam-toggle-btn {
+  transition:background .22s ease, transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+#exam-toggle-btn:hover {
+  transform:scale(1.06) !important;
+  box-shadow:0 6px 20px rgba(124,106,255,.4) !important;
 }
 
 /* PDF modal */
-#modal-pdf-view {
-  animation:fadeInUp .25s ease both;
+#modal-pdf-view { animation:fadeInUp .28s ease both; }
+
+/* Scanner modal */
+#modal-scanner .modal { animation:alertPop .38s cubic-bezier(.34,1.56,.64,1) both; }
+
+/* Pulso de indicador de alerta (bola roja/verde) */
+.pulse-dot {
+  position:relative;
+}
+.pulse-dot::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:inherit;
+  animation:pulseRing 2s ease-out infinite;
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   22. CLASES UTILITARIAS — usables desde JS
-   ══════════════════════════════════════════════════════════════ */
-
-/* Item recién añadido a cualquier lista */
-.just-added {
-  animation:bounceIn .55s cubic-bezier(.34,1.56,.64,1) both !important;
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  16. PERFIL — color picker, stat cards, career bar          ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.color-opt, .accent-color-opt {
+  transition:transform .30s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease !important;
+}
+.color-opt:hover, .accent-color-opt:hover {
+  transform:scale(1.32) !important;
+  box-shadow:0 4px 18px rgba(0,0,0,.48) !important;
+}
+.color-opt:active, .accent-color-opt:active { transform:scale(.88) !important; transition-duration:.1s !important; }
+.color-opt.selected, .accent-color-opt.selected {
+  transform:scale(1.2) !important;
+  box-shadow:0 0 0 2.5px rgba(255,255,255,.72), 0 4px 18px rgba(0,0,0,.48) !important;
 }
 
-/* Item que se está eliminando */
-.just-removed {
-  animation:fadeInDown .3s ease reverse both !important;
-  pointer-events:none;
+.icon-opt {
+  transition:background .22s ease, border-color .22s ease, transform .28s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.icon-opt:hover  { transform:scale(1.18) rotate(6deg) !important; }
+.icon-opt:active { transform:scale(.9) !important; transition-duration:.1s !important; }
+
+/* Approved courses rows */
+#approved-courses-list tr {
+  transition:background .22s ease !important;
+}
+#approved-courses-list tr:hover td { background:var(--surface2) !important; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  17. HORARIO                                                 ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.horario-cell {
+  transition:transform .28s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+.horario-cell:hover {
+  transform:scale(1.05) !important;
+  box-shadow:0 5px 16px rgba(0,0,0,.3) !important;
+}
+.horario-table td { transition:background .22s ease !important; }
+.horario-table tr:hover td { background:var(--surface2); }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  18. POMODORO                                               ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.pom-ring {
+  transition:transform .34s cubic-bezier(.25,.8,.25,1);
+}
+.pom-ring:hover { transform:scale(1.04); }
+.pom-ring.running .pom-prog,
+.pom-svg.running .pom-prog {
+  animation:pomGlow 2.8s ease-in-out infinite;
+  filter:drop-shadow(0 0 6px rgba(124,106,255,.55));
 }
 
-/* Elemento destacado momentáneamente */
-.highlight-flash {
-  animation:accentGlowPulse .8s ease 2 !important;
+.pom-music-btn {
+  transition:border-color .24s ease, color .24s ease, background .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+.pom-music-btn:hover  { transform:translateY(-3px) !important; }
+.pom-music-btn:active { transform:scale(.94) translateY(0) !important; transition-duration:.1s !important; }
+.pom-music-btn.playing {
+  background:rgba(124,106,255,.16) !important;
+  border-color:var(--accent) !important;
+  color:var(--accent2) !important;
+  box-shadow:0 0 14px rgba(124,106,255,.22) !important;
 }
 
-/* Skeleton loader — para contenido que carga */
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  19. TOPBAR & GPA                                           ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.gpa-topbar {
+  transition:border-color .28s ease, background .28s ease,
+    box-shadow .28s ease, transform .30s cubic-bezier(.25,.8,.25,1) !important;
+}
+.gpa-topbar:hover {
+  border-color:rgba(124,106,255,.38) !important;
+  background:rgba(124,106,255,.09) !important;
+  box-shadow:0 0 14px rgba(124,106,255,.18) !important;
+  transform:translateY(-2px) !important;
+}
+
+.sidebar-toggle {
+  transition:left .24s cubic-bezier(.4,0,.2,1), background .22s ease, color .22s ease,
+    transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .26s ease !important;
+}
+.sidebar-toggle:hover {
+  background:var(--accent-glow) !important;
+  color:var(--accent2) !important;
+  border-color:var(--accent) !important;
+  transform:scale(1.18) !important;
+  box-shadow:0 4px 16px rgba(124,106,255,.32) !important;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  20. EMPTY STATES — flotación                               ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.empty-state { animation:fadeInUp .42s ease both; }
+.empty-icon {
+  display:inline-block;
+  animation:floatY 4.2s ease-in-out infinite;
+  will-change:transform;
+}
+.empty-title { animation:fadeInUp .38s ease .12s both; }
+.empty-desc  { animation:fadeInUp .38s ease .20s both; }
+.empty-state .btn { animation:fadeInUp .38s ease .28s both; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  21. MISC — quick events, day strip, stat-mini, tags        ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.stat-mini {
+  transition:transform .28s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+.stat-mini:hover {
+  transform:translateY(-4px) scale(1.05) !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.32) !important;
+}
+
+.quick-ev {
+  transition:background .22s ease, padding-left .26s cubic-bezier(.25,.8,.25,1),
+    border-left-color .22s ease !important;
+}
+.quick-ev:hover { background:var(--surface3) !important; padding-left:18px !important; }
+
+/* Day strip chips */
+#ov-day-strip > div, .day-chip {
+  transition:background .24s ease, border-color .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+#ov-day-strip > div:hover, .day-chip:hover {
+  transform:translateY(-4px) scale(1.05) !important;
+  box-shadow:0 7px 20px rgba(0,0,0,.32) !important;
+  border-color:rgba(124,106,255,.38) !important;
+}
+
+/* Tags chips */
+.tag-chip {
+  transition:background .22s ease, color .22s ease, border-color .22s ease,
+    transform .26s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.tag-chip:hover  { transform:scale(1.1) translateY(-2px) !important; }
+.tag-chip:active { transform:scale(.92) !important; transition-duration:.1s !important; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  22. CLASES UTILITARIAS — para JS                           ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.just-added     { animation:bounceIn .58s cubic-bezier(.34,1.56,.64,1) both !important; }
+.just-removed   { animation:fadeInDown .32s ease reverse both !important; pointer-events:none; }
+.highlight-flash{ animation:accentGlowPulse 1s ease 2 !important; }
+.pulse-attention{ animation:accentGlowPulse 2.4s ease-in-out infinite; }
+.glow-text      { text-shadow:0 0 14px rgba(124,106,255,.52); transition:text-shadow .32s ease; }
+.stat-card.just-updated { animation:statPop .55s cubic-bezier(.34,1.56,.64,1) both; }
+
+/* Skeleton loader */
 .skeleton {
   background:linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
   background-size:400px 100%;
-  animation:skeletonPulse 1.6s ease-in-out infinite;
+  animation:skeletonPulse 1.8s ease-in-out infinite;
   border-radius:var(--radius-sm);
   color:transparent !important;
-}
-
-/* Notificación in-app — slide desde arriba */
-.notification-banner {
-  animation:slideInTop .3s cubic-bezier(.34,1.56,.64,1) both;
-}
-
-/* Glow text — para valores importantes */
-.glow-text {
-  text-shadow:0 0 12px rgba(124,106,255,.5);
-  transition:text-shadow .3s ease;
-}
-
-/* Pulso de acento — para elementos que necesitan atención */
-.pulse-attention {
-  animation:accentGlowPulse 2s ease-in-out infinite;
+  pointer-events:none;
 }
 
 
-/* ══════════════════════════════════════════════════════════════
-   23. STAT MINI — overview stats pequeñas
-   ══════════════════════════════════════════════════════════════ */
-.stat-mini {
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease !important;
-}
-.stat-mini:hover {
-  transform:translateY(-3px) scale(1.04) !important;
-  box-shadow:0 6px 20px rgba(0,0,0,.3) !important;
-}
-
-/* Quick event chips en el overview */
-.quick-ev {
-  transition:background .14s ease, padding-left .16s ease, border-left-color .16s ease !important;
-}
-.quick-ev:hover {
-  background:var(--surface3) !important;
-  padding-left:16px !important;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   24. DAY STRIP — agenda semanal del overview
-   ══════════════════════════════════════════════════════════════ */
-/* Chips de días */
-#ov-day-strip > div,
-.day-chip {
-  transition:background .16s ease, border-color .16s ease,
-    transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .16s ease !important;
-}
-#ov-day-strip > div:hover,
-.day-chip:hover {
-  transform:translateY(-3px) scale(1.04) !important;
-  box-shadow:0 6px 18px rgba(0,0,0,.3) !important;
-  border-color:rgba(124,106,255,.35) !important;
-}
-
-
-/* ══════════════════════════════════════════════════════════════
-   25. MOBILE — desactivar transforms problemáticos
-   ══════════════════════════════════════════════════════════════ */
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  23. MOBILE — desactivar transforms y fixes                 ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 @media (max-width:768px) {
   /* Nav */
-  .nav-item:hover  { transform:none; }
-  .nav-item::before{ display:none; }
+  .nav-item:hover { transform:none; }
+  .nav-item::before { display:none; }
   .nav-item:hover .icon { animation:none; }
 
   /* Reloj */
@@ -1178,16 +1536,32 @@ textarea:hover:not(:focus) {
   .ov-clock-sep   { display:none; }
   #ov-date-short  { font-size:22px !important; letter-spacing:1px !important; }
 
-  /* Botones — sin lift en móvil */
+  /* Botones — sin lift */
   .btn:hover:not(:disabled) { transform:none; }
+  .btn-ghost.btn-sm:hover:not(:disabled) { padding-left:inherit; }
 
-  /* Cards — sin escala en móvil */
-  .hub-card:hover, .mat-card:hover, .sem-hub-card:hover,
-  .chart-wrap:hover, .stat-mini:hover, .stat-card:hover,
-  #semestres-list .card:hover, #grades-cards-grid .card:hover {
+  /* Cards */
+  .hub-card:hover, .mat-card:hover,
+  #semestres-list .card:hover, #grades-cards-grid .card:hover,
+  #notes-hub-grid .card:hover, #notes-folder-grid .card:hover,
+  .fc-materias-grid .card:hover, .fc-folders-grid .card:hover,
+  .chart-wrap:hover, .stat-mini:hover, .stat-card:hover {
     transform:none !important;
   }
-  .hub-card:hover  { box-shadow:0 4px 16px rgba(0,0,0,.3) !important; }
+  .hub-card:hover {
+    box-shadow:0 4px 18px rgba(0,0,0,.32) !important;
+    border-color:rgba(124,106,255,.35) !important;
+  }
+
+  /* Flashcards */
+  .fc-list-item:hover   { transform:none !important; }
+  .fc-item-actions      { opacity:1; transform:none; }
+  .fc-rating-btn:hover:not(:disabled) { transform:none !important; }
+  .fc-folder-all-card:hover { transform:none !important; }
+
+  /* Notas */
+  .notes-folder-item:hover { padding-left:14px !important; }
+  .notes-list-item:hover   { padding-left:14px !important; }
 
   /* Calendario */
   .cal-cell:hover { transform:none; }
@@ -1195,41 +1569,36 @@ textarea:hover:not(:focus) {
   /* Tareas */
   .task-item:hover { padding-left:6px; }
 
-  /* Planner / temas */
-  .planner-item:hover        { padding-left:14px !important; }
-  .topic-item:hover          { padding-left:4px; }
+  /* Planner */
+  .planner-item:hover { padding-left:14px !important; }
+  .topic-item:hover   { padding-left:4px; }
 
-  /* Notas */
-  .notes-folder-item:hover   { padding-left:10px !important; }
-  .notes-list-item:hover     { padding-left:10px !important; }
+  /* Inputs */
+  .grade-input:focus { transform:none !important; }
+  .search-input-bar:focus { width:100% !important; }
 
-  /* Flashcards */
-  .fc-folders-grid .card:hover,
-  .fc-materias-grid .card:hover { transform:none; }
-  .fc-rating-btn:hover:not(:disabled) { transform:none !important; }
-  .fc-item-actions { opacity:1; }
+  /* Day strip */
+  #ov-day-strip > div:hover, .day-chip:hover { transform:none !important; }
+
+  /* Orbes — más suaves en móvil */
+  .mc-header::before { width:160px; height:160px; opacity:.55; }
+  .mc-header::after  { display:none; }
 
   /* Horario */
   .horario-cell:hover { transform:none !important; }
 
-  /* Inputs — sin scale en móvil */
-  .grade-input:focus { transform:none !important; }
-  .search-input-bar:focus { width:100% !important; }
+  /* GPA chip */
+  .gpa-topbar:hover { transform:none !important; }
 
-  /* Orbes del overview — reducir en móvil */
-  .mc-header::before { width:140px; height:140px; opacity:.6; }
-  .mc-header::after  { display:none; }
-
-  /* Logo gradient — mantener */
-  .logo-name span { animation-duration:8s; }
-
-  /* Empty states — mantener float */
-  .empty-icon { animation-duration:5s; }
+  /* Stat cards */
+  .stat-card:hover { transform:none !important; }
+  .stat-mini:hover { transform:none !important; }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   26. PREFERENCIA DE MOVIMIENTO REDUCIDO — accesibilidad
-   ══════════════════════════════════════════════════════════════ */
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  24. ACCESIBILIDAD — movimiento reducido                    ║
+   ╚══════════════════════════════════════════════════════════════╝ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration:.01ms !important;
@@ -1238,7 +1607,6 @@ textarea:hover:not(:focus) {
   }
   .empty-icon, .logo-name span,
   .mc-header::before, .mc-header::after,
-  #ov-clock-icon, #ov-pending-badge {
-    animation:none !important;
-  }
+  #ov-clock-icon, #ov-pending-badge,
+  .nav-badge, #fc-study-trigger button { animation:none !important; }
 }

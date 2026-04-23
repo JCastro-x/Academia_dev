@@ -890,12 +890,12 @@ function _addEditZoneRow(labelVal, subsArr) {
              value="${(labelVal||'').replace(/"/g,'&quot;')}"
              style="flex:1;font-size:13px;font-weight:600;">
       <div style="display:flex;align-items:center;gap:4px;font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;color:var(--text2);">
-        Total:
+        <span style="font-size:11px;color:var(--text3);">Total:</span>
         <input type="number" id="${id}-total" class="form-input" min="0" max="999" step="0.5"
                value="${totalPts.toFixed(1)}"
-               style="width:70px;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;padding:2px 6px;"
-               title="Puntos totales de esta zona">
-        pts
+               style="width:70px;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;padding:4px 6px;border:1.5px solid var(--accent2);border-radius:6px;background:var(--surface);"
+               title="Puntos totales de esta zona (editable)">
+        <span style="font-size:11px;color:var(--text3);">pts</span>
       </div>
       <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()"
               style="padding:3px 8px;">✕</button>
@@ -918,12 +918,12 @@ function ecAddZoneRow() {
       <input type="text" class="form-input ec-zone-name" placeholder="Nombre de la zona"
              style="flex:1;font-size:13px;font-weight:600;">
       <div style="display:flex;align-items:center;gap:4px;font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;color:var(--text2);">
-        Total:
+        <span style="font-size:11px;color:var(--text3);">Total:</span>
         <input type="number" id="${id}-total" class="form-input" min="0" max="999" step="0.5"
-               value="0"
-               style="width:70px;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;padding:2px 6px;"
-               title="Puntos totales de esta zona">
-        pts
+               value="" placeholder="0"
+               style="width:70px;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;padding:4px 6px;border:1.5px solid var(--accent2);border-radius:6px;background:var(--surface);"
+               title="Puntos totales de esta zona (editable)">
+        <span style="font-size:11px;color:var(--text3);">pts</span>
       </div>
       <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()"
               style="padding:3px 8px;">✕</button>
@@ -1003,10 +1003,11 @@ function saveEditClass() {
     const totalInput = row.querySelector('[id$="-total"]');
     const manualTotal = parseFloat(totalInput?.value);
     if (!isNaN(manualTotal) && manualTotal > 0) totalPts = manualTotal;
-    if (subs.length) newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
+    // Always push the zone, even without apartados (totalPts from manual input is valid alone)
+    newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
   });
 
-  if (!newZones.length) { alert('Agrega al menos una zona con apartados.'); return; }
+  if (!newZones.length) { alert('Agrega al menos una zona con nombre y puntos.'); return; }
   mat.zones = [...newZones, ...labZones];
 
   getMat.bust();
