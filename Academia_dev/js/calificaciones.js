@@ -233,7 +233,18 @@ function _renderGrades() {
       const milestoneEl = document.createElement('div');
       milestoneEl.style.cssText = 'padding:10px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;';
       if (isGanada) {
-        milestoneEl.innerHTML = `<div class="usac-won">🎉 ¡CLASE GANADA! Tienes ${total.toFixed(2)} pts — aprobaste sin necesidad de examen final.</div>`;
+        // Detect if a "final exam" zone exists AND has a grade entered
+        const hasFinalZone = mat.zones.some(z =>
+          !z.isLabZone && /final/i.test(z.key + ' ' + z.label)
+        );
+        const finalZoneFilled = hasFinalZone && mat.zones.some(z =>
+          !z.isLabZone && /final/i.test(z.key + ' ' + z.label) &&
+          z.subs.some(s => getG(mat.id, s.key) !== '')
+        );
+        const ganMsg = finalZoneFilled
+          ? `🎉 ¡CLASE GANADA! Tienes ${total.toFixed(2)} pts — aprobaste (examen final incluido).`
+          : `🎉 ¡CLASE GANADA! Tienes ${total.toFixed(2)} pts — ¡ya no necesitas ir a examen final!`;
+        milestoneEl.innerHTML = `<div class="usac-won">${ganMsg}</div>`;
       } else if (zonaMinOk && faltaParaGanar) {
         const faltaN = faltaParaGanar.needed;
         const pctN   = faltaParaGanar.pct;
