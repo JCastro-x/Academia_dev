@@ -1245,7 +1245,7 @@ textarea:hover:not(:focus) { border-color:var(--border2); }
 .modal-overlay.open { animation:fadeInDown .22s ease both; }
 
 /* Modal con spring bounce */
-.modal { animation:modalSpring .44s cubic-bezier(.34,1.56,.64,1) both !important; }
+.modal { animation:modalSpring .44s cubic-bezier(.34,1.56,.64,1) forwards !important; }
 
 /* Cerrar */
 .modal-close {
