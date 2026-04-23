@@ -1,0 +1,657 @@
+/* ═══════════════════════════════════════════════════════════════
+   ACADEMIA — Animations PATCH v5.2
+   Agrega DESPUÉS de academia-animations.css en app.html:
+   <link rel="stylesheet" href="css/academia-patch.css">
+
+   Corrige: notas overflow, pomodoro vida, todos los inputs/ranges
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FIX 1 — NOTAS HUB: sin scale, sin overflow                ║
+   ╚══════════════════════════════════════════════════════════════╝
+   El grid no tiene overflow:hidden, entonces scale sale del borde.
+   Reemplazamos scale por translateY + shadow profundo. */
+
+#notes-hub-grid {
+  /* Espacio para que el shadow no se corte */
+  padding: 6px 4px 14px;
+}
+
+#notes-hub-grid .card {
+  transform: none !important;
+  transition:
+    border-color  .32s ease,
+    box-shadow    .38s cubic-bezier(.25,.8,.25,1),
+    background    .28s ease !important;
+  will-change: box-shadow, border-color;
+  /* Eliminar cualquier scale heredado */
+  animation-name: notesCardIn !important;
+}
+
+#notes-hub-grid .card:hover {
+  transform: translateY(-7px) !important;   /* solo sube, no se ensancha */
+  box-shadow:
+    0 20px 52px rgba(0,0,0,.50),
+    0 0 0 1px rgba(124,106,255,.40),
+    0 0 28px rgba(124,106,255,.18) !important;
+  border-color: rgba(124,106,255,.50) !important;
+  background: var(--surface2) !important;
+}
+
+#notes-hub-grid .card:active {
+  transform: translateY(-2px) !important;
+  transition-duration: .12s !important;
+}
+
+/* Override anterior que añadía scale */
+#notes-hub-grid .card::before {
+  background: linear-gradient(135deg, rgba(124,106,255,.10), transparent 55%);
+}
+
+/* Entrada con stagger igual que flashcards */
+@keyframes notesCardIn {
+  0%   { opacity:0; transform:translateY(18px) scale(.96); }
+  60%  { opacity:1; transform:translateY(-3px) scale(1); }
+  80%  { transform:translateY(1px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+
+.page.active #notes-hub-grid .card {
+  animation: notesCardIn .44s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+.page.active #notes-hub-grid .card:nth-child(1) { animation-delay:.04s !important; }
+.page.active #notes-hub-grid .card:nth-child(2) { animation-delay:.09s !important; }
+.page.active #notes-hub-grid .card:nth-child(3) { animation-delay:.14s !important; }
+.page.active #notes-hub-grid .card:nth-child(4) { animation-delay:.19s !important; }
+.page.active #notes-hub-grid .card:nth-child(n+5){ animation-delay:.23s !important; }
+
+/* Mismo fix para el folder grid (notas dentro de carpeta) */
+#notes-folder-grid {
+  padding: 6px 4px 14px;
+}
+#notes-folder-grid .card {
+  transition:
+    border-color  .32s ease,
+    box-shadow    .38s cubic-bezier(.25,.8,.25,1),
+    background    .28s ease !important;
+}
+#notes-folder-grid .card:hover {
+  transform: translateY(-7px) !important;
+  box-shadow:
+    0 18px 48px rgba(0,0,0,.48),
+    0 0 0 1px rgba(124,106,255,.38),
+    0 0 22px rgba(124,106,255,.14) !important;
+  border-color: rgba(124,106,255,.45) !important;
+}
+#notes-folder-grid .card:active {
+  transform: translateY(-2px) !important;
+  transition-duration: .12s !important;
+}
+
+.page.active #notes-folder-grid .card {
+  animation: notesCardIn .42s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+.page.active #notes-folder-grid .card:nth-child(1) { animation-delay:.04s !important; }
+.page.active #notes-folder-grid .card:nth-child(2) { animation-delay:.09s !important; }
+.page.active #notes-folder-grid .card:nth-child(3) { animation-delay:.14s !important; }
+.page.active #notes-folder-grid .card:nth-child(n+4){ animation-delay:.18s !important; }
+
+/* Línea de acento top — solo opacity, sin scale  */
+#notes-folder-grid .card::before { pointer-events:none; }
+#notes-folder-grid .card:hover::before { opacity:1; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FIX 2 — NOTAS: ícono de carpeta solo en hub (sin scale)   ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+#notes-hub-grid .card:hover .notes-folder-icon,
+#notes-hub-grid .card:hover [style*="font-size:24px"],
+#notes-hub-grid .card:hover [style*="font-size:28px"],
+#notes-hub-grid .card:hover [style*="font-size:32px"] {
+  transform: scale(1.22) rotate(-6deg) translateY(-2px);
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  POMODORO — Vida al temporizador y sus elementos            ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* === Anillo del pomodoro === */
+@keyframes pomRingIdle {
+  0%,100% { filter: drop-shadow(0 0 3px rgba(124,106,255,.25)); }
+  50%      { filter: drop-shadow(0 0 14px rgba(124,106,255,.55)); }
+}
+@keyframes pomRingActive {
+  0%,100% { filter: drop-shadow(0 0 6px rgba(124,106,255,.5)); }
+  50%      { filter: drop-shadow(0 0 24px rgba(124,106,255,.85)); }
+}
+@keyframes pomTimePulse {
+  0%,100% { transform:scale(1); }
+  50%      { transform:scale(1.03); }
+}
+@keyframes chronoTick {
+  0%   { opacity:1; }
+  45%  { opacity:.72; }
+  55%  { opacity:.72; }
+  100% { opacity:1; }
+}
+@keyframes streakFlame {
+  0%,100% { transform:scale(1) rotate(-2deg); filter:brightness(1); }
+  50%      { transform:scale(1.12) rotate(3deg); filter:brightness(1.3) drop-shadow(0 0 6px rgba(251,146,60,.6)); }
+}
+@keyframes pomBarPulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.7; }
+}
+@keyframes histItemIn {
+  from { opacity:0; transform:translateX(-14px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes weekBarGrow {
+  from { transform:scaleY(0); transform-origin:bottom; opacity:0; }
+  to   { transform:scaleY(1); transform-origin:bottom; opacity:1; }
+}
+@keyframes dotPop {
+  0%   { transform:scale(1); }
+  40%  { transform:scale(1.45); }
+  70%  { transform:scale(.88); }
+  100% { transform:scale(1); }
+}
+@keyframes modeFlash {
+  0%   { opacity:1; transform:scale(1); }
+  25%  { opacity:0; transform:scale(.9); }
+  60%  { opacity:1; transform:scale(1.08); }
+  100% { opacity:1; transform:scale(1); }
+}
+
+/* Anillo idle — pulso suave */
+.pom-ring { animation: pomRingIdle 3.5s ease-in-out infinite; }
+.pom-ring:hover { transform:scale(1.04); animation: pomRingActive 1.8s ease-in-out infinite; }
+
+/* Cuando corre — modo activo aplicado por JS con clase .running */
+.pom-ring.running { animation: pomRingActive 2s ease-in-out infinite; }
+.pom-ring.running .pom-prog {
+  filter: drop-shadow(0 0 8px rgba(124,106,255,.7));
+  transition: stroke-dashoffset .5s ease;
+}
+
+/* Timer display — pulso mientras corre */
+#pom-time {
+  transition: color .4s ease, transform .3s ease;
+}
+.pom-ring.running ~ .pom-center #pom-time,
+#page-pomodoro.pom-running #pom-time {
+  animation: pomTimePulse 1s ease-in-out infinite;
+}
+
+/* Mode badge — flash al cambiar */
+#pom-mode {
+  transition: color .4s ease, opacity .3s ease;
+}
+.pom-mode-change #pom-mode { animation: modeFlash .5s ease both; }
+
+/* Cronómetro grande — tick visual */
+#chrono-work {
+  transition: color .3s ease, text-shadow .3s ease;
+}
+#page-pomodoro.pom-running #chrono-work {
+  animation: chronoTick 1s step-start infinite;
+  text-shadow: 0 0 18px rgba(74,222,128,.45);
+}
+
+/* Bloque cronómetro — hover glow */
+#chrono-work-block {
+  transition: border-color .32s ease, box-shadow .32s ease, background .32s ease !important;
+}
+#chrono-work-block:hover {
+  border-color: rgba(74,222,128,.55) !important;
+  box-shadow: 0 0 20px rgba(74,222,128,.2) !important;
+}
+#chrono-break-block {
+  transition: border-color .32s ease, box-shadow .32s ease !important;
+}
+#chrono-break-block:hover {
+  border-color: rgba(96,165,250,.5) !important;
+  box-shadow: 0 0 16px rgba(96,165,250,.18) !important;
+}
+#chrono-total-block {
+  transition: border-color .32s ease, box-shadow .32s ease !important;
+}
+#chrono-total-block:hover {
+  border-color: rgba(124,106,255,.5) !important;
+  box-shadow: 0 0 16px rgba(124,106,255,.18) !important;
+}
+
+/* Dots del pomodoro — pop cuando se completa uno */
+#pom-dots > * {
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1), background .3s ease;
+}
+#pom-dots > *.completed { animation: dotPop .4s cubic-bezier(.34,1.56,.64,1); }
+
+/* Botón iniciar pomodoro */
+#pom-btn {
+  min-width: 120px;
+  transition: background .22s ease, transform .34s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .32s ease !important;
+}
+#pom-btn:hover:not(:disabled) {
+  transform: scale(1.08) translateY(-2px) !important;
+  box-shadow: 0 10px 30px rgba(124,106,255,.5) !important;
+}
+#pom-btn:active { transform: scale(.95) !important; transition-duration:.1s !important; }
+
+/* Popup / Focus buttons — override de inline styles */
+#pom-mini-toggle-btn,
+#page-pomodoro .card-header > button[onclick*="Focus"],
+#page-pomodoro .card-header > button[onclick*="enterFocus"] {
+  transition: background .24s ease, border-color .24s ease, color .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+#pom-mini-toggle-btn:hover,
+#page-pomodoro .card-header > button[onclick*="Focus"]:hover,
+#page-pomodoro .card-header > button[onclick*="enterFocus"]:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 6px 18px rgba(124,106,255,.35) !important;
+}
+
+/* Racha de estudio — stat blocks */
+#page-pomodoro [id*="pom-stat-streak"],
+#page-pomodoro [id*="pom-stat-week"] {
+  transition: transform .32s cubic-bezier(.34,1.56,.64,1), text-shadow .32s ease;
+}
+/* Llama de racha — animación continua */
+#pom-stat-streak { animation: streakFlame 2.4s ease-in-out infinite; display:inline-block; }
+
+/* Stat mini cards del pomodoro (SESIONES HOY / MIN HOY) */
+#page-pomodoro .card[style*="text-align:center"] {
+  transition: transform .32s cubic-bezier(.25,.8,.25,1), box-shadow .32s ease !important;
+}
+#page-pomodoro .card[style*="text-align:center"]:hover {
+  transform: translateY(-5px) scale(1.04) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.36) !important;
+}
+
+/* Stat blocks de racha — hover */
+#page-pomodoro [id^="chrono-"][id$="-block"],
+#page-pomodoro > div > div > div[style*="background:var(--surface2)"][style*="border-radius:10px"] {
+  transition: transform .28s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+#page-pomodoro div[style*="background:var(--surface2)"][style*="border-radius:10px"]:hover {
+  transform: translateY(-3px) scale(1.04) !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.3) !important;
+}
+
+/* Barra de progreso de meta — shimmer cuando está activa */
+#pom-goal-bar {
+  position: relative; overflow: hidden;
+  transition: width .55s cubic-bezier(.4,0,.2,1) !important;
+}
+#pom-goal-bar::after {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  background-size:200% 100%;
+  animation:progShimmer 2s ease-in-out infinite;
+}
+@keyframes progShimmer {
+  0%  {background-position:-200% 0}
+  100%{background-position:200% 0}
+}
+
+/* Barras de actividad semanal — entran creciendo */
+#pom-week-bars > * {
+  transition: height .4s cubic-bezier(.4,0,.2,1), background .28s ease,
+    transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
+  cursor: default;
+}
+#pom-week-bars > *:hover {
+  transform: scaleX(1.25) !important;
+  box-shadow: 0 0 10px rgba(124,106,255,.45) !important;
+  background: var(--accent2) !important;
+}
+.page.active #pom-week-bars > * {
+  animation: weekBarGrow .5s cubic-bezier(.22,.68,0,1.1) both;
+}
+.page.active #pom-week-bars > *:nth-child(1){ animation-delay:.08s; }
+.page.active #pom-week-bars > *:nth-child(2){ animation-delay:.12s; }
+.page.active #pom-week-bars > *:nth-child(3){ animation-delay:.16s; }
+.page.active #pom-week-bars > *:nth-child(4){ animation-delay:.20s; }
+.page.active #pom-week-bars > *:nth-child(5){ animation-delay:.24s; }
+.page.active #pom-week-bars > *:nth-child(6){ animation-delay:.28s; }
+.page.active #pom-week-bars > *:nth-child(7){ animation-delay:.32s; }
+
+/* Historial de sesiones — cada ítem entra deslizando */
+#pom-history > * {
+  animation: histItemIn .35s ease both;
+  transition: background .22s ease, padding-left .26s cubic-bezier(.25,.8,.25,1) !important;
+}
+#pom-history > *:hover {
+  background: var(--surface2) !important;
+  padding-left: 18px !important;
+}
+#pom-history > *:nth-child(1){ animation-delay:.05s; }
+#pom-history > *:nth-child(2){ animation-delay:.09s; }
+#pom-history > *:nth-child(3){ animation-delay:.13s; }
+#pom-history > *:nth-child(n+4){ animation-delay:.16s; }
+
+/* Ambient sonoro — botones de ruido */
+#page-pomodoro [id*="noise-"] {
+  transition: border-color .24s ease, color .24s ease, background .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .26s ease !important;
+}
+#page-pomodoro [id*="noise-"]:hover {
+  transform: translateY(-2px) scale(1.04) !important;
+  box-shadow: 0 5px 16px rgba(124,106,255,.3) !important;
+}
+#page-pomodoro [id*="noise-"].playing {
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 18px rgba(124,106,255,.4) !important;
+}
+
+/* Badge cronómetro */
+#chrono-mode-badge {
+  transition: background .28s ease, color .28s ease, transform .28s cubic-bezier(.34,1.56,.64,1);
+}
+#chrono-mode-badge:hover { transform: scale(1.1); }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  TODOS LOS RANGE SLIDERS                                    ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+input[type="range"] {
+  cursor: pointer;
+  transition: accent-color .24s ease, opacity .22s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="range"]:hover { opacity: .9; }
+input[type="range"]:focus { outline: none; }
+input[type="range"]:active { opacity: 1; }
+
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border2);
+  transition: background .24s ease;
+}
+input[type="range"]:hover::-webkit-slider-runnable-track { background: var(--border); }
+
+/* Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(124,106,255,.25), 0 2px 6px rgba(0,0,0,.35);
+  margin-top: -5.5px;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .22s ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.22);
+  box-shadow: 0 0 0 4px rgba(124,106,255,.25), 0 3px 10px rgba(0,0,0,.4);
+}
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 6px rgba(124,106,255,.2), 0 3px 10px rgba(0,0,0,.4);
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%; border: none;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(124,106,255,.25), 0 2px 6px rgba(0,0,0,.35);
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
+}
+input[type="range"]:hover::-moz-range-thumb { transform: scale(1.22); }
+input[type="range"]::-moz-range-track { height:5px; border-radius:3px; background:var(--border2); }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  TODOS LOS SELECTS / DESPLEGABLES                          ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* Select abierto — highlight de opciones */
+select option { transition: background .15s ease; }
+select option:checked { background: var(--accent-glow) !important; color: var(--accent2) !important; }
+
+/* Focus glow en todos los selects */
+select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.18), 0 2px 12px rgba(124,106,255,.12) !important;
+  outline: none;
+}
+
+/* Select con chevron animado */
+select {
+  position: relative;
+  cursor: pointer;
+  transition: border-color .24s ease, box-shadow .28s ease,
+    background .24s ease, transform .26s cubic-bezier(.25,.8,.25,1) !important;
+}
+select:hover:not(:focus) {
+  border-color: var(--accent2) !important;
+  transform: translateY(-1px);
+}
+select:active { transform: none !important; transition-duration:.1s !important; }
+
+/* Grade-input (number inputs pequeños del pomodoro/calificaciones) */
+.grade-input {
+  transition: border-color .24s ease, box-shadow .28s ease,
+    transform .28s cubic-bezier(.25,.8,.25,1), background .22s ease !important;
+  text-align: center;
+}
+.grade-input:hover:not(:focus) { border-color: var(--accent2) !important; background: var(--surface3) !important; }
+.grade-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.2), 0 3px 12px rgba(124,106,255,.15) !important;
+  transform: scale(1.07) !important;
+  background: var(--surface3) !important;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  TODOS LOS TEXTAREAS                                        ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+textarea {
+  transition: border-color .24s ease, box-shadow .28s ease,
+    background .24s ease !important;
+  resize: vertical;
+}
+textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.16), 0 4px 18px rgba(124,106,255,.10) !important;
+  background: var(--surface3) !important;
+}
+textarea:hover:not(:focus) { border-color: var(--border2) !important; background: var(--surface2) !important; }
+
+/* Textarea de notas (richtext) */
+.notes-richtext-editor:focus { outline: none !important; }
+.notes-main-textarea:focus   { outline: none !important; }
+
+/* FC textareas (pregunta/respuesta) */
+.fc-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.18), 0 3px 14px rgba(124,106,255,.12) !important;
+  background: var(--surface3) !important;
+}
+.fc-input:hover:not(:focus) { border-color: var(--border2) !important; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  LABELS Y FORM-LABELS — micro hover                        ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.form-label, .fc-label, label {
+  transition: color .22s ease;
+}
+.form-group:hover .form-label,
+.form-group:focus-within .form-label {
+  color: var(--accent2);
+}
+.form-group:focus-within .form-label {
+  color: var(--accent) !important;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  CHECKBOXES PERSONALIZADOS                                  ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+input[type="checkbox"] {
+  width: 15px; height: 15px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  transition: transform .24s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .22s ease, accent-color .22s ease;
+}
+input[type="checkbox"]:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 3px rgba(124,106,255,.16);
+}
+input[type="checkbox"]:checked {
+  animation: checkBounce .32s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes checkBounce {
+  0%  {transform:scale(1)}
+  38% {transform:scale(1.38)}
+  68% {transform:scale(.86)}
+  84% {transform:scale(1.08)}
+  100%{transform:scale(1)}
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  INPUTS DE BÚSQUEDA Y TÍTULO (notas, tareas…)              ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+#notes-title-inp {
+  transition: color .22s ease, border-bottom .24s ease !important;
+  border-bottom: 2px solid transparent !important;
+}
+#notes-title-inp:focus {
+  border-bottom: 2px solid var(--accent) !important;
+  outline: none !important;
+}
+
+/* Tags input (notas y flashcards) */
+#notes-tags-inp, #fc-tags {
+  transition: border-color .24s ease, background .22s ease, box-shadow .26s ease !important;
+}
+#notes-tags-inp:focus, #fc-tags:focus {
+  border-color: var(--accent) !important;
+  background: var(--surface2) !important;
+  box-shadow: 0 0 0 2px rgba(124,106,255,.14) !important;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  CARD HEADER — título y acciones                           ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.card-title {
+  transition: color .24s ease;
+}
+.card:hover .card-title { color: var(--text); }
+
+/* Card header botones pequeños */
+.card-header .btn-ghost.btn-sm {
+  transition: background .22s ease, color .22s ease,
+    transform .28s cubic-bezier(.25,.8,.25,1) !important;
+}
+.card-header .btn-ghost.btn-sm:hover {
+  background: var(--surface3) !important;
+  transform: translateY(-1px) !important;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  PERFIL — section cards de personalización                 ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.card .form-select {
+  transition: border-color .24s ease, box-shadow .28s ease,
+    background .22s ease, transform .26s cubic-bezier(.25,.8,.25,1) !important;
+}
+.card .form-select:hover:not(:focus) {
+  border-color: var(--accent2) !important;
+  transform: translateY(-1px);
+}
+
+/* Botones de tema claro/oscuro en perfil */
+#page-perfil .btn-ghost {
+  transition: background .24s ease, color .24s ease, border-color .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .26s ease !important;
+}
+#page-perfil .btn-ghost:hover {
+  transform: translateY(-3px) scale(1.05) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.28) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent2) !important;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  SCAN PROGRESS BAR (notas scanner modal)                   ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+#scanner-progress-bar {
+  position: relative; overflow: hidden;
+  transition: width .35s cubic-bezier(.4,0,.2,1) !important;
+}
+#scanner-progress-bar::after {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);
+  background-size:200% 100%;
+  animation:progShimmer 1.6s ease-in-out infinite;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  TOPBAR SEARCH INPUT                                       ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+.topbar input[type="text"],
+.topbar .search-input-bar {
+  transition: border-color .24s ease, box-shadow .28s ease,
+    width .34s cubic-bezier(.25,.8,.25,1), background .22s ease !important;
+}
+.topbar input[type="text"]:focus,
+.topbar .search-input-bar:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.16) !important;
+  background: var(--surface2) !important;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  MOBILE — desactivar lo que causa problemas                ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+@media (max-width: 768px) {
+  /* Notas — sin translateY en móvil */
+  #notes-hub-grid .card:hover,
+  #notes-folder-grid .card:hover {
+    transform: none !important;
+  }
+  /* Pomodoro stat blocks */
+  #page-pomodoro .card[style*="text-align:center"]:hover { transform:none !important; }
+  #page-pomodoro div[style*="background:var(--surface2)"][style*="border-radius:10px"]:hover { transform:none !important; }
+  /* Grade inputs */
+  .grade-input:focus { transform: none !important; }
+  /* Selects */
+  select:hover:not(:focus) { transform: none; }
+  /* Checkboxes */
+  input[type="checkbox"]:hover { transform: none; box-shadow: none; }
+  /* Pom btn */
+  #pom-btn:hover:not(:disabled) { transform: none !important; }
+  /* Pom mini/focus btn */
+  #pom-mini-toggle-btn:hover { transform: none !important; }
+}
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  REDUCCIÓN DE MOVIMIENTO                                   ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+@media (prefers-reduced-motion: reduce) {
+  .pom-ring, #pom-stat-streak,
+  #pom-week-bars > *,
+  #notes-hub-grid .card,
+  #notes-folder-grid .card {
+    animation: none !important;
+  }
+}
