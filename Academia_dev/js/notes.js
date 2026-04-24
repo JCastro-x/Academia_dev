@@ -2387,6 +2387,8 @@ function _renderOverview() {
         padding: 10px 16px 8px; display: flex; align-items: center; gap: 8px;
         border-top: 2px solid var(--border);
         margin-top: 6px;
+        background: #000; /* materias header distinct background */
+        color: var(--text);
       }
       .ov-mat-header:first-child { border-top: none; margin-top: 0; }
       .ov-prog-bar-wrap {
