@@ -1,5 +1,7 @@
 
 function renderStats() {
+  const statsPage = document.getElementById('page-estadisticas');
+  if (statsPage && !statsPage.classList.contains('active')) return;
 
   const ctx1 = document.getElementById('chart-grades');
   if (!ctx1) return;
@@ -8,7 +10,15 @@ function renderStats() {
   const maxVals = State.materias.map(m => m.zones.reduce((a,z)=>a+z.maxPts,0));
   const colors  = State.materias.map(m => m.color);
 
-  const canvas = ctx1; canvas.width = canvas.offsetWidth || 600; canvas.height = 200;
+  const canvas = ctx1;
+  const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 0;
+  if (!width) {
+    // Si el layout aun no esta medido, reintentar en el siguiente frame.
+    requestAnimationFrame(() => renderStats());
+    return;
+  }
+  canvas.width = Math.max(240, width);
+  canvas.height = 200;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const pad = { left:10, right:10, top:20, bottom:40 };

@@ -1,7 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
-// POM-MINI.JS — Abre automáticamente el PiP popup cuando el
-// usuario navega fuera del pomodoro y el timer está corriendo.
-// ═══════════════════════════════════════════════════════════════
+// Opens PiP automatically when leaving Pomodoro while running.
 (function () {
   'use strict';
 
@@ -15,20 +12,17 @@
     if (typeof enterFloatingMode === 'function') enterFloatingMode();
   }
 
-  // ── Hook en goPage ───────────────────────────────────────────
+  let _isHookRegistered = false;
   function _hookGoPage() {
-    if (typeof goPage !== 'function') return false;
-    if (goPage._pmfHooked) return true;
-
-    const _orig = goPage;
-    window.goPage = function (id, el) {
-      _orig.call(this, id, el);
+    if (_isHookRegistered) return true;
+    if (typeof onGoPage !== 'function') return false;
+    onGoPage((id) => {
       if (id !== 'pomodoro' && _pomIsRunning()) {
-        // Pequeño delay para que el render de la nueva página termine
+        // Small delay so the destination page finishes rendering first.
         setTimeout(_openPip, 120);
       }
-    };
-    window.goPage._pmfHooked = true;
+    });
+    _isHookRegistered = true;
     return true;
   }
 
@@ -40,7 +34,7 @@
     }
   });
 
-  // ── Intentar hook (puede no estar disponible aún) ────────────
+  // Retry until navigation hook API becomes available.
   function _tryHooks() {
     if (!_hookGoPage()) setTimeout(_tryHooks, 300);
   }

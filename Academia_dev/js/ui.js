@@ -1,4 +1,15 @@
 
+const _goPageHooks = [];
+
+function onGoPage(fn) {
+  if (typeof fn !== 'function') return () => {};
+  _goPageHooks.push(fn);
+  return () => {
+    const idx = _goPageHooks.indexOf(fn);
+    if (idx >= 0) _goPageHooks.splice(idx, 1);
+  };
+}
+
 function goPage(id, el) {
   _uiClick('nav');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -26,6 +37,12 @@ function goPage(id, el) {
     case 'general':        renderGeneralHub(); break;
     case 'flashcards':     renderFlashcards(); break;
   }
+
+  // Post-navigation hooks for modules that need page-change side effects.
+  _goPageHooks.forEach(fn => {
+    try { fn(id, el, pageEl); }
+    catch (err) { console.warn('goPage hook error', err); }
+  });
 }
 
 function fillMatSels() {

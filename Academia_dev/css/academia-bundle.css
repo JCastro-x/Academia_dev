@@ -1,0 +1,2038 @@
+﻿/* Academia visual styles bundle. */
+/* Consolidates legacy patch and animation supplement files while preserving cascade order. */
+
+/* Academia bundle: patch + patch2 + v3 + anim-fix */
+
+
+/* ===== Source: academia-patch.css ===== */
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ACADEMIA â€” Animations PATCH v5.2
+
+   Corrige: notas overflow, pomodoro vida, todos los inputs/ranges
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  FIX 1 â€” NOTAS HUB: sin scale, sin overflow                â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   El grid no tiene overflow:hidden, entonces scale sale del borde.
+   Se usa translateY y sombra profunda para evitar desbordes. */
+
+#notes-hub-grid {
+  /* Espacio para que el shadow no se corte */
+  padding: 6px 4px 14px;
+}
+
+#notes-hub-grid .card {
+  transform: none !important;
+  transition:
+    border-color  .32s ease,
+    box-shadow    .38s cubic-bezier(.25,.8,.25,1),
+    background    .28s ease !important;
+  will-change: box-shadow, border-color;
+  /* Eliminar cualquier scale heredado */
+  animation-name: notesCardIn !important;
+}
+
+#notes-hub-grid .card:hover {
+  transform: translateY(-7px) !important;   /* solo sube, no se ensancha */
+  box-shadow:
+    0 20px 52px rgba(0,0,0,.50),
+    0 0 0 1px rgba(124,106,255,.40),
+    0 0 28px rgba(124,106,255,.18) !important;
+  border-color: rgba(124,106,255,.50) !important;
+  background: var(--surface2) !important;
+}
+
+#notes-hub-grid .card:active {
+  transform: translateY(-2px) !important;
+  transition-duration: .12s !important;
+}
+
+/* Override anterior que aÃ±adÃ­a scale */
+#notes-hub-grid .card::before {
+  background: linear-gradient(135deg, rgba(124,106,255,.10), transparent 55%);
+}
+
+/* Entrada con stagger igual que flashcards */
+@keyframes notesCardIn {
+  0%   { opacity:0; transform:translateY(18px) scale(.96); }
+  60%  { opacity:1; transform:translateY(-3px) scale(1); }
+  80%  { transform:translateY(1px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+
+.page.active #notes-hub-grid .card {
+  animation: notesCardIn .44s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+.page.active #notes-hub-grid .card:nth-child(1) { animation-delay:.04s !important; }
+.page.active #notes-hub-grid .card:nth-child(2) { animation-delay:.09s !important; }
+.page.active #notes-hub-grid .card:nth-child(3) { animation-delay:.14s !important; }
+.page.active #notes-hub-grid .card:nth-child(4) { animation-delay:.19s !important; }
+.page.active #notes-hub-grid .card:nth-child(n+5){ animation-delay:.23s !important; }
+
+/* Mismo fix para el folder grid (notas dentro de carpeta) */
+#notes-folder-grid {
+  padding: 6px 4px 14px;
+}
+#notes-folder-grid .card {
+  transition:
+    border-color  .32s ease,
+    box-shadow    .38s cubic-bezier(.25,.8,.25,1),
+    background    .28s ease !important;
+}
+#notes-folder-grid .card:hover {
+  transform: translateY(-7px) !important;
+  box-shadow:
+    0 18px 48px rgba(0,0,0,.48),
+    0 0 0 1px rgba(124,106,255,.38),
+    0 0 22px rgba(124,106,255,.14) !important;
+  border-color: rgba(124,106,255,.45) !important;
+}
+#notes-folder-grid .card:active {
+  transform: translateY(-2px) !important;
+  transition-duration: .12s !important;
+}
+
+.page.active #notes-folder-grid .card {
+  animation: notesCardIn .42s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+.page.active #notes-folder-grid .card:nth-child(1) { animation-delay:.04s !important; }
+.page.active #notes-folder-grid .card:nth-child(2) { animation-delay:.09s !important; }
+.page.active #notes-folder-grid .card:nth-child(3) { animation-delay:.14s !important; }
+.page.active #notes-folder-grid .card:nth-child(n+4){ animation-delay:.18s !important; }
+
+/* LÃ­nea de acento top â€” solo opacity, sin scale  */
+#notes-folder-grid .card::before { pointer-events:none; }
+#notes-folder-grid .card:hover::before { opacity:1; }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  FIX 2 â€” NOTAS: Ã­cono de carpeta solo en hub (sin scale)   â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+#notes-hub-grid .card:hover .notes-folder-icon,
+#notes-hub-grid .card:hover [style*="font-size:24px"],
+#notes-hub-grid .card:hover [style*="font-size:28px"],
+#notes-hub-grid .card:hover [style*="font-size:32px"] {
+  transform: scale(1.22) rotate(-6deg) translateY(-2px);
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  POMODORO â€” Vida al temporizador y sus elementos            â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* === Anillo del pomodoro === */
+@keyframes pomRingIdle {
+  0%,100% { filter: drop-shadow(0 0 3px rgba(124,106,255,.25)); }
+  50%      { filter: drop-shadow(0 0 14px rgba(124,106,255,.55)); }
+}
+@keyframes pomRingActive {
+  0%,100% { filter: drop-shadow(0 0 6px rgba(124,106,255,.5)); }
+  50%      { filter: drop-shadow(0 0 24px rgba(124,106,255,.85)); }
+}
+@keyframes pomTimePulse {
+  0%,100% { transform:scale(1); }
+  50%      { transform:scale(1.03); }
+}
+@keyframes chronoTick {
+  0%   { opacity:1; }
+  45%  { opacity:.72; }
+  55%  { opacity:.72; }
+  100% { opacity:1; }
+}
+@keyframes streakFlame {
+  0%,100% { transform:scale(1) rotate(-2deg); filter:brightness(1); }
+  50%      { transform:scale(1.12) rotate(3deg); filter:brightness(1.3) drop-shadow(0 0 6px rgba(251,146,60,.6)); }
+}
+@keyframes pomBarPulse {
+  0%,100% { opacity:1; }
+  50%      { opacity:.7; }
+}
+@keyframes histItemIn {
+  from { opacity:0; transform:translateX(-14px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes weekBarGrow {
+  from { transform:scaleY(0); transform-origin:bottom; opacity:0; }
+  to   { transform:scaleY(1); transform-origin:bottom; opacity:1; }
+}
+@keyframes dotPop {
+  0%   { transform:scale(1); }
+  40%  { transform:scale(1.45); }
+  70%  { transform:scale(.88); }
+  100% { transform:scale(1); }
+}
+@keyframes modeFlash {
+  0%   { opacity:1; transform:scale(1); }
+  25%  { opacity:0; transform:scale(.9); }
+  60%  { opacity:1; transform:scale(1.08); }
+  100% { opacity:1; transform:scale(1); }
+}
+
+/* Anillo idle â€” pulso suave */
+.pom-ring { animation: pomRingIdle 3.5s ease-in-out infinite; }
+.pom-ring:hover { transform:scale(1.04); animation: pomRingActive 1.8s ease-in-out infinite; }
+
+/* Cuando corre â€” modo activo aplicado por JS con clase .running */
+.pom-ring.running { animation: pomRingActive 2s ease-in-out infinite; }
+.pom-ring.running .pom-prog {
+  filter: drop-shadow(0 0 8px rgba(124,106,255,.7));
+  transition: stroke-dashoffset .5s ease;
+}
+
+/* Timer display â€” pulso mientras corre */
+#pom-time {
+  transition: color .4s ease, transform .3s ease;
+}
+.pom-ring.running ~ .pom-center #pom-time,
+#page-pomodoro.pom-running #pom-time {
+  animation: pomTimePulse 1s ease-in-out infinite;
+}
+
+/* Mode badge â€” flash al cambiar */
+#pom-mode {
+  transition: color .4s ease, opacity .3s ease;
+}
+.pom-mode-change #pom-mode { animation: modeFlash .5s ease both; }
+
+/* CronÃ³metro grande â€” tick visual */
+#chrono-work {
+  transition: color .3s ease, text-shadow .3s ease;
+}
+#page-pomodoro.pom-running #chrono-work {
+  animation: chronoTick 1s step-start infinite;
+  text-shadow: 0 0 18px rgba(74,222,128,.45);
+}
+
+/* Bloque cronÃ³metro â€” hover glow */
+#chrono-work-block {
+  transition: border-color .32s ease, box-shadow .32s ease, background .32s ease !important;
+}
+#chrono-work-block:hover {
+  border-color: rgba(74,222,128,.55) !important;
+  box-shadow: 0 0 20px rgba(74,222,128,.2) !important;
+}
+#chrono-break-block {
+  transition: border-color .32s ease, box-shadow .32s ease !important;
+}
+#chrono-break-block:hover {
+  border-color: rgba(96,165,250,.5) !important;
+  box-shadow: 0 0 16px rgba(96,165,250,.18) !important;
+}
+#chrono-total-block {
+  transition: border-color .32s ease, box-shadow .32s ease !important;
+}
+#chrono-total-block:hover {
+  border-color: rgba(124,106,255,.5) !important;
+  box-shadow: 0 0 16px rgba(124,106,255,.18) !important;
+}
+
+/* Dots del pomodoro â€” pop cuando se completa uno */
+#pom-dots > * {
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1), background .3s ease;
+}
+#pom-dots > *.completed { animation: dotPop .4s cubic-bezier(.34,1.56,.64,1); }
+
+/* BotÃ³n iniciar pomodoro */
+#pom-btn {
+  min-width: 120px;
+  transition: background .22s ease, transform .34s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .32s ease !important;
+}
+#pom-btn:hover:not(:disabled) {
+  transform: scale(1.08) translateY(-2px) !important;
+  box-shadow: 0 10px 30px rgba(124,106,255,.5) !important;
+}
+#pom-btn:active { transform: scale(.95) !important; transition-duration:.1s !important; }
+
+/* Popup / Focus buttons â€” override de inline styles */
+#pom-mini-toggle-btn,
+#page-pomodoro .card-header > button[onclick*="Focus"],
+#page-pomodoro .card-header > button[onclick*="enterFocus"] {
+  transition: background .24s ease, border-color .24s ease, color .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+#pom-mini-toggle-btn:hover,
+#page-pomodoro .card-header > button[onclick*="Focus"]:hover,
+#page-pomodoro .card-header > button[onclick*="enterFocus"]:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 6px 18px rgba(124,106,255,.35) !important;
+}
+
+/* Racha de estudio â€” stat blocks */
+#page-pomodoro [id*="pom-stat-streak"],
+#page-pomodoro [id*="pom-stat-week"] {
+  transition: transform .32s cubic-bezier(.34,1.56,.64,1), text-shadow .32s ease;
+}
+/* Llama de racha â€” animaciÃ³n continua */
+#pom-stat-streak { animation: streakFlame 2.4s ease-in-out infinite; display:inline-block; }
+
+/* Stat mini cards del pomodoro (SESIONES HOY / MIN HOY) */
+#page-pomodoro .card[style*="text-align:center"] {
+  transition: transform .32s cubic-bezier(.25,.8,.25,1), box-shadow .32s ease !important;
+}
+#page-pomodoro .card[style*="text-align:center"]:hover {
+  transform: translateY(-5px) scale(1.04) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.36) !important;
+}
+
+/* Stat blocks de racha â€” hover */
+#page-pomodoro [id^="chrono-"][id$="-block"],
+#page-pomodoro > div > div > div[style*="background:var(--surface2)"][style*="border-radius:10px"] {
+  transition: transform .28s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+#page-pomodoro div[style*="background:var(--surface2)"][style*="border-radius:10px"]:hover {
+  transform: translateY(-3px) scale(1.04) !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.3) !important;
+}
+
+/* Barra de progreso de meta â€” shimmer cuando estÃ¡ activa */
+#pom-goal-bar {
+  position: relative; overflow: hidden;
+  transition: width .55s cubic-bezier(.4,0,.2,1) !important;
+}
+#pom-goal-bar::after {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  background-size:200% 100%;
+  animation:progShimmer 2s ease-in-out infinite;
+}
+@keyframes progShimmer {
+  0%  {background-position:-200% 0}
+  100%{background-position:200% 0}
+}
+
+/* Barras de actividad semanal â€” entran creciendo */
+#pom-week-bars > * {
+  transition: height .4s cubic-bezier(.4,0,.2,1), background .28s ease,
+    transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
+  cursor: default;
+}
+#pom-week-bars > *:hover {
+  transform: scaleX(1.25) !important;
+  box-shadow: 0 0 10px rgba(124,106,255,.45) !important;
+  background: var(--accent2) !important;
+}
+.page.active #pom-week-bars > * {
+  animation: weekBarGrow .5s cubic-bezier(.22,.68,0,1.1) both;
+}
+.page.active #pom-week-bars > *:nth-child(1){ animation-delay:.08s; }
+.page.active #pom-week-bars > *:nth-child(2){ animation-delay:.12s; }
+.page.active #pom-week-bars > *:nth-child(3){ animation-delay:.16s; }
+.page.active #pom-week-bars > *:nth-child(4){ animation-delay:.20s; }
+.page.active #pom-week-bars > *:nth-child(5){ animation-delay:.24s; }
+.page.active #pom-week-bars > *:nth-child(6){ animation-delay:.28s; }
+.page.active #pom-week-bars > *:nth-child(7){ animation-delay:.32s; }
+
+/* Historial de sesiones â€” cada Ã­tem entra deslizando */
+#pom-history > * {
+  animation: histItemIn .35s ease both;
+  transition: background .22s ease, padding-left .26s cubic-bezier(.25,.8,.25,1) !important;
+}
+#pom-history > *:hover {
+  background: var(--surface2) !important;
+  padding-left: 18px !important;
+}
+#pom-history > *:nth-child(1){ animation-delay:.05s; }
+#pom-history > *:nth-child(2){ animation-delay:.09s; }
+#pom-history > *:nth-child(3){ animation-delay:.13s; }
+#pom-history > *:nth-child(n+4){ animation-delay:.16s; }
+
+/* Ambient sonoro â€” botones de ruido */
+#page-pomodoro [id*="noise-"] {
+  transition: border-color .24s ease, color .24s ease, background .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .26s ease !important;
+}
+#page-pomodoro [id*="noise-"]:hover {
+  transform: translateY(-2px) scale(1.04) !important;
+  box-shadow: 0 5px 16px rgba(124,106,255,.3) !important;
+}
+#page-pomodoro [id*="noise-"].playing {
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 18px rgba(124,106,255,.4) !important;
+}
+
+/* Badge cronÃ³metro */
+#chrono-mode-badge {
+  transition: background .28s ease, color .28s ease, transform .28s cubic-bezier(.34,1.56,.64,1);
+}
+#chrono-mode-badge:hover { transform: scale(1.1); }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  TODOS LOS RANGE SLIDERS                                    â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+input[type="range"] {
+  cursor: pointer;
+  transition: accent-color .24s ease, opacity .22s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="range"]:hover { opacity: .9; }
+input[type="range"]:focus { outline: none; }
+input[type="range"]:active { opacity: 1; }
+
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border2);
+  transition: background .24s ease;
+}
+input[type="range"]:hover::-webkit-slider-runnable-track { background: var(--border); }
+
+/* Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(124,106,255,.25), 0 2px 6px rgba(0,0,0,.35);
+  margin-top: -5.5px;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .22s ease;
+}
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.22);
+  box-shadow: 0 0 0 4px rgba(124,106,255,.25), 0 3px 10px rgba(0,0,0,.4);
+}
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 6px rgba(124,106,255,.2), 0 3px 10px rgba(0,0,0,.4);
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%; border: none;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(124,106,255,.25), 0 2px 6px rgba(0,0,0,.35);
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
+}
+input[type="range"]:hover::-moz-range-thumb { transform: scale(1.22); }
+input[type="range"]::-moz-range-track { height:5px; border-radius:3px; background:var(--border2); }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  TODOS LOS SELECTS / DESPLEGABLES                          â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Select abierto â€” highlight de opciones */
+select option { transition: background .15s ease; }
+select option:checked { background: var(--accent-glow) !important; color: var(--accent2) !important; }
+
+/* Focus glow en todos los selects */
+select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.18), 0 2px 12px rgba(124,106,255,.12) !important;
+  outline: none;
+}
+
+/* Select con chevron animado */
+select {
+  position: relative;
+  cursor: pointer;
+  transition: border-color .24s ease, box-shadow .28s ease,
+    background .24s ease, transform .26s cubic-bezier(.25,.8,.25,1) !important;
+}
+select:hover:not(:focus) {
+  border-color: var(--accent2) !important;
+  transform: translateY(-1px);
+}
+select:active { transform: none !important; transition-duration:.1s !important; }
+
+/* Grade-input (number inputs pequeÃ±os del pomodoro/calificaciones) */
+.grade-input {
+  transition: border-color .24s ease, box-shadow .28s ease,
+    transform .28s cubic-bezier(.25,.8,.25,1), background .22s ease !important;
+  text-align: center;
+}
+.grade-input:hover:not(:focus) { border-color: var(--accent2) !important; background: var(--surface3) !important; }
+.grade-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.2), 0 3px 12px rgba(124,106,255,.15) !important;
+  transform: scale(1.07) !important;
+  background: var(--surface3) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  TODOS LOS TEXTAREAS                                        â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+textarea {
+  transition: border-color .24s ease, box-shadow .28s ease,
+    background .24s ease !important;
+  resize: vertical;
+}
+textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.16), 0 4px 18px rgba(124,106,255,.10) !important;
+  background: var(--surface3) !important;
+}
+textarea:hover:not(:focus) { border-color: var(--border2) !important; background: var(--surface2) !important; }
+
+/* Textarea de notas (richtext) */
+.notes-richtext-editor:focus { outline: none !important; }
+.notes-main-textarea:focus   { outline: none !important; }
+
+/* FC textareas (pregunta/respuesta) */
+.fc-input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.18), 0 3px 14px rgba(124,106,255,.12) !important;
+  background: var(--surface3) !important;
+}
+.fc-input:hover:not(:focus) { border-color: var(--border2) !important; }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  LABELS Y FORM-LABELS â€” micro hover                        â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.form-label, .fc-label, label {
+  transition: color .22s ease;
+}
+.form-group:hover .form-label,
+.form-group:focus-within .form-label {
+  color: var(--accent2);
+}
+.form-group:focus-within .form-label {
+  color: var(--accent) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  CHECKBOXES PERSONALIZADOS                                  â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+input[type="checkbox"] {
+  width: 15px; height: 15px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  transition: transform .24s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .22s ease, accent-color .22s ease;
+}
+input[type="checkbox"]:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 3px rgba(124,106,255,.16);
+}
+input[type="checkbox"]:checked {
+  animation: checkBounce .32s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes checkBounce {
+  0%  {transform:scale(1)}
+  38% {transform:scale(1.38)}
+  68% {transform:scale(.86)}
+  84% {transform:scale(1.08)}
+  100%{transform:scale(1)}
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  INPUTS DE BÃšSQUEDA Y TÃTULO (notas, tareasâ€¦)              â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+#notes-title-inp {
+  transition: color .22s ease, border-bottom .24s ease !important;
+  border-bottom: 2px solid transparent !important;
+}
+#notes-title-inp:focus {
+  border-bottom: 2px solid var(--accent) !important;
+  outline: none !important;
+}
+
+/* Tags input (notas y flashcards) */
+#notes-tags-inp, #fc-tags {
+  transition: border-color .24s ease, background .22s ease, box-shadow .26s ease !important;
+}
+#notes-tags-inp:focus, #fc-tags:focus {
+  border-color: var(--accent) !important;
+  background: var(--surface2) !important;
+  box-shadow: 0 0 0 2px rgba(124,106,255,.14) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  CARD HEADER â€” tÃ­tulo y acciones                           â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.card-title {
+  transition: color .24s ease;
+}
+.card:hover .card-title { color: var(--text); }
+
+/* Card header botones pequeÃ±os */
+.card-header .btn-ghost.btn-sm {
+  transition: background .22s ease, color .22s ease,
+    transform .28s cubic-bezier(.25,.8,.25,1) !important;
+}
+.card-header .btn-ghost.btn-sm:hover {
+  background: var(--surface3) !important;
+  transform: translateY(-1px) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  PERFIL â€” section cards de personalizaciÃ³n                 â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.card .form-select {
+  transition: border-color .24s ease, box-shadow .28s ease,
+    background .22s ease, transform .26s cubic-bezier(.25,.8,.25,1) !important;
+}
+.card .form-select:hover:not(:focus) {
+  border-color: var(--accent2) !important;
+  transform: translateY(-1px);
+}
+
+/* Botones de tema claro/oscuro en perfil */
+#page-perfil .btn-ghost {
+  transition: background .24s ease, color .24s ease, border-color .24s ease,
+    transform .30s cubic-bezier(.25,.8,.25,1), box-shadow .26s ease !important;
+}
+#page-perfil .btn-ghost:hover {
+  transform: translateY(-3px) scale(1.05) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.28) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent2) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  SCAN PROGRESS BAR (notas scanner modal)                   â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+#scanner-progress-bar {
+  position: relative; overflow: hidden;
+  transition: width .35s cubic-bezier(.4,0,.2,1) !important;
+}
+#scanner-progress-bar::after {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);
+  background-size:200% 100%;
+  animation:progShimmer 1.6s ease-in-out infinite;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  TOPBAR SEARCH INPUT                                       â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.topbar input[type="text"],
+.topbar .search-input-bar {
+  transition: border-color .24s ease, box-shadow .28s ease,
+    width .34s cubic-bezier(.25,.8,.25,1), background .22s ease !important;
+}
+.topbar input[type="text"]:focus,
+.topbar .search-input-bar:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(124,106,255,.16) !important;
+  background: var(--surface2) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  MOBILE â€” desactivar lo que causa problemas                â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+@media (max-width: 768px) {
+  /* Notas â€” sin translateY en mÃ³vil */
+  #notes-hub-grid .card:hover,
+  #notes-folder-grid .card:hover {
+    transform: none !important;
+  }
+  /* Pomodoro stat blocks */
+  #page-pomodoro .card[style*="text-align:center"]:hover { transform:none !important; }
+  #page-pomodoro div[style*="background:var(--surface2)"][style*="border-radius:10px"]:hover { transform:none !important; }
+  /* Grade inputs */
+  .grade-input:focus { transform: none !important; }
+  /* Selects */
+  select:hover:not(:focus) { transform: none; }
+  /* Checkboxes */
+  input[type="checkbox"]:hover { transform: none; box-shadow: none; }
+  /* Pom btn */
+  #pom-btn:hover:not(:disabled) { transform: none !important; }
+  /* Pom mini/focus btn */
+  #pom-mini-toggle-btn:hover { transform: none !important; }
+}
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  REDUCCIÃ“N DE MOVIMIENTO                                   â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+@media (prefers-reduced-motion: reduce) {
+  .pom-ring, #pom-stat-streak,
+  #pom-week-bars > *,
+  #notes-hub-grid .card,
+  #notes-folder-grid .card {
+    animation: none !important;
+  }
+}
+
+/* ===== Source: academia-patch2.css ===== */
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ACADEMIA â€” Patch v5.3
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  FIX â€” DAY STRIP: sin scale, sin overflow                  â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Contenedor que lleva el overflow */
+#ov-day-strip {
+  overflow: visible !important;   /* liberamos para que el shadow no se corte */
+  padding: 6px 2px 12px;          /* espacio para el shadow */
+}
+
+/* Chip base â€” sin scale en ningÃºn estado */
+#ov-day-strip > div,
+.day-chip {
+  transition:
+    background     .28s ease,
+    border-color   .28s ease,
+    box-shadow     .34s cubic-bezier(.25,.8,.25,1),
+    transform      .34s cubic-bezier(.25,.8,.25,1) !important;
+  will-change: transform, box-shadow;
+}
+
+/* Hover: solo sube + shadow â€” NUNCA scale */
+#ov-day-strip > div:hover,
+.day-chip:hover {
+  transform: translateY(-6px) !important;
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.45),
+    0 0 0 1px rgba(124,106,255,.35) !important;
+  border-color: rgba(124,106,255,.42) !important;
+  background: var(--surface3) !important;
+}
+
+#ov-day-strip > div:active,
+.day-chip:active {
+  transform: translateY(-1px) !important;
+  transition-duration: .10s !important;
+}
+
+/* Chip "hoy" â€” pulso constante, solo shadow sin scale */
+#ov-day-strip > div.today,
+.day-chip.today {
+  animation: dayChipToday 3s ease-in-out infinite !important;
+}
+@keyframes dayChipToday {
+  0%,100% { box-shadow: 0 0 0 1px rgba(124,106,255,.4), 0 4px 16px rgba(124,106,255,.25); }
+  50%      { box-shadow: 0 0 0 2px rgba(124,106,255,.6), 0 4px 24px rgba(124,106,255,.42); }
+}
+
+/* Chip "hoy" hover â€” acumula con el pulso */
+#ov-day-strip > div.today:hover,
+.day-chip.today:hover {
+  transform: translateY(-6px) !important;
+  box-shadow:
+    0 0 0 2px rgba(124,106,255,.6),
+    0 16px 36px rgba(124,106,255,.35) !important;
+  animation: none !important;  /* detener el loop para que no haya conflicto */
+}
+
+/* NÃºmero del dÃ­a dentro del chip â€” transiciÃ³n de color */
+#ov-day-strip > div [style*="font-weight"],
+.day-chip [style*="font-weight"] {
+  transition: color .26s ease;
+}
+#ov-day-strip > div:hover [style*="font-weight"],
+.day-chip:hover [style*="font-weight"] {
+  color: var(--accent2);
+}
+
+/* Badge de evento dentro del chip (bola de color) */
+#ov-day-strip > div [style*="border-radius:50%"],
+.day-chip [style*="border-radius:50%"] {
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
+}
+#ov-day-strip > div:hover [style*="border-radius:50%"],
+.day-chip:hover [style*="border-radius:50%"] {
+  transform: scale(1.38);
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Badge numÃ©rico (nÃºmero de eventos) */
+#ov-day-strip > div [style*="background:var(--accent)"],
+.day-chip [style*="background:var(--accent)"] {
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .28s ease;
+}
+#ov-day-strip > div:hover [style*="background:var(--accent)"],
+.day-chip:hover [style*="background:var(--accent)"] {
+  transform: scale(1.15);
+  box-shadow: 0 0 12px rgba(124,106,255,.5);
+}
+
+/* Entrada de los chips al cargar el overview */
+@keyframes dayChipIn {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.page.active #ov-day-strip > div:nth-child(1) { animation: dayChipIn .36s ease .05s both; }
+.page.active #ov-day-strip > div:nth-child(2) { animation: dayChipIn .36s ease .09s both; }
+.page.active #ov-day-strip > div:nth-child(3) { animation: dayChipIn .36s ease .13s both; }
+.page.active #ov-day-strip > div:nth-child(4) { animation: dayChipIn .36s ease .17s both; }
+.page.active #ov-day-strip > div:nth-child(5) { animation: dayChipIn .36s ease .21s both; }
+.page.active #ov-day-strip > div:nth-child(6) { animation: dayChipIn .36s ease .25s both; }
+.page.active #ov-day-strip > div:nth-child(7) { animation: dayChipIn .36s ease .29s both; }
+
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  FLASHCARDS â€” lista individual en cascada                  â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+@keyframes fcCardCascade {
+  0%   { opacity:0; transform:translateY(20px) scale(.95); }
+  58%  { opacity:1; transform:translateY(-3px) scale(1.005); }
+  78%  { transform:translateY(1px) scale(1); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+
+#fc-list .fc-list-item {
+  animation: fcCardCascade .44s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+#fc-list .fc-list-item:nth-child(1)  { animation-delay:.03s !important; }
+#fc-list .fc-list-item:nth-child(2)  { animation-delay:.07s !important; }
+#fc-list .fc-list-item:nth-child(3)  { animation-delay:.11s !important; }
+#fc-list .fc-list-item:nth-child(4)  { animation-delay:.15s !important; }
+#fc-list .fc-list-item:nth-child(5)  { animation-delay:.18s !important; }
+#fc-list .fc-list-item:nth-child(6)  { animation-delay:.21s !important; }
+#fc-list .fc-list-item:nth-child(7)  { animation-delay:.24s !important; }
+#fc-list .fc-list-item:nth-child(8)  { animation-delay:.27s !important; }
+#fc-list .fc-list-item:nth-child(n+9){ animation-delay:.30s !important; }
+
+/* Respuesta â€” aparece con fade al hover de la tarjeta */
+.fc-item-answer {
+  transition: opacity .30s ease, max-height .34s cubic-bezier(.25,.8,.25,1);
+  opacity: .7;
+}
+.fc-list-item:hover .fc-item-answer { opacity: 1; }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  NOTAS â€” cards individuales en cascada (folder grid)       â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+@keyframes noteCardCascade {
+  0%   { opacity:0; transform:translateX(-18px) translateY(8px); }
+  55%  { opacity:1; transform:translateX(2px) translateY(-1px); }
+  78%  { transform:translateX(-1px) translateY(0); }
+  100% { opacity:1; transform:translateX(0) translateY(0); }
+}
+
+#notes-folder-grid .card {
+  animation: noteCardCascade .42s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+#notes-folder-grid .card:nth-child(1)  { animation-delay:.03s !important; }
+#notes-folder-grid .card:nth-child(2)  { animation-delay:.08s !important; }
+#notes-folder-grid .card:nth-child(3)  { animation-delay:.13s !important; }
+#notes-folder-grid .card:nth-child(4)  { animation-delay:.17s !important; }
+#notes-folder-grid .card:nth-child(5)  { animation-delay:.21s !important; }
+#notes-folder-grid .card:nth-child(6)  { animation-delay:.24s !important; }
+#notes-folder-grid .card:nth-child(n+7){ animation-delay:.27s !important; }
+
+/* Hub de carpetas â€” cascada diferente (sube desde abajo) */
+@keyframes noteHubCascade {
+  0%   { opacity:0; transform:translateY(22px) scale(.96); }
+  58%  { opacity:1; transform:translateY(-3px) scale(1); }
+  78%  { transform:translateY(1px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+
+#notes-hub-grid .card {
+  animation: noteHubCascade .44s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+#notes-hub-grid .card:nth-child(1)  { animation-delay:.04s !important; }
+#notes-hub-grid .card:nth-child(2)  { animation-delay:.09s !important; }
+#notes-hub-grid .card:nth-child(3)  { animation-delay:.14s !important; }
+#notes-hub-grid .card:nth-child(4)  { animation-delay:.19s !important; }
+#notes-hub-grid .card:nth-child(n+5){ animation-delay:.23s !important; }
+
+/* Sidebar list items de notas â€” cascada vertical */
+@keyframes noteSidebarIn {
+  from { opacity:0; transform:translateX(-12px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+.notes-list-item:nth-child(1)  { animation: noteSidebarIn .30s ease .03s both; }
+.notes-list-item:nth-child(2)  { animation: noteSidebarIn .30s ease .07s both; }
+.notes-list-item:nth-child(3)  { animation: noteSidebarIn .30s ease .11s both; }
+.notes-list-item:nth-child(4)  { animation: noteSidebarIn .30s ease .14s both; }
+.notes-list-item:nth-child(5)  { animation: noteSidebarIn .30s ease .17s both; }
+.notes-list-item:nth-child(n+6){ animation: noteSidebarIn .30s ease .20s both; }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  MOBILE â€” limpiar overrides de escala                      â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+@media (max-width: 768px) {
+  #ov-day-strip { padding: 4px 2px 10px; }
+  #ov-day-strip > div:hover, .day-chip:hover { transform: none !important; }
+
+  #fc-list .fc-list-item { animation-duration: .32s !important; }
+  #notes-folder-grid .card { animation-duration: .32s !important; }
+  #notes-hub-grid .card    { animation-duration: .34s !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ov-day-strip > div, .day-chip,
+  #fc-list .fc-list-item,
+  #notes-folder-grid .card, #notes-hub-grid .card,
+  .notes-list-item { animation: none !important; }
+}
+
+/* ===== Source: academia-animations-v3.css ===== */
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ACADEMIA â€” Animations v3  âœ¨  Supplemental
+   Cubre TODO lo que v1+v2+patch2 dejaron sin animaciÃ³n:
+   tareas, calendario, calificaciones detalle, temas, horario,
+   pomodoro historial, perfil cursos, overview plan del dÃ­a, etc.
+
+
+   FILOSOFÃA: Igual que v5.1 â€” suave, no exagerado.
+   Las entradas son rÃ¡pidas (â‰¤ 0.44s) para no cansar al usuario.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  KEYFRAMES NUEVOS                                           â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Desliza desde la izquierda con rebote ligero â€” ideal para filas */
+@keyframes slideInRow {
+  0%   { opacity:0; transform:translateX(-18px); }
+  55%  { opacity:1; transform:translateX(2px); }
+  80%  { transform:translateX(-1px); }
+  100% { opacity:1; transform:translateX(0); }
+}
+
+/* Sube desde abajo con spring â€” ideal para elementos en lista */
+@keyframes riseUp {
+  0%   { opacity:0; transform:translateY(14px) scale(.97); }
+  55%  { opacity:1; transform:translateY(-2px) scale(1.005); }
+  78%  { transform:translateY(1px) scale(1); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* Pop sutil â€” ideal para celdas pequeÃ±as de calendario */
+@keyframes cellPop {
+  0%   { opacity:0; transform:scale(.82); }
+  60%  { opacity:1; transform:scale(1.04); }
+  82%  { transform:scale(.98); }
+  100% { opacity:1; transform:scale(1); }
+}
+
+/* Entrada barra vertical â€” para las barras de actividad semanal */
+@keyframes barGrowUp {
+  from { transform:scaleY(0); transform-origin:bottom; opacity:0; }
+  to   { transform:scaleY(1); transform-origin:bottom; opacity:1; }
+}
+
+/* Entrada barra horizontal â€” planner timeline */
+@keyframes barGrowRight {
+  from { transform:scaleX(0); transform-origin:left; opacity:0; }
+  to   { transform:scaleX(1); transform-origin:left; opacity:1; }
+}
+
+/* NÃºmero que "revela" con un micro-bounce */
+@keyframes numberReveal {
+  0%   { opacity:0; transform:translateY(8px) scale(.85); }
+  62%  { opacity:1; transform:translateY(-2px) scale(1.06); }
+  82%  { transform:translateY(1px) scale(.99); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* Fade con leve desplazamiento derecho â€” para items de historial */
+@keyframes historyItemIn {
+  from { opacity:0; transform:translateX(14px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+/* Acuerdo / collapsible height reveal */
+@keyframes revealDown {
+  from { opacity:0; transform:translateY(-8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* PulsaciÃ³n continua de un nÃºmero "en vivo" (badge pendientes) */
+@keyframes liveNumberPulse {
+  0%,100% { opacity:1; }
+  50%     { opacity:.55; }
+}
+
+/* Spin de â†» para botÃ³n de reagendar */
+@keyframes spinOnce {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(360deg); }
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  1. TAREAS â€” cascade de entrada (la mÃ¡s pedida)            â•‘
+   â•‘  Aplica tanto en #tasks-list (pÃ¡gina Tareas)               â•‘
+   â•‘  como en #ov-tasks-list (Overview)                         â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+#tasks-list .task-item,
+#ov-tasks-list .task-item {
+  animation: slideInRow .38s cubic-bezier(.22,.68,0,1.1) both;
+}
+
+/* Stagger: cada tarea entra 55ms despuÃ©s que la anterior */
+#tasks-list .task-item:nth-child(1),
+#ov-tasks-list .task-item:nth-child(1)   { animation-delay:.03s; }
+
+#tasks-list .task-item:nth-child(2),
+#ov-tasks-list .task-item:nth-child(2)   { animation-delay:.08s; }
+
+#tasks-list .task-item:nth-child(3),
+#ov-tasks-list .task-item:nth-child(3)   { animation-delay:.13s; }
+
+#tasks-list .task-item:nth-child(4),
+#ov-tasks-list .task-item:nth-child(4)   { animation-delay:.18s; }
+
+#tasks-list .task-item:nth-child(5),
+#ov-tasks-list .task-item:nth-child(5)   { animation-delay:.22s; }
+
+#tasks-list .task-item:nth-child(6),
+#ov-tasks-list .task-item:nth-child(6)   { animation-delay:.26s; }
+
+#tasks-list .task-item:nth-child(7),
+#ov-tasks-list .task-item:nth-child(7)   { animation-delay:.29s; }
+
+#tasks-list .task-item:nth-child(8),
+#ov-tasks-list .task-item:nth-child(8)   { animation-delay:.32s; }
+
+#tasks-list .task-item:nth-child(n+9),
+#ov-tasks-list .task-item:nth-child(n+9) { animation-delay:.35s; }
+
+/* Subtareas â€” misma lÃ³gica pero mÃ¡s discreto */
+.task-subtasks .task-item {
+  animation: slideInRow .30s cubic-bezier(.22,.68,0,1.1) both;
+}
+.task-subtasks .task-item:nth-child(1)   { animation-delay:.04s; }
+.task-subtasks .task-item:nth-child(2)   { animation-delay:.09s; }
+.task-subtasks .task-item:nth-child(3)   { animation-delay:.13s; }
+.task-subtasks .task-item:nth-child(n+4) { animation-delay:.17s; }
+
+/* LÃ­nea de separaciÃ³n de secciÃ³n (fecha) â€” fade in */
+.task-section-header,
+.task-date-label,
+[class*="task-sep"],
+[class*="task-group-header"] {
+  animation: revealDown .30s ease both;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  2. CALENDARIO â€” celdas del grid + lista de eventos        â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Celdas del grid â€” cascade rÃ¡pida por posiciÃ³n */
+#cal-grid .cal-cell {
+  animation: cellPop .30s cubic-bezier(.22,.68,0,1.2) both;
+}
+
+/* Las primeras 7 (fila de cabecera dÃ­as) aparecen antes */
+#cal-grid .cal-cell:nth-child(1)  { animation-delay:.02s; }
+#cal-grid .cal-cell:nth-child(2)  { animation-delay:.04s; }
+#cal-grid .cal-cell:nth-child(3)  { animation-delay:.06s; }
+#cal-grid .cal-cell:nth-child(4)  { animation-delay:.08s; }
+#cal-grid .cal-cell:nth-child(5)  { animation-delay:.10s; }
+#cal-grid .cal-cell:nth-child(6)  { animation-delay:.12s; }
+#cal-grid .cal-cell:nth-child(7)  { animation-delay:.14s; }
+#cal-grid .cal-cell:nth-child(8)  { animation-delay:.06s; }
+#cal-grid .cal-cell:nth-child(9)  { animation-delay:.08s; }
+#cal-grid .cal-cell:nth-child(10) { animation-delay:.10s; }
+#cal-grid .cal-cell:nth-child(11) { animation-delay:.12s; }
+#cal-grid .cal-cell:nth-child(14) { animation-delay:.10s; }
+#cal-grid .cal-cell:nth-child(21) { animation-delay:.12s; }
+#cal-grid .cal-cell:nth-child(28) { animation-delay:.14s; }
+#cal-grid .cal-cell:nth-child(35) { animation-delay:.16s; }
+#cal-grid .cal-cell:nth-child(n+36) { animation-delay:.18s; }
+
+/* TÃ­tulo del mes â€” desliza desde arriba */
+#cal-month-title {
+  display: inline-block;
+  animation: revealDown .34s cubic-bezier(.22,.68,0,1.1) both;
+}
+
+/* Lista de eventos del mes â€” stagger vertical */
+#cal-events-list > * {
+  animation: riseUp .36s cubic-bezier(.22,.68,0,1.1) both;
+}
+#cal-events-list > *:nth-child(1)   { animation-delay:.06s; }
+#cal-events-list > *:nth-child(2)   { animation-delay:.11s; }
+#cal-events-list > *:nth-child(3)   { animation-delay:.16s; }
+#cal-events-list > *:nth-child(4)   { animation-delay:.20s; }
+#cal-events-list > *:nth-child(5)   { animation-delay:.24s; }
+#cal-events-list > *:nth-child(6)   { animation-delay:.27s; }
+#cal-events-list > *:nth-child(7)   { animation-delay:.30s; }
+#cal-events-list > *:nth-child(n+8) { animation-delay:.33s; }
+
+/* Hover sobre eventos del mes â€” deslizamiento lateral */
+#cal-events-list > * {
+  transition: background .22s ease, padding-left .28s cubic-bezier(.25,.8,.25,1),
+    border-left-color .22s ease !important;
+  border-radius: 6px;
+  padding-left: 6px;
+}
+#cal-events-list > *:hover {
+  background: var(--surface2) !important;
+  padding-left: 14px !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  3. CALIFICACIONES â€” filas en vista detalle                â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Filas dentro de un bloque de zona */
+.grades-block .grade-row,
+#grades-container .grade-row {
+  animation: slideInRow .32s cubic-bezier(.22,.68,0,1.1) both;
+}
+.grades-block .grade-row:nth-child(1),
+#grades-container .grade-row:nth-child(1)   { animation-delay:.04s; }
+
+.grades-block .grade-row:nth-child(2),
+#grades-container .grade-row:nth-child(2)   { animation-delay:.09s; }
+
+.grades-block .grade-row:nth-child(3),
+#grades-container .grade-row:nth-child(3)   { animation-delay:.14s; }
+
+.grades-block .grade-row:nth-child(4),
+#grades-container .grade-row:nth-child(4)   { animation-delay:.18s; }
+
+.grades-block .grade-row:nth-child(5),
+#grades-container .grade-row:nth-child(5)   { animation-delay:.22s; }
+
+.grades-block .grade-row:nth-child(n+6),
+#grades-container .grade-row:nth-child(n+6) { animation-delay:.25s; }
+
+/* Encabezado de zona (nombre de parcial, etc.) */
+.grades-zone-header,
+.grade-zone-title {
+  animation: revealDown .30s ease .02s both;
+}
+
+/* Cada bloque .grades-block (una zona) entra en cascada */
+.grades-block {
+  animation: riseUp .38s cubic-bezier(.22,.68,0,1.1) both;
+}
+.grades-block:nth-child(1)   { animation-delay:.04s; }
+.grades-block:nth-child(2)   { animation-delay:.12s; }
+.grades-block:nth-child(3)   { animation-delay:.20s; }
+.grades-block:nth-child(n+4) { animation-delay:.26s; }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  4. TEMAS â€” items de temas + cola de repasos               â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Items de tema individual */
+.topic-item {
+  animation: slideInRow .34s cubic-bezier(.22,.68,0,1.1) both;
+}
+.topic-item:nth-child(1)   { animation-delay:.04s; }
+.topic-item:nth-child(2)   { animation-delay:.09s; }
+.topic-item:nth-child(3)   { animation-delay:.13s; }
+.topic-item:nth-child(4)   { animation-delay:.17s; }
+.topic-item:nth-child(5)   { animation-delay:.21s; }
+.topic-item:nth-child(6)   { animation-delay:.24s; }
+.topic-item:nth-child(n+7) { animation-delay:.27s; }
+
+/* SecciÃ³n de temas por materia */
+#topics-container > * {
+  animation: riseUp .40s cubic-bezier(.22,.68,0,1.1) both;
+}
+#topics-container > *:nth-child(1)   { animation-delay:.05s; }
+#topics-container > *:nth-child(2)   { animation-delay:.12s; }
+#topics-container > *:nth-child(3)   { animation-delay:.19s; }
+#topics-container > *:nth-child(n+4) { animation-delay:.25s; }
+
+/* Cola de repasos â€” items */
+#planner-review-queue .planner-item,
+#planner-review-queue > * {
+  animation: riseUp .34s cubic-bezier(.22,.68,0,1.1) both;
+}
+#planner-review-queue > *:nth-child(1)   { animation-delay:.05s; }
+#planner-review-queue > *:nth-child(2)   { animation-delay:.10s; }
+#planner-review-queue > *:nth-child(3)   { animation-delay:.15s; }
+#planner-review-queue > *:nth-child(4)   { animation-delay:.19s; }
+#planner-review-queue > *:nth-child(5)   { animation-delay:.23s; }
+#planner-review-queue > *:nth-child(n+6) { animation-delay:.26s; }
+
+/* Barra de carga (timeline 14 dÃ­as) â€” crece desde la izquierda */
+#planner-timeline > * {
+  animation: riseUp .32s cubic-bezier(.22,.68,0,1.1) both;
+}
+#planner-timeline > *:nth-child(1)    { animation-delay:.03s; }
+#planner-timeline > *:nth-child(2)    { animation-delay:.06s; }
+#planner-timeline > *:nth-child(3)    { animation-delay:.09s; }
+#planner-timeline > *:nth-child(4)    { animation-delay:.12s; }
+#planner-timeline > *:nth-child(5)    { animation-delay:.14s; }
+#planner-timeline > *:nth-child(6)    { animation-delay:.16s; }
+#planner-timeline > *:nth-child(7)    { animation-delay:.18s; }
+#planner-timeline > *:nth-child(8)    { animation-delay:.20s; }
+#planner-timeline > *:nth-child(9)    { animation-delay:.22s; }
+#planner-timeline > *:nth-child(10)   { animation-delay:.24s; }
+#planner-timeline > *:nth-child(11)   { animation-delay:.25s; }
+#planner-timeline > *:nth-child(12)   { animation-delay:.26s; }
+#planner-timeline > *:nth-child(13)   { animation-delay:.27s; }
+#planner-timeline > *:nth-child(14)   { animation-delay:.28s; }
+
+/* Barras de carga internas (por dÃ­a) â€” crecen desde la izquierda */
+.planner-bar,
+[class*="planner-day-bar"],
+#planner-timeline [style*="background"][style*="height"] {
+  animation: barGrowRight .44s cubic-bezier(.4,0,.2,1) both;
+}
+
+/* BotÃ³n â†» Reagendar â€” spin al hacer hover */
+#planner-reschedule-btn:hover {
+  animation: spinOnce .5s cubic-bezier(.4,0,.2,1);
+}
+
+/* Topic detail drawer â€” slide desde la derecha */
+#topic-detail-drawer.open,
+#topic-detail-drawer[style*="translateX(0"] {
+  animation: none; /* ya usa transform JS */
+}
+#topic-detail-content > * {
+  animation: revealDown .34s ease both;
+}
+#topic-detail-content > *:nth-child(1) { animation-delay:.10s; }
+#topic-detail-content > *:nth-child(2) { animation-delay:.16s; }
+#topic-detail-content > *:nth-child(3) { animation-delay:.22s; }
+#topic-detail-content > *:nth-child(4) { animation-delay:.28s; }
+#topic-detail-content > *:nth-child(n+5){ animation-delay:.33s; }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  5. HORARIO â€” tabla semanal + lista detalle                â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Filas de la tabla del horario */
+#horario-table-container tr {
+  animation: slideInRow .32s cubic-bezier(.22,.68,0,1.1) both;
+}
+#horario-table-container tr:nth-child(1)   { animation-delay:.04s; }
+#horario-table-container tr:nth-child(2)   { animation-delay:.09s; }
+#horario-table-container tr:nth-child(3)   { animation-delay:.13s; }
+#horario-table-container tr:nth-child(4)   { animation-delay:.17s; }
+#horario-table-container tr:nth-child(5)   { animation-delay:.20s; }
+#horario-table-container tr:nth-child(6)   { animation-delay:.23s; }
+#horario-table-container tr:nth-child(7)   { animation-delay:.26s; }
+#horario-table-container tr:nth-child(n+8) { animation-delay:.28s; }
+
+/* Celdas dentro de la tabla */
+#horario-table-container td,
+#horario-table-container th {
+  transition: background .22s ease !important;
+}
+
+/* Lista detalle de materias del horario */
+#horario-detail-list > * {
+  animation: riseUp .36s cubic-bezier(.22,.68,0,1.1) both;
+}
+#horario-detail-list > *:nth-child(1)   { animation-delay:.08s; }
+#horario-detail-list > *:nth-child(2)   { animation-delay:.15s; }
+#horario-detail-list > *:nth-child(3)   { animation-delay:.22s; }
+#horario-detail-list > *:nth-child(4)   { animation-delay:.28s; }
+#horario-detail-list > *:nth-child(5)   { animation-delay:.33s; }
+#horario-detail-list > *:nth-child(n+6) { animation-delay:.37s; }
+
+/* Hover sobre filas del detalle */
+#horario-detail-list > * {
+  transition: background .22s ease, padding-left .28s cubic-bezier(.25,.8,.25,1) !important;
+  border-radius: 6px;
+  padding-left: 4px;
+}
+#horario-detail-list > *:hover {
+  background: var(--surface2) !important;
+  padding-left: 12px !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  6. POMODORO â€” historial, barras semanales, stats rÃ¡pidas  â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Items del historial de sesiones */
+#pom-history > * {
+  animation: historyItemIn .30s ease both;
+}
+#pom-history > *:nth-child(1)   { animation-delay:.03s; }
+#pom-history > *:nth-child(2)   { animation-delay:.07s; }
+#pom-history > *:nth-child(3)   { animation-delay:.11s; }
+#pom-history > *:nth-child(4)   { animation-delay:.14s; }
+#pom-history > *:nth-child(5)   { animation-delay:.17s; }
+#pom-history > *:nth-child(n+6) { animation-delay:.20s; }
+
+/* Hover sobre historial */
+#pom-history > * {
+  transition: background .22s ease !important;
+  border-radius: 6px;
+}
+#pom-history > *:hover {
+  background: var(--surface2) !important;
+}
+
+/* Barras de actividad semanal â€” crecen desde abajo */
+#pom-week-bars > * {
+  animation: barGrowUp .44s cubic-bezier(.22,.68,0,1.1) both;
+  transform-origin: bottom;
+}
+#pom-week-bars > *:nth-child(1) { animation-delay:.05s; }
+#pom-week-bars > *:nth-child(2) { animation-delay:.10s; }
+#pom-week-bars > *:nth-child(3) { animation-delay:.15s; }
+#pom-week-bars > *:nth-child(4) { animation-delay:.20s; }
+#pom-week-bars > *:nth-child(5) { animation-delay:.24s; }
+#pom-week-bars > *:nth-child(6) { animation-delay:.27s; }
+#pom-week-bars > *:nth-child(7) { animation-delay:.30s; }
+
+/* Hover en las barras */
+#pom-week-bars > * {
+  transition: filter .22s ease, transform .28s cubic-bezier(.34,1.56,.64,1) !important;
+  cursor: default;
+}
+#pom-week-bars > *:hover {
+  filter: brightness(1.3) !important;
+  transform: scaleY(1.06) !important;
+}
+
+/* Stats rÃ¡pidas del dÃ­a (sesiones hoy + min hoy) */
+#page-pomodoro .card[style*="text-align:center"] .card-body {
+  animation: riseUp .36s cubic-bezier(.22,.68,0,1.1) both;
+}
+
+/* NÃºmeros grandes de stats â€” numberReveal */
+#pom-stat-total,
+#pom-stat-mins,
+#pom-goal-done,
+#pom-stat-streak,
+#pom-stat-week-sessions,
+#pom-stat-week-mins {
+  display: inline-block;
+  animation: numberReveal .50s cubic-bezier(.22,.68,0,1.1) .12s both;
+}
+
+/* Meta del dÃ­a â€” progress bar animada al cargar */
+#pom-goal-bar {
+  animation: barGrowRight .60s cubic-bezier(.4,0,.2,1) .20s both;
+}
+
+/* Chrono blocks â€” entrada suave */
+#chrono-work-block {
+  animation: riseUp .40s cubic-bezier(.22,.68,0,1.1) .05s both;
+}
+#chrono-break-block,
+#chrono-total-block {
+  animation: riseUp .38s cubic-bezier(.22,.68,0,1.1) .12s both;
+}
+
+/* Racha de estudio â€” los 3 boxes entran en cascada */
+#page-pomodoro .card:has(#pom-stat-streak) > .card-body > div > div:nth-child(1) { animation: cellPop .36s cubic-bezier(.22,.68,0,1.2) .06s both; }
+#page-pomodoro .card:has(#pom-stat-streak) > .card-body > div > div:nth-child(2) { animation: cellPop .36s cubic-bezier(.22,.68,0,1.2) .13s both; }
+#page-pomodoro .card:has(#pom-stat-streak) > .card-body > div > div:nth-child(3) { animation: cellPop .36s cubic-bezier(.22,.68,0,1.2) .20s both; }
+
+/* Hover en los stat blocks del pomodoro */
+#chrono-work-block,
+#chrono-break-block,
+#chrono-total-block {
+  transition: border-color .28s ease, box-shadow .32s ease, transform .32s cubic-bezier(.25,.8,.25,1) !important;
+}
+#chrono-work-block:hover,
+#chrono-break-block:hover,
+#chrono-total-block:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.28) !important;
+}
+
+/* Dots del pomodoro â€” escala al aparecer */
+#pom-dots > * {
+  animation: cellPop .30s cubic-bezier(.22,.68,0,1.2) both;
+  display: inline-block;
+}
+#pom-dots > *:nth-child(1) { animation-delay:.05s; }
+#pom-dots > *:nth-child(2) { animation-delay:.10s; }
+#pom-dots > *:nth-child(3) { animation-delay:.15s; }
+#pom-dots > *:nth-child(4) { animation-delay:.20s; }
+#pom-dots > *:nth-child(n+5){ animation-delay:.24s; }
+
+/* Hover en pom dots */
+#pom-dots > * {
+  transition: transform .26s cubic-bezier(.34,1.56,.64,1) !important;
+}
+#pom-dots > *:hover {
+  transform: scale(1.5) !important;
+}
+
+/* Resumen Ãºltima sesiÃ³n â€” slide in al aparecer */
+#chrono-summary:not([style*="none"]) {
+  animation: riseUp .36s cubic-bezier(.22,.68,0,1.1) both;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  7. OVERVIEW â€” plan del dÃ­a + badge pendientes             â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Items del plan del dÃ­a */
+#planner-daily-plan > * {
+  animation: riseUp .36s cubic-bezier(.22,.68,0,1.1) both;
+}
+#planner-daily-plan > *:nth-child(1)   { animation-delay:.04s; }
+#planner-daily-plan > *:nth-child(2)   { animation-delay:.10s; }
+#planner-daily-plan > *:nth-child(3)   { animation-delay:.16s; }
+#planner-daily-plan > *:nth-child(4)   { animation-delay:.22s; }
+#planner-daily-plan > *:nth-child(n+5) { animation-delay:.27s; }
+
+/* Hover sobre items del plan */
+#planner-daily-plan > * {
+  transition: background .22s ease, padding-left .28s cubic-bezier(.25,.8,.25,1) !important;
+  border-radius: 6px;
+  padding-left: 4px;
+}
+#planner-daily-plan > *:hover {
+  background: var(--surface2) !important;
+  padding-left: 12px !important;
+}
+
+/* Badge de pendientes con parpadeo vivo */
+#ov-pending-badge:not(:empty) {
+  animation: liveNumberPulse 2.4s ease-in-out infinite;
+}
+
+/* Tags de filtro de agenda */
+#ov-agenda-filter-label:not(:empty) {
+  animation: revealDown .28s ease both;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  8. PERFIL â€” cursos aprobados, datos personales           â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Filas de cursos aprobados */
+#approved-courses-list tr,
+#approved-courses-list > div {
+  animation: slideInRow .32s cubic-bezier(.22,.68,0,1.1) both;
+}
+#approved-courses-list tr:nth-child(1),
+#approved-courses-list > div:nth-child(1)   { animation-delay:.04s; }
+
+#approved-courses-list tr:nth-child(2),
+#approved-courses-list > div:nth-child(2)   { animation-delay:.08s; }
+
+#approved-courses-list tr:nth-child(3),
+#approved-courses-list > div:nth-child(3)   { animation-delay:.12s; }
+
+#approved-courses-list tr:nth-child(4),
+#approved-courses-list > div:nth-child(4)   { animation-delay:.16s; }
+
+#approved-courses-list tr:nth-child(5),
+#approved-courses-list > div:nth-child(5)   { animation-delay:.20s; }
+
+#approved-courses-list tr:nth-child(6),
+#approved-courses-list > div:nth-child(6)   { animation-delay:.23s; }
+
+#approved-courses-list tr:nth-child(n+7),
+#approved-courses-list > div:nth-child(n+7) { animation-delay:.26s; }
+
+/* NÃºmeros de progreso acadÃ©mico â€” numberReveal */
+#profile-display-avg,
+#profile-display-cred,
+#profile-display-courses {
+  display: inline-block;
+  animation: numberReveal .52s cubic-bezier(.22,.68,0,1.1) .15s both;
+}
+
+/* Barra de carrera â€” animada al cargar */
+#profile-career-bar {
+  animation: barGrowRight .80s cubic-bezier(.4,0,.2,1) .30s both !important;
+}
+
+/* Opciones de tipografÃ­a en select â€” hover en el select */
+#cfg-font-select,
+#cfg-sound-select {
+  transition: border-color .24s ease, box-shadow .28s ease, transform .28s cubic-bezier(.25,.8,.25,1) !important;
+}
+#cfg-font-select:hover:not(:focus),
+#cfg-sound-select:hover:not(:focus) {
+  transform: translateY(-1px) !important;
+}
+
+/* Botones de tema claro/oscuro */
+#page-perfil .btn-ghost {
+  transition: background .22s ease, color .22s ease, transform .28s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .28s ease !important;
+}
+#page-perfil .btn-ghost:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.28) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  9. ESTADÃSTICAS â€” summary cards + nÃºmeros                 â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Cards del resumen de stats (generadas por JS) */
+#stats-summary > * {
+  animation: cellPop .36s cubic-bezier(.22,.68,0,1.2) both;
+}
+#stats-summary > *:nth-child(1) { animation-delay:.05s; }
+#stats-summary > *:nth-child(2) { animation-delay:.11s; }
+#stats-summary > *:nth-child(3) { animation-delay:.17s; }
+#stats-summary > *:nth-child(4) { animation-delay:.23s; }
+
+/* Hover en los cards de resumen */
+#stats-summary > * {
+  transition: transform .28s cubic-bezier(.25,.8,.25,1), box-shadow .28s ease !important;
+}
+#stats-summary > *:hover {
+  transform: translateY(-4px) scale(1.04) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.28) !important;
+}
+
+/* NÃºmeros dentro de stat-mini */
+.stat-mini [style*="font-size:20px"],
+.stat-mini [style*="font-size:22px"],
+.stat-mini [style*="font-size:24px"],
+.stat-mini [style*="font-size:28px"] {
+  display: inline-block;
+  animation: numberReveal .46s cubic-bezier(.22,.68,0,1.1) .08s both;
+}
+
+/* Canvas de charts â€” fade in suave */
+#chart-grades,
+#chart-tasks {
+  animation: riseUp .50s ease .22s both;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  10. SEMESTRES â€” header + lista dinÃ¡mica                   â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* El subtÃ­tulo del header */
+#page-semestres > div > div > div:last-child {
+  animation: revealDown .30s ease .08s both;
+}
+
+/* GPA en cada semester card â€” numberReveal */
+#semestres-list .card [style*="font-size:24px"],
+#semestres-list .card [style*="font-size:28px"],
+#semestres-list .card [style*="font-size:22px"] {
+  display: inline-block;
+  animation: numberReveal .44s cubic-bezier(.22,.68,0,1.1) .18s both;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  11. GENERAL HUB â€” stat debajo de cada hub card            â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Los hub-stat que el JS llena con nÃºmeros */
+.hub-stat {
+  display: inline-block;
+  transition: color .28s ease;
+}
+.hub-card:hover .hub-stat {
+  color: var(--accent2);
+}
+
+/* DescripciÃ³n del hub card â€” fade al hover */
+.hub-desc {
+  transition: color .28s ease;
+}
+.hub-card:hover .hub-desc {
+  color: var(--text2);
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  12. MODALES ADICIONALES â€” editclass, approved course      â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Zona builder en modal de editar clase */
+#ec-zones-builder > * {
+  animation: riseUp .32s cubic-bezier(.22,.68,0,1.1) both;
+}
+#ec-zones-builder > *:nth-child(1)   { animation-delay:.04s; }
+#ec-zones-builder > *:nth-child(2)   { animation-delay:.09s; }
+#ec-zones-builder > *:nth-child(3)   { animation-delay:.14s; }
+#ec-zones-builder > *:nth-child(n+4) { animation-delay:.18s; }
+
+/* Checkboxes de dÃ­as en modal â€” pop al aparecer */
+#ec-dias-checks label {
+  animation: cellPop .28s cubic-bezier(.22,.68,0,1.2) both;
+  display: inline-flex;
+}
+#ec-dias-checks label:nth-child(1) { animation-delay:.03s; }
+#ec-dias-checks label:nth-child(2) { animation-delay:.07s; }
+#ec-dias-checks label:nth-child(3) { animation-delay:.11s; }
+#ec-dias-checks label:nth-child(4) { animation-delay:.15s; }
+#ec-dias-checks label:nth-child(5) { animation-delay:.18s; }
+#ec-dias-checks label:nth-child(6) { animation-delay:.21s; }
+
+/* Dots de colores en modal editclass â€” pop con spring */
+#ec-zones-builder .color-opt,
+#modal-editclass .color-opt {
+  animation: cellPop .26s cubic-bezier(.22,.68,0,1.4) both;
+  display: inline-block;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  13. LEYENDA DEL CALENDARIO                                â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Items de la leyenda de colores del calendario */
+#cal-legend > * {
+  animation: riseUp .30s cubic-bezier(.22,.68,0,1.1) both;
+  display: inline-block;
+}
+#cal-legend > *:nth-child(1) { animation-delay:.04s; }
+#cal-legend > *:nth-child(2) { animation-delay:.09s; }
+#cal-legend > *:nth-child(3) { animation-delay:.13s; }
+#cal-legend > *:nth-child(4) { animation-delay:.17s; }
+#cal-legend > *:nth-child(n+5){ animation-delay:.20s; }
+
+/* Hover en leyenda */
+#cal-legend > * {
+  transition: transform .26s cubic-bezier(.34,1.56,.64,1) !important;
+}
+#cal-legend > *:hover {
+  transform: scale(1.1) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  14. TOOLTIPS â€” aparecen con fade                          â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+[title]:hover::after,
+[data-tooltip]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: var(--app-font);
+  color: var(--text2);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  animation: revealDown .18s ease both;
+}
+
+/* Solo en elementos donde tiene sentido (no en todos los elementos) */
+.btn[title]:hover,
+.nav-item[title]:hover,
+.hub-card[title]:hover {
+  position: relative;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  15. ACCORDION / DESPLEGABLE â€” review queue toggle         â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* El chevron del review queue rota al colapsar */
+#review-queue-chevron {
+  transition: transform .28s cubic-bezier(.4,0,.2,1), color .22s ease !important;
+  display: inline-block;
+}
+
+/* AnimaciÃ³n del contenido al aparecer (cuando JS muestra el div) */
+#planner-review-queue:not([style*="none"]):not([style*="display: none"]) {
+  animation: revealDown .32s cubic-bezier(.22,.68,0,1.1) both;
+}
+
+/* TransiciÃ³n suave del header del accordion */
+.card-header[onclick*="_toggleReviewQueue"] {
+  transition: background .22s ease !important;
+  border-radius: 8px 8px 0 0;
+}
+.card-header[onclick*="_toggleReviewQueue"]:hover {
+  background: var(--surface2) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  16. ESTADOS DE CARGA â€” skeleton refinado                  â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Un skeleton mÃ¡s visible para cuando el JS tarda */
+.loading-placeholder {
+  background: linear-gradient(
+    90deg,
+    var(--surface2) 25%,
+    var(--surface3) 50%,
+    var(--surface2) 75%
+  );
+  background-size: 400px 100%;
+  animation: skeletonPulse 1.6s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+  min-height: 48px;
+  border-radius: 10px;
+}
+
+@keyframes skeletonPulse {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  17. REFINAMIENTOS â€” elementos que ya existÃ­an             â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Botones de navegaciÃ³n del calendario â€” micro-bounce */
+.btn-ghost.btn-sm[onclick*="calNav"] {
+  transition: background .22s ease, color .22s ease,
+    transform .28s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.btn-ghost.btn-sm[onclick*="calNav(-1)"]:hover {
+  transform: translateX(-3px) !important;
+}
+.btn-ghost.btn-sm[onclick*="calNav(1)"]:hover {
+  transform: translateX(3px) !important;
+}
+
+/* "Ver calendario â†’" y similares â€” flecha que avanza */
+.btn-ghost.btn-sm[onclick*="calendario"]:hover,
+.btn-ghost.btn-sm[onclick*="Ver"]:hover {
+  transform: translateX(3px) !important;
+}
+
+/* BotÃ³n exportar horario */
+.btn-ghost.btn-sm[onclick*="exportHorario"]:hover {
+  transform: translateY(-2px) !important;
+}
+
+/* El Ã­cono ðŸ”¥ del botÃ³n Focus del pomodoro */
+button[onclick*="enterFocusMode"]:hover,
+button[onclick*="enterFloatingMode"]:hover {
+  transform: translateY(-2px) scale(1.04) !important;
+  box-shadow: 0 6px 18px rgba(124,106,255,.28) !important;
+}
+
+/* Filtros de la pÃ¡gina de tareas â€” slide hacia arriba en hover */
+#page-tareas .form-select:hover:not(:focus) {
+  transform: translateY(-1px) !important;
+}
+
+/* BÃºsqueda de tareas â€” se expande al focus */
+#search-input:focus {
+  width: 220px !important;
+}
+
+/* Textarea del modo examen */
+#exam-notes-display {
+  transition: border-color .24s ease, box-shadow .28s ease !important;
+}
+#exam-notes-display:hover {
+  border-color: var(--border2) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2) !important;
+}
+
+/* Slider del popup de comprensiÃ³n */
+#comp-slider {
+  transition: accent-color .22s ease !important;
+}
+#comp-val {
+  display: inline-block;
+  transition: color .22s ease, transform .26s cubic-bezier(.34,1.56,.64,1) !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  18. MOBILE â€” desactivar lo que distrae en pantallas chicas â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+@media (max-width: 768px) {
+  /* Tareas â€” sin slide horizontal, solo fade */
+  #tasks-list .task-item,
+  #ov-tasks-list .task-item {
+    animation: riseUp .28s ease both !important;
+  }
+
+  /* Calendario â€” sin scale en celdas */
+  #cal-grid .cal-cell {
+    animation: none !important;
+  }
+
+  /* Barras â€” duraciÃ³n mÃ¡s corta */
+  #pom-week-bars > * {
+    animation-duration: .28s !important;
+  }
+
+  /* Planner timeline â€” sin retrasos largos */
+  #planner-timeline > *:nth-child(n) {
+    animation-delay: .05s !important;
+    animation-duration: .24s !important;
+  }
+
+  /* Horario â€” sin slide */
+  #horario-table-container tr {
+    animation: riseUp .24s ease both !important;
+  }
+
+  /* Desactivar tooltips en mÃ³vil (ya hay poco espacio) */
+  [title]:hover::after,
+  [data-tooltip]:hover::after {
+    display: none !important;
+  }
+
+  /* BÃºsqueda â€” no expande (ya ocupa ancho fijo) */
+  #search-input:focus {
+    width: 100% !important;
+  }
+
+  /* Hover en items de lista â€” mÃ¡s sutil */
+  #cal-events-list > *:hover,
+  #planner-daily-plan > *:hover,
+  #horario-detail-list > *:hover {
+    padding-left: 8px !important;
+  }
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  19. ACCESIBILIDAD â€” prefers-reduced-motion                â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+@media (prefers-reduced-motion: reduce) {
+  #tasks-list .task-item,
+  #ov-tasks-list .task-item,
+  #cal-grid .cal-cell,
+  #cal-events-list > *,
+  .grades-block,
+  .grades-block .grade-row,
+  #grades-container .grade-row,
+  .topic-item,
+  #topics-container > *,
+  #planner-review-queue > *,
+  #planner-timeline > *,
+  #horario-table-container tr,
+  #horario-detail-list > *,
+  #pom-history > *,
+  #pom-week-bars > *,
+  #planner-daily-plan > *,
+  #approved-courses-list tr,
+  #approved-courses-list > div,
+  #stats-summary > *,
+  #profile-display-avg,
+  #profile-display-cred,
+  #profile-display-courses,
+  #pom-stat-total, #pom-stat-mins,
+  #pom-goal-done, #pom-stat-streak,
+  #pom-stat-week-sessions, #pom-stat-week-mins,
+  #cal-month-title,
+  #ec-dias-checks label,
+  #topic-detail-content > *,
+  .task-section-header,
+  #pom-dots > *,
+  #chrono-work-block,
+  #chrono-break-block,
+  #chrono-total-block {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  #pom-goal-bar,
+  #profile-career-bar,
+  .planner-bar {
+    animation: none !important;
+  }
+}
+
+/* ===== Source: academia-anim-fix.css ===== */
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ACADEMIA â€” Animations Fix Patch
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  FIX 1 â€” TAREAS COMPLETADAS: vuelven a verse oscuras       â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* La animaciÃ³n de entrada no debe afectar la opacidad final
+   de tareas completadas/tachadas */
+.task-item.done,
+.task-item[data-done="true"],
+.task-item.completed {
+  opacity: .42 !important;
+  animation: fadeInDone .38s ease both !important;
+}
+
+@keyframes fadeInDone {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: .42; transform: translateX(0); }
+}
+
+/* El label tachado tambiÃ©n se mantiene oscuro */
+.task-item.done .task-label,
+.task-item.completed .task-label {
+  color: var(--text3) !important;
+  text-decoration: line-through;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  FIX 2 â€” TAREAS DEL OVERVIEW: trigger de animaciÃ³n        â•‘
+   â•‘  El overview es la pÃ¡gina activa por defecto asÃ­ que       â•‘
+   â•‘  las tareas se insertan despuÃ©s de que CSS ya estÃ¡ listo.  â•‘
+   â•‘  Usamos will-change para forzar el repaint.                â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+#ov-tasks-list .task-item {
+  animation: slideInRow .38s cubic-bezier(.22,.68,0,1.1) both !important;
+  will-change: transform, opacity;
+}
+
+/* Stagger igual que en v3 pero con !important para ganar */
+#ov-tasks-list .task-item:nth-child(1)   { animation-delay:.05s !important; }
+#ov-tasks-list .task-item:nth-child(2)   { animation-delay:.10s !important; }
+#ov-tasks-list .task-item:nth-child(3)   { animation-delay:.15s !important; }
+#ov-tasks-list .task-item:nth-child(4)   { animation-delay:.20s !important; }
+#ov-tasks-list .task-item:nth-child(5)   { animation-delay:.24s !important; }
+#ov-tasks-list .task-item:nth-child(6)   { animation-delay:.28s !important; }
+#ov-tasks-list .task-item:nth-child(7)   { animation-delay:.31s !important; }
+#ov-tasks-list .task-item:nth-child(8)   { animation-delay:.34s !important; }
+#ov-tasks-list .task-item:nth-child(n+9) { animation-delay:.37s !important; }
+
+/* Grupos de materia (el wrapper encima de las tareas) */
+#ov-tasks-list > div:not(.task-item) {
+  animation: slideInRow .34s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+#ov-tasks-list > div:nth-child(1) { animation-delay:.03s !important; }
+#ov-tasks-list > div:nth-child(2) { animation-delay:.10s !important; }
+#ov-tasks-list > div:nth-child(3) { animation-delay:.17s !important; }
+#ov-tasks-list > div:nth-child(n+4) { animation-delay:.23s !important; }
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  FIX 3 â€” DAY STRIP: solo el chip bajo el cursor crece,    â•‘
+   â•‘  sin translateY y sin la animaciÃ³n de entrada rara         â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Cancelar la animaciÃ³n de entrada que se ve mal */
+.page.active #ov-day-strip > div,
+.page.active #ov-day-strip > div:nth-child(n) {
+  animation: none !important;
+}
+
+/* Chips base â€” sin expansion para evitar desbordes */
+#ov-day-strip > div,
+.day-chip {
+  transition:
+    background     .24s ease,
+    border-color   .26s ease,
+    box-shadow     .28s cubic-bezier(.25,.8,.25,1) !important;
+  will-change: auto;
+}
+
+/* HOVER: mantener tamano fijo */
+#ov-day-strip > div:hover,
+.day-chip:hover {
+  transform: none !important;
+  box-shadow:
+    0 8px 28px rgba(0,0,0,.45),
+    0 0 0 1px rgba(124,106,255,.42) !important;
+  border-color: rgba(124,106,255,.48) !important;
+  background: var(--surface3) !important;
+  z-index: 2;
+  position: relative;
+}
+
+/* Click: press down */
+#ov-day-strip > div:active,
+.day-chip:active {
+  transform: none !important;
+  transition-duration: .10s !important;
+}
+
+/* Chip "hoy" â€” solo el pulso de sombra, sin mover */
+#ov-day-strip > div.today,
+.day-chip.today {
+  animation: dayChipToday 3s ease-in-out infinite !important;
+}
+
+/* Chip "hoy" al hover â€” sin escala */
+#ov-day-strip > div.today:hover,
+.day-chip.today:hover {
+  transform: none !important;
+  box-shadow:
+    0 0 0 2px rgba(124,106,255,.65),
+    0 12px 32px rgba(124,106,255,.38) !important;
+  animation: none !important;
+}
+
+/* NÃºmero dentro del chip â€” color al hover del chip padre */
+#ov-day-strip > div:hover [style*="font-weight"],
+.day-chip:hover [style*="font-weight"] {
+  color: var(--accent2);
+}
+
+/* Punto de evento dentro del chip â€” pop al hover */
+#ov-day-strip > div:hover [style*="border-radius:50%"],
+.day-chip:hover [style*="border-radius:50%"] {
+  transform: scale(1.4);
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Badge numÃ©rico */
+#ov-day-strip > div:hover [style*="background:var(--accent)"],
+.day-chip:hover [style*="background:var(--accent)"] {
+  transform: scale(1.18);
+  box-shadow: 0 0 10px rgba(124,106,255,.5);
+}
+
+/* Evitar que el panel se salga de margenes */
+#ov-day-strip {
+  overflow: hidden !important;
+  padding: 6px 4px 12px !important;
+}
+
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  MOBILE â€” sin scale en el strip (poco espacio)             â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+@media (max-width: 768px) {
+  #ov-day-strip > div:hover,
+  .day-chip:hover {
+    transform: none !important;
+  }
+  .task-item.done,
+  .task-item.completed {
+    opacity: .38 !important;
+  }
+}
+
+/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+   â•‘  FIX 4 â€” POMODORO SEMANAL: sin expansion en hover           â•‘
+   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* Desactivar cualquier escala al pasar el mouse */
+#pom-week-bars > *,
+#pom-week-bars > * > div:first-child {
+  transform: none !important;
+}
+
+#pom-week-bars > *:hover,
+#pom-week-bars > *:hover > div:first-child {
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+

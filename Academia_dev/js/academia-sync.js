@@ -1,23 +1,9 @@
 /**
- * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- * ACADEMIA-SYNC.JS — window.DB para sincronización de datos
+ * Client-side sync adapter for user academic data.
  *
- * Requerido por app.js:  window.DB.init / load / save / saveNow / _ready
- *
- * TABLA SUPABASE necesaria (ejecutar en SQL Editor una sola vez):
- * ─────────────────────────────────────────────────────────────
- * CREATE TABLE IF NOT EXISTS user_data (
- *   user_id   TEXT PRIMARY KEY,
- *   semestres JSONB DEFAULT '[]',
- *   settings  JSONB DEFAULT '{}',
- *   updated_at TIMESTAMPTZ DEFAULT now()
- * );
- * ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
- * CREATE POLICY "Solo el dueño puede leer/escribir"
- *   ON user_data FOR ALL
- *   USING (auth.uid()::text = user_id)
- *   WITH CHECK (auth.uid()::text = user_id);
- * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * Exposes `window.AcademiaDB` as the canonical sync API.
+ * Legacy alias `window.DB` is kept for backward compatibility.
+ * Data source: Supabase table `user_data` keyed by `user_id`.
  */
 
 (function () {
@@ -49,13 +35,13 @@
     }
   }
 
-  // ── load() → { semestres, settings } | null ─────────────────
+  // load() -> { semestres, settings, updatedAt } | null
   async function load() {
     if (!_ready) return null;
     try {
       const { data, error } = await _getClient()
         .from('user_data')
-        .select('semestres, settings')
+        .select('semestres, settings, updated_at')
         .eq('user_id', _userId)
         .maybeSingle();           // null si no existe, sin error
 
@@ -71,6 +57,7 @@
       return {
         semestres: data.semestres || [],
         settings:  data.settings  || {},
+        updatedAt: data.updated_at || null,
       };
     } catch (err) {
       console.warn('⚠️ DB.load excepción:', err.message);
@@ -115,19 +102,25 @@
     await _doSave(semestres, settings);
   }
 
-  // ── Export ───────────────────────────────────────────────────
-  Object.defineProperty(window, 'DB', {
-    get() {
-      return {
-        init,
-        load,
-        save,
-        saveNow,
-        get _ready() { return _ready; },
-      };
-    },
+  const API = {
+    init,
+    load,
+    save,
+    saveNow,
+    get _ready() { return _ready; },
+  };
+
+  // Canonical name for personal data synchronization.
+  Object.defineProperty(window, 'AcademiaDB', {
+    get() { return API; },
     configurable: true,
   });
 
-  console.log('📦 academia-sync.js cargado (window.DB disponible)');
+  // Backward-compatible alias used by older modules.
+  Object.defineProperty(window, 'DB', {
+    get() { return API; },
+    configurable: true,
+  });
+
+  console.log('📦 academia-sync.js cargado (window.AcademiaDB / window.DB)');
 })();

@@ -1,5 +1,6 @@
 
 function init() {
+  const getAcademiaDB = () => window.AcademiaDB || window.DB;
 
   // ── Detectar modo invitado ────────────────────────────────────
   const isGuest = localStorage.getItem('academia_guest_mode') === '1';
@@ -85,9 +86,10 @@ function init() {
       localStorage.setItem('_academia_last_user', auth.id);
 
       // Inicializar DB y cargar desde Supabase
-      if (window.DB) {
-        window.DB.init(auth.id);
-        const dbData = await window.DB.load();
+      const db = getAcademiaDB();
+      if (db) {
+        db.init(auth.id);
+        const dbData = await db.load();
         if (dbData) {
           // Supabase es la fuente de verdad
           if (dbData.semestres && dbData.semestres.length) {
@@ -110,7 +112,7 @@ function init() {
 
           if (hadGuestData) {
             console.log('📤 Migrando datos de invitado a Supabase...');
-            await window.DB.saveNow(
+            await db.saveNow(
               guestSems     ? JSON.parse(guestSems)     : [],
               guestSettings ? JSON.parse(guestSettings) : {}
             );
@@ -270,42 +272,58 @@ function continueInit(auth) {
     if (dd && dd.classList.contains('open') && sb && !sb.contains(e.target)) dd.classList.remove('open');
   });
 
-  // ── Auto-sync — solo si NO es invitado ────────────────────────
-  if (!isGuest && window.DB) {
+  // Auto-sync desde Supabase (deshabilitado en modo invitado)
+  if (!isGuest && getAcademiaDB()) {
     let _lastSync = Date.now();
 
     async function _syncFromSupabase(force = false) {
-      if (!window.DB || !window.DB._ready) return;
+      const db = getAcademiaDB();
+      if (!db || !db._ready) return;
       const now = Date.now();
       if (!force && now - _lastSync < 5000) return;
+
+      // Si hay un guardado local pendiente, nunca hacer pull remoto todavía.
+      if (!force && typeof _saveTimer !== 'undefined' && _saveTimer) {
+        console.log('⏭️ Sync omitido: guardado local pendiente');
+        return;
+      }
+
       const msSinceLocalMod = now - (window._localModifiedAt || 0);
       if (msSinceLocalMod < 30000) {
         console.log('⏭️ Sync omitido: cambios locales recientes (' + Math.round(msSinceLocalMod/1000) + 's)');
         return;
       }
       _lastSync = now;
-      const dbData = await window.DB.load();
+      const dbData = await db.load();
       if (!dbData) return;
+
+      const remoteUpdatedAt = dbData.updatedAt ? Date.parse(dbData.updatedAt) : 0;
+      const localModifiedAt = window._localModifiedAt || 0;
+      if (!force && remoteUpdatedAt && remoteUpdatedAt <= localModifiedAt) {
+        console.log('⏭️ Sync omitido: datos locales son mas recientes o iguales al servidor');
+        return;
+      }
+
       let changed = false;
-      if (dbData.semestres && dbData.semestres.length) {
+      if (Array.isArray(dbData.semestres)) {
         const localJson = localStorage.getItem('academia_v4_semestres');
         const dbJson = JSON.stringify(dbData.semestres);
         if (localJson !== dbJson) { localStorage.setItem('academia_v4_semestres', dbJson); changed = true; }
       }
-      if (dbData.settings && Object.keys(dbData.settings).length) {
+      if (dbData.settings && typeof dbData.settings === 'object') {
         const localJson = localStorage.getItem('academia_v3_settings');
         const dbJson = JSON.stringify(dbData.settings);
         if (localJson !== dbJson) { localStorage.setItem('academia_v3_settings', dbJson); changed = true; }
       }
       if (changed) {
         console.log('🔄 Datos actualizados desde Supabase — recargando UI...');
-        if (dbData.semestres && dbData.semestres.length) {
+        if (Array.isArray(dbData.semestres)) {
           State.semestres.length = 0;
           dbData.semestres.forEach(s => State.semestres.push(s));
-          if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
+          if (State.semestres.length && !State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
           getMat.bust();
         }
-        if (dbData.settings && Object.keys(dbData.settings).length) {
+        if (dbData.settings && typeof dbData.settings === 'object') {
           Object.assign(State.settings, dbData.settings);
         }
         try {
@@ -338,7 +356,8 @@ function continueInit(auth) {
 
     setInterval(() => {
       const canSync = (Date.now() - (window._localModifiedAt || 0)) > 30000;
-      if (canSync && window.DB && window.DB._ready) {
+      const db = getAcademiaDB();
+      if (canSync && db && db._ready) {
         _lastSync = 0;
         _syncFromSupabase();
       }
@@ -351,15 +370,8 @@ function continueInit(auth) {
 } // FIN continueInit()
 
 
-/* ═══════════════════════════════════════════════════════════════
-   ACADEMIA — Typewriter Greeting Script
-   Agregar en app.html justo antes de </body>:
-   <script src="js/typewriter-greeting.js"></script>
-   ═══════════════════════════════════════════════════════════════
-
-   Espera a que init.js ponga el saludo en #ov-greeting,
-   luego lo "escribe" letra a letra con un cursor parpadeante.
-   ═══════════════════════════════════════════════════════════════ */
+/* Typewriter greeting effect for #ov-greeting.
+   It observes text updates and animates the final greeting string. */
 
 (function () {
   'use strict';

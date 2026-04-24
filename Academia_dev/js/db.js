@@ -1,6 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
-// STUDYSPACE — db.js
-// ═══════════════════════════════════════════════════════════════
+// Social module data access (groups, messages, shared notes/files).
 
 window.SS = window.SS || {};
 
@@ -270,4 +268,7 @@ const DB = {
   }
 };
 
+// Canonical social DB namespace.
+window.SS.SocialDB = DB;
+// Backward-compatible alias.
 window.SS.DB = DB;

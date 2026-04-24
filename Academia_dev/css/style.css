@@ -1,9 +1,0 @@
-/* ═══════════════════════════════════════════════════
-   ACADEMIA — Entry Point CSS
-   Importa los módulos en orden correcto
-═══════════════════════════════════════════════════ */
-
-@import url('base.css');
-@import url('components.css');
-@import url('mobile.css');
-@import url('mobile-fixes.css');

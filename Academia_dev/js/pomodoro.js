@@ -60,9 +60,51 @@ document.addEventListener('click', function _unlockAudio() {
 }, { once: true, passive: true });
 
 let _pomPipWin = null;
+
+function _pomShowFloatingHint(msg) {
+  let el = document.getElementById('pom-floating-hint');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'pom-floating-hint';
+    el.style.cssText = [
+      'position:fixed',
+      'left:50%',
+      'bottom:88px',
+      'transform:translateX(-50%)',
+      'z-index:3200',
+      'padding:8px 14px',
+      'border-radius:10px',
+      'background:rgba(16,16,24,.95)',
+      'border:1px solid rgba(124,106,255,.35)',
+      'color:#e8e8f0',
+      'font-size:12px',
+      'font-family:Syne,sans-serif',
+      'box-shadow:0 6px 20px rgba(0,0,0,.35)',
+      'opacity:0',
+      'transition:opacity .18s ease'
+    ].join(';');
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(_pomShowFloatingHint._t);
+  _pomShowFloatingHint._t = setTimeout(() => { if (el) el.style.opacity = '0'; }, 2800);
+}
+
+function _openPomFallbackPopup() {
+  const popup = window.open('pom-popup.html', 'academia_pom_popup', 'width=320,height=520');
+  if (popup) {
+    try { popup.focus(); } catch (e) {}
+    _pomShowFloatingHint('Modo flotante abierto en una ventana auxiliar.');
+    return true;
+  }
+  _pomShowFloatingHint('No se pudo abrir la ventana flotante (popup bloqueado).');
+  return false;
+}
+
 async function enterFloatingMode() {
   if (!('documentPictureInPicture' in window)) {
-    alert("Tu navegador no soporta ventanas flotantes reales. ¡Prueba en Chrome!");
+    _openPomFallbackPopup();
     return;
   }
 
@@ -72,10 +114,16 @@ async function enterFloatingMode() {
     return;
   }
 
-  _pomPipWin = await window.documentPictureInPicture.requestWindow({
-    width: 280,
-    height: 240,
-  });
+  try {
+    _pomPipWin = await window.documentPictureInPicture.requestWindow({
+      width: 280,
+      height: 240,
+    });
+  } catch (err) {
+    console.warn('PiP request failed, using popup fallback', err);
+    _openPomFallbackPopup();
+    return;
+  }
 
   const doc = _pomPipWin.document;
 

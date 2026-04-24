@@ -1,8 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
-   ACADEMIA — animations-patch.js  v2
-   Agregar en app.html DESPUÉS de todos los scripts:
-   <script src="js/animations-patch.js" defer></script>
-   ═══════════════════════════════════════════════════════════════ */
+/* Supplementary overview animation behaviors. */
 (function () {
   'use strict';
 
@@ -53,26 +49,23 @@
     });
   }
 
-  /* Parchea goPage para forzar reflow y re-disparar animaciones CSS */
-  function _patchGoPage() {
-    if (typeof goPage !== 'function') { requestAnimationFrame(_patchGoPage); return; }
-    var _orig = goPage;
-    window.goPage = function (id, el) {
-      document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
-      var target = document.getElementById('page-' + id);
-      if (target) void target.offsetWidth;
+  function _registerGoPageHook() {
+    if (typeof onGoPage !== 'function') {
+      requestAnimationFrame(_registerGoPageHook);
+      return;
+    }
+    onGoPage(function (id) {
       if (id === 'overview') {
         setTimeout(_replayOverviewAnims, 40);
         setTimeout(function () { _setDate(); _watchDate(); }, 60);
       }
-      _orig.apply(this, arguments);
-    };
+    });
   }
 
   function _init() {
     _setDate(); _watchDate(); _watchPage();
     setInterval(_setDate, 60000);
-    _patchGoPage();
+    _registerGoPageHook();
   }
 
   if (document.readyState === 'loading') {

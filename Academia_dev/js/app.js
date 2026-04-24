@@ -78,8 +78,32 @@ const DEFAULT_SETTINGS = { minGrade: 70, theme: 'dark', semester: '1er Año · 2
 function dbGet(key, fallback = null) {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }
 }
+let _storageWarnTimer = null;
+function _showStorageWarning(msg) {
+  let el = document.getElementById('storage-warning-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'storage-warning-toast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:94px;transform:translateX(-50%);z-index:3500;max-width:min(92vw,620px);padding:10px 14px;border-radius:10px;background:rgba(36,10,10,.95);border:1px solid rgba(248,113,113,.45);color:#ffd7d7;font-size:12px;font-family:Syne,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;transition:opacity .18s ease;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(_storageWarnTimer);
+  _storageWarnTimer = setTimeout(() => { if (el) el.style.opacity = '0'; }, 4200);
+}
 function dbSet(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) { console.warn('Storage error', e); }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch(e) {
+    const isQuota = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.code === 1014;
+    console.warn('Storage error', e);
+    if (isQuota) {
+      _showStorageWarning('No se pudo guardar: almacenamiento lleno. Elimina notas/imagenes pesadas o exporta respaldo.');
+    } else {
+      _showStorageWarning('No se pudo guardar localmente. Revisa permisos de almacenamiento del navegador.');
+    }
+  }
 }
 
 (function _stripDemoCourses() {
@@ -1394,6 +1418,8 @@ function renderSemestresList() {
 }
 
 function renderStats() {
+  const statsPage = document.getElementById('page-estadisticas');
+  if (statsPage && !statsPage.classList.contains('active')) return;
 
   const ctx1 = document.getElementById('chart-grades');
   if (!ctx1) return;
@@ -1402,7 +1428,14 @@ function renderStats() {
   const maxVals = State.materias.map(m => m.zones.reduce((a,z)=>a+z.maxPts,0));
   const colors  = State.materias.map(m => m.color);
 
-  const canvas = ctx1; canvas.width = canvas.offsetWidth || 600; canvas.height = 200;
+  const canvas = ctx1;
+  const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 0;
+  if (!width) {
+    requestAnimationFrame(() => renderStats());
+    return;
+  }
+  canvas.width = Math.max(240, width);
+  canvas.height = 200;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const pad = { left:10, right:10, top:20, bottom:40 };
