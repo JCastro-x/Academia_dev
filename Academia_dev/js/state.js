@@ -9,6 +9,11 @@ function _el(id) {
 function _clearDOMCache() { for (const k in _DOM) delete _DOM[k]; }
 function _getAcademiaDB() { return window.AcademiaDB || window.DB; }
 
+// Backwards-compatibility: expose `getAcademiaDB` expected by older files
+if (typeof window.getAcademiaDB !== 'function') {
+  window.getAcademiaDB = function() { return _getAcademiaDB(); };
+}
+
 /* ─── rAF Render Scheduler: batch multiple render() calls into one frame ─── */
 const _pending = new Set();
 let   _rafId   = null;
