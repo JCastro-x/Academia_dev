@@ -2543,7 +2543,7 @@ function _renderOverview() {
   sortedGroups.forEach(({ mat, tasks }) => {
     const cnt = tasks.length;
     const mc  = mat.color || 'var(--accent)';
-    html += `<div class="ov-mat-header" style="border-left:4px solid ${mc};background:${mc}12;">
+    html += `<div class="ov-mat-header" style="border-left:4px solid ${mc};background:#000;">
       <span style="font-size:15px;line-height:1;">${mat.icon||'📚'}</span>
       <span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">${mat.name}</span>
       ${mat.code?`<span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 7px;border-radius:4px;font-family:'Space Mono',monospace;">${mat.code}</span>`:''}
