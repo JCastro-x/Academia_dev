@@ -162,3 +162,26 @@
     opacity: .38 !important;
   }
 }
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FIX 4 — POMODORO SEMANAL: escala solo la barra del dia     ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* No escalar el wrapper completo de cada columna */
+#pom-week-bars > *:hover {
+  transform: none !important;
+}
+
+/* Escalar solo la barra vertical interna */
+#pom-week-bars > * > div:first-child {
+  transform-origin: bottom center;
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1),
+              filter .18s ease,
+              box-shadow .22s ease !important;
+}
+
+#pom-week-bars > *:hover > div:first-child {
+  transform: scaleY(1.08) !important;
+  filter: brightness(1.12) !important;
+  box-shadow: 0 0 10px rgba(124,106,255,.38) !important;
+}
