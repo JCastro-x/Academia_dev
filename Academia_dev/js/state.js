@@ -154,6 +154,16 @@ if (typeof window._getGreeting !== 'function') {
     return `${salud}, ${userName} `;
   };
 }
+
+if (typeof window._uiClick !== 'function') {
+  window._uiClick = function(type) {
+    try {
+      // No-op safe shim: if sounds.js loads later it will overwrite this
+      if (type === 'nav') return;
+      return;
+    } catch (e) {}
+  };
+}
 function dbSet(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
