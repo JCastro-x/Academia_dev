@@ -1,6 +1,38 @@
 
 function init() {
   const getAcademiaDB = () => window.AcademiaDB || window.DB;
+  const AUTH_REDIRECT_GUARD_KEY = 'academia_auth_redirect_ts';
+
+  function redirectToAuthSafely(reason = 'unknown') {
+    const now = Date.now();
+    const lastTs = Number(sessionStorage.getItem(AUTH_REDIRECT_GUARD_KEY) || 0);
+    const inLoopWindow = now - lastTs < 8000;
+
+    if (inLoopWindow) {
+      console.warn('⚠️ Auth redirect loop evitado:', reason);
+      const overlay = document.getElementById('auth-check-overlay');
+      if (overlay) {
+        overlay.innerHTML = `
+          <div style="max-width:420px;text-align:center;padding:0 18px;">
+            <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+            <div style="color:#e8e8f0;font-size:14px;font-family:Syne,sans-serif;line-height:1.6;margin-bottom:14px;">
+              No se pudo validar la sesión en este intento.<br>
+              Evitamos una recarga infinita para que puedas recuperar acceso.
+            </div>
+            <button id="auth-recover-btn" style="padding:9px 14px;border-radius:8px;border:1px solid #7c6aff;background:#7c6aff;color:#fff;font-family:Syne,sans-serif;font-weight:700;cursor:pointer;">
+              Ir al login
+            </button>
+          </div>
+        `;
+        const btn = document.getElementById('auth-recover-btn');
+        if (btn) btn.addEventListener('click', () => { window.location.href = 'auth-page.html'; }, { once: true });
+      }
+      return;
+    }
+
+    sessionStorage.setItem(AUTH_REDIRECT_GUARD_KEY, String(now));
+    window.location.href = 'auth-page.html';
+  }
 
   // ── Detectar modo invitado ────────────────────────────────────
   const isGuest = localStorage.getItem('academia_guest_mode') === '1';
@@ -70,7 +102,7 @@ function init() {
         }
 
         console.log('❌ NO AUTENTICADO - Redirigiendo a login');
-        window.location.href = 'auth-page.html';
+        redirectToAuthSafely('no-auth');
         return;
       }
 
@@ -144,7 +176,7 @@ function init() {
         if (overlay) overlay.remove();
         continueInit(null);
       } else {
-        window.location.href = 'auth-page.html';
+        redirectToAuthSafely('auth-error');
       }
     }
   })();

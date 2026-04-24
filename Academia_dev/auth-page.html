@@ -195,11 +195,15 @@
 
     // Verificar sesión al cargar
     window.addEventListener('load', () => {
+      const lastRedirect = Number(sessionStorage.getItem('academia_auth_redirect_ts') || 0);
+      const skipAutoJump = Date.now() - lastRedirect < 8000;
+
       // Si ya era invitado activo → directo a la app
       if (localStorage.getItem('academia_guest_mode') === '1') {
         window.location.href = 'app.html';
         return;
       }
+      if (skipAutoJump) return;
       // Si tiene sesión Google → directo a la app
       waitForAuth(async () => {
         const auth = await window.Auth.checkAuth();
