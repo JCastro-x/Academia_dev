@@ -340,3 +340,177 @@
   width: 100% !important;
   max-width: none !important;
 }
+
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ACADEMIA — Day Strip Individual Fix + Typewriter Greeting
+   Agregar AL FINAL de los CSS en app.html:
+   <link rel="stylesheet" href="css/daystrip-typewriter-fix.css">
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FIX — DAY STRIP: cada chip es INDEPENDIENTE               ║
+   ║  El problema: el contenedor usaba display:flex sin que      ║
+   ║  cada hijo tuviese position:relative + isolation, así el    ║
+   ║  hover de uno afectaba el layout de los demás.              ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* Contenedor: no expande, no redistribuye hijos al hover */
+#ov-day-strip {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 8px !important;
+  align-items: flex-start !important;   /* ← clave: no stretch en altura */
+  overflow: visible !important;
+  padding: 6px 2px 14px !important;
+}
+
+/* Cada chip: caja fija, aislada, no empuja a los vecinos */
+#ov-day-strip > div,
+.day-chip {
+  position: relative !important;
+  isolation: isolate !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+
+  /* Resetear cualquier transform heredado */
+  transform: translateY(0) scale(1) !important;
+
+  transition:
+    background     .28s ease,
+    border-color   .28s ease,
+    box-shadow     .32s cubic-bezier(.25,.8,.25,1),
+    transform      .32s cubic-bezier(.34,1.56,.64,1) !important;
+
+  will-change: transform, box-shadow;
+}
+
+/* HOVER: solo el chip que tocas se eleva — los demás no se mueven */
+#ov-day-strip > div:hover,
+.day-chip:hover {
+  transform: translateY(-7px) scale(1) !important;  /* solo Y, sin scale */
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, .48),
+    0 0 0 1px rgba(124, 106, 255, .40) !important;
+  border-color: rgba(124, 106, 255, .48) !important;
+  background: var(--surface3) !important;
+  z-index: 10 !important;
+}
+
+/* Click: baja un poco */
+#ov-day-strip > div:active,
+.day-chip:active {
+  transform: translateY(-2px) scale(1) !important;
+  transition-duration: .08s !important;
+}
+
+/* Chip "hoy": pulso de sombra, SIN transform para no interferir */
+#ov-day-strip > div.today,
+.day-chip.today {
+  animation: dayChipPulse 3s ease-in-out infinite !important;
+}
+@keyframes dayChipPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(124, 106, 255, .40),
+      0 4px 18px rgba(124, 106, 255, .22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px rgba(124, 106, 255, .65),
+      0 4px 28px rgba(124, 106, 255, .42);
+  }
+}
+
+/* Chip "hoy" al hover: detener el loop y elevar */
+#ov-day-strip > div.today:hover,
+.day-chip.today:hover {
+  transform: translateY(-7px) scale(1) !important;
+  animation: none !important;
+  box-shadow:
+    0 0 0 2px rgba(124, 106, 255, .65),
+    0 16px 38px rgba(124, 106, 255, .36) !important;
+}
+
+/* Dot / badge dentro del chip — pop individual */
+#ov-day-strip > div [style*="border-radius:50%"],
+.day-chip [style*="border-radius:50%"] {
+  transition: transform .26s cubic-bezier(.34,1.56,.64,1), box-shadow .26s ease;
+  display: inline-block;
+}
+#ov-day-strip > div:hover [style*="border-radius:50%"],
+.day-chip:hover [style*="border-radius:50%"] {
+  transform: scale(1.35) !important;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Badge numérico */
+#ov-day-strip > div [style*="background:var(--accent)"],
+.day-chip [style*="background:var(--accent)"] {
+  transition: transform .26s cubic-bezier(.34,1.56,.64,1), box-shadow .26s ease;
+}
+#ov-day-strip > div:hover [style*="background:var(--accent)"],
+.day-chip:hover [style*="background:var(--accent)"] {
+  transform: scale(1.18) !important;
+  box-shadow: 0 0 10px rgba(124, 106, 255, .55);
+}
+
+/* Número del día — color al hover */
+#ov-day-strip > div:hover [style*="font-weight"],
+.day-chip:hover [style*="font-weight"] {
+  color: var(--accent2);
+}
+
+/* Mobile: sin translateY (poco espacio) */
+@media (max-width: 768px) {
+  #ov-day-strip {
+    gap: 5px !important;
+  }
+  #ov-day-strip > div:hover,
+  .day-chip:hover {
+    transform: none !important;
+  }
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  TYPEWRITER — saludo personalizado                         ║
+   ║  Aplica el efecto sobre #ov-greeting cuando la página      ║
+   ║  carga. El JS de abajo lo activa automáticamente.          ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* Cursor parpadeante */
+@keyframes twCursor {
+  0%, 100% { border-color: var(--accent2); opacity: 1; }
+  50%       { border-color: transparent;   opacity: 0; }
+}
+
+/* El span que actúa de cursor */
+.tw-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: text-bottom;
+  background: var(--accent2, #7c6aff);
+  border-radius: 1px;
+  animation: twCursor .75s step-start infinite;
+}
+
+/* El saludo durante el efecto: sin overflow visible */
+#ov-greeting {
+  overflow: visible !important;
+  white-space: nowrap;
+}
+
+/* Una vez terminado el typewriter, el saludo puede volver a wrap */
+#ov-greeting.tw-done {
+  white-space: normal;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  SCRIPT INLINE — Typewriter activado desde CSS patch       ║
+   ╚══════════════════════════════════════════════════════════════╝ */

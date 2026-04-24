@@ -325,3 +325,97 @@ function continueInit(auth) {
   initNotifications();
 
 } // FIN continueInit()
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ACADEMIA — Typewriter Greeting Script
+   Agregar en app.html justo antes de </body>:
+   <script src="js/typewriter-greeting.js"></script>
+   ═══════════════════════════════════════════════════════════════
+
+   Espera a que init.js ponga el saludo en #ov-greeting,
+   luego lo "escribe" letra a letra con un cursor parpadeante.
+   ═══════════════════════════════════════════════════════════════ */
+
+(function () {
+  'use strict';
+
+  /**
+   * Typewriter en un elemento dado.
+   * @param {HTMLElement} el    - Elemento a animar
+   * @param {string}      text  - Texto final a escribir
+   * @param {number}      speed - ms por carácter (default 38)
+   */
+  function typewrite(el, text, speed = 38) {
+    // Limpiar contenido anterior
+    el.textContent = '';
+    el.classList.remove('tw-done');
+
+    // Cursor
+    const cursor = document.createElement('span');
+    cursor.className = 'tw-cursor';
+    el.appendChild(cursor);
+
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        // Insertar el carácter ANTES del cursor
+        el.insertBefore(document.createTextNode(text[i]), cursor);
+        i++;
+      } else {
+        clearInterval(interval);
+        // Remover cursor después de 2 s
+        setTimeout(() => {
+          cursor.remove();
+          el.classList.add('tw-done');
+        }, 2000);
+      }
+    }, speed);
+  }
+
+  /**
+   * Observa #ov-greeting y ejecuta el efecto en cuanto
+   * el texto cambia a algo no vacío.
+   * Funciona tanto si init.js ya corrió como si corre después.
+   */
+  function watchGreeting() {
+    const grEl = document.getElementById('ov-greeting');
+    if (!grEl) {
+      // El elemento aún no existe en el DOM — reintentar
+      setTimeout(watchGreeting, 150);
+      return;
+    }
+
+    let lastText = '';
+
+    const applyTw = () => {
+      const raw = grEl.textContent.trim();
+      // Ignorar si ya está vacío o es el mismo texto
+      if (!raw || raw === lastText) return;
+      lastText = raw;
+      typewrite(grEl, raw, 36);
+    };
+
+    // Si ya tiene texto al montar
+    if (grEl.textContent.trim()) {
+      applyTw();
+    }
+
+    // Observar cambios futuros (init.js puede setear el texto después)
+    const obs = new MutationObserver(() => {
+      // Solo re-animar si el contenido cambió y NO hay cursor activo
+      if (!grEl.querySelector('.tw-cursor')) {
+        applyTw();
+      }
+    });
+
+    obs.observe(grEl, { childList: true, subtree: true, characterData: true });
+  }
+
+  // Arrancar cuando el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', watchGreeting);
+  } else {
+    watchGreeting();
+  }
+})();
