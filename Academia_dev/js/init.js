@@ -55,6 +55,7 @@ function init() {
   document.body.insertBefore(loadingOverlay, document.body.firstChild);
 
   (async () => {
+    let auth = null;
     try {
 
       // ════════════════════════════════════════════════════════
@@ -77,7 +78,7 @@ function init() {
       const hasOAuthCallback = window.location.hash.includes('access_token') ||
                                window.location.search.includes('code=');
 
-      let auth = await window.Auth.checkAuth();
+      auth = await window.Auth.checkAuth();
 
       if (!auth && hasOAuthCallback) {
         // Evita race condition del callback OAuth sin depender de un solo timeout fijo
@@ -162,6 +163,17 @@ function init() {
 
     } catch (err) {
       console.error('❌ Error verificando auth:', err);
+      if (auth && auth.id) {
+        // Si la sesión ya era válida, no forzar logout por errores de render/UI.
+        const overlay = document.getElementById('auth-check-overlay');
+        if (overlay) overlay.remove();
+        try {
+          continueInit(auth);
+        } catch (uiErr) {
+          console.error('❌ Error iniciando UI con sesión válida:', uiErr);
+        }
+        return;
+      }
       const hasLocalData =
         !!localStorage.getItem('academia_v4_semestres') ||
         !!localStorage.getItem('academia_v3_settings');
