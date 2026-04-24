@@ -398,6 +398,52 @@ function setNoiseVol(v) {
   if (_noiseGain && _pomAudioCtx) {
     _noiseGain.gain.setTargetAtTime(_noiseVol, _pomAudioCtx.currentTime, 0.1);
   }
+  localStorage.setItem('academia_noise_vol', v);
+  updateSliderFill(document.getElementById('noise-vol'));
+}
+
+// Actualiza el fondo del slider para mostrar progreso
+function updateSliderFill(el) {
+  if (!el) return;
+  const val = (el.value - el.min) / (el.max - el.min) * 100;
+  el.style.backgroundSize = val + '% 100%';
+}
+
+// Inicializar todos los sliders al cargar y escuchar cambios globales
+document.addEventListener('input', e => {
+  if (e.target.type === 'range') {
+    updateSliderFill(e.target);
+  }
+});
+
+// También inicializar los sliders existentes al cargar el DOM y al cambiar de página
+document.addEventListener('DOMContentLoaded', () => {
+  initSliders();
+});
+
+// Hook para SPA: actualizar sliders al cambiar de página
+if (typeof onGoPage === 'function') {
+  onGoPage(() => {
+    setTimeout(initSliders, 50);
+  });
+}
+
+function initSliders() {
+  const noiseVol = localStorage.getItem('academia_noise_vol');
+  const pomVol = localStorage.getItem('academia_pom_vol');
+  
+  const noiseSlider = document.getElementById('noise-vol');
+  const pomSlider = document.getElementById('pom-vol');
+  
+  if (noiseSlider && noiseVol !== null) {
+    noiseSlider.value = noiseVol;
+    _noiseVol = parseInt(noiseVol) / 100;
+  }
+  if (pomSlider && pomVol !== null) {
+    pomSlider.value = pomVol;
+  }
+  
+  document.querySelectorAll('input[type="range"]').forEach(updateSliderFill);
 }
 
 // ── INTEGRATE UI SOUNDS INTO EXISTING FUNCTIONS ───────────────
@@ -491,6 +537,8 @@ function _mp3Stop() {
 function setPomVol(v) {
   const audio = _el('pom-audio');
   if (audio) audio.volume = parseInt(v) / 100;
+  localStorage.setItem('academia_pom_vol', v);
+  updateSliderFill(document.getElementById('pom-vol'));
 }
 
 function _pomTodayKey() {
