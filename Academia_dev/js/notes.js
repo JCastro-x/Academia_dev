@@ -2390,6 +2390,13 @@ function _renderOverview() {
         background: #000; /* materias header distinct background */
         color: var(--text);
       }
+      .ov-mat-chip {
+        background: #000 !important;
+        color: #fff !important;
+        border-radius: 5px;
+        padding: 2px 8px;
+        font-size: 11px; font-weight: 700;
+      }
       .ov-mat-header:first-child { border-top: none; margin-top: 0; }
       .ov-prog-bar-wrap {
         width: 100%; height: 5px; background: rgba(255,255,255,.10);
@@ -2472,7 +2479,7 @@ function _renderOverview() {
       <div class="mc-task-info">
         <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">${t.title}</div>
         <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-          <span style="background:${tc.bg};color:${tc.text};border:1px solid ${tc.border};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${type}</span>
+          <span class="ov-mat-chip" style="color:${tc.text};border:1px solid ${tc.border};padding:2px 8px;font-size:11px;font-weight:700;border-radius:5px;">${type}</span>
           ${planStr}
         </div>
         ${progBar}
@@ -2515,7 +2522,7 @@ function _renderOverview() {
         <div class="mc-task-info">
           <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">📅 ${ev.title||'Evento'}</div>
           <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-            ${evMat?`<span style="background:${evMat.color||'#60a5fa'}33;color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}55;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;">${evMat.code||evMat.name}</span>`:''}
+            ${evMat?`<span class="ov-mat-chip" style="color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}55;">${evMat.code||evMat.name}</span>`:''}
             ${ev.type?`<span style="font-size:11px;color:#93c5fd;">${ev.type}</span>`:''}
           </div>
         </div>
