@@ -75,21 +75,20 @@
   animation: none !important;
 }
 
-/* Chips base — transición limpia SOLO de scale y shadow */
+/* Chips base — sin expansion para evitar desbordes */
 #ov-day-strip > div,
 .day-chip {
   transition:
     background     .24s ease,
     border-color   .26s ease,
-    box-shadow     .28s cubic-bezier(.25,.8,.25,1),
-    transform      .28s cubic-bezier(.34,1.56,.64,1) !important;
-  will-change: transform;
+    box-shadow     .28s cubic-bezier(.25,.8,.25,1) !important;
+  will-change: auto;
 }
 
-/* HOVER: solo el chip que tocas crece, los demás no se mueven */
+/* HOVER: mantener tamano fijo */
 #ov-day-strip > div:hover,
 .day-chip:hover {
-  transform: scale(1.12) !important;
+  transform: none !important;
   box-shadow:
     0 8px 28px rgba(0,0,0,.45),
     0 0 0 1px rgba(124,106,255,.42) !important;
@@ -102,7 +101,7 @@
 /* Click: press down */
 #ov-day-strip > div:active,
 .day-chip:active {
-  transform: scale(1.05) !important;
+  transform: none !important;
   transition-duration: .10s !important;
 }
 
@@ -112,10 +111,10 @@
   animation: dayChipToday 3s ease-in-out infinite !important;
 }
 
-/* Chip "hoy" al hover — escala + acumula el glow */
+/* Chip "hoy" al hover — sin escala */
 #ov-day-strip > div.today:hover,
 .day-chip.today:hover {
-  transform: scale(1.12) !important;
+  transform: none !important;
   box-shadow:
     0 0 0 2px rgba(124,106,255,.65),
     0 12px 32px rgba(124,106,255,.38) !important;
@@ -142,9 +141,9 @@
   box-shadow: 0 0 10px rgba(124,106,255,.5);
 }
 
-/* El contenedor no corta el shadow del scale */
+/* Evitar que el panel se salga de margenes */
 #ov-day-strip {
-  overflow: visible !important;
+  overflow: hidden !important;
   padding: 6px 4px 12px !important;
 }
 
