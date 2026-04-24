@@ -1,0 +1,164 @@
+/* ═══════════════════════════════════════════════════════════════
+   ACADEMIA — Animations Fix Patch
+   Agregar DESPUÉS de academia-animations-v3.css en app.html:
+   <link rel="stylesheet" href="css/academia-anim-fix.css">
+   ═══════════════════════════════════════════════════════════════ */
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FIX 1 — TAREAS COMPLETADAS: vuelven a verse oscuras       ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* La animación de entrada no debe afectar la opacidad final
+   de tareas completadas/tachadas */
+.task-item.done,
+.task-item[data-done="true"],
+.task-item.completed {
+  opacity: .42 !important;
+  animation: fadeInDone .38s ease both !important;
+}
+
+@keyframes fadeInDone {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: .42; transform: translateX(0); }
+}
+
+/* El label tachado también se mantiene oscuro */
+.task-item.done .task-label,
+.task-item.completed .task-label {
+  color: var(--text3) !important;
+  text-decoration: line-through;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FIX 2 — TAREAS DEL OVERVIEW: trigger de animación        ║
+   ║  El overview es la página activa por defecto así que       ║
+   ║  las tareas se insertan después de que CSS ya está listo.  ║
+   ║  Usamos will-change para forzar el repaint.                ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+#ov-tasks-list .task-item {
+  animation: slideInRow .38s cubic-bezier(.22,.68,0,1.1) both !important;
+  will-change: transform, opacity;
+}
+
+/* Stagger igual que en v3 pero con !important para ganar */
+#ov-tasks-list .task-item:nth-child(1)   { animation-delay:.05s !important; }
+#ov-tasks-list .task-item:nth-child(2)   { animation-delay:.10s !important; }
+#ov-tasks-list .task-item:nth-child(3)   { animation-delay:.15s !important; }
+#ov-tasks-list .task-item:nth-child(4)   { animation-delay:.20s !important; }
+#ov-tasks-list .task-item:nth-child(5)   { animation-delay:.24s !important; }
+#ov-tasks-list .task-item:nth-child(6)   { animation-delay:.28s !important; }
+#ov-tasks-list .task-item:nth-child(7)   { animation-delay:.31s !important; }
+#ov-tasks-list .task-item:nth-child(8)   { animation-delay:.34s !important; }
+#ov-tasks-list .task-item:nth-child(n+9) { animation-delay:.37s !important; }
+
+/* Grupos de materia (el wrapper encima de las tareas) */
+#ov-tasks-list > div:not(.task-item) {
+  animation: slideInRow .34s cubic-bezier(.22,.68,0,1.1) both !important;
+}
+#ov-tasks-list > div:nth-child(1) { animation-delay:.03s !important; }
+#ov-tasks-list > div:nth-child(2) { animation-delay:.10s !important; }
+#ov-tasks-list > div:nth-child(3) { animation-delay:.17s !important; }
+#ov-tasks-list > div:nth-child(n+4) { animation-delay:.23s !important; }
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FIX 3 — DAY STRIP: solo el chip bajo el cursor crece,    ║
+   ║  sin translateY y sin la animación de entrada rara         ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* Cancelar la animación de entrada que se ve mal */
+.page.active #ov-day-strip > div,
+.page.active #ov-day-strip > div:nth-child(n) {
+  animation: none !important;
+}
+
+/* Chips base — transición limpia SOLO de scale y shadow */
+#ov-day-strip > div,
+.day-chip {
+  transition:
+    background     .24s ease,
+    border-color   .26s ease,
+    box-shadow     .28s cubic-bezier(.25,.8,.25,1),
+    transform      .28s cubic-bezier(.34,1.56,.64,1) !important;
+  will-change: transform;
+}
+
+/* HOVER: solo el chip que tocas crece, los demás no se mueven */
+#ov-day-strip > div:hover,
+.day-chip:hover {
+  transform: scale(1.12) !important;
+  box-shadow:
+    0 8px 28px rgba(0,0,0,.45),
+    0 0 0 1px rgba(124,106,255,.42) !important;
+  border-color: rgba(124,106,255,.48) !important;
+  background: var(--surface3) !important;
+  z-index: 2;
+  position: relative;
+}
+
+/* Click: press down */
+#ov-day-strip > div:active,
+.day-chip:active {
+  transform: scale(1.05) !important;
+  transition-duration: .10s !important;
+}
+
+/* Chip "hoy" — solo el pulso de sombra, sin mover */
+#ov-day-strip > div.today,
+.day-chip.today {
+  animation: dayChipToday 3s ease-in-out infinite !important;
+}
+
+/* Chip "hoy" al hover — escala + acumula el glow */
+#ov-day-strip > div.today:hover,
+.day-chip.today:hover {
+  transform: scale(1.12) !important;
+  box-shadow:
+    0 0 0 2px rgba(124,106,255,.65),
+    0 12px 32px rgba(124,106,255,.38) !important;
+  animation: none !important;
+}
+
+/* Número dentro del chip — color al hover del chip padre */
+#ov-day-strip > div:hover [style*="font-weight"],
+.day-chip:hover [style*="font-weight"] {
+  color: var(--accent2);
+}
+
+/* Punto de evento dentro del chip — pop al hover */
+#ov-day-strip > div:hover [style*="border-radius:50%"],
+.day-chip:hover [style*="border-radius:50%"] {
+  transform: scale(1.4);
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Badge numérico */
+#ov-day-strip > div:hover [style*="background:var(--accent)"],
+.day-chip:hover [style*="background:var(--accent)"] {
+  transform: scale(1.18);
+  box-shadow: 0 0 10px rgba(124,106,255,.5);
+}
+
+/* El contenedor no corta el shadow del scale */
+#ov-day-strip {
+  overflow: visible !important;
+  padding: 6px 4px 12px !important;
+}
+
+
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  MOBILE — sin scale en el strip (poco espacio)             ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+@media (max-width: 768px) {
+  #ov-day-strip > div:hover,
+  .day-chip:hover {
+    transform: none !important;
+  }
+  .task-item.done,
+  .task-item.completed {
+    opacity: .38 !important;
+  }
+}
