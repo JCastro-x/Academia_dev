@@ -47,6 +47,7 @@
 
       if (error) {
         console.warn('⚠️ DB.load error:', error.message);
+        if (typeof window._appNotify === 'function') window._appNotify('No se pudo cargar datos desde la nube: ' + (error.message || 'error de red'), 'error');
         return null;
       }
       if (!data) {
@@ -61,6 +62,12 @@
       };
     } catch (err) {
       console.warn('⚠️ DB.load excepción:', err.message);
+      // Detect network offline
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        if (typeof window._appNotify === 'function') window._appNotify('Sin conexión — no se pudo sincronizar con Supabase', 'warning');
+      } else {
+        if (typeof window._appNotify === 'function') window._appNotify('Error al cargar datos desde Supabase', 'error');
+      }
       return null;
     }
   }
@@ -82,11 +89,18 @@
         );
       if (error) {
         console.warn('⚠️ DB.save error:', error.message);
+        if (typeof window._appNotify === 'function') window._appNotify('No se pudo sincronizar con la nube: ' + (error.message || 'error'), 'error');
       } else {
         console.log('☁️ DB.save: datos guardados en Supabase');
+        if (typeof window._appNotify === 'function') window._appNotify('Sincronización exitosa ☁️', 'ok');
       }
     } catch (err) {
       console.warn('⚠️ DB.save excepción:', err.message);
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        if (typeof window._appNotify === 'function') window._appNotify('Sin conexión — guardado local pendiente', 'warning');
+      } else {
+        if (typeof window._appNotify === 'function') window._appNotify('Error al sincronizar con Supabase', 'error');
+      }
     }
   }
 

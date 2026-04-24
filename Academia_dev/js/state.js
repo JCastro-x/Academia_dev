@@ -96,6 +96,64 @@ function _showStorageWarning(msg) {
   clearTimeout(_storageWarnTimer);
   _storageWarnTimer = setTimeout(() => { if (el) el.style.opacity = '0'; }, 4200);
 }
+
+function _appNotify(msg, type = 'ok') {
+  let el = document.getElementById('app-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'app-toast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:30px;transform:translateX(-50%);z-index:4500;max-width:min(92vw,720px);padding:10px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,.35);opacity:0;transition:opacity .18s ease;';
+    document.body.appendChild(el);
+  }
+  const colors = { ok: 'var(--accent)', warning: '#fbbf24', error: '#f87171' };
+  el.style.border = `2px solid ${colors[type] || colors.ok}`;
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { if (el) el.style.opacity = '0'; }, 4200);
+}
+
+// Expose a simple global notifier used by sync and other modules
+window._appNotify = _appNotify;
+
+// Show quick online/offline status changes
+window.addEventListener('online', () => { _appNotify('Conexión restablecida — intentando sincronizar', 'ok'); });
+window.addEventListener('offline', () => { _appNotify('Sin conexión — trabajando en modo offline', 'warning'); });
+
+// Compatibility shims for functions expected by older modules
+if (typeof window.createFlashcardFromSelection !== 'function') {
+  window.createFlashcardFromSelection = function() {
+    const sel = window.getSelection ? window.getSelection().toString().trim() : '';
+    if (!sel) { if (typeof window._appNotify === 'function') window._appNotify('Selecciona texto para crear la flashcard', 'warning'); return; }
+    // Prefer new flashcards API
+    if (typeof window.openAddFlashcardModal === 'function') {
+      try {
+        openAddFlashcardModal();
+        setTimeout(() => {
+          const q = document.getElementById('fc-question-input') || document.getElementById('fc-front') || document.getElementById('fc-front-input');
+          if (q) { q.value = sel; if (typeof q.focus === 'function') q.focus(); }
+        }, 60);
+        return;
+      } catch(e) { /* fallback below */ }
+    }
+    // Legacy modal fallback
+    if (typeof window.openNewFlashcardModal === 'function') {
+      openNewFlashcardModal();
+      setTimeout(() => { const f = document.getElementById('fc-front'); if (f) f.value = sel; }, 60);
+      return;
+    }
+    if (typeof window._appNotify === 'function') window._appNotify('Función de flashcards no disponible', 'error');
+  };
+}
+
+if (typeof window._getGreeting !== 'function') {
+  window._getGreeting = function() {
+    const h = new Date().getHours();
+    const userName = window._currentUserName || (typeof State !== 'undefined' && State.settings?.profile?.name ? State.settings.profile.name.split(' ')[0] : null) || 'Usuario';
+    const salud = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+    return `${salud}, ${userName} `;
+  };
+}
 function dbSet(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
