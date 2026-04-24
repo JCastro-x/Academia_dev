@@ -102,7 +102,7 @@ async function handleLogout() {
 
   if (isGuest) {
     if (!confirm('¿Salir del modo invitado? Tus datos guardados en este dispositivo se eliminarán.')) return;
-    localStorage.clear();
+    if (window.Auth?.clearAcademiaStorage) window.Auth.clearAcademiaStorage();
     window.location.href = 'auth-page.html';
     return;
   }
@@ -112,7 +112,7 @@ async function handleLogout() {
   const result = await window.Auth.logoutUser();
   if (result.success) {
     console.log('✅ Sesión cerrada');
-    localStorage.clear();
+    if (window.Auth?.clearAcademiaStorage) window.Auth.clearAcademiaStorage();
     window.location.href = 'auth-page.html';
   } else {
     alert('Error al cerrar sesión: ' + result.error);

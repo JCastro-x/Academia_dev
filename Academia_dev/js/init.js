@@ -47,11 +47,27 @@ function init() {
       let auth = await window.Auth.checkAuth();
 
       if (!auth && hasOAuthCallback) {
-        await new Promise(r => setTimeout(r, 1500));
-        auth = await window.Auth.checkAuth();
+        // Evita race condition del callback OAuth sin depender de un solo timeout fijo
+        for (let i = 0; i < 6 && !auth; i++) {
+          await new Promise(r => setTimeout(r, 400));
+          auth = await window.Auth.checkAuth();
+        }
       }
 
       if (!auth) {
+        const hasLocalData =
+          !!localStorage.getItem('academia_v4_semestres') ||
+          !!localStorage.getItem('academia_v3_settings');
+        const isOffline = navigator.onLine === false;
+
+        if (isOffline && hasLocalData) {
+          console.warn('⚠️ Modo offline: continuando con datos locales cacheados');
+          const overlay = document.getElementById('auth-check-overlay');
+          if (overlay) overlay.remove();
+          continueInit(null);
+          return;
+        }
+
         console.log('❌ NO AUTENTICADO - Redirigiendo a login');
         window.location.href = 'auth-page.html';
         return;
@@ -112,8 +128,16 @@ function init() {
 
     } catch (err) {
       console.error('❌ Error verificando auth:', err);
+      const hasLocalData =
+        !!localStorage.getItem('academia_v4_semestres') ||
+        !!localStorage.getItem('academia_v3_settings');
+      const isOffline = navigator.onLine === false;
       // En caso de error, si es invitado igual dejamos pasar
       if (localStorage.getItem('academia_guest_mode') === '1') {
+        const overlay = document.getElementById('auth-check-overlay');
+        if (overlay) overlay.remove();
+        continueInit(null);
+      } else if (isOffline && hasLocalData) {
         const overlay = document.getElementById('auth-check-overlay');
         if (overlay) overlay.remove();
         continueInit(null);

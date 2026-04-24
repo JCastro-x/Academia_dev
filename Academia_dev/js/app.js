@@ -1,8 +1,10 @@
 /* ─── DOM Cache: cache frequently-accessed nodes once at startup ─── */
 const _DOM = {};
 function _el(id) {
-  if (!_DOM[id]) _DOM[id] = document.getElementById(id);
-  return _DOM[id];
+  if (_DOM[id]) return _DOM[id];
+  const el = document.getElementById(id);
+  if (el) _DOM[id] = el;
+  return el;
 }
 function _clearDOMCache() { for (const k in _DOM) delete _DOM[k]; }
 

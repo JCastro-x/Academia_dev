@@ -7,6 +7,7 @@
 (function() {
   const SUPABASE_URL      = 'https://mwzezekdxrutpzqbduvh.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_O1RMAV7hbpvDwJj0ESgaCg_dd8lZur5';
+  const ACADEMIA_STORAGE_PREFIXES = ['academia_', '_academia_'];
 
   let supabaseClient = null;
 let prueba12;
@@ -31,6 +32,18 @@ let prueba12;
     document.addEventListener('DOMContentLoaded', initSupabase);
   } else {
     initSupabase();
+  }
+
+  function clearAcademiaStorage() {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (ACADEMIA_STORAGE_PREFIXES.some(prefix => k.startsWith(prefix))) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
   }
 
   // ── Google SignIn ────────────────────────────────────────────
@@ -67,7 +80,7 @@ let prueba12;
       if (!supabaseClient) return { success: false, error: 'Supabase no inicializado' };
       const { error } = await supabaseClient.auth.signOut();
       if (error) return { success: false, error: error.message };
-      localStorage.clear();
+      clearAcademiaStorage();
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
@@ -77,6 +90,7 @@ let prueba12;
   // ── Check auth ───────────────────────────────────────────────
   async function checkAuth() {
     try {
+      if (!supabaseClient) initSupabase();
       if (!supabaseClient) return null;
       const { data: { session }, error } = await supabaseClient.auth.getSession();
       if (error || !session?.user) return null;
@@ -105,6 +119,7 @@ let prueba12;
     signInGoogle,
     logoutUser,
     checkAuth,
+    clearAcademiaStorage,
     onAuthChange,
     getClient: () => supabaseClient
   };
