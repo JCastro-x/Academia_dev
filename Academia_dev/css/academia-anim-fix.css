@@ -164,24 +164,18 @@
 }
 
 /* ╔══════════════════════════════════════════════════════════════╗
-   ║  FIX 4 — POMODORO SEMANAL: escala solo la barra del dia     ║
+   ║  FIX 4 — POMODORO SEMANAL: sin expansion en hover           ║
    ╚══════════════════════════════════════════════════════════════╝ */
 
-/* No escalar el wrapper completo de cada columna */
-#pom-week-bars > *:hover {
+/* Desactivar cualquier escala al pasar el mouse */
+#pom-week-bars > *,
+#pom-week-bars > * > div:first-child {
   transform: none !important;
 }
 
-/* Escalar solo la barra vertical interna */
-#pom-week-bars > * > div:first-child {
-  transform-origin: bottom center;
-  transition: transform .22s cubic-bezier(.34,1.56,.64,1),
-              filter .18s ease,
-              box-shadow .22s ease !important;
-}
-
+#pom-week-bars > *:hover,
 #pom-week-bars > *:hover > div:first-child {
-  transform: scaleY(1.08) !important;
-  filter: brightness(1.12) !important;
-  box-shadow: 0 0 10px rgba(124,106,255,.38) !important;
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
 }
