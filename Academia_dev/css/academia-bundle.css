@@ -1308,11 +1308,18 @@ input[type="checkbox"]:checked {
 #pom-stat-total,
 #pom-stat-mins,
 #pom-goal-done,
-#pom-stat-streak,
 #pom-stat-week-sessions,
 #pom-stat-week-mins {
   display: inline-block;
   animation: numberReveal .50s cubic-bezier(.22,.68,0,1.1) .12s both;
+}
+
+/* Keep entry reveal and continuous flame together. */
+#pom-stat-streak {
+  display: inline-block;
+  animation:
+    numberReveal .50s cubic-bezier(.22,.68,0,1.1) .12s both,
+    streakFlame 2.4s ease-in-out .62s infinite;
 }
 
 /* Meta del dÃ­a â€” progress bar animada al cargar */

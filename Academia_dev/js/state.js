@@ -25,6 +25,9 @@ const DB_KEYS = {
   SEMESTRES: 'academia_v4_semestres',
   POM_TODAY: 'academia_v3_pom_today',
   POM_DATE:  'academia_v3_pom_date',
+  POM_HISTORY: 'academia_v3_pom_history',
+  POM_RUNNING: 'academia_v3_pom_running',
+  POM_SNAPSHOTS: 'academia_v3_pom_daily_snapshots',
   SETTINGS:  'academia_v3_settings',
 };
 
@@ -201,8 +204,24 @@ const State = {
     }
     return dbGet(DB_KEYS.POM_TODAY, []);
   })(),
+  pomHistory: dbGet(DB_KEYS.POM_HISTORY, {}),
+  pomSnapshots: dbGet(DB_KEYS.POM_SNAPSHOTS, {}),
   settings: { ...DEFAULT_SETTINGS, ...dbGet(DB_KEYS.SETTINGS, {}) },
 };
+
+if ((!State.pomSessions || !State.pomSessions.length) && State.settings?.pomData?.date === new Date().toDateString()) {
+  State.pomSessions = Array.isArray(State.settings.pomData.today) ? State.settings.pomData.today : [];
+}
+if ((!State.pomHistory || !Object.keys(State.pomHistory).length) && State.settings?.pomData?.history) {
+  State.pomHistory = State.settings.pomData.history;
+}
+if ((!State.pomSnapshots || !Object.keys(State.pomSnapshots).length) && State.settings?.pomData?.snapshots) {
+  State.pomSnapshots = State.settings.pomData.snapshots;
+}
+
+if (!State.settings.pomDailyGoal || Number.isNaN(Number(State.settings.pomDailyGoal))) {
+  State.settings.pomDailyGoal = 4;
+}
 
 /* ─── Debounced save: batches rapid saveState calls into one write every 400ms ─── */
 let _saveTimer = null;
@@ -245,6 +264,29 @@ function saveStateNow(keys = ['all']) {
 function savePom() {
   dbSet(DB_KEYS.POM_TODAY, State.pomSessions);
   dbSet(DB_KEYS.POM_DATE, new Date().toDateString());
+  dbSet(DB_KEYS.POM_HISTORY, State.pomHistory || {});
+  dbSet(DB_KEYS.POM_SNAPSHOTS, State.pomSnapshots || {});
+  State.settings.pomData = {
+    today: State.pomSessions,
+    date: new Date().toDateString(),
+    history: State.pomHistory || {},
+    snapshots: State.pomSnapshots || {},
+    goal: Number(State.settings.pomDailyGoal) || 4,
+    updatedAt: Date.now(),
+  };
+  saveState(['settings']);
+}
+
+function savePomRunning(payload) {
+  if (!payload) {
+    localStorage.removeItem(DB_KEYS.POM_RUNNING);
+    return;
+  }
+  dbSet(DB_KEYS.POM_RUNNING, payload);
+}
+
+function loadPomRunning() {
+  return dbGet(DB_KEYS.POM_RUNNING, null);
 }
 
 function getActiveSem() { return State._activeSem; }

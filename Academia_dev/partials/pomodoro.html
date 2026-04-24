@@ -87,7 +87,7 @@
                     <input type="number" id="pom-cycles" value="4" min="1" max="20" class="grade-input" style="width:58px;" oninput="renderPomGoal()">
                   </div>
                 </div>
-                <button class="btn btn-ghost btn-sm" onclick="pomSavePartial()" style="width:100%;font-size:12px;">💾 Guardar sesión parcial</button>
+                <button class="btn btn-primary" onclick="pomSavePartial()" style="width:100%;font-size:13px;font-weight:700;">💾 Guardar progreso de sesión</button>
               </div>
             </div>
           </div>
@@ -133,7 +133,6 @@
               <div style="display:flex;gap:8px;">
                 <button class="btn btn-primary" id="chrono-btn" onclick="chronoToggle()" style="flex:1;">▶ Iniciar</button>
                 <button class="btn btn-ghost btn-sm" onclick="chronoReset()" title="Reiniciar">↺</button>
-                <button class="btn btn-ghost btn-sm" onclick="chronoSave()" title="Guardar sesión">💾</button>
               </div>
               <button class="btn btn-ghost btn-sm" onclick="chronoSwitchPhase()" style="width:100%;font-size:11px;" id="chrono-switch-btn">☕ Cambiar a descanso</button>
 

@@ -493,11 +493,138 @@ function setPomVol(v) {
   if (audio) audio.volume = parseInt(v) / 100;
 }
 
+function _pomTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function _pomDateLabel(isoDate) {
+  try {
+    return new Date(`${isoDate}T12:00:00`).toLocaleDateString('es-ES', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short'
+    });
+  } catch (e) {
+    return isoDate;
+  }
+}
+
+function _ensurePomStateContainers() {
+  if (!State.pomHistory || typeof State.pomHistory !== 'object') State.pomHistory = {};
+  if (!State.pomSnapshots || typeof State.pomSnapshots !== 'object') State.pomSnapshots = {};
+}
+
+function _appendPomSession(session) {
+  _ensurePomStateContainers();
+  const dayKey = _pomTodayKey();
+  const entry = { ...session, date: dayKey };
+  State.pomSessions.push(entry);
+  if (!Array.isArray(State.pomHistory[dayKey])) State.pomHistory[dayKey] = [];
+  State.pomHistory[dayKey].push(entry);
+  savePom();
+}
+
+function _savePomRunningState() {
+  if (!pomR) {
+    savePomRunning(null);
+    return;
+  }
+  savePomRunning({
+    running: !!pomR,
+    isBreak: !!pomB,
+    remaining: pomSL,
+    total: pomTS,
+    cyclesDone: pomD,
+    workMins: parseInt(document.getElementById('pom-work')?.value || '25', 10),
+    breakMins: parseInt(document.getElementById('pom-break')?.value || '5', 10),
+    cyclesGoal: parseInt(document.getElementById('pom-cycles')?.value || '4', 10),
+    subjectId: document.getElementById('pom-subject')?.value || '',
+    taskId: document.getElementById('pom-task-sel')?.value || '',
+    savedAt: Date.now(),
+  });
+}
+
+function restorePomRunningState() {
+  const saved = loadPomRunning();
+  if (!saved || !saved.running) return;
+  const ageMs = Date.now() - (saved.savedAt || 0);
+  if (ageMs > (1000 * 60 * 60 * 6)) {
+    savePomRunning(null);
+    return;
+  }
+  if (document.getElementById('pom-work') && saved.workMins) document.getElementById('pom-work').value = saved.workMins;
+  if (document.getElementById('pom-break') && saved.breakMins) document.getElementById('pom-break').value = saved.breakMins;
+  if (document.getElementById('pom-cycles') && saved.cyclesGoal) document.getElementById('pom-cycles').value = saved.cyclesGoal;
+  if (document.getElementById('pom-subject')) document.getElementById('pom-subject').value = saved.subjectId || '';
+  if (document.getElementById('pom-task-sel')) document.getElementById('pom-task-sel').value = saved.taskId || '';
+  pomB = !!saved.isBreak;
+  pomR = !!saved.running;
+  pomD = Number(saved.cyclesDone) || 0;
+  pomTS = Number(saved.total) || (pomB ? pomBreak() : pomWork());
+  pomSL = Number(saved.remaining) || pomTS;
+  if (pomSL <= 0) {
+    pomR = false;
+    savePomRunning(null);
+    return;
+  }
+  _el('pom-btn').textContent = '⏸ Pausar';
+  updatePomDisp();
+  updatePomDots();
+  pomI = setInterval(() => {
+    pomSL--;
+    updatePomDisp();
+    _savePomRunningState();
+    if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
+    if (pomSL <= 0) {
+      clearInterval(pomI); pomI = null; pomR = false;
+      savePomRunning(null);
+      pomPlayAlarm(pomB);
+      if (!pomB) {
+        pomD++;
+        const subj = document.getElementById('pom-subject').value;
+        const m = getMat(subj);
+        _appendPomSession({
+          subject: m.name || subj || 'General',
+          time: new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }),
+          taskId: document.getElementById('pom-task-sel')?.value || '',
+          taskTitle: (() => { const ts = document.getElementById('pom-task-sel'); return ts?.options[ts.selectedIndex]?.text || ''; })(),
+          mins: pomWork() / 60
+        });
+        _recordPomWeekSession(pomWork() / 60);
+        _updateStreak();
+        renderPomHistory(); renderPomGoal();
+        const ovSess = document.getElementById('ov-sessions'); if (ovSess) ovSess.textContent = State.pomSessions.length;
+        pomB = true; pomSL = pomTS = pomBreak();
+      } else {
+        pomB = false; pomSL = pomTS = pomWork();
+      }
+      _el('pom-btn').textContent = '▶ Iniciar'; updatePomDisp(); updatePomDots();
+    }
+  }, 1000);
+}
+
+function _capturePomSnapshotIfGoalReached(goal, done) {
+  if (!goal || done < goal) return;
+  _ensurePomStateContainers();
+  const dayKey = _pomTodayKey();
+  if (State.pomSnapshots[dayKey]) return;
+  const mins = (State.pomHistory[dayKey] || []).reduce((acc, s) => acc + (s.mins || 0), 0);
+  State.pomSnapshots[dayKey] = {
+    date: dayKey,
+    goal,
+    sessions: done,
+    mins,
+    achievedAt: new Date().toISOString(),
+  };
+  savePom();
+}
+
 function pomWork()  { return (parseInt(document.getElementById('pom-work')?.value)||25)*60; }
 function pomBreak() { return (parseInt(document.getElementById('pom-break')?.value)||5)*60; }
 function pomReset() {
   if (pomI) { clearInterval(pomI); pomI=null; }
   pomR=false; pomB=false; pomSL=pomTS=pomWork();
+  savePomRunning(null);
   _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp();
 }
 
@@ -541,6 +668,7 @@ function pomToggle() {
   try { const ctx = _pomAudio(); if (ctx.state === 'suspended') ctx.resume(); } catch(e) {}
   if (pomR) {
     clearInterval(pomI); pomI=null; pomR=false;
+    _savePomRunningState();
     _el('pom-btn').textContent='▶ Reanudar';
     _pomBeep('pause');
     // Notify chrono: pom paused → stop counting work time
@@ -548,20 +676,23 @@ function pomToggle() {
   } else {
     if (pomSL<=0||pomTS===0) pomReset();
     pomR=true; _el('pom-btn').textContent='⏸ Pausar';
+    _savePomRunningState();
     _pomBeep(pomB ? 'break' : 'start');
     // Notify chrono: pom running
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(true, pomB ? 'break' : 'work');
     pomI = setInterval(() => {
       pomSL--; updatePomDisp();
+      _savePomRunningState();
       if (pomSL <= 10 && pomSL > 0) _pomCountdownBeep(pomSL);
       if (pomSL <= 0) {
         clearInterval(pomI); pomI=null; pomR=false;
+        savePomRunning(null);
         pomPlayAlarm(pomB);
         if (!pomB) {
           pomD++;
           const subj = document.getElementById('pom-subject').value;
           const m = getMat(subj);
-          State.pomSessions.push({
+          _appendPomSession({
             subject: m.name||subj||'General',
             time: new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),
             taskId: document.getElementById('pom-task-sel')?.value || '',
@@ -570,7 +701,7 @@ function pomToggle() {
           });
           _recordPomWeekSession(pomWork() / 60);
           _updateStreak();
-          savePom(); renderPomHistory(); renderPomGoal();
+          renderPomHistory(); renderPomGoal();
           const ovSess = document.getElementById('ov-sessions'); if(ovSess) ovSess.textContent = State.pomSessions.length;
           pomB=true; pomSL=pomTS=pomBreak();
           _pomMusicOnBreak();
@@ -588,6 +719,7 @@ function pomToggle() {
 function pomSkip() {
   if (pomI) { clearInterval(pomI); pomI=null; }
   pomR=false;
+  savePomRunning(null);
   if (!pomB) {
     pomD++; pomB=true; pomSL=pomTS=pomBreak(); _pomBeep('break');
     _pomMusicOnBreak();
@@ -616,34 +748,59 @@ function updatePomDots() {
 }
 function renderPomHistory() {
   const hist = document.getElementById('pom-history'); if (!hist) return;
-  const sess = State.pomSessions;
-  if (!sess.length) {
-    hist.innerHTML = `<div style="text-align:center;padding:36px;color:var(--text3);">⏱️ Sin sesiones hoy aún<br><span style="font-size:11px;margin-top:6px;display:block;">¡Inicia tu primera sesión!</span></div>`;
+  _ensurePomStateContainers();
+  const todayKey = _pomTodayKey();
+  if (!Array.isArray(State.pomHistory[todayKey])) {
+    State.pomHistory[todayKey] = Array.isArray(State.pomSessions) ? [...State.pomSessions] : [];
+  }
+  const days = Object.keys(State.pomHistory).sort((a, b) => b.localeCompare(a)).slice(0, 14);
+  const todaySessions = State.pomHistory[todayKey] || [];
+  State.pomSessions = [...todaySessions];
+  if (!days.length) {
+    hist.innerHTML = `<div style="text-align:center;padding:36px;color:var(--text3);">⏱️ Sin sesiones registradas aún<br><span style="font-size:11px;margin-top:6px;display:block;">¡Inicia tu primera sesión!</span></div>`;
   } else {
-    hist.innerHTML = sess.slice().reverse().map((s, i) => {
-      const num = sess.length - i;
-      const partialBadge = s.partial ? `<span style="font-size:9px;background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.3);border-radius:4px;padding:1px 5px;font-family:'Space Mono',monospace;">PARCIAL</span>` : '';
-      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);border-left:3px solid ${s.partial?'#fbbf24':'var(--accent)'};">
-        <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--accent2);font-weight:700;flex-shrink:0;padding-top:1px;">#${num}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">${s.subject} ${partialBadge}</div>
-          ${s.taskTitle && !s.taskTitle.includes('Sin tarea') ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">📋 ${s.taskTitle.replace(/^[^\s]+ /,'').split(' · ')[0].substring(0,40)}</div>` : ''}
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${s.time} · ${s.mins||25} min enfocado</div>
-        </div>
-        <div style="font-size:18px;">${s.partial ? '⏳' : '✅'}</div>
+    hist.innerHTML = days.map((dayKey) => {
+      const daySessions = (State.pomHistory[dayKey] || []).slice().reverse();
+      const dayTotalMins = daySessions.reduce((acc, s) => acc + (s.mins || 0), 0);
+      const dayHeader = `<div style="position:sticky;top:0;z-index:1;background:var(--surface);padding:8px 14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;color:var(--accent2);font-family:'Space Mono',monospace;font-weight:700;">${_pomDateLabel(dayKey)}${dayKey === todayKey ? ' · HOY' : ''}</span>
+        <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${daySessions.length} sesiones · ${dayTotalMins} min</span>
       </div>`;
+      const dayRows = daySessions.map((s, i) => {
+        const partialBadge = s.partial ? `<span style="font-size:9px;background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.3);border-radius:4px;padding:1px 5px;font-family:'Space Mono',monospace;">PARCIAL</span>` : '';
+        return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);border-left:3px solid ${s.partial ? '#fbbf24' : 'var(--accent)'};">
+          <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--accent2);font-weight:700;flex-shrink:0;padding-top:1px;">#${daySessions.length - i}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">${s.subject} ${partialBadge}</div>
+            ${s.taskTitle && !s.taskTitle.includes('Sin tarea') ? `<div style="font-size:11px;color:var(--text3);margin-top:2px;">📋 ${s.taskTitle.replace(/^[^\s]+ /,'').split(' · ')[0].substring(0,40)}</div>` : ''}
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">${s.time} · ${s.mins || 25} min enfocado</div>
+          </div>
+          <div style="font-size:18px;">${s.partial ? '⏳' : '✅'}</div>
+        </div>`;
+      }).join('');
+      return `${dayHeader}${dayRows}`;
     }).join('');
   }
   // Update stats
   const totalEl = document.getElementById('pom-stat-total');
   const minsEl  = document.getElementById('pom-stat-mins');
-  if (totalEl) totalEl.textContent = sess.length;
-  if (minsEl)  minsEl.textContent  = sess.reduce((a,s) => a + (s.mins||25), 0);
+  if (totalEl) totalEl.textContent = todaySessions.length;
+  if (minsEl)  minsEl.textContent  = todaySessions.reduce((a,s) => a + (s.mins||25), 0);
   renderPomGoal();
 }
 
 function renderPomGoal() {
-  const goal = parseInt(document.getElementById('pom-goal')?.value) || 4;
+  const goalInput = document.getElementById('pom-goal');
+  if (goalInput && !goalInput.dataset.bound) {
+    goalInput.dataset.bound = '1';
+    goalInput.value = String(Number(State.settings?.pomDailyGoal) || Number(goalInput.value) || 4);
+    goalInput.addEventListener('input', () => {
+      State.settings.pomDailyGoal = parseInt(goalInput.value || '4', 10) || 4;
+      saveState(['settings']);
+    });
+  }
+  const goal = parseInt(goalInput?.value || State.settings?.pomDailyGoal || 4, 10) || 4;
+  State.settings.pomDailyGoal = goal;
   const done = State.pomSessions.length;
   const pct  = Math.min((done / goal) * 100, 100);
   const doneEl  = document.getElementById('pom-goal-done');
@@ -656,6 +813,7 @@ function renderPomGoal() {
   if (labelEl) labelEl.textContent = pct >= 100
     ? `🎉 ¡Meta alcanzada! ${done} sesiones hoy`
     : `${done} de ${goal} sesiones · ${Math.round(pct)}%`;
+  _capturePomSnapshotIfGoalReached(goal, done);
   // Streak
   if (streakEl) {
     const sd = typeof _getStreakData === 'function' ? _getStreakData() : {count:0};
@@ -712,13 +870,22 @@ function _renderPomWeekStats() {
 }
 
 function pomSavePartial() {
+  const saved = _savePomPartialInternal({ silent: false });
+  if (!saved) return;
+  alert(`✅ Sesión parcial guardada: ${saved} min de estudio`);
+}
+
+function _savePomPartialInternal({ silent = false } = {}) {
   const totalWork = pomWork();
   const elapsed = pomB ? totalWork : (totalWork - pomSL);
-  if (elapsed < 60) { alert('Debes estudiar al menos 1 minuto para guardar.'); return; }
+  if (elapsed < 60) {
+    if (!silent) alert('Debes estudiar al menos 1 minuto para guardar.');
+    return null;
+  }
   const mins = Math.round(elapsed / 60);
   const subj = document.getElementById('pom-subject')?.value;
   const m    = getMat(subj);
-  State.pomSessions.push({
+  _appendPomSession({
     subject: m.name || subj || 'General',
     time: new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),
     taskId: document.getElementById('pom-task-sel')?.value || '',
@@ -740,16 +907,30 @@ function pomSavePartial() {
     if (badge) badge.textContent = 'GUARDADO';
     if (typeof _chronoUpdateUI !== 'undefined') _chronoUpdateUI();
   }
-  savePom(); renderPomHistory(); renderPomGoal();
-  alert(`✅ Sesión parcial guardada: ${mins} min de estudio`);
+  renderPomHistory(); renderPomGoal();
+  return mins;
 }
 
 function clearPomHistory() {
   if (!confirm('¿Limpiar historial de sesiones de hoy?')) return;
+  _ensurePomStateContainers();
+  const todayKey = _pomTodayKey();
   State.pomSessions = [];
+  State.pomHistory[todayKey] = [];
   savePom();
   renderPomHistory();
 }
+
+window.addEventListener('beforeunload', () => {
+  if (pomR) _savePomPartialInternal({ silent: true });
+  if (!pomR) return;
+  _savePomRunningState();
+});
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && pomR) {
+    _savePomRunningState();
+  }
+});
 
 function toggleTheme() {
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';

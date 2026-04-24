@@ -2,6 +2,19 @@
 function init() {
   const getAcademiaDB = () => window.AcademiaDB || window.DB;
   const AUTH_REDIRECT_GUARD_KEY = 'academia_auth_redirect_ts';
+  const mergePomData = (localSettings = {}, remoteSettings = {}) => {
+    const localPom = localSettings?.pomData;
+    const remotePom = remoteSettings?.pomData;
+    if (!localPom && !remotePom) return { ...remoteSettings };
+    if (!localPom) return { ...remoteSettings };
+    if (!remotePom) return { ...remoteSettings, pomData: localPom };
+    const localAt = Number(localPom.updatedAt || 0);
+    const remoteAt = Number(remotePom.updatedAt || 0);
+    return {
+      ...remoteSettings,
+      pomData: localAt >= remoteAt ? localPom : remotePom,
+    };
+  };
 
   function redirectToAuthSafely(reason = 'unknown') {
     const now = Date.now();
@@ -133,8 +146,25 @@ function init() {
             getMat.bust();
           }
           if (dbData.settings && Object.keys(dbData.settings).length) {
-            localStorage.setItem('academia_v3_settings', JSON.stringify(dbData.settings));
-            Object.assign(State.settings, dbData.settings);
+            const mergedSettings = mergePomData(State.settings, dbData.settings);
+            localStorage.setItem('academia_v3_settings', JSON.stringify(mergedSettings));
+            Object.assign(State.settings, mergedSettings);
+          }
+          if (dbData.settings?.pomData && typeof dbData.settings.pomData === 'object') {
+            const pomData = dbData.settings.pomData;
+            if (pomData.date === new Date().toDateString() && Array.isArray(pomData.today)) {
+              State.pomSessions = pomData.today;
+              localStorage.setItem('academia_v3_pom_today', JSON.stringify(pomData.today));
+              localStorage.setItem('academia_v3_pom_date', pomData.date);
+            }
+            if (pomData.history && typeof pomData.history === 'object') {
+              State.pomHistory = pomData.history;
+              localStorage.setItem('academia_v3_pom_history', JSON.stringify(pomData.history));
+            }
+            if (pomData.snapshots && typeof pomData.snapshots === 'object') {
+              State.pomSnapshots = pomData.snapshots;
+              localStorage.setItem('academia_v3_pom_daily_snapshots', JSON.stringify(pomData.snapshots));
+            }
           }
           console.log('✅ Datos sincronizados desde Supabase');
         } else {
@@ -282,7 +312,7 @@ function continueInit(auth) {
     });
 
     fillMatSels(); fillPomSel(); fillTopicMatSel(); fillNotesSel(); fillExamSel();
-    renderOverview(); renderMaterias(); updateBadge(); updatePomDots(); pomReset(); initCal();
+    renderOverview(); renderMaterias(); updateBadge(); updatePomDots(); pomReset(); restorePomRunningState(); initCal();
     renderSemesterBadge();
 
     document.querySelectorAll('.modal-overlay').forEach(o =>
@@ -355,8 +385,9 @@ function continueInit(auth) {
         if (localJson !== dbJson) { localStorage.setItem('academia_v4_semestres', dbJson); changed = true; }
       }
       if (dbData.settings && typeof dbData.settings === 'object') {
+        const mergedSettings = mergePomData(State.settings, dbData.settings);
         const localJson = localStorage.getItem('academia_v3_settings');
-        const dbJson = JSON.stringify(dbData.settings);
+        const dbJson = JSON.stringify(mergedSettings);
         if (localJson !== dbJson) { localStorage.setItem('academia_v3_settings', dbJson); changed = true; }
       }
       if (changed) {
@@ -368,7 +399,7 @@ function continueInit(auth) {
           getMat.bust();
         }
         if (dbData.settings && typeof dbData.settings === 'object') {
-          Object.assign(State.settings, dbData.settings);
+          Object.assign(State.settings, mergePomData(State.settings, dbData.settings));
         }
         try {
           renderOverview     && renderOverview();
