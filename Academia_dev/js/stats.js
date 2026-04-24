@@ -1,5 +1,6 @@
 
-function renderStats() {
+if (typeof window.renderStats !== 'function') {
+  window.renderStats = function() {
   const statsPage = document.getElementById('page-estadisticas');
   if (statsPage && !statsPage.classList.contains('active')) return;
 
@@ -87,4 +88,5 @@ function renderStats() {
       <div class="stat-mini"><div class="stat-mini-lbl">⚠️ EN RIESGO</div><div class="stat-mini-val" style="color:#f87171;">${atRisk}</div></div>
       <div class="stat-mini"><div class="stat-mini-lbl">✅ CRED. APROBADOS</div><div class="stat-mini-val" style="color:#60a5fa;">${gpaData.creditosAprobados}/${gpaData.totalCreditos}</div></div>`;
   }
+  };
 }

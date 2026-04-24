@@ -742,269 +742,270 @@ function saveTopic() {
   if (!name) { document.getElementById('tp-name').style.borderColor = 'var(--red)'; return; }
   document.getElementById('tp-name').style.borderColor = '';
 
-  const subsRaw    = document.getElementById('tp-subs').value.trim();
-  const difficulty = document.getElementById('tp-difficulty')?.value || 'normal';
-  const subs = subsRaw
-    ? subsRaw.split('\n').map(s => s.trim()).filter(Boolean)
-              .map(s => ({ name: s, seen: false, comp: 0, done: false, difficulty }))
-    : [];
+  if (typeof window.renderTopics !== 'function') {
+    window.renderTopics = function() {
+      const matId     = document.getElementById('topics-mat-sel')?.value || '';
+      const container = document.getElementById('topics-container');
+      if (!container) return;
+      if (!matId) { window._renderTopicsAllMats(container); return; }
+      window._renderTopicsForMat(container, matId);
+    };
 
-  const matId      = document.getElementById('tp-mat').value;
-  const parcial    = document.getElementById('tp-parcial').value;
-  const dateAdded  = document.getElementById('tp-date-added')?.value  || PLANNER.todayStr();
-  const estMinutes = parseInt(document.getElementById('tp-est-minutes')?.value) || 50;
-
-  const examInput = document.getElementById('tp-exam-date');
-  if (examInput?.value) PLANNER.setExamDate(matId, parcial, examInput.value);
-
-  const topic = { id: Date.now().toString(), matId, parcial, name,
-    seen: false, comp: 0, subs, difficulty, dateAdded, estMinutes, reviewSchedule: [] };
-
-  if (!subs.length) {
-    topic.reviewSchedule = PLANNER.generateSmartReviews(topic);
-    const next = topic.reviewSchedule.find(r => r.status === 'pending');
-    PLANNER._plannerToast(next
-      ? `Guardado - proximo repaso ${PLANNER.fmtShort(next.date)}`
-      : 'Tema guardado');
-  } else {
-    PLANNER._plannerToast('Guardado - marca subtemas para activar repasos');
-  }
-
-  State.topics.push(topic);
-  saveState(['topics']);
-  closeModal('modal-topic');
-  renderTopics();
-  PLANNER._refreshAll();
-  PLANNER._checkExamWarnings();
-}
-
-// ── Toggle subtema — mantiene acordeón abierto ────────────────
-function togglePlannerSubtopic(topicId, subIdx) {
-  const topic = State.topics.find(t => t.id === topicId);
-  if (!topic?.subs?.[subIdx]) return;
-
-  topic.subs[subIdx].done = !topic.subs[subIdx].done;
-  topic.subs[subIdx].seen = topic.subs[subIdx].done;
-  if (topic.subs[subIdx].done) topic.subs[subIdx].comp = 100;
-
-  const anyDone    = topic.subs.some(s => s.done);
-  const hasReviews = (topic.reviewSchedule || []).length > 0;
-
-  if (anyDone && !hasReviews) {
-    topic.reviewSchedule = PLANNER.generateSmartReviews(topic);
-    const next = topic.reviewSchedule.find(r => r.status === 'pending');
-    if (next) {
-      PLANNER._plannerToast(`Repasos agendados - proximo ${PLANNER.fmtShort(next.date)}`);
-      PLANNER._pushNotify(`Repasos: ${topic.name}`, `Proximo repaso el ${PLANNER.fmtShort(next.date)}`);
-    }
-  }
-
-  saveState(['topics']);
-
-  // Re-renderizar solo este item, preservando estado del acordeón
-  const mat    = getMat(topic.matId);
-  const itemEl = document.getElementById('topic-item-' + topicId);
-  if (itemEl) {
-    const wasOpen = document.getElementById('tbody-' + topicId)?.style.display !== 'none';
-    const temp = document.createElement('div');
-    temp.innerHTML = _renderTopicItem(topic, mat);
-    itemEl.replaceWith(temp.firstElementChild);
-    if (wasOpen) {
-      const newBody = document.getElementById('tbody-' + topicId);
-      const newChev = document.getElementById('chev-' + topicId);
-      if (newBody) newBody.style.display = 'block';
-      if (newChev) newChev.style.transform = 'rotate(90deg)';
-    }
-  }
-
-  PLANNER._refreshAll();
-}
-
-function setPlannerSubDifficulty(topicId, subIdx, difficulty) {
-  const topic = State.topics.find(t => t.id === topicId);
-  if (!topic?.subs?.[subIdx]) return;
-  topic.subs[subIdx].difficulty = difficulty;
-  saveState(['topics']);
-  const mat    = getMat(topic.matId);
-  const itemEl = document.getElementById('topic-item-' + topicId);
-  if (itemEl) {
-    const wasOpen = document.getElementById('tbody-' + topicId)?.style.display !== 'none';
-    const temp = document.createElement('div');
-    temp.innerHTML = _renderTopicItem(topic, mat);
-    itemEl.replaceWith(temp.firstElementChild);
-    if (wasOpen) {
-      const b = document.getElementById('tbody-' + topicId);
-      const c = document.getElementById('chev-' + topicId);
-      if (b) b.style.display = 'block';
-      if (c) c.style.transform = 'rotate(90deg)';
-    }
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// renderTopics — tarjetas de materias + vista detallada
-// ═══════════════════════════════════════════════════════════════
-
-function renderTopics() {
-  const matId     = document.getElementById('topics-mat-sel')?.value || '';
-  const container = document.getElementById('topics-container');
-  if (!container) return;
-  if (!matId) { _renderTopicsAllMats(container); return; }
-  _renderTopicsForMat(container, matId);
-}
-
-function _renderTopicsAllMats(container) {
-  const today = PLANNER.todayStr();
-  if (!State.materias.length) {
-    container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3);">Agrega materias primero</div>`;
-    return;
-  }
-  const mats = State.materias.filter(m => !m.parentId);
-  if (!mats.length) {
-    container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3);">Sin temas registrados</div>`;
-    return;
-  }
-  const cards = mats.map(mat => {
-    const matTopics = State.topics.filter(t => t.matId === mat.id);
-    const total   = matTopics.length;
-    const done    = matTopics.filter(t => t.subs?.every(s=>s.done) || (t.seen && !t.subs?.length)).length;
-    const pending = matTopics.filter(t => (t.reviewSchedule||[]).some(r=>!r.done&&r.date<=today)).length;
-    const pct = total ? Math.round(done/total*100) : 0;
-    const clr = pct>=70?'#4ade80':pct>=30?'#fbbf24':total?'#f87171':'var(--text3)';
-    return `<div onclick="document.getElementById('topics-mat-sel').value='${mat.id}';renderTopics();"
-      style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-top:3px solid ${mat.color};
-        border-radius:var(--radius);padding:16px 14px;display:flex;flex-direction:column;gap:10px;
-        transition:border-color .15s,background .15s;min-width:0;"
-      onmouseover="this.style.background='var(--surface2)'"
-      onmouseout="this.style.background='var(--surface)'">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
-          <span style="font-size:24px;flex-shrink:0;">${mat.icon||'📚'}</span>
-          <div style="min-width:0;">
-            <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${mat.name}</div>
-            <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:1px;">${mat.code}</div>
-          </div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:22px;font-weight:800;color:${clr};line-height:1;">${pct}%</div>
-          <div style="font-size:9px;color:var(--text3);margin-top:1px;">preparado</div>
-        </div>
-      </div>
-      <div>
-        <div class="prog-bar" style="height:5px;margin-bottom:6px;"><div class="prog-fill" style="background:${clr};width:${pct}%;transition:width .4s;"></div></div>
-        <div style="display:flex;gap:10px;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;flex-wrap:wrap;">
-          <span>📖 ${total} temas</span>
-          ${pending>0?`<span style="color:#fbbf24;">🔁 ${pending} atrasados</span>`:''}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">${cards}</div>`;
-}
-
-function _renderTopicsForMat(container, matId) {
-  const mat       = getMat(matId);
-  const matTopics = State.topics.filter(t => t.matId === matId);
-  const totalT    = matTopics.length;
-  const seenT     = matTopics.filter(t => t.seen || t.subs?.some(s=>s.done)).length;
-  const avgComp   = totalT ? Math.round(matTopics.reduce((a,t)=>a+t.comp,0)/totalT) : 0;
-  const needRev   = matTopics.filter(t => t.comp<70 && (t.seen||t.subs?.some(s=>s.done))).length;
-  const sem       = State._activeSem;
-  const examDates = sem.examDates || {};
-  const today     = PLANNER.todayStr();
-  const parciales = ['1','2','3','final'];
-
-  let html = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('topics-mat-sel').value='';renderTopics();">← Todas</button>
-      <span style="font-size:15px;font-weight:800;">${mat.icon||'📚'} ${mat.name}</span>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
-      <div class="stat-mini"><div class="stat-mini-lbl">VISTOS</div>
-        <div class="stat-mini-val" style="color:#4ade80;">${seenT}<span style="font-size:13px;color:var(--text3);">/${totalT}</span></div>
-        <div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:#4ade80;width:${totalT?seenT/totalT*100:0}%;"></div></div>
-      </div>
-      <div class="stat-mini"><div class="stat-mini-lbl">COMP.</div>
-        <div class="stat-mini-val" style="color:${barColor(avgComp)};">${avgComp}%</div>
-        <div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:${barColor(avgComp)};width:${avgComp}%;"></div></div>
-      </div>
-      <div class="stat-mini"><div class="stat-mini-lbl">REPASO</div>
-        <div class="stat-mini-val" style="color:#fbbf24;">${needRev}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:4px;">&lt;70%</div>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title" style="font-size:12px;">📝 Fechas de Examen</span></div>
-      <div class="card-body" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 14px;">
-        ${parciales.map(p => {
-          const key  = `${matId}__${p}`;
-          const date = examDates[key] || '';
-          const days = date ? PLANNER.diffDays(today, date) : null;
-          const urg  = days!==null&&days<=3?'#f87171':days!==null&&days<=7?'#fbbf24':'var(--text3)';
-          return `<div>
-            <label style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;">${p==='final'?'FINAL':'PARCIAL '+p}</label>
-            <div style="display:flex;gap:5px;align-items:center;margin-top:3px;">
-              <input type="date" class="form-input" style="font-size:13px;flex:1;padding:5px 8px;"
-                value="${date}" onchange="PLANNER.setExamDate('${matId}','${p}',this.value)">
-              ${days!==null&&days>=0?`<span style="font-size:10px;font-weight:800;color:${urg};white-space:nowrap;">${days===0?'¡HOY!':days+'d'}</span>`:''}
+    window._renderTopicsAllMats = function(container) {
+      const today = PLANNER.todayStr();
+      if (!State.materias.length) {
+        container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3);">Agrega materias primero</div>`;
+        return;
+      }
+      const mats = State.materias.filter(m => !m.parentId);
+      if (!mats.length) {
+        container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text3);">Sin temas registrados</div>`;
+        return;
+      }
+      const cards = mats.map(mat => {
+        const matTopics = State.topics.filter(t => t.matId === mat.id);
+        const total   = matTopics.length;
+        const done    = matTopics.filter(t => t.subs?.every(s=>s.done) || (t.seen && !t.subs?.length)).length;
+        const pending = matTopics.filter(t => (t.reviewSchedule||[]).some(r=>!r.done&&r.date<=today)).length;
+        const pct = total ? Math.round(done/total*100) : 0;
+        const clr = pct>=70?'#4ade80':pct>=30?'#fbbf24':total?'#f87171':'var(--text3)';
+        return `<div onclick="document.getElementById('topics-mat-sel').value='${mat.id}';renderTopics();"
+          style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-top:3px solid ${mat.color};
+            border-radius:var(--radius);padding:16px 14px;display:flex;flex-direction:column;gap:10px;
+            transition:border-color .15s,background .15s;min-width:0;"
+          onmouseover="this.style.background='var(--surface2)'"
+          onmouseout="this.style.background='var(--surface)'>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+              <span style="font-size:24px;flex-shrink:0;">${mat.icon||'📚'}</span>
+              <div style="min-width:0;">
+                <div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${mat.name}</div>
+                <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:1px;">${mat.code}</div>
+              </div>
             </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:22px;font-weight:800;color:${clr};line-height:1;">${pct}%</div>
+              <div style="font-size:9px;color:var(--text3);margin-top:1px;">preparado</div>
+            </div>
+          </div>
+          <div>
+            <div class="prog-bar" style="height:5px;margin-bottom:6px;"><div class="prog-fill" style="background:${clr};width:${pct}%;transition:width .4s;"></div></div>
+            <div style="display:flex;gap:10px;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;flex-wrap:wrap;">
+              <span>📖 ${total} temas</span>
+              ${pending>0?`<span style="color:#fbbf24;">🔁 ${pending} atrasados</span>`:''}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
 
-  const parts = [{v:'1',l:'Parcial 1'},{v:'2',l:'Parcial 2'},{v:'3',l:'Parcial 3'},{v:'final',l:'Final'}];
-  let any = false;
+      container.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">${cards}</div>`;
+    };
 
-  parts.forEach(p => {
-    const pts = matTopics.filter(t => t.parcial === p.v);
-    if (!pts.length) return;
-    any = true;
+    window._renderTopicsForMat = function(container, matId) {
+      const mat       = getMat(matId);
+      const matTopics = State.topics.filter(t => t.matId === matId);
+      const totalT    = matTopics.length;
+      const seenT     = matTopics.filter(t => t.seen || t.subs?.some(s=>s.done)).length;
+      const avgComp   = totalT ? Math.round(matTopics.reduce((a,t)=>a+t.comp,0)/totalT) : 0;
+      const needRev   = matTopics.filter(t => t.comp<70 && (t.seen||t.subs?.some(s=>s.done))).length;
+      const sem       = State._activeSem;
+      const examDates = sem.examDates || {};
+      const today     = PLANNER.todayStr();
+      const parciales = ['1','2','3','final'];
 
-    const allSubs   = pts.flatMap(t => t.subs || []);
-    const doneSubs  = allSubs.filter(s => s.done).length;
-    const totalSubs = allSubs.length;
-    const confPct   = totalSubs > 0
-      ? Math.round(doneSubs/totalSubs*100)
-      : Math.round(pts.filter(t=>t.seen).length/pts.length*100);
-    const confColor = confPct>=70?'#4ade80':confPct>=30?'#fbbf24':'#f87171';
-    const confLabel = confPct>=70?'Buena preparacion':confPct>=30?'En progreso':'Poco preparado';
-
-    const examDate   = PLANNER.getExamDate(matId, p.v);
-    const daysToExam = examDate ? PLANNER.diffDays(today, examDate) : null;
-    const examBadge  = daysToExam!==null
-      ? `<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;
-          background:${daysToExam<=3?'rgba(248,113,113,.2)':daysToExam<=7?'rgba(251,191,36,.2)':'var(--surface2)'};
-          color:${daysToExam<=3?'#f87171':daysToExam<=7?'#fbbf24':'var(--text3)'};">
-          📝 ${daysToExam===0?'Hoy!':daysToExam<0?'Pasado':'En '+daysToExam+'d'}
-        </span>` : '';
-
-    html += `<div class="card" style="margin-bottom:14px;">
-      <div class="card-header" style="border-left:3px solid ${mat.color};flex-direction:column;align-items:stretch;padding:12px 16px 8px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span class="card-title">📖 ${p.l}</span>
-          <div style="display:flex;gap:8px;align-items:center;">${examBadge}
-            <span style="font-size:11px;color:var(--text3);">${pts.filter(t=>t.subs?.some(s=>s.done)||t.seen).length}/${pts.length}</span>
+      let html = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('topics-mat-sel').value='';renderTopics();">← Todas</button>
+          <span style="font-size:15px;font-weight:800;">${mat.icon||'📚'} ${mat.name}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+          <div class="stat-mini"><div class="stat-mini-lbl">VISTOS</div>
+            <div class="stat-mini-val" style="color:#4ade80;">${seenT}<span style="font-size:13px;color:var(--text3);">/${totalT}</span></div>
+            <div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:#4ade80;width:${totalT?seenT/totalT*100:0}%;"></div></div>
+          </div>
+          <div class="stat-mini"><div class="stat-mini-lbl">COMP.</div>
+            <div class="stat-mini-val" style="color:${barColor(avgComp)};">${avgComp}%</div>
+            <div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:${barColor(avgComp)};width:${avgComp}%;"></div></div>
+          </div>
+          <div class="stat-mini"><div class="stat-mini-lbl">REPASO</div>
+            <div class="stat-mini-val" style="color:#fbbf24;">${needRev}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px;">&lt;70%</div>
           </div>
         </div>
-        <div style="margin-top:7px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-            <span style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;">PREPARACION</span>
-            <span style="font-size:9px;font-weight:800;color:${confColor};font-family:'Space Mono',monospace;">${Math.round(confPct)}% - ${confLabel}</span>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header"><span class="card-title" style="font-size:12px;">📝 Fechas de Examen</span></div>
+          <div class="card-body" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:10px 14px;">
+            ${parciales.map(p => {
+              const key  = `${matId}__${p}`;
+              const date = examDates[key] || '';
+              const days = date ? PLANNER.diffDays(today, date) : null;
+              const urg  = days!==null&&days<=3?'#f87171':days!==null&&days<=7?'#fbbf24':'var(--text3)';
+              return `<div>
+                <label style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;">${p==='final'?'FINAL':'PARCIAL '+p}</label>
+                <div style="display:flex;gap:5px;align-items:center;margin-top:3px;">
+                  <input type="date" class="form-input" style="font-size:13px;flex:1;padding:5px 8px;"
+                    value="${date}" onchange="PLANNER.setExamDate('${matId}','${p}',this.value)">
+                  ${days!==null&&days>=0?`<span style="font-size:10px;font-weight:800;color:${urg};white-space:nowrap;">${days===0?'¡HOY!':days+'d'}</span>`:''}
+                </div>
+              </div>`;
+            }).join('')}
           </div>
-          <div class="prog-bar" style="height:4px;"><div class="prog-fill" style="background:${confColor};width:${confPct}%;border-radius:2px;transition:width .5s;"></div></div>
+        </div>`;
+
+      const parts = [{v:'1',l:'Parcial 1'},{v:'2',l:'Parcial 2'},{v:'3',l:'Parcial 3'},{v:'final',l:'Final'}];
+      let any = false;
+
+      parts.forEach(p => {
+        const pts = matTopics.filter(t => t.parcial === p.v);
+        if (!pts.length) return;
+        any = true;
+
+        const allSubs   = pts.flatMap(t => t.subs || []);
+        const doneSubs  = allSubs.filter(s => s.done).length;
+        const totalSubs = allSubs.length;
+        const confPct   = totalSubs > 0
+          ? Math.round(doneSubs/totalSubs*100)
+          : Math.round(pts.filter(t=>t.seen).length/pts.length*100);
+        const confColor = confPct>=70?'#4ade80':confPct>=30?'#fbbf24':'#f87171';
+        const confLabel = confPct>=70?'Buena preparacion':confPct>=30?'En progreso':'Poco preparado';
+
+        const examDate   = PLANNER.getExamDate(matId, p.v);
+        const daysToExam = examDate ? PLANNER.diffDays(today, examDate) : null;
+        const examBadge  = daysToExam!==null
+          ? `<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;
+              background:${daysToExam<=3?'rgba(248,113,113,.2)':daysToExam<=7?'rgba(251,191,36,.2)':'var(--surface2)'};
+              color:${daysToExam<=3?'#f87171':daysToExam<=7?'#fbbf24':'var(--text3)'};">
+              📝 ${daysToExam===0?'Hoy!':daysToExam<0?'Pasado':'En '+daysToExam+'d'}
+            </span>` : '';
+
+        html += `<div class="card" style="margin-bottom:14px;">
+          <div class="card-header" style="border-left:3px solid ${mat.color};flex-direction:column;align-items:stretch;padding:12px 16px 8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span class="card-title">📖 ${p.l}</span>
+              <div style="display:flex;gap:8px;align-items:center;">${examBadge}
+                <span style="font-size:11px;color:var(--text3);">${pts.filter(t=>t.subs?.some(s=>s.done)||t.seen).length}/${pts.length}</span>
+              </div>
+            </div>
+            <div style="margin-top:7px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;">PREPARACION</span>
+                <span style="font-size:9px;font-weight:800;color:${confColor};font-family:'Space Mono',monospace;">${Math.round(confPct)}% - ${confLabel}</span>
+              </div>
+              <div class="prog-bar" style="height:4px;"><div class="prog-fill" style="background:${confColor};width:${confPct}%;border-radius:2px;transition:width .5s;"></div></div>
+            </div>
+          </div>
+          <div class="card-body" style="padding:0;">${pts.map(t => window._renderTopicItem(t, mat)).join('')}</div>
+        </div>`;
+      });
+
+      if (!any) html += `<div style="text-align:center;padding:48px;color:var(--text3);">Presiona "+ Agregar Tema" para comenzar</div>`;
+      container.innerHTML = html;
+    };
+
+    window._renderTopicItem = function(t, mat) {
+      const today      = PLANNER.todayStr();
+      const hasSubs    = t.subs && t.subs.length > 0;
+      const anyDone    = t.subs?.some(s => s.done);
+      const allDone    = hasSubs && t.subs.every(s => s.done);
+      const hasReviews = (t.reviewSchedule || []).length > 0;
+      const nextReview = hasReviews ? t.reviewSchedule.find(r => !r.done && r.status === 'pending') : null;
+      const doneSubs   = t.subs?.filter(s => s.done).length || 0;
+      const totalSubs  = t.subs?.length || 0;
+      const pendRevs   = (t.reviewSchedule || []).filter(r => !r.done && r.status !== 'skipped');
+      const doneRevs   = (t.reviewSchedule || []).filter(r => r.done).length;
+      const dotColor   = allDone ? '#4ade80' : anyDone ? '#fbbf24' : mat.color;
+      const subPct     = totalSubs > 0 ? Math.round(doneSubs/totalSubs*100) : (t.seen ? 100 : 0);
+      const subClr     = subPct>=70?'#4ade80':subPct>=30?'#fbbf24':'var(--border)';
+
+      return `<div class="planner-topic-item" id="topic-item-${t.id}">
+        <div class="planner-topic-header" onclick="togglePlannerTopic('${t.id}')">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+            <div style="width:10px;height:10px;border-radius:50%;background:${dotColor};flex-shrink:0;box-shadow:0 0 5px ${dotColor}44;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</div>
+              <div style="display:flex;gap:7px;align-items:center;margin-top:3px;flex-wrap:wrap;">
+                ${hasSubs ? `<div style="display:flex;align-items:center;gap:4px;">
+                  <div class="prog-bar" style="width:36px;height:3px;"><div class="prog-fill" style="background:${subClr};width:${subPct}%;"></div></div>
+                  <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${doneSubs}/${totalSubs}</span>
+                </div>` : ''}
+                ${nextReview ? `<span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;">🔁 ${nextReview.date===today?'hoy':PLANNER.fmtShort(nextReview.date)}</span>` : ''}
+                ${t.difficulty==='hard' ? `<span class="planner-tag-hard">dificil</span>` : ''}
+                ${!hasReviews&&!hasSubs ? `<span style="font-size:10px;color:var(--text3);">toca subtema para repasos</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">
+            ${doneRevs>0?`<span style="font-size:10px;color:#4ade80;font-family:'Space Mono',monospace;">✅${doneRevs}</span>`:''}
+            ${pendRevs.length>0?`<span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;">🔁${pendRevs.length}</span>`:''}
+            <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTopic('${t.id}')" style="padding:3px 7px;font-size:11px;">✕</button>
+            <span id="chev-${t.id}" style="font-size:11px;color:var(--text3);transition:transform .2s;display:inline-block;">▶</span>
+          </div>
         </div>
-      </div>
-      <div class="card-body" style="padding:0;">${pts.map(t => _renderTopicItem(t, mat)).join('')}</div>
-    </div>`;
-  });
 
-  if (!any) html += `<div style="text-align:center;padding:48px;color:var(--text3);">Presiona "+ Agregar Tema" para comenzar</div>`;
-  container.innerHTML = html;
-}
+        <div class="planner-topic-body" id="tbody-${t.id}" style="display:none;">
+          ${hasSubs ? `<div style="padding:8px 14px 6px;">
+            <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:8px;">SUBTEMAS</div>
+            <div style="padding-left:10px;border-left:2px solid var(--border2);">
+              ${t.subs.map((s,i) => {
+                const diff   = s.difficulty || t.difficulty || 'normal';
+                const dColor = diff==='easy'?'#4ade80':diff==='hard'?'#f87171':'#fbbf24';
+                const revMin = PLANNER.REVIEW_MINS[diff];
+                return `<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);position:relative;" id="sub-${t.id}-${i}">
+                  <div style="position:absolute;left:-10px;top:14px;width:8px;height:1px;background:var(--border2);"></div>
+                  <div onclick="togglePlannerSubtopic('${t.id}',${i})"
+                    style="width:18px;height:18px;border-radius:5px;flex-shrink:0;margin-top:1px;cursor:pointer;
+                      border:2px solid ${s.done?'#4ade80':'var(--border2)'};background:${s.done?'#4ade80':'transparent'};
+                      display:flex;align-items:center;justify-content:center;transition:all .15s;">
+                    ${s.done?'<span style="font-size:11px;color:#111;font-weight:800;">✓</span>':''}
+                  </div>
+                  <div style="flex:1;min-width:0;">
+                    <div onclick="togglePlannerSubtopic('${t.id}',${i})" style="font-size:12px;cursor:pointer;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${s.name}</div>
+                    <div style="display:flex;gap:4px;margin-top:4px;align-items:center;flex-wrap:wrap;">
+                      ${['easy','normal','hard'].map(d => {
+                        const dc = d==='easy'?'#4ade80':d==='hard'?'#f87171':'#fbbf24';
+                        const dl = d==='easy'?'fácil':d==='hard'?'difícil':'normal';
+                        const active = diff===d;
+                        return `<button onclick="event.stopPropagation();setPlannerSubDifficulty('${t.id}',${i},'${d}')"
+                          style="font-size:8px;padding:1px 6px;border-radius:4px;cursor:pointer;font-family:'Space Mono',monospace;
+                            background:${active?dc+'22':'transparent'};color:${active?dc:'var(--text3)'};
+                            border:1px solid ${active?dc:'var(--border)'};font-weight:${active?800:400};transition:all .12s;">${dl}</button>`;
+                      }).join('')}
+                      <span style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;">${revMin}min repaso</span>
+                    </div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>` : `<div style="padding:8px 14px 6px;font-size:11px;color:var(--text3);">Sin subtemas · repasos generados al crear</div>`}
 
-function _renderTopicItem(t, mat) {
+          ${pendRevs.length>0 ? `<div style="padding:8px 14px;border-top:1px solid var(--border);">
+            <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:6px;">REPASOS AGENDADOS</div>
+            ${pendRevs.map(r => {
+              const lb  = PLANNER.loadBar(r.date);
+              const isT = r.date === today;
+              return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;">
+                <span class="planner-tag-num">#${r.num}</span>
+                <span style="font-family:'Space Mono',monospace;color:${isT?'var(--accent2)':'var(--text2)'};font-weight:${isT?800:400};min-width:66px;">${isT?'HOY':PLANNER.fmtShort(r.date)}</span>
+                <div class="prog-bar" style="width:30px;height:3px;flex-shrink:0;"><div class="prog-fill" style="background:${lb.color};width:${lb.pct}%;"></div></div>
+                <span style="color:${lb.color};font-size:9px;flex:1;">${lb.label}</span>
+                <span style="color:var(--text3);font-size:10px;">${r.minutes}min</span>
+                ${r.status==='low-priority'?'<span class="planner-tag-skip">↓</span>':''}
+              </div>`;
+            }).join('')}
+          </div>` : hasSubs ? `<div style="padding:6px 14px 8px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);">Marca un subtema para activar repasos</div>` : ''}
+        </div>
+      </div>`;
+    };
+
+    window.togglePlannerTopic = function(id) {
+      const body = document.getElementById('tbody-' + id);
+      const chev = document.getElementById('chev-' + id);
+      if (!body) return;
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      if (chev) chev.style.transform = open ? '' : 'rotate(90deg)';
+    };
+  }
   const today      = PLANNER.todayStr();
   const hasSubs    = t.subs && t.subs.length > 0;
   const anyDone    = t.subs?.some(s => s.done);

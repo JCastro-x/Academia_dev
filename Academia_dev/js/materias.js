@@ -594,22 +594,23 @@ function applyComp() {
 }
 function closeCompPopup() { const p=document.getElementById('comp-popup'); if(p) p.style.display='none'; compTarget=null; }
 
-function renderTopics() {
-  const matId = document.getElementById('topics-mat-sel')?.value || '';
-  const container = document.getElementById('topics-container');
-  if (!container) return;
-  if (!matId) { container.innerHTML=''; return; }
-  const mat      = getMat(matId);
-  const matTopics = State.topics.filter(t=>t.matId===matId);
-  const totalT   = matTopics.length, seenT = matTopics.filter(t=>t.seen).length;
-  const avgComp  = totalT ? Math.round(matTopics.reduce((a,t)=>a+t.comp,0)/totalT) : 0;
-  const needRev  = matTopics.filter(t=>t.comp<70&&t.seen).length;
+if (typeof window.renderTopics !== 'function') {
+  window.renderTopics = function() {
+    const matId = document.getElementById('topics-mat-sel')?.value || '';
+    const container = document.getElementById('topics-container');
+    if (!container) return;
+    if (!matId) { container.innerHTML=''; return; }
+    const mat      = getMat(matId);
+    const matTopics = State.topics.filter(t=>t.matId===matId);
+    const totalT   = matTopics.length, seenT = matTopics.filter(t=>t.seen).length;
+    const avgComp  = totalT ? Math.round(matTopics.reduce((a,t)=>a+t.comp,0)/totalT) : 0;
+    const needRev  = matTopics.filter(t=>t.comp<70&&t.seen).length;
 
-  let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
-    <div class="stat-mini"><div class="stat-mini-lbl">✅ TEMAS VISTOS</div><div class="stat-mini-val" style="color:#4ade80;">${seenT}<span style="font-size:13px;color:var(--text3);">/${totalT}</span></div><div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:#4ade80;width:${totalT?seenT/totalT*100:0}%;"></div></div></div>
-    <div class="stat-mini"><div class="stat-mini-lbl">🧠 COMPRENSIÓN</div><div class="stat-mini-val" style="color:${barColor(avgComp)};">${avgComp}%</div><div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:${barColor(avgComp)};width:${avgComp}%;"></div></div></div>
-    <div class="stat-mini"><div class="stat-mini-lbl">⚠️ REPASO</div><div class="stat-mini-val" style="color:#fbbf24;">${needRev}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">&lt;70% comprensión</div></div>
-  </div>`;
+    let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
+      <div class="stat-mini"><div class="stat-mini-lbl">✅ TEMAS VISTOS</div><div class="stat-mini-val" style="color:#4ade80;">${seenT}<span style="font-size:13px;color:var(--text3);">/${totalT}</span></div><div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:#4ade80;width:${totalT?seenT/totalT*100:0}%;"></div></div></div>
+      <div class="stat-mini"><div class="stat-mini-lbl">🧠 COMPRENSIÓN</div><div class="stat-mini-val" style="color:${barColor(avgComp)};">${avgComp}%</div><div class="prog-bar" style="margin-top:8px;"><div class="prog-fill" style="background:${barColor(avgComp)};width:${avgComp}%;"></div></div></div>
+      <div class="stat-mini"><div class="stat-mini-lbl">⚠️ REPASO</div><div class="stat-mini-val" style="color:#fbbf24;">${needRev}</div><div style="font-size:11px;color:var(--text3);margin-top:4px;">&lt;70% comprensión</div></div>
+    </div>`;
 
   const parcials = [{v:'1',l:'Parcial 1'},{v:'2',l:'Parcial 2'},{v:'3',l:'Parcial 3'},{v:'final',l:'Final'}];
   let anyFound = false;
@@ -659,6 +660,7 @@ function renderTopics() {
   });
   if (!anyFound) html += `<div style="text-align:center;padding:48px;color:var(--text3);">📖 Presiona "+ Agregar Tema" para comenzar</div>`;
   container.innerHTML = html;
+  };
 }
 
 // ── GENERAL HUB ──────────────────────────────────────────────
