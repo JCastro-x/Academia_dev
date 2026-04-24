@@ -2,7 +2,7 @@
 :root {
   --bg:       #0a0a0f; --surface: #111118; --surface2: #18181f; --surface3: #1e1e28;
   --border:   #2a2a38; --border2: #363648;
-  --text:     #e8e8f0; --text2:  #9090a8; --text3:  #5a5a72;
+  --text:     #e8e8f0; --text2:  #a0a0b8; --text3:  #70708a;
   --accent:   #7c6aff; --accent2: #a892ff; --accent-glow: rgba(124,106,255,.15);
   --green:    #4ade80; --green-dim: rgba(74,222,128,.12);
   --yellow:   #fbbf24; --yellow-dim: rgba(251,191,36,.12);
@@ -11,20 +11,22 @@
   --p-high:   #f87171; --p-high-bg: rgba(248,113,113,.15);
   --p-med:    #fbbf24; --p-med-bg:  rgba(251,191,36,.15);
   --p-low:    #4ade80; --p-low-bg:  rgba(74,222,128,.15);
-  --shadow:   0 2px 16px rgba(0,0,0,.4);
-  --shadow-sm:0 1px 6px rgba(0,0,0,.3);
+  --shadow:   0 6px 20px rgba(0,0,0,.32);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.22);
+  --font-body: 14px;
+  --font-small: 12px;
   --radius:   12px; --radius-sm: 7px; --radius-lg: 16px;
   --sidebar-w:240px;
   --app-font: 'Syne', sans-serif;
 }
 
 [data-theme="light"] {
-  --bg:      #dadde2; --surface: #d6dde7; --surface2: #d4d8df; --surface3: #d8dade;
-  --border:  #c8ccd4; --border2: #b8bdc7;
-  --text:    #1a1f2e; --text2:  #4a5568; --text3:  #8a95a5;
+  --bg:      #e2e6ee; --surface: #f3f5fa; --surface2: #eceff6; --surface3: #e7ebf3;
+  --border:  #cdd4e2; --border2: #bcc6d8;
+  --text:    #1a1f2e; --text2:  #39485f; --text3:  #5a6b85;
   --accent:  #6b58e8; --accent2: #7c6aff; --accent-glow: rgba(107,88,232,.1);
-  --shadow:  0 2px 16px rgba(0,0,0,.12);
-  --shadow-sm:0 1px 6px rgba(0,0,0,.08);
+  --shadow:  0 4px 16px rgba(31,41,55,.12);
+  --shadow-sm:0 2px 8px rgba(31,41,55,.08);
 }
 
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -33,6 +35,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--app-font);
+  font-size: var(--font-body);
+  line-height: 1.45;
   min-height: 100vh;
   overflow-x: hidden;
   transition: background .25s, color .25s;
@@ -117,7 +121,7 @@ body::before {
 }
 .page-title { font-size:19px; font-weight:800; letter-spacing:-.5px; }
 .topbar-right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.date-chip { font-family:'Space Mono',monospace; font-size:11px; color:var(--text2); background:var(--surface2); border:1px solid var(--border); padding:5px 10px; border-radius:6px; }
+.date-chip { font-family:'Space Mono',monospace; font-size:var(--font-small); color:var(--text2); background:var(--surface2); border:1px solid var(--border); padding:5px 10px; border-radius:6px; }
 .content { padding:24px 28px; }
 
 .search-wrap { position:relative; }
