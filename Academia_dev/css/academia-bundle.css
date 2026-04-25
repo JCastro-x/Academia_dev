@@ -1563,18 +1563,13 @@ input[type="checkbox"]:checked {
    â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Zona builder en modal de editar clase */
-#ec-zones-builder > *,
-#zones-builder > * {
+#ec-zones-builder > * {
   animation: riseUp .32s cubic-bezier(.22,.68,0,1.1) both;
 }
-#ec-zones-builder > *:nth-child(1),
-#zones-builder > *:nth-child(1)   { animation-delay:.04s; }
-#ec-zones-builder > *:nth-child(2),
-#zones-builder > *:nth-child(2)   { animation-delay:.09s; }
-#ec-zones-builder > *:nth-child(3),
-#zones-builder > *:nth-child(3)   { animation-delay:.14s; }
-#ec-zones-builder > *:nth-child(n+4),
-#zones-builder > *:nth-child(n+4) { animation-delay:.18s; }
+#ec-zones-builder > *:nth-child(1)   { animation-delay:.04s; }
+#ec-zones-builder > *:nth-child(2)   { animation-delay:.09s; }
+#ec-zones-builder > *:nth-child(3)   { animation-delay:.14s; }
+#ec-zones-builder > *:nth-child(n+4) { animation-delay:.18s; }
 
 /* Checkboxes de dÃ­as en modal â€” pop al aparecer */
 #ec-dias-checks label {
