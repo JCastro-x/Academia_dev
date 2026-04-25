@@ -65,6 +65,25 @@
     }
   }
 
+  // getRemoteUpdatedAt() -> number (ms since epoch) | 0
+  // Cheap preflight to avoid downloading large JSONB when unchanged.
+  async function getRemoteUpdatedAt() {
+    if (!_ready) return 0;
+    try {
+      const { data, error } = await _getClient()
+        .from('user_data')
+        .select('updated_at')
+        .eq('user_id', _userId)
+        .maybeSingle();
+
+      if (error || !data || !data.updated_at) return 0;
+      const ts = Date.parse(data.updated_at);
+      return Number.isFinite(ts) ? ts : 0;
+    } catch {
+      return 0;
+    }
+  }
+
   // ── _doSave(semestres, settings) ────────────────────────────
   async function _doSave(semestres, settings) {
     if (!_ready) return;
@@ -105,6 +124,7 @@
   const API = {
     init,
     load,
+    getRemoteUpdatedAt,
     save,
     saveNow,
     get _ready() { return _ready; },

@@ -349,6 +349,8 @@ function continueInit(auth) {
   // Auto-sync desde Supabase (deshabilitado en modo invitado)
   if (!isGuest && getAcademiaDB()) {
     let _lastSync = Date.now();
+    let _lastRemoteUpdatedAt = 0;
+    let _lastRemoteCheckAt = 0;
 
     async function _syncFromSupabase(force = false) {
       const db = getAcademiaDB();
@@ -367,12 +369,34 @@ function continueInit(auth) {
         console.log('⏭️ Sync omitido: cambios locales recientes (' + Math.round(msSinceLocalMod/1000) + 's)');
         return;
       }
+      const localModifiedAt = window._localModifiedAt || 0;
+
+      // Preflight barato: si no hay cambios remotos, evitar descargar JSONB.
+      // Fallback: si el método no existe, seguimos con load() como antes.
+      let remoteUpdatedAt = 0;
+      if (!force && typeof db.getRemoteUpdatedAt === 'function') {
+        // Throttle del preflight para evitar martillar en focus/visibility repetidos
+        if (now - _lastRemoteCheckAt > 10000) {
+          _lastRemoteCheckAt = now;
+          remoteUpdatedAt = await db.getRemoteUpdatedAt();
+          if (remoteUpdatedAt) _lastRemoteUpdatedAt = remoteUpdatedAt;
+        } else {
+          remoteUpdatedAt = _lastRemoteUpdatedAt;
+        }
+
+        if (remoteUpdatedAt && remoteUpdatedAt <= localModifiedAt) {
+          console.log('⏭️ Sync omitido: remoto no más nuevo que local (preflight)');
+          _lastSync = now;
+          return;
+        }
+      }
+
       _lastSync = now;
       const dbData = await db.load();
       if (!dbData) return;
 
-      const remoteUpdatedAt = dbData.updatedAt ? Date.parse(dbData.updatedAt) : 0;
-      const localModifiedAt = window._localModifiedAt || 0;
+      remoteUpdatedAt = dbData.updatedAt ? Date.parse(dbData.updatedAt) : 0;
+      if (remoteUpdatedAt) _lastRemoteUpdatedAt = remoteUpdatedAt;
       if (!force && remoteUpdatedAt && remoteUpdatedAt <= localModifiedAt) {
         console.log('⏭️ Sync omitido: datos locales son mas recientes o iguales al servidor');
         return;
