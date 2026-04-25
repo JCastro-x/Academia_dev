@@ -418,7 +418,7 @@ function _notesHubCard(folderIdStr, icon, name, count, color, subtitle, isManual
         style="background:rgba(248,113,113,.25);border:none;border-radius:6px;color:#f87171;cursor:pointer;font-size:12px;padding:3px 6px;line-height:1;"
         title="Eliminar carpeta">✕</button>
     </div>` : '';
-  return `<div id="folder-${folderId}" onclick="if(event.target.closest('button'))return;_openNotesFolder(${folderIdStr})"
+  return `<div class="card" id="folder-${folderId}" onclick="if(event.target.closest('button'))return;_openNotesFolder(${folderIdStr})"
     style="cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);position:relative;
       border-top:3px solid ${color};border-radius:14px;padding:20px 16px 18px;
       transition:transform .15s,box-shadow .15s,border-color .15s;
@@ -478,7 +478,7 @@ function _renderNotesFolderGrid(folderId) {
       ? new Date(note.updatedAt).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'2-digit'})
       : '';
     const color   = mat ? mat.color : 'var(--accent2)';
-    html += `<div onclick="selectProNote('${note.id}')"
+    html += `<div class="card" onclick="selectProNote('${note.id}')"
       style="cursor:pointer;background:var(--surface2);border:1.5px solid var(--border);
         border-radius:14px;padding:16px 14px 14px;
         transition:transform .15s,box-shadow .15s,border-color .15s;
