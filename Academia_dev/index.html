@@ -59,47 +59,6 @@
   }
   </script>
 </script>
-  <script>
-    // Additional UX helpers: small JS to enhance neon buttons and ensure accessibility
-    (function(){
-      // neon buttons: slightly vary intensity on interval for noticeable but soft blink
-      const neonButtons = document.querySelectorAll('.btn-main.neon');
-      neonButtons.forEach(btn => {
-        // gentle randomized pulse offsets
-        const base = 3600;
-        setInterval(() => {
-          const adj = 0.9 + Math.random() * 0.3;
-          btn.style.transform = 'translateY(' + (Math.random() * -3 - 1) + 'px)';
-          btn.style.opacity = adj;
-          setTimeout(()=>{ btn.style.transform = ''; btn.style.opacity = ''; }, 420);
-        }, base + Math.floor(Math.random()*1200));
-      });
-
-      // Typewriter effect for "Tu semestre"
-      const typeEl = document.querySelector('.typewriter');
-      if(typeEl) {
-        const text = typeEl.getAttribute('data-text') || typeEl.textContent.trim();
-        typeEl.textContent = '';
-        typeEl.setAttribute('aria-label', text);
-        
-        let i = 0;
-        const typeSpeed = 100;
-        
-        function typeWriter() {
-          if (i < text.length) {
-            typeEl.textContent += text.charAt(i);
-            i++;
-            setTimeout(typeWriter, typeSpeed);
-          } else {
-            typeEl.classList.add('typed');
-          }
-        }
-        
-        // Start typing after a short delay
-        setTimeout(typeWriter, 500);
-      }
-    })();
-  </script>
   <!-- Favicon & PWA -->
   <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
   <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
@@ -470,6 +429,34 @@
   }).catch(() => {}); // silencioso si falla
  
 })();
+  </script>
+
+  <script>
+    // Typewriter effect for "Tu semestre"
+    document.addEventListener('DOMContentLoaded', function() {
+      const typeEl = document.querySelector('.typewriter');
+      if(typeEl) {
+        const text = typeEl.getAttribute('data-text') || 'Tu semestre';
+        typeEl.textContent = '';
+        typeEl.setAttribute('aria-label', text);
+        
+        let i = 0;
+        const typeSpeed = 100;
+        
+        function typeWriter() {
+          if (i < text.length) {
+            typeEl.textContent += text.charAt(i);
+            i++;
+            setTimeout(typeWriter, typeSpeed);
+          } else {
+            typeEl.classList.add('typed');
+          }
+        }
+        
+        // Start typing after a short delay
+        setTimeout(typeWriter, 500);
+      }
+    });
   </script>
   
 </body>
