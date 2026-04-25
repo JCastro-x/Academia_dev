@@ -384,12 +384,22 @@ hyphens: none;
       background: var(--surface);
       overflow: hidden;
       animation: fadeUp .7s .4s ease-out both;
+      transition: transform .3s ease, box-shadow .3s ease;
+    }
+    .stats-bar:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(124,106,255,.15);
     }
     .stat-item {
       flex: 1;
       padding: 20px;
       text-align: center;
       border-right: 1px solid var(--border);
+      transition: background .3s ease, transform .3s ease;
+    }
+    .stat-item:hover {
+      background: rgba(124,106,255,.08);
+      transform: scale(1.05);
     }
     .stat-item:last-child { border-right: none; }
     .stat-num {
@@ -398,6 +408,10 @@ hyphens: none;
       color: var(--accent2);
       font-family: 'Space Mono', monospace;
       line-height: 1;
+      transition: text-shadow .3s ease;
+    }
+    .stat-item:hover .stat-num {
+      text-shadow: 0 0 20px rgba(124,106,255,.5);
     }
     .stat-lbl {
       font-size: 11px;
@@ -405,6 +419,10 @@ hyphens: none;
       margin-top: 4px;
       font-family: 'Space Mono', monospace;
       letter-spacing: 1px;
+      transition: color .3s ease;
+    }
+    .stat-item:hover .stat-lbl {
+      color: var(--accent2);
     }
 
     /* ── APP PREVIEW ── */
@@ -636,12 +654,25 @@ hyphens: none;
       opacity: 0;
       transition: opacity .2s;
     }
+    .feature-card::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(124,106,255,.1) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity .3s ease;
+      pointer-events: none;
+    }
     .feature-card:hover {
       border-color: rgba(124,106,255,.4);
-      transform: translateY(-4px);
-      box-shadow: 0 20px 48px rgba(0,0,0,.4);
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 20px 48px rgba(0,0,0,.4), 0 0 30px rgba(124,106,255,.15);
     }
     .feature-card:hover::before { opacity: 1; }
+    .feature-card:hover::after { opacity: 1; }
     .feature-card.big {
       grid-column: span 2;
     }
@@ -650,12 +681,20 @@ hyphens: none;
       font-size: 32px;
       margin-bottom: 16px;
       display: block;
+      transition: transform .3s ease;
+    }
+    .feature-card:hover .fc-icon {
+      transform: scale(1.2) rotate(-5deg);
     }
     .fc-title {
       font-size: 17px;
       font-weight: 800;
       margin-bottom: 8px;
       letter-spacing: -.3px;
+      transition: color .3s ease;
+    }
+    .feature-card:hover .fc-title {
+      color: var(--accent2);
     }
     .fc-desc {
       font-size: 13px;
@@ -676,6 +715,11 @@ hyphens: none;
       background: rgba(124,106,255,.12);
       border: 1px solid rgba(124,106,255,.2);
       color: var(--accent2);
+      transition: transform .2s ease, background .2s ease;
+    }
+    .fc-tag:hover {
+      transform: translateY(-2px);
+      background: rgba(124,106,255,.2);
     }
 
     /* ── TECH STACK ── */
@@ -796,9 +840,16 @@ hyphens: none;
       .hero-sub { font-size: 15px; }
       .stats-bar { margin: 0 16px 60px; }
       .cta-box { padding: 40px 24px; }
+      .btn-main { padding: 14px 28px; font-size: 15px; }
+      .stat-item { flex: 1 1 45%; min-width: 120px; }
     }
-    @media (max-width: px) {
-      .hero-title { font-size: clamp(px, 10vw, 60px); }
+    @media (max-width: 480px) {
+      .hero-title { font-size: clamp(24px, 8vw, 42px); }
       .stat-num { font-size: 22px; }
+      .hero-sub { font-size: 14px; }
+      .btn-main { padding: 12px 24px; font-size: 14px; }
+      .cta-box { padding: 32px 20px; }
+      .section-title { font-size: clamp(24px, 6vw, 36px); }
+      .feature-card { padding: 20px; }
+      .fc-icon { font-size: 28px; }
     }
- 
