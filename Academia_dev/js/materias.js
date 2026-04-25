@@ -395,7 +395,11 @@ function selectIcon(el) {
 function addZoneRow(labelVal, ptsVal, subsArr) {
   zoneRowCount++;
   const id   = 'zr-' + zoneRowCount;
-  const subs = subsArr || (labelVal ? [{label: labelVal, pts: ptsVal || 0}] : []);
+  // Convert subs with maxPts to subs with pts for the UI
+  const subs = (subsArr || []).map(s => ({ label: s.label, pts: s.maxPts || s.pts || 0 }));
+  if (!subs.length && labelVal) {
+    subs.push({ label: labelVal, pts: ptsVal || 0 });
+  }
   const div  = document.createElement('div');
   div.id = id;
   div.style.cssText = 'border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:var(--surface2);';
@@ -420,7 +424,9 @@ function addZoneRow(labelVal, ptsVal, subsArr) {
     <div id="${id}-subs" class="zone-subs-area">${buildSubsHtml(subs)}</div>
     <button class="btn btn-ghost btn-sm" onclick="addZoneSub('${id}')" style="margin-top:4px;font-size:11px;">+ Apartado</button>`;
 
-  document.getElementById('zones-builder').appendChild(div);
+  // Detect which modal is open and use the appropriate builder
+  const builder = document.getElementById('zones-builder');
+  if (builder) builder.appendChild(div);
 }
 
 function updateZoneTotal(zoneId) {
@@ -841,11 +847,11 @@ function openEditClassModal(matId) {
   document.querySelectorAll('#modal-editclass .icon-opt')
     .forEach(el => el.classList.toggle('selected', el.dataset.icon  === newIconSel));
 
-  const builder = document.getElementById('ec-zones-builder');
+  const builder = document.getElementById('zones-builder');
   if (!builder) return;
   builder.innerHTML = '';
   zoneRowCount = 0;
-  mat.zones.filter(z => !z.isLabZone).forEach(z => _addEditZoneRow(z.label, z.subs, z.maxPts));
+  mat.zones.filter(z => !z.isLabZone).forEach(z => addZoneRow(z.label, z.maxPts, z.subs));
 
   document.getElementById('modal-editclass').classList.add('open');
 }
@@ -861,110 +867,6 @@ function ecSelectIcon(el) {
   document.querySelectorAll('#modal-editclass .icon-opt')
     .forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
-}
-
-function _addEditZoneRow(labelVal, subsArr, zoneMaxPts) {
-  zoneRowCount++;
-  const id   = 'ecz-' + zoneRowCount;
-  const subs = subsArr || [];
-  const div  = document.createElement('div');
-  div.id = id;
-  div.style.cssText = 'border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:var(--surface2);';
-
-  const buildSubsHtml = (list) => list.map((s, i) => `
-    <div class="zone-sub-row" id="${id}-sub-${i}" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      <input type="text"   class="form-input ec-sub-label" placeholder="Nombre del apartado"
-             value="${(s.label||'').replace(/"/g,'&quot;')}" style="flex:1;font-size:12px;">
-      <input type="number" class="form-input ec-sub-pts"   placeholder="Pts"
-             value="${s.maxPts != null ? s.maxPts : ''}" min="0" max="999" step="0.5"
-             style="width:70px;font-size:12px;text-align:center;"
-             oninput="ecUpdateZoneTotal('${id}')">
-      <button class="btn btn-danger btn-sm"
-              onclick="this.closest('.zone-sub-row').remove();ecUpdateZoneTotal('${id}')"
-              style="padding:3px 7px;flex-shrink:0;">✕</button>
-    </div>`).join('');
-
-  const subsSum  = subs.reduce((a, s) => a + (parseFloat(s.maxPts) || 0), 0);
-  const totalPts = (zoneMaxPts != null && zoneMaxPts > 0) ? zoneMaxPts : subsSum;
-  div.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <input type="text" class="form-input ec-zone-name" placeholder="Nombre de la zona"
-             value="${(labelVal||'').replace(/"/g,'&quot;')}"
-             style="flex:1;font-size:13px;font-weight:600;">
-      <div style="display:flex;align-items:center;gap:4px;font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;color:var(--text2);">
-        <span style="font-size:11px;color:var(--text3);">Total:</span>
-        <input type="number" id="${id}-total" class="form-input" min="0" max="999" step="0.5"
-               value="${totalPts.toFixed(1)}"
-               style="width:70px;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;padding:4px 6px;border:1.5px solid var(--accent2);border-radius:6px;background:var(--surface);"
-               title="Puntos totales de esta zona (editable)">
-        <span style="font-size:11px;color:var(--text3);">pts</span>
-      </div>
-      <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()"
-              style="padding:3px 8px;">✕</button>
-    </div>
-    <div id="${id}-subs">${buildSubsHtml(subs)}</div>
-    <button class="btn btn-ghost btn-sm" onclick="ecAddZoneSub('${id}')"
-            style="margin-top:4px;font-size:11px;">+ Apartado</button>`;
-
-  document.getElementById('ec-zones-builder').appendChild(div);
-}
-
-function ecAddZoneRow() {
-  zoneRowCount++;
-  const id  = 'ecz-' + zoneRowCount;
-  const div = document.createElement('div');
-  div.id = id;
-  div.style.cssText = 'border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:var(--surface2);';
-  div.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-      <input type="text" class="form-input ec-zone-name" placeholder="Nombre de la zona"
-             style="flex:1;font-size:13px;font-weight:600;">
-      <div style="display:flex;align-items:center;gap:4px;font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;color:var(--text2);">
-        <span style="font-size:11px;color:var(--text3);">Total:</span>
-        <input type="number" id="${id}-total" class="form-input" min="0" max="999" step="0.5"
-               value="" placeholder="0"
-               style="width:70px;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;padding:4px 6px;border:1.5px solid var(--accent2);border-radius:6px;background:var(--surface);"
-               title="Puntos totales de esta zona (editable)">
-        <span style="font-size:11px;color:var(--text3);">pts</span>
-      </div>
-      <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()"
-              style="padding:3px 8px;">✕</button>
-    </div>
-    <div id="${id}-subs"></div>
-    <button class="btn btn-ghost btn-sm" onclick="ecAddZoneSub('${id}')"
-            style="margin-top:4px;font-size:11px;">+ Apartado</button>`;
-  document.getElementById('ec-zones-builder').appendChild(div);
-  ecAddZoneSub(id);
-}
-
-function ecAddZoneSub(zoneId) {
-  const subsDiv = document.getElementById(zoneId + '-subs');
-  if (!subsDiv) return;
-  const idx = subsDiv.querySelectorAll('.zone-sub-row').length;
-  const row = document.createElement('div');
-  row.className = 'zone-sub-row';
-  row.id = zoneId + '-sub-' + idx;
-  row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
-  row.innerHTML = `
-    <input type="text"   class="form-input ec-sub-label" placeholder="Nombre del apartado"
-           style="flex:1;font-size:12px;">
-    <input type="number" class="form-input ec-sub-pts" placeholder="Pts"
-           min="0" max="999" step="0.5"
-           style="width:70px;font-size:12px;text-align:center;"
-           oninput="ecUpdateZoneTotal('${zoneId}')">
-    <button class="btn btn-danger btn-sm"
-            onclick="this.closest('.zone-sub-row').remove();ecUpdateZoneTotal('${zoneId}')"
-            style="padding:3px 7px;">✕</button>`;
-  subsDiv.appendChild(row);
-}
-
-function ecUpdateZoneTotal(zoneId) {
-  const subsDiv = document.getElementById(zoneId + '-subs');
-  const totalEl = document.getElementById(zoneId + '-total');
-  if (!subsDiv || !totalEl) return;
-  let total = 0;
-  subsDiv.querySelectorAll('.ec-sub-pts').forEach(inp => { total += parseFloat(inp.value) || 0; });
-  totalEl.value = total.toFixed(1);
 }
 
 function saveEditClass() {
@@ -987,34 +889,30 @@ function saveEditClass() {
 
   const labZones = mat.zones.filter(z => z.isLabZone);
   const newZones = [];
-  document.getElementById('ec-zones-builder').querySelectorAll('div[id^="ecz-"]').forEach(row => {
-    const lbl = row.querySelector('.ec-zone-name')?.value.trim();
+  document.getElementById('zones-builder').querySelectorAll('div[id^="zr-"]').forEach(row => {
+    const nameInp = row.querySelector('.zone-name-inp');
+    const lbl     = nameInp ? nameInp.value.trim() : '';
     if (!lbl) return;
-    const key  = lbl.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20);
+    const key = lbl.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,20);
+    const subsRows = row.querySelectorAll('.zone-sub-row');
     const subs = [];
     let totalPts = 0;
-    row.querySelectorAll('.zone-sub-row').forEach((sr, i) => {
-      const subLabel = sr.querySelector('.ec-sub-label')?.value.trim() || lbl + ' ' + (i + 1);
-      const subPts   = parseFloat(sr.querySelector('.ec-sub-pts')?.value) || 0;
+    subsRows.forEach((sr, i) => {
+      const subLabel = sr.querySelector('.zone-sub-label')?.value.trim() || lbl + ' ' + (i+1);
+      const subPts   = parseFloat(sr.querySelector('.zone-sub-pts')?.value) || 0;
       const existingZone = mat.zones.find(z => z.label === lbl);
-      const existingKey  = existingZone?.subs?.[i]?.key || (key + '_' + (i + 1));
-      subs.push({ key: existingKey, label: subLabel, maxPts: subPts });
-      totalPts += subPts;
+      const existingKey  = existingZone?.subs?.[i]?.key || (key + '_' + (i+1));
+      if (subPts > 0) {
+        subs.push({ key: existingKey, label: subLabel, maxPts: subPts });
+        totalPts += subPts;
+      }
     });
-    // Use the total input directly if it was manually set and differs from sub-sum
-    const totalInput  = row.querySelector('[id$="-total"]');
-const manualTotal = parseFloat(totalInput?.value);
-// Usar manualTotal si es válido; si no, totalPts ya viene de la suma de subs
-if (!isNaN(manualTotal) && manualTotal > 0) totalPts = manualTotal;
-// Garantizar que el zone.maxPts nunca quede en 0 si hay subs con pts
-if (totalPts === 0 && subs.length > 0) {
-  totalPts = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
-}
-    // Always push the zone, even without apartados (totalPts from manual input is valid alone)
-    newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
+    if (totalPts > 0) {
+      newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
+    }
   });
 
-  if (!newZones.length) { alert('Agrega al menos una zona con nombre y puntos.'); return; }
+  if (!newZones.length) { alert('Agrega al menos una zona de calificación.'); return; }
   mat.zones = [...newZones, ...labZones];
 
   getMat.bust();
