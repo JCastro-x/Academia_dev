@@ -359,17 +359,17 @@ body::before {
 .main { transition: margin-left .22s cubic-bezier(.4,0,.2,1); }
 
 .sidebar-toggle {
-  position:fixed; top:12px; left:244px; z-index:200;
+  position:fixed; top:12px; left:calc(var(--sidebar-w) - 14px); z-index:220;
   background:var(--surface); border:1px solid var(--border);
-  border-radius:50%; width:26px; height:26px;
+  border-radius:999px; width:30px; height:30px;
   display:flex; align-items:center; justify-content:center;
-  cursor:pointer; font-size:13px; color:var(--text2);
-  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+  cursor:pointer; font-size:14px; font-weight:800; line-height:1; color:var(--text2);
+  box-shadow: 0 4px 14px rgba(0,0,0,.35);
   transition: left .22s cubic-bezier(.4,0,.2,1), background .15s, color .15s, transform .15s;
   user-select:none;
 }
 .sidebar-toggle:hover { background:var(--accent-glow); color:var(--accent2); border-color:var(--accent); transform:scale(1.1); }
-.sidebar-toggle.is-collapsed { left:6px; }
+.sidebar-toggle.is-collapsed { left:10px; }
 [data-theme="light"] .sidebar-toggle { background:#fff; }
 
 .horario-table { width:100%; border-collapse:separate; border-spacing:0; }

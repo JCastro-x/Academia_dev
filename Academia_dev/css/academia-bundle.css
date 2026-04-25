@@ -2012,6 +2012,53 @@ button[onclick*="enterFloatingMode"]:hover {
   padding: 6px 4px 12px !important;
 }
 
+/* FIX 2026-04: agenda semanal por tarjeta individual
+   Evita que se anime el contenedor completo y anima cada dia */
+#ov-day-strip > .agenda-strip,
+#ov-day-strip > .agenda-strip:hover {
+  transform: none !important;
+  animation: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+#ov-day-strip > .agenda-strip {
+  overflow: visible !important;
+}
+
+#ov-day-strip .agenda-day-card {
+  position: relative;
+  z-index: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    transform .24s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .24s ease,
+    border-color .24s ease,
+    background .24s ease !important;
+  will-change: transform, box-shadow;
+}
+
+#ov-day-strip .agenda-day-card:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  z-index: 4;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.34),
+    0 0 0 1px rgba(124,106,255,.32) !important;
+}
+
+#ov-day-strip .agenda-day-card:active {
+  transform: translateY(-1px) scale(1.01) !important;
+}
+
+.page.active #ov-day-strip .agenda-day-card:nth-child(1) { animation: dayChipIn .34s ease .04s both !important; }
+.page.active #ov-day-strip .agenda-day-card:nth-child(2) { animation: dayChipIn .34s ease .08s both !important; }
+.page.active #ov-day-strip .agenda-day-card:nth-child(3) { animation: dayChipIn .34s ease .12s both !important; }
+.page.active #ov-day-strip .agenda-day-card:nth-child(4) { animation: dayChipIn .34s ease .16s both !important; }
+.page.active #ov-day-strip .agenda-day-card:nth-child(5) { animation: dayChipIn .34s ease .20s both !important; }
+.page.active #ov-day-strip .agenda-day-card:nth-child(6) { animation: dayChipIn .34s ease .24s both !important; }
+.page.active #ov-day-strip .agenda-day-card:nth-child(7) { animation: dayChipIn .34s ease .28s both !important; }
+
 
 /* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
    â•‘  MOBILE â€” sin scale en el strip (poco espacio)             â•‘

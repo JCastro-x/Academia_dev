@@ -84,7 +84,7 @@ function renderFcMateriasGrid() {
     const mf = folders.filter(f => f.matId === mat.id);
     const cs = mat.color ? `--mat-color:${mat.color};` : '';
     return `
-      <div class="fc-mat-card" style="${cs}" onclick="fcOpenMateria('${mat.id}')">
+      <div class="fc-mat-card card" style="${cs}" onclick="fcOpenMateria('${mat.id}')">
         <div class="fc-mat-icon">${mat.icon || '📚'}</div>
         <div class="fc-mat-name">${_fcEsc(mat.name)}</div>
         <div class="fc-mat-meta">
@@ -128,7 +128,7 @@ function renderFoldersGrid(matId) {
   const folders = fcGetFolders().filter(f => f.matId === matId);
   const cards   = fcGetCards();
   const newBtn  = `
-    <div class="fc-folder-card" style="border-style:dashed;align-items:center;justify-content:center;flex-direction:column;gap:8px;min-height:120px;display:flex;" onclick="openCreateFolderModal()">
+    <div class="fc-folder-card card" style="border-style:dashed;align-items:center;justify-content:center;flex-direction:column;gap:8px;min-height:120px;display:flex;" onclick="openCreateFolderModal()">
       <span style="font-size:26px;">📁</span>
       <span style="font-size:12px;color:var(--text3);font-weight:700;">Nueva carpeta</span>
     </div>`;
@@ -136,7 +136,7 @@ function renderFoldersGrid(matId) {
   grid.innerHTML = folders.map(f => {
     const cnt = cards.filter(c => c.folderId === f.id).length;
     return `
-      <div class="fc-folder-card" onclick="fcOpenFolder('${f.id}')">
+      <div class="fc-folder-card card" onclick="fcOpenFolder('${f.id}')">
         <div class="fc-folder-card-top">
           <span class="fc-folder-card-icon">${f.icon || '📁'}</span>
           <div class="fc-folder-card-actions">
