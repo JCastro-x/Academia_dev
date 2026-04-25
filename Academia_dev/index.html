@@ -58,7 +58,28 @@
     ]
   }
   </script>
+</script>
+  <script>
+    // Additional UX helpers: small JS to enhance neon buttons and ensure accessibility
+    (function(){
+      // neon buttons: slightly vary intensity on interval for noticeable but soft blink
+      const neonButtons = document.querySelectorAll('.btn-main.neon');
+      neonButtons.forEach(btn => {
+        // gentle randomized pulse offsets
+        const base = 3600;
+        setInterval(() => {
+          const adj = 0.9 + Math.random() * 0.3;
+          btn.style.transform = 'translateY(' + (Math.random() * -3 - 1) + 'px)';
+          btn.style.opacity = adj;
+          setTimeout(()=>{ btn.style.transform = ''; btn.style.opacity = ''; }, 420);
+        }, base + Math.floor(Math.random()*1200));
+      });
 
+      // make sure the typed title is treated as accessible text for screen readers
+      const typeEl = document.querySelector('.typewriter');
+      if(typeEl) typeEl.setAttribute('aria-label', typeEl.getAttribute('data-text') || typeEl.textContent.trim());
+    })();
+  </script>
   <!-- Favicon & PWA -->
   <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
   <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg">
@@ -96,7 +117,7 @@
     </div>
 
     <h1 class="hero-title">
-      Tu semestre,<br>
+      <span class="typewriter" data-text="Tu semestre,">​</span><br>
       <span class="grad">perfectamente organizado.</span>
     </h1>
 
@@ -106,8 +127,8 @@
     </p>
 
     <div class="hero-actions">
-      <a href="auth-page.html" class="btn-main">
-        🎓 Entrar con Google
+      <a href="auth-page.html" class="btn-main neon">
+        🎓 <span class="btn-label">Entrar con Google</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
     </div>
@@ -333,8 +354,8 @@
     <div class="cta-box reveal">
       <h2 class="cta-title">Empezá tu semestre<br>con todo organizado.</h2>
       <p class="cta-sub">Gratis. Sin configuración. Entrás con Google<br>y tus datos están listos en segundos.</p>
-      <a href="auth-page.html" class="btn-main" style="font-size:17px;padding:18px 44px;">
-        🎓 Entrar con Google
+      <a href="auth-page.html" class="btn-main neon" style="font-size:17px;padding:18px 44px;">
+        🎓 <span class="btn-label">Entrar con Google</span>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
     </div>

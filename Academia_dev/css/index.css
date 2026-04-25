@@ -225,6 +225,69 @@ hyphens: none;
       position: relative;
       overflow: hidden;
     }
+    /* Neon variant for main CTA */
+    .btn-main.neon {
+      background: linear-gradient(90deg, rgba(156, 84, 255, 0.18), rgba(255, 107, 157, 0.12));
+      border: 1px solid rgba(124,106,255,.25);
+      box-shadow: 0 8px 30px rgba(124,106,255,.12), 0 0 40px rgba(124,106,255,.06) inset;
+      transition: box-shadow .35s ease, transform .18s ease, filter .2s;
+    }
+    .btn-main.neon:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(124,106,255,.26), 0 0 80px rgba(124,106,255,.12) inset; }
+
+    /* Animated soft blink / neon pulse */
+    @keyframes neonPulse {
+      0% { box-shadow: 0 8px 30px rgba(124,106,255,.06), 0 0 0 rgba(124,106,255,0); filter: brightness(1); }
+      50% { box-shadow: 0 18px 48px rgba(124,106,255,.16), 0 0 40px rgba(124,106,255,.08); filter: brightness(1.06); }
+      100% { box-shadow: 0 8px 30px rgba(124,106,255,.06), 0 0 0 rgba(124,106,255,0); filter: brightness(1); }
+    }
+    .btn-main.neon { animation: neonPulse 3.6s ease-in-out infinite; }
+
+    /* Slight flicker overlay for synthetic 'fire streak' vibe */
+    .btn-main.neon::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(156,84,255,0.06), rgba(255,107,157,0.04));
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: .9;
+      transition: opacity .25s;
+      animation: neonFlicker 4.2s infinite;
+    }
+    @keyframes neonFlicker {
+      0% { opacity: .9; transform: translateY(0); }
+      10%{ opacity: .6; }
+      30%{ opacity: .95; }
+      60%{ opacity: .8; }
+      100%{ opacity: .9; }
+    }
+
+    /* Typewriter cursor */
+    .typewriter { font-weight: 800; }
+    .typewriter::after {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 22px;
+      margin-left: 6px;
+      vertical-align: bottom;
+      background: linear-gradient(180deg, var(--accent2), var(--pink));
+      border-radius: 2px;
+      animation: caretBlink 900ms steps(2,end) infinite;
+    }
+    .typewriter.typed::after { opacity: 0; transition: opacity .3s; }
+    @keyframes caretBlink { 0% { opacity: 1 } 50% { opacity: 0 } 100% { opacity: 1 } }
+
+    /* Subtle global motion: small bob for preview frame and cta box */
+    @keyframes floatY { from { transform: translateY(0);} to { transform: translateY(-6px);} }
+    .preview-frame { animation: floatY 10s ease-in-out infinite alternate; }
+    .cta-box { animation: floatY 12s ease-in-out infinite alternate-reverse; }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .btn-main.neon, .preview-frame, .cta-box, .orb { animation: none !important; }
+      .typewriter::after { animation: none !important; }
+    }
     .btn-main::before {
       content: '';
       position: absolute;
