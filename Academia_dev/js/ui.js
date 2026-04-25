@@ -24,7 +24,12 @@ function goPage(id, el) {
   switch(id) {
     case 'overview':       renderOverview(); break;
     case 'materias':       renderMaterias(); break;
-    case 'tareas':         fillMatSels(); document.getElementById('tf-mat').value=''; renderTasks(); break;
+    case 'tareas':
+      fillMatSels();
+      document.getElementById('tf-mat').value = '';
+      if (typeof armTasksDueTodayBlink === 'function') armTasksDueTodayBlink();
+      renderTasks();
+      break;
     case 'calendario':     fillMatSels(); renderCalendar(); break;
     case 'calificaciones': renderGrades(); break;
     case 'temas':          fillMatSels(); fillTopicMatSel(); renderTopics(); break;

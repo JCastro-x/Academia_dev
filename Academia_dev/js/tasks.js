@@ -12,6 +12,27 @@ let editTaskId       = null;
 let _editSubtasks    = [];
 let _editAttachments = [];
 let _editComments    = [];
+let _tasksDueTodayBlinkArmed = true;
+
+function armTasksDueTodayBlink() {
+  _tasksDueTodayBlinkArmed = true;
+}
+function _todayLocalISO() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+function _isTasksPageActive() {
+  return document.getElementById('page-tareas')?.classList.contains('active');
+}
+function _consumeDueTodayBlinkOnRender() {
+  if (!_tasksDueTodayBlinkArmed) return false;
+  if (!_isTasksPageActive()) return false;
+  _tasksDueTodayBlinkArmed = false;
+  return true;
+}
 
 function fmtD(ds) {
   if (!ds) return '';
@@ -412,6 +433,8 @@ function renderTasks() { _schedRender(_renderTasks); }
 function _renderTasks() {
   const list = _el('tasks-list');
   if (!list) return;
+  const blinkDueTodayNow = _consumeDueTodayBlinkOnRender();
+  const todayIso = _todayLocalISO();
 
   const mf = document.getElementById('tf-mat')?.value    || '';
   const sf = document.getElementById('tf-status')?.value || '';
@@ -445,6 +468,10 @@ function _renderTasks() {
     const pStripe = t.priority === 'high' ? 'p-high-stripe' : t.priority === 'low' ? 'p-low-stripe' : 'p-med-stripe';
     const tBadge  = getTypeBadgeClass(t.type);
     const highGlowClass = t.priority === 'high' && !t.done ? ' prio-high-glow' : '';
+    const isDueToday = !t.done && !!t.due && t.due === todayIso;
+    const dueTodayBlinkClass = blinkDueTodayNow && isDueToday ? ' due-today-blink' : '';
+    const blinkRgb = t.priority === 'high' ? '248,113,113' : t.priority === 'low' ? '74,222,128' : '251,191,36';
+    const dueTodayBlinkStyle = blinkDueTodayNow && isDueToday ? ` style="--due-today-blink-rgb:${blinkRgb};"` : '';
 
     const subtasksHtml = prog ? `
       <div style="margin-top:7px;">
@@ -485,8 +512,9 @@ function _renderTasks() {
     const commBadge = t.comments?.length
       ? `<span style="font-size:11px;color:var(--text3);">💬 ${t.comments.length}</span>` : '';
 
-    return `<div class="task-item${t.done ? ' done' : ''}${highGlowClass}" draggable="true" 
+    return `<div class="task-item${t.done ? ' done' : ''}${highGlowClass}${dueTodayBlinkClass}" draggable="true" 
       data-id="${t.id}"
+      ${dueTodayBlinkStyle}
       ondragstart="taskDragStart(event,'${t.id}')"
       ondragover="taskDragOver(event)"
       ondrop="taskDrop(event,'${t.id}')"

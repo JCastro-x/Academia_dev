@@ -185,6 +185,19 @@ body::before {
 .task-item:last-child { border-bottom:none; }
 .task-item.done { opacity:.45; }
 .task-item.done .task-title { text-decoration:line-through; color:var(--text3); }
+.task-item.due-today-blink {
+  animation: dueTodayBlink .95s ease-in-out 2;
+}
+@keyframes dueTodayBlink {
+  0%, 100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 0 rgba(var(--due-today-blink-rgb,251,191,36), 0);
+  }
+  45% {
+    background: rgba(var(--due-today-blink-rgb,251,191,36), .11);
+    box-shadow: inset 0 0 0 1px rgba(var(--due-today-blink-rgb,251,191,36), .38), 0 0 16px rgba(var(--due-today-blink-rgb,251,191,36), .22);
+  }
+}
 .task-check { width:18px; height:18px; border-radius:5px; border:2px solid var(--border2); cursor:pointer; flex-shrink:0; margin-top:2px; display:flex; align-items:center; justify-content:center; transition:background .15s, border-color .15s; }
 .task-check:hover { border-color:var(--accent); }
 .task-check.checked { background:var(--accent); border-color:var(--accent); }
