@@ -263,9 +263,64 @@ function toggleTask(id) {
 function toggleSubtask(taskId, idx) {
   const t = State.tasks.find(x => x.id === taskId);
   if (!t?.subtasks?.[idx]) return;
+  const wasDone = !!t.done;
   t.subtasks[idx].done = !t.subtasks[idx].done;
-  if (t.subtasks.every(s => s.done)) t.done = true;
-  saveState(['tasks']); renderTasks(); updateBadge(); renderCalendar();
+  t.done = t.subtasks.length > 0 && t.subtasks.every(s => s.done);
+
+  const needsFullRender = _needsFullTaskRenderOnSubtaskToggle(wasDone, t.done);
+  saveState(['tasks']);
+  if (needsFullRender) {
+    renderTasks();
+  } else {
+    _updateSingleTaskProgressUI(taskId);
+  }
+  updateBadge();
+  renderOverview();
+  renderCalendar();
+}
+function _needsFullTaskRenderOnSubtaskToggle(wasDone, isDoneNow) {
+  const sf = document.getElementById('tf-status')?.value || '';
+  if (!sf) return false;
+  if (sf === 'pending' && isDoneNow) return true;
+  if (sf === 'done' && !isDoneNow) return true;
+  return false;
+}
+function _updateSingleTaskProgressUI(taskId) {
+  const t = State.tasks.find(x => x.id === taskId);
+  const card = document.querySelector(`.task-item[data-id="${taskId}"]`);
+  if (!t || !card) return;
+
+  card.classList.toggle('done', !!t.done);
+  const taskCheck = card.querySelector('.task-check');
+  if (taskCheck) taskCheck.classList.toggle('checked', !!t.done);
+
+  const prog = subtaskProgress(t);
+  const progFill = card.querySelector('[data-subtask-progress-fill]');
+  const progText = card.querySelector('[data-subtask-progress-text]');
+  if (progFill) {
+    progFill.style.width = `${prog ? prog.pct : 0}%`;
+    progFill.style.background = prog && prog.pct === 100 ? '#4ade80' : '#7c6aff';
+  }
+  if (progText) {
+    progText.textContent = prog ? `${prog.done}/${prog.total}` : '0/0';
+  }
+
+  (t.subtasks || []).forEach((s, i) => {
+    const row = card.querySelector(`[data-subtask-row="${i}"]`);
+    const box = card.querySelector(`[data-subtask-box="${i}"]`);
+    const check = card.querySelector(`[data-subtask-check="${i}"]`);
+    const txt = card.querySelector(`[data-subtask-text="${i}"]`);
+    if (row) row.style.opacity = s.done ? '.5' : '';
+    if (box) {
+      box.style.borderColor = s.done ? 'var(--accent)' : 'var(--border2)';
+      box.style.background = s.done ? 'var(--accent)' : 'transparent';
+    }
+    if (check) check.innerHTML = s.done ? '<span style="font-size:9px;color:#fff;">✓</span>' : '';
+    if (txt) {
+      txt.style.textDecoration = s.done ? 'line-through' : '';
+      txt.style.color = s.done ? 'var(--text3)' : '';
+    }
+  });
 }
 function deleteTask(id) {
   State.tasks = State.tasks.filter(t => t.id !== id);
@@ -395,20 +450,21 @@ function _renderTasks() {
       <div style="margin-top:7px;">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
           <div class="prog-bar" style="flex:1;height:4px;">
-            <div class="prog-fill" style="background:${prog.pct===100?'#4ade80':'#7c6aff'};width:${prog.pct}%;"></div>
+            <div class="prog-fill" data-subtask-progress-fill style="background:${prog.pct===100?'#4ade80':'#7c6aff'};width:${prog.pct}%;"></div>
           </div>
-          <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;white-space:nowrap;">${prog.done}/${prog.total}</span>
+          <span data-subtask-progress-text style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;white-space:nowrap;">${prog.done}/${prog.total}</span>
         </div>
         ${t.subtasks.map((s, i) => `
           <div onclick="toggleSubtask('${t.id}',${i})"
+            data-subtask-row="${i}"
             style="display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;${s.done?'opacity:.5;':''}">
-            <div style="width:14px;height:14px;border-radius:3px;flex-shrink:0;
+            <div data-subtask-box="${i}" style="width:14px;height:14px;border-radius:3px;flex-shrink:0;
               border:2px solid ${s.done?'var(--accent)':'var(--border2)'};
               background:${s.done?'var(--accent)':'transparent'};
               display:flex;align-items:center;justify-content:center;">
-              ${s.done ? '<span style="font-size:9px;color:#fff;">✓</span>' : ''}
+              <span data-subtask-check="${i}">${s.done ? '<span style="font-size:9px;color:#fff;">✓</span>' : ''}</span>
             </div>
-            <span style="font-size:12px;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${s.text}</span>
+            <span data-subtask-text="${i}" style="font-size:12px;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${s.text}</span>
           </div>`).join('')}
       </div>` : '';
 
