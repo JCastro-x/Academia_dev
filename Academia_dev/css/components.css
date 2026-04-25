@@ -514,3 +514,43 @@
 /* ╔══════════════════════════════════════════════════════════════╗
    ║  SCRIPT INLINE — Typewriter activado desde CSS patch       ║
    ╚══════════════════════════════════════════════════════════════╝ */
+
+/* ════════════════════════════════════════════════════════════
+   OVERVIEW — Cabeceras de grupo de materia en #ov-tasks-list
+   Fondo uniforme, legible y claramente distinto de las tareas
+   ════════════════════════════════════════════════════════════ */
+
+#ov-tasks-list .task-section-header,
+#ov-tasks-list .task-date-label,
+#ov-tasks-list [class*="task-group-header"],
+#ov-tasks-list [class*="task-sep"] {
+  background: linear-gradient(90deg, rgba(124, 106, 255, .18), rgba(124, 106, 255, .06)) !important;
+  border: 1px solid rgba(124, 106, 255, .28) !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
+  margin: 10px 0 4px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  font-family: 'Space Mono', monospace !important;
+  color: var(--accent2) !important;
+  letter-spacing: .5px !important;
+  text-transform: uppercase !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* Quita el color inline de materia que pueda sobreescribir el texto */
+#ov-tasks-list .task-section-header *,
+#ov-tasks-list .task-date-label *,
+#ov-tasks-list [class*="task-group-header"] *,
+#ov-tasks-list [class*="task-sep"] * {
+  color: inherit !important;
+}
+
+/* Separación visual antes del primer grupo */
+#ov-tasks-list .task-section-header:first-child,
+#ov-tasks-list .task-date-label:first-child,
+#ov-tasks-list [class*="task-group-header"]:first-child {
+  margin-top: 0 !important;
+}

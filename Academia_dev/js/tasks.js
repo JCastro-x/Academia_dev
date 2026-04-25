@@ -265,7 +265,7 @@ function toggleSubtask(taskId, idx) {
   if (!t?.subtasks?.[idx]) return;
   t.subtasks[idx].done = !t.subtasks[idx].done;
   if (t.subtasks.every(s => s.done)) t.done = true;
-  saveState(['tasks']); renderTasks(); updateBadge(); renderCalendar();
+  saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
 }
 function deleteTask(id) {
   State.tasks = State.tasks.filter(t => t.id !== id);
