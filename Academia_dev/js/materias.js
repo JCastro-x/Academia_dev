@@ -395,7 +395,11 @@ function selectIcon(el) {
 function addZoneRow(labelVal, ptsVal, subsArr) {
   zoneRowCount++;
   const id   = 'zr-' + zoneRowCount;
-  const subs = subsArr || (labelVal ? [{label: labelVal, pts: ptsVal || 0}] : []);
+  // Convert subs with maxPts to subs with pts for the UI
+  const subs = (subsArr || []).map(s => ({ label: s.label, pts: s.maxPts || s.pts || 0 }));
+  if (!subs.length && labelVal) {
+    subs.push({ label: labelVal, pts: ptsVal || 0 });
+  }
   const div  = document.createElement('div');
   div.id = id;
   div.style.cssText = 'border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:var(--surface2);';
@@ -420,7 +424,9 @@ function addZoneRow(labelVal, ptsVal, subsArr) {
     <div id="${id}-subs" class="zone-subs-area">${buildSubsHtml(subs)}</div>
     <button class="btn btn-ghost btn-sm" onclick="addZoneSub('${id}')" style="margin-top:4px;font-size:11px;">+ Apartado</button>`;
 
-  document.getElementById('zones-builder').appendChild(div);
+  // Detect which modal is open and use the appropriate builder
+  const builder = document.getElementById('ec-zones-builder') || document.getElementById('zones-builder');
+  if (builder) builder.appendChild(div);
 }
 
 function updateZoneTotal(zoneId) {
@@ -841,7 +847,7 @@ function openEditClassModal(matId) {
   document.querySelectorAll('#modal-editclass .icon-opt')
     .forEach(el => el.classList.toggle('selected', el.dataset.icon  === newIconSel));
 
-  const builder = document.getElementById('zones-builder');
+  const builder = document.getElementById('ec-zones-builder');
   if (!builder) return;
   builder.innerHTML = '';
   zoneRowCount = 0;
@@ -883,7 +889,9 @@ function saveEditClass() {
 
   const labZones = mat.zones.filter(z => z.isLabZone);
   const newZones = [];
-  document.getElementById('zones-builder').querySelectorAll('div[id^="zr-"]').forEach(row => {
+  const builder = document.getElementById('ec-zones-builder');
+  if (!builder) return;
+  builder.querySelectorAll('div[id^="zr-"]').forEach(row => {
     const nameInp = row.querySelector('.zone-name-inp');
     const lbl     = nameInp ? nameInp.value.trim() : '';
     if (!lbl) return;
