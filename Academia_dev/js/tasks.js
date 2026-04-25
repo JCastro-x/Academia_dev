@@ -63,7 +63,21 @@ function renderSubtasksEditor(list) {
 }
 function subtaskEditorAdd()      { _editSubtasks.push({ text:'', done:false }); renderSubtasksEditor(_editSubtasks); }
 function subtaskEditorText(i, v) { if (_editSubtasks[i]) _editSubtasks[i].text = v; }
-function subtaskEditorToggle(i)  { if (_editSubtasks[i]) { _editSubtasks[i].done = !_editSubtasks[i].done; renderSubtasksEditor(_editSubtasks); } }
+function subtaskEditorToggle(i)  {
+  if (!_editSubtasks[i]) return;
+  _editSubtasks[i].done = !_editSubtasks[i].done;
+  // If we're editing an existing task, persist the toggle immediately
+  if (editTaskId) {
+    const t = State.tasks.find(x => x.id === editTaskId);
+    if (t) {
+      t.subtasks = JSON.parse(JSON.stringify(_editSubtasks));
+      if (t.subtasks.length && t.subtasks.every(s => s.done)) t.done = true;
+      saveState(['tasks']);
+      renderTasks(); updateBadge(); renderOverview(); renderCalendar();
+    }
+  }
+  renderSubtasksEditor(_editSubtasks);
+}
 function subtaskEditorRemove(i)  { _editSubtasks.splice(i, 1); renderSubtasksEditor(_editSubtasks); }
 
 function renderAttachmentsEditor(list) {
@@ -251,7 +265,7 @@ function toggleSubtask(taskId, idx) {
   if (!t?.subtasks?.[idx]) return;
   t.subtasks[idx].done = !t.subtasks[idx].done;
   if (t.subtasks.every(s => s.done)) t.done = true;
-  saveState(['tasks']); renderTasks(); updateBadge(); renderCalendar();
+  saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
 }
 function deleteTask(id) {
   State.tasks = State.tasks.filter(t => t.id !== id);
