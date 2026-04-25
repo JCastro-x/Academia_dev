@@ -2387,11 +2387,11 @@ function _renderOverview() {
         padding: 10px 16px 8px; display: flex; align-items: center; gap: 8px;
         border-top: 2px solid var(--border);
         margin-top: 6px;
-        background: #000; /* materias header distinct background */
+        background: #00000091; /* materias header distinct background */
         color: var(--text);
       }
       .ov-mat-chip {
-        background: #000 !important;
+        background: #00000080 !important;
         color: #fff !important;
         border-radius: 5px;
         padding: 2px 8px;

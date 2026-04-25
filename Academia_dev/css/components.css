@@ -554,3 +554,27 @@
 #ov-tasks-list [class*="task-group-header"]:first-child {
   margin-top: 0 !important;
 }
+
+
+/* ════════════════════════════════════════════════════════════
+   OVERVIEW — Fix cabeceras de materia (selectores reales)
+   Sobreescribe el #00000091 inline del app.js
+   ════════════════════════════════════════════════════════════ */
+
+.ov-mat-header {
+  background: linear-gradient(90deg, rgba(124, 106, 255, .22), rgba(124, 106, 255, .08)) !important;
+  border-top: 2px solid rgba(124, 106, 255, .35) !important;
+  border-radius: 8px 8px 0 0 !important;
+  padding: 8px 16px !important;
+  margin-top: 8px !important;
+}
+
+.ov-mat-chip {
+  background: rgba(124, 106, 255, .25) !important;
+  color: var(--accent2) !important;
+  border: 1px solid rgba(124, 106, 255, .4) !important;
+  border-radius: 5px !important;
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
