@@ -60,10 +60,7 @@ function applyUsacZones() {
   const suma = ['lab','tar','par','fin','extra'].reduce((a,z) => a + (on(z) ? get(z) : 0), 0);
   if (suma !== 100) { alert(`La suma debe ser exactamente 100 pts (actualmente ${suma}). Ajusta los valores.`); return; }
 
-  // Detect which builder is available
-  const builder = document.getElementById('ec-zones-builder') || document.getElementById('zones-builder');
-  if (!builder) { alert('No se encontró el contenedor de zonas.'); return; }
-  builder.innerHTML = '';
+  document.getElementById('zones-builder').innerHTML = '';
   zoneRowCount = 0;
 
   if (on('par')) {
