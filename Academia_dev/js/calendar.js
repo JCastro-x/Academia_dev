@@ -113,9 +113,156 @@ function _renderCalendar() {
 }
 
 function calDayClick(ds) {
+  const dayEvents = State.events.filter(e => e.date === ds);
+  const dayTasks = State.tasks.filter(t => t.due === ds && !t.done);
+  
+  // Si hay eventos o tareas, abrir modal con ellos
+  if (dayEvents.length > 0 || dayTasks.length > 0) {
+    openDayEventsModal(ds, dayEvents, dayTasks);
+  } else {
+    // Si no hay eventos, abrir modal para crear uno con la fecha preseleccionada
+    openEventModal();
+    document.getElementById('ev-date').value = ds;
+  }
+}
 
-  const list = _el('cal-events-list');
-  if (list) list.scrollIntoView({ behavior:'smooth', block:'start' });
+function openDayEventsModal(date, events, tasks) {
+  const modal = document.getElementById('modal-day-events');
+  if (!modal) {
+    // Crear modal si no existe
+    const modalHtml = `
+      <div class="modal-overlay" id="modal-day-events">
+        <div class="modal" style="max-width:700px;">
+          <div class="modal-close" onclick="closeModal('modal-day-events')">✕</div>
+          <div class="modal-title">📅 Eventos del ${date}</div>
+          <div id="day-events-list" style="max-height:500px;overflow-y:auto;margin-bottom:16px;"></div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="openEventModal();document.getElementById('ev-date').value='${date}';closeModal('modal-day-events');">+ Nuevo Evento</button>
+            <button class="btn btn-ghost" onclick="closeModal('modal-day-events')">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+  
+  // Renderizar eventos del día
+  const listEl = document.getElementById('day-events-list');
+  if (listEl) {
+    let html = '';
+    
+    // Separar eventos con hora y sin hora
+    const eventsWithTime = events.filter(e => e.hora && e.horaEnd);
+    const eventsWithoutTime = events.filter(e => !e.hora || !e.horaEnd);
+    
+    // Línea de tiempo para eventos con hora
+    if (eventsWithTime.length > 0) {
+      html += '<div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:12px;">HORARIO DEL DÍA</div>';
+      html += '<div style="position:relative;background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:16px;">';
+      
+      // Marcadores de hora (cada hora)
+      html += '<div style="position:relative;height:480px;border-left:2px solid var(--border);">';
+      
+      for (let hour = 0; hour < 24; hour++) {
+        const top = hour * 20;
+        html += `<div style="position:absolute;top:${top}px;left:-35px;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;text-align:right;width:30px;">${String(hour).padStart(2,'0')}:00</div>`;
+        html += `<div style="position:absolute;top:${top}px;left:0;right:0;height:1px;background:var(--border);"></div>`;
+      }
+      
+      // Renderizar eventos en la línea de tiempo
+      eventsWithTime.forEach(e => {
+        const m = getMat(e.matId);
+        const [startHour, startMin] = e.hora.split(':').map(Number);
+        const [endHour, endMin] = e.horaEnd.split(':').map(Number);
+        
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
+        const duration = endMinutes - startMinutes;
+        
+        const top = (startMinutes / 60) * 20;
+        const height = (duration / 60) * 20;
+        
+        html += `
+          <div style="position:absolute;top:${top}px;left:4px;right:8px;height:${height}px;background:${m.color||'#7c6aff'}22;border-left:3px solid ${m.color||'#7c6aff'};border-radius:4px;padding:6px 8px;cursor:pointer;overflow:hidden;" onclick="editEvent('${e.id}')">
+            <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div>
+            <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;">${e.hora} - ${e.horaEnd}</div>
+            <div style="font-size:9px;color:var(--text3);">${m.icon||''} ${m.code||m.name||''}</div>
+          </div>
+        `;
+      });
+      
+      html += '</div></div>';
+    }
+    
+    // Eventos sin hora
+    if (eventsWithoutTime.length > 0) {
+      html += '<div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:8px;">EVENTOS SIN HORA</div>';
+      eventsWithoutTime.forEach(e => {
+        const m = getMat(e.matId);
+        html += `
+          <div class="task-item" style="align-items:center;">
+            <div style="width:9px;height:9px;border-radius:50%;background:${m.color||'#7c6aff'};flex-shrink:0;margin-top:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13.5px;font-weight:600;">${e.title}</div>
+              <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.name||''} · ${e.type||''}${e.desc?' · '+e.desc:''}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="editEvent('${e.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.id}');closeModal('modal-day-events');">🗑️</button>
+          </div>
+        `;
+      });
+    }
+    
+    // Tareas
+    if (tasks.length > 0) {
+      html += '<div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;margin:16px 0 8px;">TAREAS</div>';
+      tasks.forEach(t => {
+        const m = getMat(t.matId);
+        html += `
+          <div class="task-item" style="align-items:center;">
+            <div class="task-check" onclick="toggleTask('${t.id}');closeModal('modal-day-events');"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:600;">${t.title}</div>
+              <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.code||''} · ${t.type||'Tarea'}</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+    
+    if (!events.length && !tasks.length) {
+      html = '<div style="text-align:center;padding:20px;color:var(--text3);">Sin eventos ni tareas</div>';
+    }
+    
+    listEl.innerHTML = html;
+  }
+  
+  document.getElementById('modal-day-events').classList.add('open');
+}
+
+function editEvent(id) {
+  const event = State.events.find(e => e.id === id);
+  if (!event) return;
+  
+  closeModal('modal-day-events');
+  
+  // Llenar el modal de evento con los datos del evento
+  fillMatSels();
+  document.getElementById('ev-title').value = event.title;
+  document.getElementById('ev-mat').value = event.matId;
+  document.getElementById('ev-type').value = event.type || 'Parcial';
+  document.getElementById('ev-date').value = event.date;
+  document.getElementById('ev-time').value = event.hora || '';
+  document.getElementById('ev-time-end').value = event.horaEnd || '';
+  document.getElementById('ev-desc').value = event.desc || '';
+  
+  // Guardar el ID del evento que se está editando
+  document.getElementById('modal-event').dataset.editingId = id;
+  
+  // Cambiar el título del modal
+  document.querySelector('#modal-event .modal-title').textContent = '✏️ Editar Evento';
+  
+  document.getElementById('modal-event').classList.add('open');
 }
 
 function openEventModal() {
@@ -123,19 +270,48 @@ function openEventModal() {
   ['ev-title','ev-desc'].forEach(i => document.getElementById(i).value = '');
   document.getElementById('ev-date').value = '';
   document.getElementById('ev-time').value = '';
+  document.getElementById('ev-time-end').value = '';
+  
+  // Limpiar el ID de edición y restaurar el título
+  delete document.getElementById('modal-event').dataset.editingId;
+  document.querySelector('#modal-event .modal-title').textContent = '📅 Nuevo Evento / Parcial';
+  
   document.getElementById('modal-event').classList.add('open');
 }
 function saveEvent() {
   const title = document.getElementById('ev-title').value.trim();
   if (!title) return;
-  State.events.push({
-    id: Date.now().toString(), title,
-    matId: document.getElementById('ev-mat').value,
-    type:  document.getElementById('ev-type').value,
-    date:  document.getElementById('ev-date').value,
-    hora:  document.getElementById('ev-time').value,
-    desc:  document.getElementById('ev-desc').value,
-  });
+  
+  const editingId = document.getElementById('modal-event').dataset.editingId;
+  
+  if (editingId) {
+    // Modo edición: actualizar evento existente
+    const eventIndex = State.events.findIndex(e => e.id === editingId);
+    if (eventIndex !== -1) {
+      State.events[eventIndex] = {
+        ...State.events[eventIndex],
+        title,
+        matId: document.getElementById('ev-mat').value,
+        type:  document.getElementById('ev-type').value,
+        date:  document.getElementById('ev-date').value,
+        hora:  document.getElementById('ev-time').value,
+        horaEnd: document.getElementById('ev-time-end').value,
+        desc:  document.getElementById('ev-desc').value,
+      };
+    }
+  } else {
+    // Modo creación: agregar nuevo evento
+    State.events.push({
+      id: Date.now().toString(), title,
+      matId: document.getElementById('ev-mat').value,
+      type:  document.getElementById('ev-type').value,
+      date:  document.getElementById('ev-date').value,
+      hora:  document.getElementById('ev-time').value,
+      horaEnd: document.getElementById('ev-time-end').value,
+      desc:  document.getElementById('ev-desc').value,
+    });
+  }
+  
   saveState(['events']);
   closeModal('modal-event');
   renderCalendar();

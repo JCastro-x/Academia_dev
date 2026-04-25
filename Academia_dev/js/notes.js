@@ -2479,7 +2479,7 @@ function _renderOverview() {
     const pal      = _pal(daysLeft);
     // Fondo neutro fijo — solo el borde izquierdo lleva el color de urgencia
     const borderColor = pal.border || 'var(--border2)';
-    const bgStyle  = `background:var(--surface2,rgba(255,255,255,.04));border-left:3px solid ${borderColor};`;
+    const bgStyle  = `background:var(--surface2,rgba(255,255,255,.04));`;
     const prog       = subtaskProgress(t);
     const dueTimeStr = t.dueTime ? ` · ⏰ ${t.dueTime}` : '';
     const planStr    = t.datePlanned
@@ -2578,7 +2578,7 @@ function _renderOverview() {
   sortedGroups.forEach(({ mat, tasks }) => {
     const cnt = tasks.length;
     const mc  = mat.color || 'var(--accent)';
-    html += `<div class="ov-mat-header" style="border-left:4px solid ${mc};background:#000;">
+    html += `<div class="ov-mat-header" style="background:#000;">
       <span style="font-size:15px;line-height:1;">${mat.icon||'📚'}</span>
       <span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">${mat.name}</span>
       ${mat.code?`<span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 7px;border-radius:4px;font-family:'Space Mono',monospace;">${mat.code}</span>`:''}
