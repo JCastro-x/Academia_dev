@@ -2372,6 +2372,26 @@ function _renderOverview() {
         padding: 11px 16px; transition: filter .15s;
       }
       .ov-task-row:hover { filter: brightness(1.07); }
+      .ov-task-row.ov-due-today-blink {
+        position: relative;
+        z-index: 1;
+        transform-origin: center;
+        animation: dueTodayBlink 1.15s ease-in-out 3 !important;
+      }
+      .ov-task-row.ov-due-today-blink::before {
+        content: '';
+        position: absolute;
+        inset: -6px -8px;
+        border-radius: 12px;
+        pointer-events: none;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(var(--due-today-blink-rgb,251,146,60), .22) 0%,
+          rgba(var(--due-today-blink-rgb,251,146,60), .10) 45%,
+          rgba(var(--due-today-blink-rgb,251,146,60), 0) 75%
+        );
+        animation: dueTodayFlameAura 1.15s ease-in-out 3 !important;
+      }
       .ov-task-row .mc-task-info { flex: 1; min-width: 0; }
       .ov-badge {
         display: inline-flex; align-items: center; gap: 5px;
@@ -2441,6 +2461,13 @@ function _renderOverview() {
     return _typeColorMap[key] || { bg: fallbackColor+'22', border: fallbackColor+'88', text: fallbackColor };
   }
 
+  const blinkDueTodayNow = typeof _consumeOverviewDueTodayBlinkOnRender === 'function'
+    ? _consumeOverviewDueTodayBlinkOnRender()
+    : false;
+  const todayIso = typeof _todayLocalISO === 'function'
+    ? _todayLocalISO()
+    : new Date().toISOString().slice(0, 10);
+
   function _taskHtml(t) {
     const m        = getMat(t.matId);
     const dueD     = t.due ? new Date(t.due + 'T00:00:00') : null;
@@ -2460,6 +2487,10 @@ function _renderOverview() {
     const mc   = m ? (m.color||'#7c6aff') : '#7c6aff';
     const type = (t.type||'Tarea');
     const tc   = _typeStyle(type, mc);
+    const isDueToday = !t.done && !!t.due && t.due === todayIso;
+    const dueTodayBlinkClass = blinkDueTodayNow && isDueToday ? ' ov-due-today-blink' : '';
+    const blinkRgb = t.priority === 'high' ? '248,113,113' : t.priority === 'low' ? '74,222,128' : '251,191,36';
+    const dueTodayBlinkStyle = blinkDueTodayNow && isDueToday ? `--due-today-blink-rgb:${blinkRgb};` : '';
     // Barra de progreso de subtareas
     const progBar = prog && prog.total > 0 ? (() => {
       const pct  = Math.round((prog.done / prog.total) * 100);
@@ -2475,7 +2506,7 @@ function _renderOverview() {
     const dueDateBig = t.due
       ? `<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:right;margin-bottom:4px;white-space:nowrap;line-height:1.2;">📅 ${_fmtReadable(t.due)}${dueTimeStr}</div>`
       : '';
-    return `<div class="mc-task-item ov-task-row ${prioClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}">
+    return `<div class="mc-task-item ov-task-row ${prioClass}${dueTodayBlinkClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}${dueTodayBlinkStyle}">
       <div class="mc-task-info">
         <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">${t.title}</div>
         <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">

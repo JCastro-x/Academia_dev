@@ -22,7 +22,10 @@ function goPage(id, el) {
   closeCompPopup();
 
   switch(id) {
-    case 'overview':       renderOverview(); break;
+    case 'overview':
+      if (typeof armOverviewDueTodayBlink === 'function') armOverviewDueTodayBlink();
+      renderOverview();
+      break;
     case 'materias':       renderMaterias(); break;
     case 'tareas':
       fillMatSels();

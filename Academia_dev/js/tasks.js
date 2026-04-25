@@ -13,9 +13,13 @@ let _editSubtasks    = [];
 let _editAttachments = [];
 let _editComments    = [];
 let _tasksDueTodayBlinkArmed = true;
+let _overviewDueTodayBlinkArmed = true;
 
 function armTasksDueTodayBlink() {
   _tasksDueTodayBlinkArmed = true;
+}
+function armOverviewDueTodayBlink() {
+  _overviewDueTodayBlinkArmed = true;
 }
 function _todayLocalISO() {
   const now = new Date();
@@ -31,6 +35,13 @@ function _consumeDueTodayBlinkOnRender() {
   if (!_tasksDueTodayBlinkArmed) return false;
   if (!_isTasksPageActive()) return false;
   _tasksDueTodayBlinkArmed = false;
+  return true;
+}
+function _consumeOverviewDueTodayBlinkOnRender() {
+  if (!_overviewDueTodayBlinkArmed) return false;
+  const isOverviewActive = document.getElementById('page-overview')?.classList.contains('active');
+  if (!isOverviewActive) return false;
+  _overviewDueTodayBlinkArmed = false;
   return true;
 }
 
