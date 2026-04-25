@@ -1,20 +1,20 @@
+const mergePomData = (localSettings = {}, remoteSettings = {}) => {
+  const localPom = localSettings?.pomData;
+  const remotePom = remoteSettings?.pomData;
+  if (!localPom && !remotePom) return { ...remoteSettings };
+  if (!localPom) return { ...remoteSettings };
+  if (!remotePom) return { ...remoteSettings, pomData: localPom };
+  const localAt = Number(localPom.updatedAt || 0);
+  const remoteAt = Number(remotePom.updatedAt || 0);
+  return {
+    ...remoteSettings,
+    pomData: localAt >= remoteAt ? localPom : remotePom,
+  };
+};
 
 function init() {
   const getAcademiaDB = () => window.AcademiaDB || window.DB;
   const AUTH_REDIRECT_GUARD_KEY = 'academia_auth_redirect_ts';
-  const mergePomData = (localSettings = {}, remoteSettings = {}) => {
-    const localPom = localSettings?.pomData;
-    const remotePom = remoteSettings?.pomData;
-    if (!localPom && !remotePom) return { ...remoteSettings };
-    if (!localPom) return { ...remoteSettings };
-    if (!remotePom) return { ...remoteSettings, pomData: localPom };
-    const localAt = Number(localPom.updatedAt || 0);
-    const remoteAt = Number(remotePom.updatedAt || 0);
-    return {
-      ...remoteSettings,
-      pomData: localAt >= remoteAt ? localPom : remotePom,
-    };
-  };
 
   function redirectToAuthSafely(reason = 'unknown') {
     const now = Date.now();

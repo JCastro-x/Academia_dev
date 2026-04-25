@@ -35,9 +35,20 @@
     }
   }
 
-  // load() -> { semestres, settings, updatedAt } | null
-  async function load() {
+  // load(localUpdatedAt?) -> { semestres, settings, updatedAt } | null
+  // Si se proporciona localUpdatedAt, hace preflight check antes de descargar
+  async function load(localUpdatedAt) {
     if (!_ready) return null;
+    
+    // Preflight: si hay timestamp local, verificar si remoto es más reciente
+    if (localUpdatedAt && typeof localUpdatedAt === 'number') {
+      const remoteUpdatedAt = await getRemoteUpdatedAt();
+      if (remoteUpdatedAt && remoteUpdatedAt <= localUpdatedAt) {
+        console.log('⏭️ DB.load: remoto no más nuevo que local (preflight), omitiendo descarga');
+        return null;
+      }
+    }
+    
     try {
       const { data, error } = await _getClient()
         .from('user_data')

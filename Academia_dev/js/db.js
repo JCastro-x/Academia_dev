@@ -196,9 +196,11 @@ const DB = {
   // ── Archivos ─────────────────────────────────────────────────
 
   async getFiles(groupId) {
+    // Excluimos la columna 'data' para evitar descargar base64 pesado
+    // Solo solicitamos metadatos y la URL pública del Storage
     const { data, error } = await SS.client
       .from('social_files')
-      .select('*, social_profiles!social_files_uploaded_by_fkey(username, avatar_url)')
+      .select('id, group_id, uploaded_by, name, file_type, storage_path, public_url, size, created_at, social_profiles!social_files_uploaded_by_fkey(username, avatar_url)')
       .eq('group_id', groupId)
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -206,35 +208,87 @@ const DB = {
   },
 
   async uploadFile(groupId, userId, file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const data64   = e.target.result;
-        const ext      = file.name.split('.').pop().toLowerCase();
-        const fileType = ['pdf'].includes(ext) ? 'pdf'
-                       : ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'image'
-                       : 'file';
-        const { data, error } = await SS.client
-          .from('social_files')
-          .insert({
-            group_id:    groupId,
-            uploaded_by: userId,
-            name:        file.name,
-            file_type:   fileType,
-            data:        data64,
-            size:        file.size
-          })
-          .select()
-          .single();
-        if (error) reject(error);
-        else resolve(data);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    // REQUISITO: Bucket 'social-files' debe existir en Supabase Storage
+    // REQUISITO: Tabla social_files debe tener columnas: storage_path (text), public_url (text)
+    // La columna 'data' ya no se usa (puede eliminarse en SQL)
+    
+    const ext = file.name.split('.').pop().toLowerCase();
+    const fileType = ['pdf'].includes(ext) ? 'pdf'
+                   : ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'image'
+                   : 'file';
+    
+    // Generar nombre único para evitar colisiones
+    const timestamp = Date.now();
+    const fileName = `${groupId}_${timestamp}_${file.name}`;
+    const storagePath = `groups/${groupId}/${fileName}`;
+    
+    try {
+      // Subir archivo a Supabase Storage
+      const { data: uploadData, error: uploadError } = await SS.client
+        .storage
+        .from('social-files')
+        .upload(storagePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      // Obtener URL pública del archivo
+      const { data: urlData } = SS.client
+        .storage
+        .from('social-files')
+        .getPublicUrl(storagePath);
+      
+      const publicUrl = urlData.publicUrl;
+      
+      // Guardar metadatos en la tabla (sin el base64)
+      const { data, error } = await SS.client
+        .from('social_files')
+        .insert({
+          group_id:    groupId,
+          uploaded_by: userId,
+          name:        file.name,
+          file_type:   fileType,
+          storage_path: storagePath,
+          public_url:  publicUrl,
+          size:        file.size
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error subiendo archivo a Storage:', error);
+      throw error;
+    }
   },
 
   async deleteFile(fileId) {
+    // Primero obtener el storage_path para eliminar del Storage
+    const { data: fileData, error: fetchError } = await SS.client
+      .from('social_files')
+      .select('storage_path')
+      .eq('id', fileId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    // Eliminar archivo del Storage si existe storage_path
+    if (fileData && fileData.storage_path) {
+      const { error: storageError } = await SS.client
+        .storage
+        .from('social-files')
+        .remove([fileData.storage_path]);
+      
+      if (storageError) {
+        console.warn('⚠️ Error eliminando del Storage:', storageError);
+        // Continuamos con la eliminación del registro aunque falle el Storage
+      }
+    }
+    
+    // Eliminar registro de la tabla
     const { error } = await SS.client.from('social_files').delete().eq('id', fileId);
     if (error) throw error;
   },
