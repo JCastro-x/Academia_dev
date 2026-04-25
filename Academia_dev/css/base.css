@@ -21,8 +21,8 @@
 }
 
 [data-theme="light"] {
-  --bg:      #e2e6ee; --surface: #f3f5fa; --surface2: #eceff6; --surface3: #e7ebf3;
-  --border:  #cdd4e2; --border2: #bcc6d8;
+  --bg:      #e8e4dc; --surface: #f5f2eb; --surface2: #ebe8e0; --surface3: #e0ddd5;
+  --border:  #d0ccc4; --border2: #c0bcb4;
   --text:    #1a1f2e; --text2:  #39485f; --text3:  #5a6b85;
   --accent:  #6b58e8; --accent2: #7c6aff; --accent-glow: rgba(107,88,232,.1);
   --shadow:  0 4px 16px rgba(31,41,55,.12);
