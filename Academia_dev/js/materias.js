@@ -332,6 +332,13 @@ function deleteClass(matId) {
 }
 
 function openAddClassModal() {
+  // Asegurarse de que el modal esté en modo "crear", no "editar"
+  window._editClassMatId = null;
+  const titleEl = document.querySelector('#modal-addclass .modal-title');
+  const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
+  if (titleEl) titleEl.textContent = '📚 Nueva Clase';
+  if (saveBtn) { saveBtn.onclick = saveNewClass; saveBtn.textContent = '💾 Crear Clase'; }
+
   document.getElementById('nc-name').value    = '';
   document.getElementById('nc-code').value    = '';
   document.getElementById('nc-credits').value = '';
@@ -392,7 +399,7 @@ function selectIcon(el) {
   document.querySelectorAll('.icon-opt').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
 }
-function addZoneRow(labelVal, ptsVal, subsArr) {
+function addZoneRow(labelVal, ptsVal, subsArr, origKey) {
   zoneRowCount++;
   const id   = 'zr-' + zoneRowCount;
   const subs = subsArr || (labelVal ? [{label: labelVal, pts: ptsVal || 0}] : []);
@@ -402,6 +409,7 @@ function addZoneRow(labelVal, ptsVal, subsArr) {
 
   const buildSubsHtml = (subsList) => subsList.map((s, i) => `
     <div class="zone-sub-row" id="${id}-sub-${i}">
+      <input type="hidden" class="zone-sub-orig-key" value="${(s.key||'').replace(/"/g,'&quot;')}">
       <input type="text" class="form-input zone-sub-label" placeholder="Apartado (ej: Tarea P1)" value="${(s.label||'').replace(/"/g,'&quot;')}" style="font-size:12px;">
       <input type="number" class="form-input zone-sub-pts" placeholder="Pts" value="${s.pts||''}" min="0" max="200" style="font-size:12px;text-align:center;" oninput="updateZoneTotal('${id}')">
       <button class="btn btn-danger btn-sm" onclick="removeZoneSub('${id}', ${i})" style="padding:3px 6px;">✕</button>
@@ -410,6 +418,7 @@ function addZoneRow(labelVal, ptsVal, subsArr) {
   const totalPts = subs.reduce((a, s) => a + (parseFloat(s.pts) || 0), 0);
 
   div.innerHTML = `
+    <input type="hidden" class="zone-orig-key" value="${(origKey||'').replace(/"/g,'&quot;')}">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <input type="text" class="form-input zone-name-inp" data-zone-name="1" placeholder="Nombre de la zona (ej: Exámenes Parciales)" value="${(labelVal||'').replace(/"/g,'&quot;')}" style="font-size:13px;font-weight:600;flex:1;">
       <div style="display:flex;align-items:center;gap:4px;font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;">
@@ -823,31 +832,70 @@ function openEditClassModal(matId) {
   const mat = getMat(matId);
   if (!mat) return;
 
-  const sv = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
-  sv('ec-name', mat.name);
-  sv('ec-code', mat.code);
-  sv('ec-credits', mat.credits);
-  sv('ec-catedratico', mat.catedratico);
-  sv('ec-seccion', mat.seccion);
-  sv('ec-horario', mat.horario);
+  // Cambiar título y botón del modal de crear para modo edición
+  const titleEl = document.querySelector('#modal-addclass .modal-title');
+  const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
+  if (titleEl) titleEl.textContent = `✏️ Editar: ${mat.name}`;
+  if (saveBtn) { saveBtn.onclick = saveEditClassFromCreate; saveBtn.textContent = '💾 Guardar Cambios'; }
 
-  document.querySelectorAll('#ec-dias-checks input[type=checkbox]')
+  // Pre-cargar campos básicos
+  document.getElementById('nc-name').value    = mat.name    || '';
+  document.getElementById('nc-code').value    = mat.code    || '';
+  document.getElementById('nc-credits').value = mat.credits || '';
+  document.getElementById('nc-nolab').checked = true;
+  document.getElementById('lab-section').style.display = 'none';
+
+  const sv = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  sv('nc-seccion',     mat.seccion);
+  sv('nc-catedratico', mat.catedratico);
+  sv('nc-horario',     mat.horario);
+
+  // Días de clase
+  document.querySelectorAll('#nc-dias-checks input[type=checkbox]')
     .forEach(cb => { cb.checked = (mat.dias || '').includes(cb.value); });
 
+  // Color e ícono
   newColorSel = mat.color || '#7c6aff';
   newIconSel  = mat.icon  || '📚';
-  document.querySelectorAll('#modal-editclass .color-opt')
+  document.querySelectorAll('#modal-addclass .color-opt')
     .forEach(el => el.classList.toggle('selected', el.dataset.color === newColorSel));
-  document.querySelectorAll('#modal-editclass .icon-opt')
+  document.querySelectorAll('#modal-addclass .icon-opt')
     .forEach(el => el.classList.toggle('selected', el.dataset.icon  === newIconSel));
 
-  const builder = document.getElementById('ec-zones-builder');
-  if (!builder) return;
-  builder.innerHTML = '';
-  zoneRowCount = 0;
-  mat.zones.filter(z => !z.isLabZone).forEach(z => _addEditZoneRow(z.label, z.subs, z.maxPts));
+  // Resetear configurador rápido de zonas USAC
+  ['lab','tar','par','fin','extra'].forEach(id => {
+    const cb = document.getElementById('uz-'+id+'-on');
+    if (cb) cb.checked = false;
+    const ctrl = document.getElementById('uzc-'+id);
+    if (ctrl) ctrl.style.display = 'none';
+  });
+  updateUsacSuma();
 
-  document.getElementById('modal-editclass').classList.add('open');
+  // Pre-cargar zonas existentes preservando claves (para no perder calificaciones)
+  document.getElementById('zones-builder').innerHTML = '';
+  zoneRowCount = 0;
+  mat.zones.filter(z => !z.isLabZone).forEach(z => {
+    addZoneRow(
+      z.label,
+      z.maxPts,
+      z.subs.map(s => ({ label: s.label, pts: s.maxPts, key: s.key })),
+      z.key
+    );
+  });
+
+  // Selector de clase padre
+  const ps = document.getElementById('nc-parent');
+  ps.innerHTML = '<option value="">— No es un lab —</option>';
+  State.materias.forEach(m => {
+    if (m.id === matId) return;
+    const o = document.createElement('option');
+    o.value = m.id;
+    o.textContent = `${m.icon||'📚'} ${m.name}`;
+    ps.appendChild(o);
+  });
+  if (mat.parentId) ps.value = mat.parentId;
+
+  document.getElementById('modal-addclass').classList.add('open');
 }
 
 function ecSelectColor(el) {
@@ -1020,5 +1068,80 @@ if (totalPts === 0 && subs.length > 0) {
   getMat.bust();
   saveState(['materias']);
   closeModal('modal-editclass');
+  renderMaterias(); renderGrades(); renderOverview(); fillMatSels();
+}
+
+// ══════════════════════════════════════════════════════════════
+// GUARDAR EDICIÓN DESDE EL MODAL DE CREAR (modal-addclass)
+// Lee los campos nc-* y zones-builder igual que al crear,
+// pero actualiza la materia existente en vez de crear una nueva.
+// Las claves originales guardadas en inputs ocultos preservan
+// las calificaciones ya ingresadas.
+// ══════════════════════════════════════════════════════════════
+function saveEditClassFromCreate() {
+  const mat = getMat(window._editClassMatId);
+  if (!mat) return;
+
+  const name = document.getElementById('nc-name').value.trim();
+  const code = document.getElementById('nc-code').value.trim();
+  if (!name || !code) { alert('Ingresa nombre y código.'); return; }
+
+  mat.name        = name;
+  mat.code        = code;
+  mat.credits     = document.getElementById('nc-credits').value.trim()     || mat.credits;
+  mat.catedratico = document.getElementById('nc-catedratico')?.value.trim() || '';
+  mat.seccion     = document.getElementById('nc-seccion')?.value.trim()     || '';
+  mat.horario     = document.getElementById('nc-horario')?.value.trim()     || '';
+  mat.color       = newColorSel;
+  mat.icon        = newIconSel;
+  mat.dias        = Array.from(document.querySelectorAll('#nc-dias-checks input:checked'))
+                      .map(cb => cb.value).join(', ');
+
+  // Preservar zonas de laboratorio enlazadas
+  const labZones = mat.zones.filter(z => z.isLabZone);
+  const newZones = [];
+
+  document.getElementById('zones-builder').querySelectorAll(':scope > div[id^="zr-"]').forEach(row => {
+    const lbl = row.querySelector('.zone-name-inp')?.value.trim();
+    if (!lbl) return;
+
+    // Usar clave original si existe → preserva calificaciones aunque se renombre la zona
+    const origKey = row.querySelector('.zone-orig-key')?.value || '';
+    const key     = origKey || lbl.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20);
+
+    const subs = [];
+    let totalPts = 0;
+
+    row.querySelectorAll('.zone-sub-row').forEach((sr, i) => {
+      const subLabel   = sr.querySelector('.zone-sub-label')?.value.trim() || lbl + ' ' + (i + 1);
+      const subPts     = parseFloat(sr.querySelector('.zone-sub-pts')?.value) || 0;
+      const origSubKey = sr.querySelector('.zone-sub-orig-key')?.value || '';
+      const subKey     = origSubKey || (key + '_' + (i + 1));
+      subs.push({ key: subKey, label: subLabel, maxPts: subPts });
+      totalPts += subPts;
+    });
+
+    if (totalPts === 0 && subs.length === 0) return; // zona vacía, ignorar
+    if (totalPts === 0 && subs.length > 0) {
+      totalPts = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
+    }
+
+    newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
+  });
+
+  if (!newZones.length) { alert('Agrega al menos una zona de calificación.'); return; }
+  mat.zones = [...newZones, ...labZones];
+
+  getMat.bust();
+  saveState(['materias']);
+  closeModal('modal-addclass');
+
+  // Restaurar modal-addclass a modo "crear" para la próxima vez
+  window._editClassMatId = null;
+  const titleEl = document.querySelector('#modal-addclass .modal-title');
+  const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
+  if (titleEl) titleEl.textContent = '📚 Nueva Clase';
+  if (saveBtn) { saveBtn.onclick = saveNewClass; saveBtn.textContent = '💾 Crear Clase'; }
+
   renderMaterias(); renderGrades(); renderOverview(); fillMatSels();
 }

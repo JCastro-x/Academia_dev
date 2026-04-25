@@ -60,8 +60,12 @@ function applyUsacZones() {
   const suma = ['lab','tar','par','fin','extra'].reduce((a,z) => a + (on(z) ? get(z) : 0), 0);
   if (suma !== 100) { alert(`La suma debe ser exactamente 100 pts (actualmente ${suma}). Ajusta los valores.`); return; }
 
-  document.getElementById('zones-builder').innerHTML = '';
-  zoneRowCount = 0;
+  // Si estamos editando una clase, NO borrar las zonas ya existentes — solo agregar las nuevas.
+  // Si estamos creando, limpiar y empezar de cero.
+  if (!window._editClassMatId) {
+    document.getElementById('zones-builder').innerHTML = '';
+    zoneRowCount = 0;
+  }
 
   if (on('par')) {
     const pts = get('par'), n = getN('par');
