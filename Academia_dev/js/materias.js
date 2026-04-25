@@ -407,7 +407,7 @@ function addZoneRow(labelVal, ptsVal, subsArr) {
   const buildSubsHtml = (subsList) => subsList.map((s, i) => `
     <div class="zone-sub-row" id="${id}-sub-${i}">
       <input type="text" class="form-input zone-sub-label" placeholder="Apartado (ej: Tarea P1)" value="${(s.label||'').replace(/"/g,'&quot;')}" style="font-size:12px;">
-      <input type="number" class="form-input zone-sub-pts" placeholder="Pts" value="${s.pts||''}" min="0" max="200" style="font-size:12px;text-align:center;" oninput="updateZoneTotal('${id}')">
+      <input type="number" class="form-input zone-sub-pts" placeholder="Pts" value="${s.pts !== undefined && s.pts !== '' ? s.pts : ''}" min="0" max="200" style="font-size:12px;text-align:center;" oninput="updateZoneTotal('${id}')">
       <button class="btn btn-danger btn-sm" onclick="removeZoneSub('${id}', ${i})" style="padding:3px 6px;">✕</button>
     </div>`).join('');
 
@@ -446,8 +446,8 @@ function addZoneSub(zoneId) {
   row.className = 'zone-sub-row';
   row.id = zoneId + '-sub-' + idx;
   row.innerHTML = `
-    <input type="text" class="form-input" placeholder="Apartado" style="font-size:12px;">
-    <input type="number" class="form-input" placeholder="Pts" min="0" max="200" style="font-size:12px;text-align:center;" oninput="updateZoneTotal('${zoneId}')">
+    <input type="text" class="form-input zone-sub-label" placeholder="Apartado" style="font-size:12px;">
+    <input type="number" class="form-input zone-sub-pts" placeholder="Pts" min="0" max="200" style="font-size:12px;text-align:center;" oninput="updateZoneTotal('${zoneId}')">
     <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();updateZoneTotal('${zoneId}')" style="padding:3px 6px;">✕</button>`;
   subsDiv.appendChild(row);
 }
