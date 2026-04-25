@@ -25,10 +25,10 @@
 .mc-task-item { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); transition:background .15s; cursor:default; border-left:3px solid transparent; }
 .mc-task-item:last-child { border-bottom:none; }
 .mc-task-item:hover { background:var(--surface2); }
-.mc-task-item.prio-alta  { border-left-color:#f87171; background:rgba(248,113,113,.06); }
-.mc-task-item.prio-media { border-left-color:#fbbf24; background:rgba(251,191,36,.05); }
-.mc-task-item.prio-baja  { border-left-color:#4ade80; background:rgba(74,222,128,.05); }
-.mc-task-item.prio-none  { border-left-color:var(--border); }
+.mc-task-item.prio-alta  { background:rgba(248,113,113,.06); }
+.mc-task-item.prio-media { background:rgba(251,191,36,.05); }
+.mc-task-item.prio-baja  { background:rgba(74,222,128,.05); }
+.mc-task-item.prio-none  { background:transparent; }
 .mc-task-item:hover.prio-alta  { background:rgba(248,113,113,.11); }
 .mc-task-item:hover.prio-media { background:rgba(251,191,36,.09); }
 .mc-task-item:hover.prio-baja  { background:rgba(74,222,128,.09); }

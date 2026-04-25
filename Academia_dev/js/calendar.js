@@ -19,7 +19,7 @@ function _renderCalendar() {
       + State.materias.slice(0,8).map(m =>
           `<span class="cal-legend-item" style="--lc:${m.color};">${m.icon||''} ${m.code}</span>`
         ).join('')
-      + `<span class="cal-legend-item" style="--lc:#f87171;border-style:dashed;">✅ Tareas</span>`;
+      + `<span class="cal-legend-item" style="--lc:#f87171;">✅ Tareas</span>`;
   }
 
   let html = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
@@ -67,7 +67,10 @@ function _renderCalendar() {
     listHtml += `<div class="section-title">📅 Eventos del mes</div>`;
     listHtml += mEvs.map(e => {
       const m = getMat(e.matId);
-      const evDate = new Date(e.date); evDate.setHours(0,0,0,0);
+      // Parsear fecha en zona horaria local (evitar problema UTC)
+      const [year, month, day] = e.date.split('-').map(Number);
+      const evDate = new Date(year, month - 1, day);
+      evDate.setHours(0,0,0,0);
       const dLeft = Math.ceil((evDate - today) / 86400000);
       let cdClass = 'ok', cdText = `${dLeft}d`;
       if (dLeft < 0)      { cdClass='urgent'; cdText=`hace ${-dLeft}d`; }
@@ -80,9 +83,10 @@ function _renderCalendar() {
         <div style="width:9px;height:9px;border-radius:50%;background:${m.color||'#7c6aff'};flex-shrink:0;margin-top:0;"></div>
         <div style="flex:1;">
           <div style="font-size:13.5px;font-weight:600;">${e.title}${countdownBadge}</div>
-          <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.name||''} · ${fmtD(e.date)}${e.hora?' · '+e.hora:''}${e.desc?' · '+e.desc:''}</div>
+          <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.name||''} · ${fmtD(e.date)}${e.hora?' · '+e.hora:''}${e.horaEnd?' - '+e.horaEnd:''}${e.desc?' · '+e.desc:''}</div>
         </div>
         <span class="type-badge ${getTypeBadgeClass(e.type)}">${e.type||''}</span>
+        <button class="btn btn-ghost btn-sm" onclick="editEvent('${e.id}')">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.id}')">🗑️</button>
       </div>`;
     }).join('');
@@ -132,10 +136,10 @@ function openDayEventsModal(date, events, tasks) {
     // Crear modal si no existe
     const modalHtml = `
       <div class="modal-overlay" id="modal-day-events">
-        <div class="modal" style="max-width:700px;">
+        <div class="modal" style="max-width:800px;">
           <div class="modal-close" onclick="closeModal('modal-day-events')">✕</div>
           <div class="modal-title">📅 Eventos del ${date}</div>
-          <div id="day-events-list" style="max-height:500px;overflow-y:auto;margin-bottom:16px;"></div>
+          <div id="day-events-list" style="max-height:600px;overflow-y:auto;margin-bottom:16px;"></div>
           <div class="form-actions">
             <button class="btn btn-primary" onclick="openEventModal();document.getElementById('ev-date').value='${date}';closeModal('modal-day-events');">+ Nuevo Evento</button>
             <button class="btn btn-ghost" onclick="closeModal('modal-day-events')">Cerrar</button>
@@ -152,49 +156,79 @@ function openDayEventsModal(date, events, tasks) {
     let html = '';
     
     // Separar eventos con hora y sin hora
-    const eventsWithTime = events.filter(e => e.hora && e.horaEnd);
-    const eventsWithoutTime = events.filter(e => !e.hora || !e.horaEnd);
+    const eventsWithTime = events.filter(e => e.hora);
+    const eventsWithoutTime = events.filter(e => !e.hora);
     
-    // Línea de tiempo para eventos con hora
+    // Calcular rango de horas dinámico
+    let startHour = 0;
+    let endHour = 24;
+    
+    if (eventsWithTime.length === 1) {
+      // Si hay un solo evento, mostrar 2 horas antes y 2 horas después
+      const [evStartHour] = eventsWithTime[0].hora.split(':').map(Number);
+      const [evEndHour] = (eventsWithTime[0].horaEnd || eventsWithTime[0].hora).split(':').map(Number);
+      startHour = Math.max(0, evStartHour - 2);
+      endHour = Math.min(24, evEndHour + 2);
+    }
+    
+    // Línea de tiempo - mostrar solo si hay eventos con hora
     if (eventsWithTime.length > 0) {
       html += '<div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:12px;">HORARIO DEL DÍA</div>';
-      html += '<div style="position:relative;background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:16px;">';
+      html += '<div style="display:flex;gap:16px;background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:16px;">';
       
-      // Marcadores de hora (cada hora)
-      html += '<div style="position:relative;height:480px;border-left:2px solid var(--border);">';
+      // Columna de horas (izquierda)
+      html += '<div style="flex:0 0 60px;position:relative;border-right:2px solid var(--border);padding-right:12px;">';
+      for (let hour = startHour; hour < endHour; hour++) {
+        html += `<div style="height:60px;display:flex;align-items:center;justify-content:flex-end;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;padding-right:8px;">${String(hour).padStart(2,'0')}:00</div>`;
+        html += `<div style="height:1px;background:var(--border);margin-left:-20px;margin-right:-12px;"></div>`;
+      }
+      html += '</div>';
       
-      for (let hour = 0; hour < 24; hour++) {
-        const top = hour * 20;
-        html += `<div style="position:absolute;top:${top}px;left:-35px;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;text-align:right;width:30px;">${String(hour).padStart(2,'0')}:00</div>`;
-        html += `<div style="position:absolute;top:${top}px;left:0;right:0;height:1px;background:var(--border);"></div>`;
+      // Calcular altura total y offset
+      const totalHours = endHour - startHour;
+      const totalHeight = totalHours * 60;
+      const offsetMinutes = startHour * 60;
+      
+      // Columna de eventos (derecha)
+      html += `<div style="flex:1;position:relative;height:${totalHeight}px;">`;
+      
+      // Líneas horizontales cada hora
+      for (let hour = startHour; hour < endHour; hour++) {
+        const top = (hour - startHour) * 60;
+        html += `<div style="position:absolute;top:${top}px;left:0;right:0;height:1px;background:var(--border);opacity:0.3;"></div>`;
       }
       
       // Renderizar eventos en la línea de tiempo
       eventsWithTime.forEach(e => {
         const m = getMat(e.matId);
-        const [startHour, startMin] = e.hora.split(':').map(Number);
-        const [endHour, endMin] = e.horaEnd.split(':').map(Number);
+        const [eStartHour, eStartMin] = e.hora.split(':').map(Number);
+        const [eEndHour, eEndMin] = (e.horaEnd || e.hora).split(':').map(Number);
         
-        const startMinutes = startHour * 60 + startMin;
-        const endMinutes = endHour * 60 + endMin;
-        const duration = endMinutes - startMinutes;
+        const startMinutes = eStartHour * 60 + eStartMin;
+        const endMinutes = eEndHour * 60 + eEndMin;
+        const duration = Math.max(endMinutes - startMinutes, 30); // Mínimo 30 minutos
         
-        const top = (startMinutes / 60) * 20;
-        const height = (duration / 60) * 20;
+        const top = startMinutes - offsetMinutes;
+        const height = duration;
         
         html += `
-          <div style="position:absolute;top:${top}px;left:4px;right:8px;height:${height}px;background:${m.color||'#7c6aff'}22;border-left:3px solid ${m.color||'#7c6aff'};border-radius:4px;padding:6px 8px;cursor:pointer;overflow:hidden;" onclick="editEvent('${e.id}')">
-            <div style="font-size:11px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div>
-            <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;">${e.hora} - ${e.horaEnd}</div>
-            <div style="font-size:9px;color:var(--text3);">${m.icon||''} ${m.code||m.name||''}</div>
+          <div style="position:absolute;top:${top}px;left:8px;right:8px;height:${height}px;background:${m.color||'#7c6aff'}22;border-left:4px solid ${m.color||'#7c6aff'};border-radius:6px;padding:8px 10px;cursor:pointer;overflow:hidden;" onclick="editEvent('${e.id}')">
+            <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${e.hora}${e.horaEnd ? ' - '+e.horaEnd : ''}</div>
+            <div style="font-size:10px;color:var(--text3);">${m.icon||''} ${m.code||m.name||''}</div>
           </div>
         `;
       });
       
+      // Mensaje si no hay eventos con hora pero hay eventos sin hora
+      if (eventsWithTime.length === 0 && eventsWithoutTime.length > 0) {
+        html += `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:var(--text3);">Los eventos no tienen hora específica</div>`;
+      }
+      
       html += '</div></div>';
     }
     
-    // Eventos sin hora
+    // Eventos sin hora - mostrar lista
     if (eventsWithoutTime.length > 0) {
       html += '<div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:8px;">EVENTOS SIN HORA</div>';
       eventsWithoutTime.forEach(e => {

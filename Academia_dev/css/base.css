@@ -280,7 +280,7 @@ body::before {
 .ev-countdown-badge.warn   { background:rgba(251,191,36,.2);  color:#fbbf24; border:1px solid rgba(251,191,36,.4);  box-shadow:0 0 8px rgba(251,191,36,.15); }
 .ev-countdown-badge.ok     { background:rgba(74,222,128,.15); color:#4ade80; border:1px solid rgba(74,222,128,.3);  }
 .cal-event { font-size:9px; padding:2px 5px; border-radius:3px; margin-bottom:2px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.cal-legend-item { display:inline-flex; align-items:center; gap:4px; font-size:10px; padding:2px 8px; border-radius:4px; background:rgba(var(--lc, 124,106,255),.12); border:1px solid rgba(var(--lc,124,106,255),.25); color:var(--text2); }
+.cal-legend-item { display:inline-flex; align-items:center; gap:4px; font-size:10px; padding:2px 8px; border-radius:4px; background:rgba(var(--lc, 124,106,255),.12); color:var(--text2); }
 #cal-legend { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
 
 .grade-row { display:grid; grid-template-columns:1fr 70px 60px 70px 80px; gap:8px; align-items:center; margin-bottom:9px; }
