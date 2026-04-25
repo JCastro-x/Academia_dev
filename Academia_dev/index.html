@@ -75,9 +75,29 @@
         }, base + Math.floor(Math.random()*1200));
       });
 
-      // make sure the typed title is treated as accessible text for screen readers
+      // Typewriter effect for "Tu semestre"
       const typeEl = document.querySelector('.typewriter');
-      if(typeEl) typeEl.setAttribute('aria-label', typeEl.getAttribute('data-text') || typeEl.textContent.trim());
+      if(typeEl) {
+        const text = typeEl.getAttribute('data-text') || typeEl.textContent.trim();
+        typeEl.textContent = '';
+        typeEl.setAttribute('aria-label', text);
+        
+        let i = 0;
+        const typeSpeed = 100;
+        
+        function typeWriter() {
+          if (i < text.length) {
+            typeEl.textContent += text.charAt(i);
+            i++;
+            setTimeout(typeWriter, typeSpeed);
+          } else {
+            typeEl.classList.add('typed');
+          }
+        }
+        
+        // Start typing after a short delay
+        setTimeout(typeWriter, 500);
+      }
     })();
   </script>
   <!-- Favicon & PWA -->
