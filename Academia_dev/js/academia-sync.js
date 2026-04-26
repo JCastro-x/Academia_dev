@@ -120,10 +120,10 @@
     }
   }
 
-  // ── save(semestres, settings) — debounced 1500ms ────────────
+  // ── save(semestres, settings) — debounced 5000ms ────────────
   function save(semestres, settings) {
     clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => _doSave(semestres, settings), 1500);
+    _saveTimer = setTimeout(() => _doSave(semestres, settings), 5000);
   }
 
   // ── saveNow(semestres, settings) — inmediato ────────────────

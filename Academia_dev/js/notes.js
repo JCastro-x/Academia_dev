@@ -997,21 +997,35 @@ function _renderImagesStrip(note) {
   const noteId = note.id;
   strip.innerHTML = keys.map(k => `
     <div class="notes-img-thumb" id="thumb-${k}" onclick="openLightbox('${noteId}','${k}')">
-      <img src="" alt="img" id="img-${k}" style="max-height:160px;max-width:240px;object-fit:cover;">
+      <img src="" alt="img" id="img-${k}" data-img-key="${k}" loading="lazy" style="max-height:160px;max-width:240px;object-fit:cover;">
       <button class="nit-del" onclick="event.stopPropagation();deleteNoteImage('${noteId}','${k}')">✕</button>
     </div>`).join('');
-  // Load images — from IDB if referenced, else direct
-  keys.forEach(async k => {
-    const val = imgs[k];
+  
+  // Lazy load images con Intersection Observer
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(async entry => {
+      if (entry.isIntersecting) {
+        const imgEl = entry.target;
+        const k = imgEl.dataset.imgKey;
+        if (!k) return;
+        
+        const val = imgs[k];
+        if (val && val.startsWith('IDB:')) {
+          const idbKey = val.slice(4);
+          const data = await idbGetImage(idbKey);
+          if (data) imgEl.src = data;
+        } else if (val) {
+          imgEl.src = val;
+        }
+        
+        observer.unobserve(imgEl);
+      }
+    });
+  }, { rootMargin: '50px' });
+  
+  keys.forEach(k => {
     const imgEl = document.getElementById('img-' + k);
-    if (!imgEl) return;
-    if (val && val.startsWith('IDB:')) {
-      const idbKey = val.slice(4);
-      const data = await idbGetImage(idbKey);
-      if (data) imgEl.src = data;
-    } else if (val) {
-      imgEl.src = val;
-    }
+    if (imgEl) observer.observe(imgEl);
   });
 }
 

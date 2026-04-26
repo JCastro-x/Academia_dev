@@ -47,12 +47,46 @@ function _openIDB() {
     req.onerror = () => reject(req.error);
   });
 }
+
+// ─── Image compression ───────────────────────────────────────────
+async function compressImage(dataUrl, maxWidth = 1920, quality = 0.75) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      // Redimensionar si excede maxWidth
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Usar JPEG para mejor compresión (a menos que sea PNG con transparencia)
+      const isPngWithTransparency = dataUrl.startsWith('data:image/png') && img.width > 0 && img.height > 0;
+      const format = isPngWithTransparency ? 'image/png' : 'image/jpeg';
+      
+      resolve(canvas.toDataURL(format, quality));
+    };
+    img.onerror = () => resolve(dataUrl); // Fallback: usar original si falla
+    img.src = dataUrl;
+  });
+}
+
 async function idbSetImage(key, dataUrl) {
   try {
+    // Comprimir imagen antes de guardar
+    const compressed = await compressImage(dataUrl);
     const db = await _openIDB();
     return new Promise((res, rej) => {
       const tx = db.transaction('images','readwrite');
-      tx.objectStore('images').put(dataUrl, key);
+      tx.objectStore('images').put(compressed, key);
       tx.oncomplete = () => res(true);
       tx.onerror = () => rej(tx.error);
     });

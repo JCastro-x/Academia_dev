@@ -16,6 +16,9 @@
           </div>
         </div>
         <div class="fc-header-actions">
+          <button class="btn btn-ghost" onclick="openAIGenerateModal()" style="border-color:rgba(124,106,255,.4);color:var(--accent2);">
+            ✨ <span class="hide-mobile">Generar con IA</span>
+          </button>
           <button class="btn btn-primary" onclick="openAddFlashcardModal()">
             ➕ <span class="hide-mobile">Nueva Tarjeta</span>
           </button>
@@ -62,6 +65,9 @@
           </div>
         </div>
         <div class="fc-header-actions">
+          <button class="btn btn-ghost" onclick="openAIGenerateModal()" style="border-color:rgba(124,106,255,.4);color:var(--accent2);">
+            ✨ <span class="hide-mobile">Generar con IA</span>
+          </button>
           <button class="btn btn-ghost" onclick="openCreateFolderModal()">
             📁 <span class="hide-mobile">Nueva Carpeta</span>
           </button>
@@ -88,6 +94,9 @@
           </div>
         </div>
         <div class="fc-header-actions">
+          <button class="btn btn-ghost" onclick="openAIGenerateModal()" style="border-color:rgba(124,106,255,.4);color:var(--accent2);">
+            ✨ <span class="hide-mobile">Generar con IA</span>
+          </button>
           <button class="btn btn-ghost" id="fc-study-btn-header" onclick="enterStudyMode()" style="display:none;">
             📖 <span class="hide-mobile">Modo Estudio</span>
           </button>
@@ -97,50 +106,6 @@
         </div>
       </div>
       <div class="fc-stats-row" id="fc-cards-stats-row"></div>
-    </div>
-
-    <!-- Modo estudio -->
-    <div id="fc-study-mode" style="display:none;">
-      <div class="card" style="max-width:700px;margin:0 auto 20px;">
-        <div style="text-align:center;margin-bottom:20px;">
-          <div style="font-size:14px;color:var(--text3);margin-bottom:12px;">
-            <span id="fc-study-progress">Tarjeta 1 de 10</span>
-            <span style="margin:0 12px;">·</span>
-            <span id="fc-study-subject"></span>
-          </div>
-          <div style="background:var(--surface2);border-radius:8px;height:6px;overflow:hidden;">
-            <div id="fc-study-bar" style="height:100%;width:0%;transition:width 0.3s;"></div>
-          </div>
-        </div>
-        <div class="fc-card-wrapper" onclick="flipCard()">
-          <div class="fc-card" id="fc-card">
-            <div class="fc-card-front">
-              <div class="fc-card-label">Pregunta</div>
-              <div class="fc-card-content" id="fc-question">Click para voltear</div>
-              <div class="fc-card-hint">↩ click para ver respuesta</div>
-            </div>
-            <div class="fc-card-back">
-              <div class="fc-card-label">Respuesta</div>
-              <div class="fc-card-content" id="fc-answer">...</div>
-            </div>
-          </div>
-        </div>
-        <!-- Rating buttons (spaced repetition) -->
-        <div style="display:flex;gap:10px;margin-top:20px;justify-content:center;flex-wrap:wrap;" id="fc-rating-row" style="display:none;">
-          <button class="btn fc-rating-btn fc-rating-hard"  onclick="rateCard('dificil')">😤 Difícil</button>
-          <button class="btn fc-rating-btn fc-rating-med"   onclick="rateCard('media')">😐 Media</button>
-          <button class="btn fc-rating-btn fc-rating-easy"  onclick="rateCard('facil')">✅ Fácil</button>
-        </div>
-        <div id="fc-next-info" style="text-align:center;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:6px;display:none;"></div>
-        <div style="display:flex;gap:12px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
-          <button class="btn" onclick="prevCard()" id="fc-prev-btn">‹ Anterior</button>
-          <button class="btn btn-ghost" onclick="exitStudyMode()">Salir del modo estudio</button>
-          <button class="btn" onclick="nextCard()" id="fc-next-btn">Siguiente ›</button>
-        </div>
-        <div style="text-align:center;margin-top:14px;">
-          <button class="btn btn-sm btn-ghost" onclick="shuffleStudyCards()">🔀 Mezclar tarjetas</button>
-        </div>
-      </div>
     </div>
 
     <!-- Lista tarjetas -->
@@ -242,6 +207,190 @@
   </div>
 </div>
 
+<!-- ═══ MODAL: Selección de Modo Estudio ═══ -->
+<div id="modal-study-select" class="modal-overlay">
+  <div class="modal" style="max-width:500px;width:96vw;">
+    <div class="modal-title">
+      <span>📖 Seleccionar Modo de Estudio</span>
+      <button class="modal-close" onclick="closeStudySelectModal()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <button class="btn" style="padding:16px;text-align:left;display:flex;align-items:center;gap:12px;" onclick="startStudyMode('general')">
+        <span style="font-size:24px;">📚</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;">Repaso General</div>
+          <div style="font-size:12px;color:var(--text3);">Todas las tarjetas del mazo</div>
+        </div>
+      </button>
+      <button class="btn" style="padding:16px;text-align:left;display:flex;align-items:center;gap:12px;" onclick="startStudyMode('difficult')">
+        <span style="font-size:24px;">😤</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;">Difíciles</div>
+          <div style="font-size:12px;color:var(--text3);">Solo tarjetas marcadas como difíciles</div>
+        </div>
+      </button>
+      <button class="btn" style="padding:16px;text-align:left;display:flex;align-items:center;gap:12px;" onclick="startStudyMode('neutral')">
+        <span style="font-size:24px;">😐</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;">Neutras</div>
+          <div style="font-size:12px;color:var(--text3);">Tarjetas que necesitan repaso moderado</div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Modo Estudio ═══ -->
+<div id="modal-fc-study" class="modal-overlay">
+  <div class="modal" style="max-width:700px;width:96vw;">
+    <div class="modal-title">
+      <span>📖 Modo Estudio</span>
+      <button class="modal-close" onclick="exitStudyMode()">✕</button>
+    </div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:14px;color:var(--text3);margin-bottom:12px;">
+        <span id="fc-study-progress">Tarjeta 1 de 10</span>
+        <span style="margin:0 12px;">·</span>
+        <span id="fc-study-subject"></span>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;height:6px;overflow:hidden;">
+        <div id="fc-study-bar" style="height:100%;width:0%;transition:width 0.3s;"></div>
+      </div>
+    </div>
+    <div class="fc-card-wrapper" onclick="flipCard()">
+      <div class="fc-card" id="fc-card">
+        <div class="fc-card-front">
+          <div class="fc-card-label">Pregunta</div>
+          <div class="fc-card-content" id="fc-question">Click para voltear</div>
+          <div class="fc-card-hint">↩ click para ver respuesta</div>
+        </div>
+        <div class="fc-card-back">
+          <div class="fc-card-label">Respuesta</div>
+          <div class="fc-card-content" id="fc-answer">...</div>
+        </div>
+      </div>
+    </div>
+    <!-- Rating buttons (spaced repetition) -->
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:center;flex-wrap:wrap;" id="fc-rating-row" style="display:none;">
+      <button class="btn fc-rating-btn fc-rating-hard"  onclick="rateCard('dificil')">😤 Difícil</button>
+      <button class="btn fc-rating-btn fc-rating-med"   onclick="rateCard('media')">😐 Media</button>
+      <button class="btn fc-rating-btn fc-rating-easy"  onclick="rateCard('facil')">✅ Fácil</button>
+    </div>
+    <div id="fc-next-info" style="text-align:center;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:6px;display:none;"></div>
+    <div style="display:flex;gap:12px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn" onclick="prevCard()" id="fc-prev-btn">‹ Anterior</button>
+      <button class="btn btn-ghost" onclick="exitStudyMode()">Salir</button>
+      <button class="btn" onclick="nextCard()" id="fc-next-btn">Siguiente ›</button>
+    </div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="btn btn-sm btn-ghost" onclick="shuffleStudyCards()">🔀 Mezclar tarjetas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Generar con IA ═══ -->
+<div id="modal-ai-generate" class="modal-overlay">
+  <div class="modal" style="max-width:640px;width:96vw;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;">
+    <div class="modal-title">
+      <span>✨ Generar Flashcards con IA</span>
+      <button class="modal-close" onclick="closeAIGenerateModal()">✕</button>
+    </div>
+
+    <!-- API Key (hidden - uses default) -->
+    <div style="display:none;">
+      <input type="password" id="ai-api-key" class="fc-input">
+    </div>
+
+    <!-- Material Source -->
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">Material de estudio</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('ai-file-input').click()" style="flex:1;">
+          📁 Subir archivo (PDF/TXT/IMG)
+        </button>
+        <input type="file" id="ai-file-input" multiple accept=".pdf,.txt,image/*" style="display:none;" onchange="handleAIFileSelect(this)">
+        <button class="btn btn-sm btn-ghost" onclick="toggleAIPasteArea()" style="flex:1;">
+          📋 Pegar texto
+        </button>
+      </div>
+      <div id="ai-file-list" style="margin-top:8px;font-size:11px;color:var(--text3);"></div>
+    </div>
+
+    <!-- Paste Text Area (hidden by default) -->
+    <div id="ai-paste-area" style="display:none;margin-bottom:14px;">
+      <label class="fc-label">Texto del material</label>
+      <textarea id="ai-text-input" class="fc-input" rows="6" placeholder="Pega aquí el texto del que quieres generar flashcards..."></textarea>
+    </div>
+
+    <!-- Select Note Source -->
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">O usa una nota existente</label>
+      <select id="ai-note-sel" class="fc-input" onchange="loadNoteText()">
+        <option value="">— Selecciona una nota —</option>
+      </select>
+    </div>
+
+    <!-- Destination -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label class="fc-label">Materia destino <span style="color:var(--red,#f87171);">*</span></label>
+        <select id="ai-mat-sel" class="fc-input" onchange="updateAIFolderSelect()">
+          <option value="">— Selecciona —</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label class="fc-label">Carpeta destino</label>
+        <select id="ai-folder-sel" class="fc-input">
+          <option value="">Sin carpeta</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Configuration -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label class="fc-label">Cantidad de flashcards</label>
+        <input type="number" id="ai-count" class="fc-input" value="5" min="1" max="20">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label class="fc-label">Tipo de preguntas</label>
+        <select id="ai-type" class="fc-input">
+          <option value="qa">Pregunta / Respuesta</option>
+          <option value="mc">Opción Múltiple</option>
+          <option value="tf">Verdadero / Falso</option>
+          <option value="mixed">Mixto</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Custom Prompt -->
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
+      <label class="fc-label">Instrucciones adicionales <span style="color:var(--text3);">(opcional)</span></label>
+      <textarea id="ai-custom-prompt" class="fc-input" rows="2" placeholder="Ej: Enfócate en fórmulas, incluye ejemplos prácticos..."></textarea>
+    </div>
+
+    <!-- Generate Button -->
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-ghost" onclick="closeAIGenerateModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="generateAIFlashcards()" id="ai-generate-btn">
+        ✨ Generar Flashcards
+      </button>
+    </div>
+
+    <!-- Preview Area -->
+    <div id="ai-preview-area" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">📋 Vista previa</div>
+      <div id="ai-preview-list" style="display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button class="btn btn-ghost" onclick="closeAIGenerateModal()">Descartar</button>
+        <button class="btn btn-primary" onclick="saveAIFlashcards()">
+          💾 Guardar todas
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
 /* ══════════════════════════════════════
    FLASHCARDS — Estilos internos
@@ -337,6 +486,28 @@ select.fc-input option { background: var(--surface2); color: var(--text); }
 }
 .fc-mat-chip-cards   { background: var(--accent-glow); border: 1px solid rgba(124,106,255,.25); color: var(--accent2); }
 .fc-mat-chip-folders { background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.25); color: #fbbf24; }
+.fc-mastery-bar {
+  position: relative;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.fc-mastery-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.fc-mastery-text {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: 10px;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--text3);
+}
 
 /* ── Card "Todas" ── */
 .fc-folder-all-card {
@@ -508,11 +679,32 @@ select.fc-input option { background: var(--surface2); color: var(--text); }
   .fc-title-text { font-size: 17px; }
   .fc-header-bar { padding: 12px 14px 10px; }
   .fc-mat-card { min-height: 120px; padding: 16px 14px 12px; }
+  #fc-study-btn-header { padding: 8px 12px; font-size: 13px; }
+  #modal-fc-study .modal { max-width:95vw; }
+  #modal-fc-study .fc-card-wrapper, #modal-fc-study .fc-card, #modal-fc-study .fc-card-front, #modal-fc-study .fc-card-back { min-height: 200px; }
 }
 
 @media (max-width: 480px) {
   .fc-materias-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .fc-folders-grid  { grid-template-columns: 1fr 1fr; gap: 10px; }
   .fc-header-actions .btn span.hide-mobile { display: none; }
+  #fc-study-btn-header { padding: 6px 10px; font-size: 12px; }
+  #modal-fc-study .fc-card-content { font-size: 15px; }
+}
+
+/* ── AI Spinner ── */
+.ai-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
 }
 </style>

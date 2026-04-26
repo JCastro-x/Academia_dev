@@ -92,7 +92,7 @@
 <body>
   <div class="container">
     <h1>Política de Privacidad</h1>
-    <p class="subtitle">Última actualización: 5 de marzo de 2026</p>
+    <p class="subtitle">Última actualización: 25 de abril de 2026</p>
 
     <h2>1. Introducción</h2>
     <p>Academia Dev ("nosotros", "nuestro" o "Plataforma") está comprometida con la protección de tu privacidad. Esta Política de Privacidad explica cómo recopilamos, usamos, divulgamos y protegemos tu información.</p>
@@ -115,6 +115,7 @@
       <li>Enviar notificaciones importantes</li>
       <li>Analizar tendencias y mejorar la Plataforma</li>
       <li>Cumplir con obligaciones legales</li>
+      <li><strong>Generar contenido con IA:</strong> cuando usas las funciones de IA (generación de flashcards, asistente académico), el contenido que envíes (notas, archivos, texto) se procesa temporalmente por Google Gemini API</li>
     </ul>
 
     <h2>4. Almacenamiento de Datos</h2>
@@ -167,22 +168,40 @@
       <li><strong>Restricción:</strong> limitar cómo se usan tus datos</li>
     </ul>
 
-    <h2>10. Terceros</h2>
+    <h2>10. Uso de Inteligencia Artificial (Google Gemini)</h2>
+    <p>Academia Dev integra <strong>Google Gemini 2.5 Flash API</strong> para proporcionar funciones de inteligencia artificial:</p>
+    <ul>
+      <li><strong>Generación de flashcards:</strong> cuando usas el botón "✨ Generar con IA", el contenido que envíes (texto, archivos, notas) se envía a los servidores de Google para procesamiento</li>
+      <li><strong>Asistente académico:</strong> el chat con IA envía tus mensajes y el contexto seleccionado (notas, flashcards) a Google Gemini para generar respuestas</li>
+      <li><strong>Creación de tareas:</strong> cuando solicitas crear tareas desde el chat, tu instrucción se procesa por la API de Google</li>
+    </ul>
+    <p><strong>Información importante sobre el uso de IA:</strong></p>
+    <ul>
+      <li>La API key de Google Gemini está preconfigurada en la aplicación (no necesitas proporcionar la tuya)</li>
+      <li>El contenido que envíes a las funciones de IA se procesa en los servidores de Google LLC</li>
+      <li>Google puede usar los datos enviados para mejorar sus servicios según su política de privacidad</li>
+      <li>No almacenamos el historial de conversaciones con la IA en Supabase</li>
+      <li>Las flashcards generadas por IA se guardan en tu cuenta de Supabase como cualquier otra flashcard</li>
+      <li>El uso de la API de Gemini está sujeto a los límites del plan gratuito (15 req/min)</li>
+    </ul>
+    <p>Para más información sobre cómo Google procesa tus datos, consulta la <a href="https://policies.google.com/privacy" style="color: #7c6aff;" target="_blank">Política de Privacidad de Google</a> y los <a href="https://ai.google.dev/gemini-api/docs/terms" style="color: #7c6aff;" target="_blank">Términos de Gemini API</a>.</p>
+
+    <h2>11. Terceros</h2>
     <p>Usamos servicios de terceros:</p>
     <ul>
       <li><strong>Supabase:</strong> base de datos y autenticación</li>
-      <li><strong>Google:</strong> para OAuth login</li>
+      <li><strong>Google:</strong> para OAuth login y Gemini API (IA)</li>
       <li><strong>Vercel:</strong> hosting de la Plataforma</li>
     </ul>
     <p>Consulta sus políticas de privacidad en sus sitios web respectivos. Void Studio no se hace responsable por las prácticas de privacidad de estos terceros.</p>
 
-    <h2>11. Exención de Responsabilidad</h2>
+    <h2>12. Exención de Responsabilidad</h2>
     <p>Esta Plataforma se proporciona "tal cual". Josue Castro y Void Studio no serán responsables por ningún daño, pérdida de datos, interrupción del servicio, o perjuicio de cualquier tipo que resulte del uso o la imposibilidad de uso de Academia Dev. El uso de la Plataforma es bajo tu propio riesgo y responsabilidad.</p>
 
-    <h2>12. Cambios en esta Política</h2>
+    <h2>13. Cambios en esta Política</h2>
     <p>Podemos actualizar esta política en cualquier momento. Te notificaremos de cambios significativos por email o en la Plataforma.</p>
 
-    <h2>13. Contacto</h2>
+    <h2>14. Contacto</h2>
     <p>Si tienes preguntas sobre tu privacidad o deseas ejercer tus derechos, contáctanos:</p>
     <ul>
       <li><strong>Email:</strong> privacy@academia-dev.com</li>

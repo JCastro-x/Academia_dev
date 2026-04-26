@@ -460,7 +460,7 @@ function continueInit(auth) {
         _lastSync = 0;
         _syncFromSupabase();
       }
-    }, 90000);
+    }, 300000); // 5 minutos en lugar de 90s
   }
 
   _maybeShowOnboarding();

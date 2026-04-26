@@ -12,6 +12,7 @@ let _fcStudyIdx      = 0;
 let _fcFlipped       = false;
 let _fcMatId         = null;
 let _fcFolderIdState = undefined; // undefined=fuera de vista-cards | null=todas | string=carpeta id
+let _fcReviewedCount = 0; // contador de tarjetas repasadas en la sesión
 
 /* ── Acceso al semestre activo ── */
 function _fcSem() {
@@ -82,6 +83,8 @@ function renderFcMateriasGrid() {
   grid.innerHTML = materias.map(mat => {
     const mc = cards.filter(c => c.matId === mat.id);
     const mf = folders.filter(f => f.matId === mat.id);
+    const mastered = mc.filter(c => c.status === 'dominada').length;
+    const mastery = mc.length > 0 ? Math.round((mastered / mc.length) * 100) : 0;
     const cs = mat.color ? `--mat-color:${mat.color};` : '';
     return `
       <div class="fc-mat-card card" style="${cs}" onclick="fcOpenMateria('${mat.id}')">
@@ -91,6 +94,7 @@ function renderFcMateriasGrid() {
           <span class="fc-mat-chip fc-mat-chip-cards">${mc.length} tarjeta${mc.length !== 1 ? 's' : ''}</span>
           ${mf.length > 0 ? `<span class="fc-mat-chip fc-mat-chip-folders">${mf.length} carpeta${mf.length !== 1 ? 's' : ''}</span>` : ''}
         </div>
+        ${mc.length > 0 ? `<div class="fc-mastery-bar"><div class="fc-mastery-fill" style="width:${mastery}%;background:${mastery >= 70 ? 'var(--green)' : mastery >= 40 ? '#fbbf24' : '#f87171'}"></div><span class="fc-mastery-text">${mastery}% dominado</span></div>` : ''}
       </div>`;
   }).join('');
   if (!cards.length && emptyEl) emptyEl.style.display = 'block';
@@ -177,7 +181,7 @@ function fcOpenFolder(folderId) {
   const emptyEl   = g('fc-cards-empty');
   const listEl    = g('fc-list');
   if (studyBtn)  studyBtn.style.display  = filtered.length > 0 ? 'inline-flex' : 'none';
-  if (triggerEl) triggerEl.style.display = filtered.length > 0 ? 'block' : 'none';
+  if (triggerEl) triggerEl.style.display = 'none'; // Ocultar botón flotante, usar solo el del header
   if (emptyEl)   emptyEl.style.display   = filtered.length === 0 ? 'block' : 'none';
   if (listEl)    listEl.style.display    = filtered.length === 0 ? 'none'  : 'grid';
   _renderCardsList(filtered);
@@ -396,22 +400,58 @@ document.addEventListener('click', e => {
 
 /* ════════════════ MODO ESTUDIO ════════════════ */
 function enterStudyMode() {
+  document.getElementById('modal-study-select').classList.add('open');
+  if (typeof _uiClick === 'function') _uiClick('open');
+}
+
+function closeStudySelectModal() {
+  document.getElementById('modal-study-select').classList.remove('open');
+}
+
+function startStudyMode(mode) {
+  closeStudySelectModal();
+  
   const cards = fcGetCards();
-  const pool  = _fcFolderIdState === null  ? cards.filter(c => c.matId === _fcMatId)
+  let pool  = _fcFolderIdState === null  ? cards.filter(c => c.matId === _fcMatId)
               : _fcFolderIdState           ? cards.filter(c => c.folderId === _fcFolderIdState)
               : [...cards];
+  
   if (!pool.length) { alert('No hay tarjetas para estudiar'); return; }
-  _fcStudyCards = [...pool]; _fcStudyIdx = 0; _fcFlipped = false;
-  document.getElementById('fc-list-mode').style.display  = 'none';
-  document.getElementById('fc-study-mode').style.display = 'block';
+  
+  // Filtrar según modo seleccionado
+  if (mode === 'difficult') {
+    pool = pool.filter(c => c.status === 'practicando' && c.interval <= 3);
+  } else if (mode === 'neutral') {
+    pool = pool.filter(c => c.status === 'practicando' && c.interval > 3 && c.interval <= 10);
+  }
+  // 'general' usa todas las tarjetas del pool
+  
+  if (!pool.length) { 
+    alert('No hay tarjetas que coincidan con este modo de estudio'); 
+    return; 
+  }
+  
+  // Priorizar tarjetas vencidas para repaso
+  const now = Date.now();
+  _fcStudyCards = [...pool].sort((a, b) => {
+    const aOverdue = a.nextReview && a.nextReview <= now ? 0 : 1;
+    const bOverdue = b.nextReview && b.nextReview <= now ? 0 : 1;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+    // Si ambas vencidas o ninguna, ordenar por nextReview más cercano
+    const aNext = a.nextReview || Infinity;
+    const bNext = b.nextReview || Infinity;
+    return aNext - bNext;
+  });
+  
+  _fcStudyIdx = 0; 
+  _fcFlipped = false;
+  _fcReviewedCount = 0; // Inicializar contador de tarjetas repasadas
+  document.getElementById('modal-fc-study').classList.add('open');
   _renderStudyCard();
   if (typeof _uiClick === 'function') _uiClick('enter-study');
 }
 function exitStudyMode() {
-  const sm = document.getElementById('fc-study-mode');
-  const lm = document.getElementById('fc-list-mode');
-  if (sm) sm.style.display = 'none';
-  if (lm) lm.style.display = 'block';
+  document.getElementById('modal-fc-study').classList.remove('open');
   _fcStudyCards = []; _fcStudyIdx = 0; _fcFlipped = false;
   ['fc-rating-row','fc-next-info'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 }
@@ -444,17 +484,68 @@ function flipCard() {
 }
 function rateCard(rating) {
   const card = _fcStudyCards[_fcStudyIdx]; if (!card) return;
-  const statusMap = { dificil:'practicando', media:'practicando', facil:'dominada' };
   const cards = fcGetCards();
   const idx = cards.findIndex(c => c.id === card.id);
-  if (idx !== -1) cards[idx] = { ...cards[idx], status: statusMap[rating] || 'practicando', lastReview: Date.now() };
+  if (idx === -1) return;
+  
+  const now = Date.now();
+  const c = cards[idx];
+  
+  // Inicializar campos de spaced repetition si no existen
+  if (!c.easeFactor) c.easeFactor = 2.5;
+  if (!c.interval) c.interval = 1;
+  if (!c.repetitions) c.repetitions = 0;
+  
+  // Algoritmo SM-2 mejorado - no tan agresivo
+  if (rating === 'facil') {
+    // Fácil: aumentar intervalo moderadamente
+    c.repetitions++;
+    c.interval = Math.round(c.interval * c.easeFactor);
+    c.easeFactor = Math.max(1.3, c.easeFactor + 0.05);
+    c.status = 'dominada';
+  } else if (rating === 'media') {
+    // Medio: intervalo moderado basado en repeticiones
+    c.repetitions++;
+    if (c.repetitions === 1) c.interval = 2;
+    else if (c.repetitions === 2) c.interval = 4;
+    else if (c.repetitions === 3) c.interval = 7;
+    else c.interval = Math.round(c.interval * 1.3);
+    c.easeFactor = Math.max(1.3, c.easeFactor);
+    c.status = 'practicando';
+  } else {
+    // Difícil: reducir intervalo pero no a 1 inmediatamente
+    c.repetitions = Math.max(0, c.repetitions - 1);
+    c.interval = Math.max(1, Math.round(c.interval * 0.5));
+    c.easeFactor = Math.max(1.3, c.easeFactor - 0.1);
+    c.status = 'practicando';
+  }
+  
+  // Calcular próximo repaso (máximo 90 días)
+  c.interval = Math.max(1, Math.min(c.interval, 90));
+  c.nextReview = now + (c.interval * 86400000);
+  c.lastReview = now;
+  
+  cards[idx] = c;
   fcSetCards(cards);
+  
+  _fcReviewedCount++; // Incrementar contador de tarjetas repasadas
+  
   const ni = document.getElementById('fc-next-info');
-  const msgs = { dificil:'Sigue practicando 💪', media:'Casi lo tienes 😊', facil:'¡Dominada! ✅' };
+  const msgs = { 
+    dificil:`Repaso en ${c.interval} día${c.interval!==1?'s':''} 💪`, 
+    media:`Repaso en ${c.interval} día${c.interval!==1?'s':''} 😊`, 
+    facil:`¡Dominada! Próximo repaso en ${c.interval} día${c.interval!==1?'s':''} ✅` 
+  };
   if (ni) { ni.textContent = msgs[rating]; ni.style.display = 'block'; }
+  
   setTimeout(() => {
     if (_fcStudyIdx < _fcStudyCards.length - 1) { _fcStudyIdx++; _renderStudyCard(); updateFcHeaderStats(); }
-    else { exitStudyMode(); updateFcHeaderStats(); alert(`¡Sesión completada! Repasaste ${_fcStudyCards.length} tarjeta${_fcStudyCards.length !== 1 ? 's' : ''} 🎉`); }
+    else { 
+      const reviewed = _fcReviewedCount;
+      exitStudyMode(); 
+      updateFcHeaderStats(); 
+      alert(`¡Sesión completada! Repasaste ${reviewed} tarjeta${reviewed !== 1 ? 's' : ''} 🎉`); 
+    }
   }, 800);
 }
 function prevCard() { if (_fcStudyIdx > 0) { _fcStudyIdx--; _renderStudyCard(); } }
@@ -467,8 +558,8 @@ function shuffleStudyCards() {
   _fcStudyIdx = 0; _renderStudyCard();
 }
 document.addEventListener('keydown', e => {
-  const sm = document.getElementById('fc-study-mode');
-  if (!sm || sm.style.display === 'none') return;
+  const modal = document.getElementById('modal-fc-study');
+  if (!modal || !modal.classList.contains('open')) return;
   if (e.key === 'ArrowLeft')              { prevCard();      e.preventDefault(); }
   if (e.key === 'ArrowRight')             { nextCard();      e.preventDefault(); }
   if (e.key === ' ' || e.key === 'Enter') { flipCard();      e.preventDefault(); }
@@ -479,3 +570,23 @@ document.addEventListener('keydown', e => {
 });
 
 function _fcEsc(t) { const d = document.createElement('div'); d.textContent = t || ''; return d.innerHTML; }
+
+/* ── AI GENERATION STUB (lazy loads flashcards-ai.js) ── */
+window.openAIGenerateModal = function() {
+  if (!window._aiModuleLoaded) {
+    const script = document.createElement('script');
+    script.src = 'js/flashcards-ai.js';
+    script.onload = () => {
+      window._aiModuleLoaded = true;
+      // Wait a tick for the script to initialize, then call the real function
+      setTimeout(() => {
+        if (typeof _openAIModalAfterLoad === 'function') {
+          _openAIModalAfterLoad();
+        }
+      }, 50);
+    };
+    document.head.appendChild(script);
+  } else if (typeof _openAIModalAfterLoad === 'function') {
+    _openAIModalAfterLoad();
+  }
+};
