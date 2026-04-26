@@ -159,7 +159,7 @@
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
       <label class="fc-label">Etiquetas <span style="color:var(--text3);">(separa con comas)</span></label>
-      <input type="text" id="fc-tags" class="fc-input" placeholder="biología, célula, proceso">
+      <input type="text" id="fc-tags" class="fc-input" placeholder="biología, célula, proceso" autocomplete="off">
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
       <button class="btn btn-ghost" onclick="closeFlashcardModal()">Cancelar</button>
@@ -177,7 +177,7 @@
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
       <label class="fc-label">Nombre <span style="color:var(--red,#f87171);">*</span></label>
-      <input type="text" id="fc-folder-name-input" class="fc-input" placeholder="Ej: Unidad 1, Parcial 2, Conceptos clave...">
+      <input type="text" id="fc-folder-name-input" class="fc-input" placeholder="Ej: Unidad 1, Parcial 2, Conceptos clave..." autocomplete="off">
     </div>
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:18px;">
       <label class="fc-label">Icono</label>
@@ -298,7 +298,7 @@
 
     <!-- API Key (hidden - uses default) -->
     <div style="display:none;">
-      <input type="password" id="ai-api-key" class="fc-input">
+      <input type="password" id="ai-api-key" class="fc-input" autocomplete="off">
     </div>
 
     <!-- Material Source -->
@@ -319,7 +319,7 @@
     <!-- Paste Text Area (hidden by default) -->
     <div id="ai-paste-area" style="display:none;margin-bottom:14px;">
       <label class="fc-label">Texto del material</label>
-      <textarea id="ai-text-input" class="fc-input" rows="6" placeholder="Pega aquí el texto del que quieres generar flashcards..."></textarea>
+      <textarea id="ai-text-input" class="fc-input" rows="6" placeholder="Pega aquí el texto del que quieres generar flashcards..." autocomplete="off"></textarea>
     </div>
 
     <!-- Select Note Source -->
@@ -366,7 +366,7 @@
     <!-- Custom Prompt -->
     <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
       <label class="fc-label">Instrucciones adicionales <span style="color:var(--text3);">(opcional)</span></label>
-      <textarea id="ai-custom-prompt" class="fc-input" rows="2" placeholder="Ej: Enfócate en fórmulas, incluye ejemplos prácticos..."></textarea>
+      <textarea id="ai-custom-prompt" class="fc-input" rows="2" placeholder="Ej: Enfócate en fórmulas, incluye ejemplos prácticos..." autocomplete="off"></textarea>
     </div>
 
     <!-- Generate Button -->

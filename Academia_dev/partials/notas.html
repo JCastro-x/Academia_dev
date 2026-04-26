@@ -50,7 +50,7 @@
           <input type="text" id="notes-title-inp" class="form-input"
             placeholder="Título de la nota..."
             style="font-size:15px;font-weight:700;border:none;background:transparent;padding:4px 0;outline:none;flex:1;min-width:0;"
-            oninput="onNotesTitleInput()">
+            autocomplete="off" oninput="onNotesTitleInput()">
           <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;" id="notes-autosave-indicator">—</span>
           <button class="btn btn-ghost btn-sm" onclick="expandCurrentNote()" title="Pantalla completa" style="flex-shrink:0;">⛶</button>
           <button class="btn btn-ghost btn-sm" onclick="exportCurrentNote()" style="flex-shrink:0;">⬇️</button>
@@ -83,7 +83,7 @@
             <input type="text" id="notes-tags-inp" class="form-input"
               placeholder="tags, separados, por coma"
               style="flex:1;min-width:80px;padding:3px 7px;font-size:11px;border:none;background:var(--surface2);border-radius:6px;"
-              oninput="onNoteTagsInput()">
+              autocomplete="off" oninput="onNoteTagsInput()">
             <div id="notes-tags-display" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
           </div>
         </div>
@@ -208,7 +208,7 @@
             <button class="modal-close" onclick="closeModal('modal-new-folder')">✕</button>
           </div>
           <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-            <input type="text" id="new-folder-name" class="form-input" placeholder="Nombre de la carpeta..." style="font-size:14px;">
+            <input type="text" id="new-folder-name" class="form-input" placeholder="Nombre de la carpeta..." style="font-size:14px;" autocomplete="off">
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <span style="font-size:12px;color:var(--text2);">Icono:</span>
               <div style="display:flex;gap:6px;flex-wrap:wrap;" id="folder-icon-picker">

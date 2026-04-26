@@ -94,6 +94,45 @@ function clearAIContext() {
   addSystemMessage('🗑️ Contexto eliminado');
 }
 
+function showMyActivities() {
+  const sem = typeof State !== 'undefined' ? State._activeSem : null;
+  if (!sem) {
+    addSystemMessage('💡 No hay semestre activo disponible.');
+    return;
+  }
+
+  const tasks = sem.tasks ? sem.tasks.filter(t => !t.done) : [];
+  const events = sem.events || [];
+
+  let message = '📋 TUS ACTIVIDADES:\n\n';
+
+  if (tasks.length > 0) {
+    message += `✅ TAREAS (${tasks.length}):\n`;
+    tasks.forEach(t => {
+      const mat = sem.materias.find(m => m.id === t.matId);
+      const matName = mat ? mat.name : 'Sin materia';
+      const priorityEmoji = t.priority === 'alta' ? '🔴' : t.priority === 'media' ? '🟡' : '🟢';
+      message += `${priorityEmoji} ${t.title} (${matName}) - ${t.due || 'Sin fecha'}\n`;
+    });
+    message += '\n';
+  } else {
+    message += '✅ Sin tareas pendientes\n\n';
+  }
+
+  if (events.length > 0) {
+    message += `📅 EVENTOS (${events.length}):\n`;
+    events.forEach(e => {
+      const mat = sem.materias.find(m => m.id === e.matId);
+      const matName = mat ? mat.name : 'Sin materia';
+      message += `📌 ${e.title} (${matName}) - ${e.date} ${e.hora || ''}\n`;
+    });
+  } else {
+    message += '📅 Sin eventos próximos';
+  }
+
+  addSystemMessage(message);
+}
+
 function attachFullContext() {
   const sem = typeof State !== 'undefined' ? State._activeSem : null;
   if (!sem) {
@@ -187,7 +226,12 @@ async function sendAIMessage() {
     addChatMessage(response, 'ai');
   } catch (error) {
     removeTypingIndicator();
-    addChatMessage('Error: ' + error.message, 'ai');
+    // Check if it's a quota exceeded error
+    if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit')) {
+      addChatMessage('🚫 El asistente no está disponible en este momento. Por favor intenta de nuevo en unos minutos.', 'ai');
+    } else {
+      addChatMessage('Error: ' + error.message, 'ai');
+    }
   }
 }
 
@@ -223,11 +267,15 @@ async function _callGeminiChat(userMessage) {
   // Check if user wants to create a task
   const taskCreationKeywords = ['agrega', 'añade', 'crea', 'nueva tarea', 'tarea nueva', 'agregar', 'añadir', 'crear'];
   const wantsTask = taskCreationKeywords.some(kw => userMessage.toLowerCase().includes(kw));
-  
+
   if (wantsTask) {
     return await _handleTaskCreation(userMessage);
   }
-  
+
+  // Auto-attach full context for task/priority/activity questions
+  const contextKeywords = ['tarea', 'prioridad', 'urgente', 'actividad', 'qué tengo', 'pendiente', 'vence', 'fecha', 'entrega', 'examen', 'estudio'];
+  const needsContext = contextKeywords.some(kw => userMessage.toLowerCase().includes(kw));
+
   let contextPrompt = '';
 
   if (_aiContext) {
@@ -272,17 +320,67 @@ ${Object.keys(c.grades).length > 0 ? Object.entries(c.grades).map(([subject, gra
 
 `;
     }
+  } else if (needsContext) {
+    // Auto-attach full context when user asks about tasks/priorities
+    const sem = typeof State !== 'undefined' ? State._activeSem : null;
+    if (sem) {
+      const tasks = sem.tasks ? sem.tasks.filter(t => !t.done) : [];
+      const events = sem.events || [];
+
+      contextPrompt = `CONTEXTO DEL SEMESTRE:
+SEMESTRE: ${sem.nombre}
+
+TAREAS PENDIENTES (${tasks.length}):
+${tasks.length > 0 ? tasks.map(t => {
+  const mat = sem.materias.find(m => m.id === t.matId);
+  const matName = mat ? mat.name : 'Sin materia';
+  return `- ${t.title} (${matName})
+  Fecha: ${t.due || 'Sin fecha'}
+  Prioridad: ${t.priority}
+  Tipo: ${t.type}`;
+}).join('\n') : 'Sin tareas pendientes'}
+
+EVENTOS (${events.length}):
+${events.length > 0 ? events.map(e => {
+  const mat = sem.materias.find(m => m.id === e.matId);
+  const matName = mat ? mat.name : 'Sin materia';
+  return `- ${e.title} (${matName})
+  Fecha: ${e.date}
+  Hora: ${e.hora || 'Sin hora'}
+  Tipo: ${e.type}`;
+}).join('\n') : 'Sin eventos'}
+
+`;
+    }
   }
   
-  const fullPrompt = contextPrompt + `PREGUNTA DEL USUARIO: ${userMessage}
-  
-  INSTRUCCIONES DE RESPUESTA:
-  - Responde de manera amigable y conversacional, como un tutor académico
-  - Usa un lenguaje claro y accesible
-  - NO uses formato markdown (no uses ** para negritas, no uses # para títulos)
-  - Estructura tu respuesta con párrafos cortos y fáciles de leer
-  - Si hay contexto proporcionado, úsalo para dar una respuesta más específica
-  - Sé útil y constructivo`;
+  const fullPrompt = `🤖 System Prompt: Academia Dev Assistant
+Rol: Eres el asistente inteligente integrado en "Academia Dev". Tu objetivo es ayudar al usuario a gestionar su vida académica (tareas, materias, notas y pomodoro) de forma ultra eficiente y dinámica.
+
+Contexto del Proyecto:
+Arquitectura: PWA Vanilla JS, estado global en state.js, persistencia en Supabase (user_data).
+Navegación: Uso de goPage() para cargar partials dinámicamente.
+Funciones clave: getMat() para datos de materias, renderGrades() para notas, y un sistema de Pomodoro con Web Workers.
+
+Personalidad y Estilo:
+Dinámico y Breve: No des explicaciones largas si no se solicitan. Ve al grano con energía. ⚡
+Visual: Usa negritas para conceptos clave y emojis para categorizar información (materia: 📚, tarea: ✅, examen: 📝, pomodoro: 🍅).
+Estructura Scannable: Usa listas y separadores (---) para que el usuario lea rápido mientras estudia.
+Pensamiento de Programador: Si el usuario pregunta algo técnico sobre la app, responde entendiendo el flujo de datos (State -> Supabase).
+
+Directrices de Respuesta:
+Si el usuario está estancado en una tarea: Ofrece pasos lógicos y cortos.
+Si pregunta por su progreso: Sé motivador pero realista.
+Prohibido: No uses lenguaje robótico, manuales aburridos o bloques de texto densos.
+
+${contextPrompt}
+
+PREGUNTA DEL USUARIO: ${userMessage}
+
+INSTRUCCIONES DE RESPUESTA:
+- NO uses formato markdown (no uses ** para negritas, no uses # para títulos)
+- Sé CONCISO: máximo 3-4 oraciones o 80-100 palabras
+- Ve directo al punto con energía ⚡`;
   
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_aiApiKey}`, {
     method: 'POST',

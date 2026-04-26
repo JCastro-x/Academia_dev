@@ -333,7 +333,7 @@
 </button>
 
 <div id="ai-chat-modal" class="modal-overlay" style="display:none;">
-  <div class="modal" style="max-width:500px;width:95vw;max-height:80vh;display:flex;flex-direction:column;">
+  <div class="modal" style="max-width:700px;width:95vw;max-height:85vh;display:flex;flex-direction:column;">
     <div class="modal-title">
       <span>🐮 Asistente Académico</span>
       <button class="modal-close" onclick="toggleAIChat()">✕</button>
@@ -341,11 +341,12 @@
     
     <!-- Context Selection -->
     <div id="ai-chat-context-bar" style="padding:12px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <span style="font-size:11px;color:var(--text3);">Contexto:</span>
-      <button class="btn btn-sm btn-ghost" onclick="attachFullContext()" style="font-size:11px;padding:4px 8px;background:rgba(124,106,255,.15);color:var(--accent2);border:1px solid rgba(124,106,255,.3);">📊 Todo mi semestre</button>
-      <button class="btn btn-sm btn-ghost" onclick="attachCurrentNote()" style="font-size:11px;padding:4px 8px;">📝 Nota actual</button>
-      <button class="btn btn-sm btn-ghost" onclick="attachCurrentFlashcard()" style="font-size:11px;padding:4px 8px;">🎴 Flashcard actual</button>
-      <button class="btn btn-sm btn-ghost" onclick="clearAIContext()" style="font-size:11px;padding:4px 8px;">🗑️ Limpiar</button>
+      <span style="font-size:12px;color:var(--text3);">Contexto:</span>
+      <button class="btn btn-sm btn-ghost" onclick="attachFullContext()" style="font-size:12px;padding:6px 10px;background:rgba(124,106,255,.15);color:var(--accent2);border:1px solid rgba(124,106,255,.3);">📊 Todo mi semestre</button>
+      <button class="btn btn-sm btn-ghost" onclick="showMyActivities()" style="font-size:12px;padding:6px 10px;background:rgba(124,106,255,.15);color:var(--accent2);border:1px solid rgba(124,106,255,.3);">📋 ¿Qué actividades tengo?</button>
+      <button class="btn btn-sm btn-ghost" onclick="attachCurrentNote()" style="font-size:12px;padding:6px 10px;">📝 Nota actual</button>
+      <button class="btn btn-sm btn-ghost" onclick="attachCurrentFlashcard()" style="font-size:12px;padding:6px 10px;">🎴 Flashcard actual</button>
+      <button class="btn btn-sm btn-ghost" onclick="clearAIContext()" style="font-size:12px;padding:6px 10px;">🗑️ Limpiar</button>
     </div>
     
     <!-- Chat Messages -->
@@ -357,7 +358,7 @@
     
     <!-- Input Area -->
     <div style="padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;">
-      <input type="text" id="ai-chat-input" class="fc-input" placeholder="Escribe tu pregunta..." style="flex:1;" onkeypress="if(event.key==='Enter')sendAIMessage()">
+      <input type="text" id="ai-chat-input" class="fc-input" placeholder="Escribe tu pregunta..." style="flex:1;" autocomplete="off" onkeypress="if(event.key==='Enter')sendAIMessage()">
       <button class="btn btn-primary" onclick="sendAIMessage()" style="padding:8px 16px;">Enviar</button>
     </div>
   </div>
@@ -365,11 +366,11 @@
 
 <style>
 .ai-message {
-  max-width:85%;
-  padding:10px 14px;
+  max-width:95%;
+  padding:14px 18px;
   border-radius:12px;
-  font-size:13px;
-  line-height:1.5;
+  font-size:16px;
+  line-height:1.6;
 }
 .ai-message-user {
   align-self:flex-end;
@@ -417,12 +418,13 @@
     flex-wrap: wrap !important;
   }
   #ai-chat-context-bar button {
-    font-size: 10px !important;
-    padding: 3px 6px !important;
+    font-size: 11px !important;
+    padding: 5px 8px !important;
   }
   .ai-message {
-    font-size: 14px !important;
-    padding: 12px 14px !important;
+    font-size: 16px !important;
+    padding: 14px 18px !important;
+    max-width: 95% !important;
   }
 }
 </style>

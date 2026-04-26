@@ -229,7 +229,12 @@ async function generateAIFlashcards() {
     _renderAIPreview();
   } catch (error) {
     console.error('Error generating flashcards:', error);
-    alert('Error al generar flashcards: ' + error.message + '\n\nPor favor verifica tu conexión a internet e intenta de nuevo.');
+    // Check if it's a quota exceeded error
+    if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit')) {
+      alert('🚫 El servicio de IA no está disponible en este momento. Has excedido el límite de uso gratuito. Por favor intenta de nuevo en unos minutos.');
+    } else {
+      alert('Error al generar flashcards: ' + error.message + '\n\nPor favor verifica tu conexión a internet e intenta de nuevo.');
+    }
     btn.disabled = false;
     btn.textContent = '✨ Generar Flashcards';
   }
