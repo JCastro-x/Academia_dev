@@ -75,6 +75,10 @@ const DEFAULT_MATERIAS = [];
 
 const DEFAULT_SETTINGS = { minGrade: 70, theme: 'dark', semester: '1er Año · 2do Sem', font: 'Sistema', soundVariant: 'classic', accentColor: '#7c6aff' };
 
+// ─── Navigation History for Mobile Back Button ───────────────────
+const _navHistory = [];
+let _isNavigating = false;
+
 function dbGet(key, fallback = null) {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }
 }
@@ -493,6 +497,16 @@ const PAGE_TITLES = {
 };
 
 function goPage(id, el) {
+  // ─── Mobile Back Button Navigation History ───────────────────────
+  if (!_isNavigating) {
+    const currentPage = document.querySelector('.page.active')?.id?.replace('page-', '') || 'overview';
+    if (currentPage !== id) {
+      _navHistory.push(currentPage);
+      history.pushState({ page: id }, '', `#${id}`);
+    }
+  }
+  _isNavigating = false;
+
   _uiClick('nav');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -3689,6 +3703,16 @@ document.addEventListener('DOMContentLoaded', () => {
     item.addEventListener('click', () => {
       if (window.innerWidth <= 768) closeMobileSidebar();
     });
+  });
+
+  // ─── Handle Mobile Back Button ───────────────────────────────────
+  window.addEventListener('popstate', (event) => {
+    if (_navHistory.length > 0) {
+      _isNavigating = true;
+      const previousPage = _navHistory.pop();
+      const navEl = document.querySelector(`[onclick*="${previousPage}"]`);
+      goPage(previousPage, navEl);
+    }
   });
 });
 

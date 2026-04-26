@@ -29,17 +29,12 @@ window._openAIModalAfterLoad = function() {
   
   // Small delay to ensure DOM is ready
   setTimeout(() => {
-    // Load saved API key or use default
+    // Load saved API key
     const savedKey = localStorage.getItem('gemini_api_key');
-    const defaultKey = 'AIzaSyCer2vyc0n6MjWUd1cH9Ay4GCJ0DVkr0Ng'; // Default key for development
     const keyInput = document.getElementById('ai-api-key');
     
     if (keyInput) {
-      if (savedKey) {
-        keyInput.value = savedKey;
-      } else {
-        keyInput.value = defaultKey;
-      }
+      keyInput.value = savedKey || '';
     }
     
     // Populate selects
@@ -231,7 +226,7 @@ async function generateAIFlashcards() {
     console.error('Error generating flashcards:', error);
     // Check if it's a quota exceeded error
     if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit')) {
-      alert('🚫 El servicio de IA no está disponible en este momento. Has excedido el límite de uso gratuito. Por favor intenta de nuevo en unos minutos.');
+      alert('🚫 El servicio de IA no está disponible en este momento. Has alcanzado el límite diario de 20 mensajes. Por favor intenta de nuevo mañana.');
     } else {
       alert('Error al generar flashcards: ' + error.message + '\n\nPor favor verifica tu conexión a internet e intenta de nuevo.');
     }

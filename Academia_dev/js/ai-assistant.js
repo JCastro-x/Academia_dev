@@ -6,7 +6,7 @@
 
 let _aiChatHistory = [];
 let _aiContext = null; // { type: 'note'|'flashcard'|'file', data: ... }
-const _aiApiKey = 'AIzaSyCer2vyc0n6MjWUd1cH9Ay4GCJ0DVkr0Ng';
+const _aiApiKey = localStorage.getItem('gemini_api_key') || '';
 
 /* ── MODAL CONTROLS ─────────────────────────────────────────── */
 function toggleAIChat() {
@@ -228,7 +228,7 @@ async function sendAIMessage() {
     removeTypingIndicator();
     // Check if it's a quota exceeded error
     if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit')) {
-      addChatMessage('🚫 El asistente no está disponible en este momento. Por favor intenta de nuevo en unos minutos.', 'ai');
+      addChatMessage('🚫 El asistente no está disponible en este momento. Has alcanzado el límite diario de 20 mensajes. Por favor intenta de nuevo mañana.', 'ai');
     } else {
       addChatMessage('Error: ' + error.message, 'ai');
     }
