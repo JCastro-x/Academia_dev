@@ -632,6 +632,9 @@ html {
 .agenda-day-card.today.selected {
   box-shadow: 0 0 20px rgba(124,106,255,.5), 0 0 0 4px rgba(124,106,255,.25);
 }
+.agenda-day-card.sunday {
+  border-left: 3px solid rgba(74,222,128,.7);
+}
 
 .adc-dayname {
   font-size: 9px;

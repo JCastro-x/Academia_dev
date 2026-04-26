@@ -411,7 +411,7 @@ function addZoneRow(labelVal, ptsVal, subsArr, origKey) {
     <div class="zone-sub-row" id="${id}-sub-${i}">
       <input type="hidden" class="zone-sub-orig-key" value="${(s.key||'').replace(/"/g,'&quot;')}">
       <input type="text" class="form-input zone-sub-label" placeholder="Apartado (ej: Tarea P1)" value="${(s.label||'').replace(/"/g,'&quot;')}" style="font-size:12px;">
-      <input type="number" class="form-input zone-sub-pts" placeholder="Pts" value="${s.pts||''}" min="0" max="200" style="font-size:12px;text-align:center;" oninput="updateZoneTotal('${id}')">
+      <input type="number" class="form-input zone-sub-pts" placeholder="Pts" value="${s.pts||''}" min="0" max="200" style="font-size:12px;text-align:center;">
       <button class="btn btn-danger btn-sm" onclick="removeZoneSub('${id}', ${i})" style="padding:3px 6px;">✕</button>
     </div>`).join('');
 
@@ -421,8 +421,13 @@ function addZoneRow(labelVal, ptsVal, subsArr, origKey) {
     <input type="hidden" class="zone-orig-key" value="${(origKey||'').replace(/"/g,'&quot;')}">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <input type="text" class="form-input zone-name-inp" data-zone-name="1" placeholder="Nombre de la zona (ej: Exámenes Parciales)" value="${(labelVal||'').replace(/"/g,'&quot;')}" style="font-size:13px;font-weight:600;flex:1;">
-      <div style="display:flex;align-items:center;gap:4px;font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;">
-        Total: <strong id="${id}-total" style="color:var(--accent2);margin-left:4px;">${totalPts.toFixed(1)}</strong> pts
+      <div style="display:flex;align-items:center;gap:4px;font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;color:var(--text2);">
+        <span style="font-size:11px;color:var(--text3);">Total:</span>
+        <input type="number" id="${id}-total" class="form-input" min="0" max="999" step="0.5"
+               value="${totalPts.toFixed(1)}" placeholder="0"
+               style="width:70px;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;padding:4px 6px;border:1.5px solid var(--accent2);border-radius:6px;background:var(--surface);"
+               title="Puntos totales de esta zona (editable)">
+        <span style="font-size:11px;color:var(--text3);">pts</span>
       </div>
       <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()" style="padding:3px 8px;">✕</button>
     </div>
@@ -450,8 +455,8 @@ function addZoneSub(zoneId) {
   row.id = zoneId + '-sub-' + idx;
   row.innerHTML = `
     <input type="text" class="form-input" placeholder="Apartado" style="font-size:12px;">
-    <input type="number" class="form-input" placeholder="Pts" min="0" max="200" style="font-size:12px;text-align:center;" oninput="updateZoneTotal('${zoneId}')">
-    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove();updateZoneTotal('${zoneId}')" style="padding:3px 6px;">✕</button>`;
+    <input type="number" class="form-input" placeholder="Pts" min="0" max="200" style="font-size:12px;text-align:center;">
+    <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()" style="padding:3px 6px;">✕</button>`;
   subsDiv.appendChild(row);
 }
 
@@ -1120,6 +1125,12 @@ function saveEditClassFromCreate() {
       subs.push({ key: subKey, label: subLabel, maxPts: subPts });
       totalPts += subPts;
     });
+
+    // Leer el total del input editable directamente
+    const totalInput = row.querySelector('input[id$="-total"]');
+    const manualTotal = totalInput ? parseFloat(totalInput.value) || 0 : 0;
+    // Usar el manual si el usuario lo editó, si no usar la suma de apartados
+    totalPts = manualTotal > 0 ? manualTotal : totalPts;
 
     if (totalPts === 0 && subs.length === 0) return; // zona vacía, ignorar
     if (totalPts === 0 && subs.length > 0) {

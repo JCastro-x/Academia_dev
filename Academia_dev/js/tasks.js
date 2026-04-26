@@ -555,6 +555,13 @@ function _renderTasks() {
       </div>
     </div>`;
   }).join('');
+
+  // Remove blink class after animation completes
+  setTimeout(() => {
+    document.querySelectorAll('.due-today-blink').forEach(el => {
+      el.classList.remove('due-today-blink');
+    });
+  }, 3450); // 1.15s * 3 iterations = 3.45s
 }
 
 // ═══════════════════════════════════════════════════════

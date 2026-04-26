@@ -120,7 +120,7 @@ function renderHorario() {
     if (!m.dias || !m.horario) return;
     const hr = m.horario.trim();
     if (!slotMap[hr]) slotMap[hr] = {};
-    m.dias.split(/[,\s]+/).forEach(d => {
+    [...new Set(m.dias.split(/[,\s]+/))].forEach(d => {
       const dk = d.trim().slice(0,3);
       if (!DAYS.includes(dk)) return;
       if (!slotMap[hr][dk]) slotMap[hr][dk] = [];
@@ -132,7 +132,7 @@ function renderHorario() {
   if (noSlot.length) {
     if (!slotMap['Sin hora']) slotMap['Sin hora'] = {};
     noSlot.forEach(m => {
-      m.dias.split(/[,\s]+/).forEach(d => {
+      [...new Set(m.dias.split(/[,\s]+/))].forEach(d => {
         const dk = d.trim().slice(0,3);
         if (!DAYS.includes(dk)) return;
         if (!slotMap['Sin hora'][dk]) slotMap['Sin hora'][dk] = [];
@@ -173,14 +173,14 @@ function renderHorario() {
         html += `<td style="background:var(--surface);"></td>`;
       } else if (mats.length === 1) {
         const m = mats[0];
-        html += `<td><div class="horario-cell" style="border-left-color:${m.color};background:${m.color}18;">
+        html += `<td onclick="goPage('materias')" style="cursor:pointer;"><div class="horario-cell" style="border-left-color:${m.color};background:${m.color}18;">
           <div style="font-size:10px;font-weight:800;color:${m.color};">${m.icon||'📚'} ${m.name}</div>
           ${m.catedratico ? `<div style="font-size:9px;color:var(--text3);">👤 ${m.catedratico}</div>` : ''}
           ${m.seccion ? `<div style="font-size:9px;color:var(--text3);">Sec. ${m.seccion}</div>` : ''}
         </div></td>`;
       } else {
 
-        html += `<td><div style="display:flex;gap:4px;">`;
+        html += `<td onclick="goPage('materias')" style="cursor:pointer;"><div style="display:flex;gap:4px;">`;
         mats.forEach(m => {
           html += `<div class="horario-cell" style="flex:1;min-width:0;border-left-color:${m.color};background:${m.color}18;">
             <div style="font-size:9px;font-weight:800;color:${m.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.icon||'📚'} ${m.name}</div>
@@ -2059,7 +2059,14 @@ function ecAddZoneRow(labelVal, ptsVal, subsArr) {
   div.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <input type="text" class="form-input ec-zone-name" placeholder="Nombre de la zona" value="${(labelVal||'').replace(/"/g,'&quot;')}" style="font-size:13px;font-weight:600;flex:1;">
-      <div style="font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;">Total: <strong id="${id}-total" style="color:var(--accent2);">${totalPts.toFixed(1)}</strong> pts</div>
+      <div style="display:flex;align-items:center;gap:4px;font-size:12px;font-family:'Space Mono',monospace;white-space:nowrap;color:var(--text2);">
+        <span style="font-size:11px;color:var(--text3);">Total:</span>
+        <input type="number" id="${id}-total" class="form-input" min="0" max="999" step="0.5"
+               value="${totalPts.toFixed(1)}" placeholder="0"
+               style="width:70px;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;padding:4px 6px;border:1.5px solid var(--accent2);border-radius:6px;background:var(--surface);"
+               title="Puntos totales de esta zona (editable)">
+        <span style="font-size:11px;color:var(--text3);">pts</span>
+      </div>
       <button class="btn btn-danger btn-sm" onclick="document.getElementById('${id}').remove()" style="padding:3px 8px;">✕</button>
     </div>
     <div id="${id}-subs" class="zone-subs-area">${buildSubsHtml(subs)}</div>
@@ -2088,7 +2095,7 @@ function ecUpdateZoneTotal(zoneId) {
   if (!subsDiv || !totalEl) return;
   let total = 0;
   subsDiv.querySelectorAll('input[type="number"]').forEach(inp => { total += parseFloat(inp.value)||0; });
-  totalEl.textContent = total.toFixed(1);
+  totalEl.value = total.toFixed(1);
 }
 
 function saveEditClass() {
@@ -2141,7 +2148,12 @@ function saveEditClass() {
           totalPts += subPts;
         }
       });
-      if (subs.length && totalPts > 0) {
+      // Leer el total del input editable directamente
+      const totalInput = row.querySelector('input[id$="-total"]');
+      const manualTotal = totalInput ? parseFloat(totalInput.value) || 0 : 0;
+      // Usar el manual si el usuario lo editó, si no usar la suma de apartados
+      totalPts = manualTotal > 0 ? manualTotal : totalPts;
+      if (totalPts > 0) {
         const existZone = (mat.zones||[]).find(z=>z.key===key);
         newZones.push({ ...(existZone||{}), key, label: lbl, maxPts: totalPts, color: _ecColorSel, subs });
       }
@@ -2203,6 +2215,12 @@ function ovSetDayFilter(dateStr) {
   renderOverview();
 }
 
+function openAgendaDayModal(dateStr) {
+  if (typeof calDayClick === 'function') {
+    calDayClick(dateStr);
+  }
+}
+
 function ovClearDayFilter() {
   ovFilterDay = null;
   renderOverview();
@@ -2259,8 +2277,9 @@ function _renderOverview() {
       }).join('');
       const extraDots  = matIds.length > 5 ? `<div class="agenda-dot-more">+${matIds.length-5}</div>` : '';
       const totalCount = dayTasks.length + dayEvents.length;
+      const isSunday = d.getDay() === 0;
 
-      return `<div class="agenda-day-card${isToday?' today':''}${isSelected?' selected':''}" onclick="ovSetDayFilter('${dStr}')" title="${isToday?'Hoy · ':''} ${d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}">
+      return `<div class="agenda-day-card${isToday?' today':''}${isSelected?' selected':''}${isSunday?' sunday':''}" onclick="openAgendaDayModal('${dStr}')" title="${isToday?'Hoy · ':''} ${d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}">
         <div class="adc-dayname">${daysFull[d.getDay()]}</div>
         <div class="adc-daynum">${d.getDate()}</div>
         <div class="adc-month">${monthNames[d.getMonth()]}</div>
@@ -2588,6 +2607,13 @@ function _renderOverview() {
   });
 
   tl.innerHTML = html;
+
+  // Remove blink class after animation completes
+  setTimeout(() => {
+    document.querySelectorAll('.ov-due-today-blink').forEach(el => {
+      el.classList.remove('ov-due-today-blink');
+    });
+  }, 3450); // 1.15s * 3 iterations = 3.45s
 }
 
 let _sidebarCollapsed = false;

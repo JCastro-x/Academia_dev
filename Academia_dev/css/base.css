@@ -273,6 +273,10 @@ body::before {
 .cal-cell.past { background:rgba(var(--bg-rgb,10,10,15),.6); opacity:.45; pointer-events:none; }
 .cal-cell.today { border:2px solid var(--accent); box-shadow:0 0 0 1px rgba(124,106,255,.3), 0 0 18px rgba(124,106,255,.35), 0 0 32px rgba(124,106,255,.15); background:rgba(124,106,255,.08); }
 .cal-cell.today .cal-num { color:var(--accent); font-weight:800; font-size:13px; background:var(--accent); color:#fff; width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;margin-bottom:4px; }
+.cal-cell.first-day { background:rgba(74,222,128,.15); border:1px solid rgba(74,222,128,.4); box-shadow:0 0 12px rgba(74,222,128,.2); }
+.cal-cell.first-day .cal-num { color:#4ade80; font-weight:800; }
+.cal-cell.last-day { background:rgba(34,197,94,.18); border:1px solid rgba(34,197,94,.5); box-shadow:0 0 12px rgba(34,197,94,.25); }
+.cal-cell.last-day .cal-num { color:#22c55e; font-weight:800; }
 .cal-cell.empty { background:transparent; border-color:transparent; cursor:default; }
 .cal-num   { font-size:11px; font-family:'Space Mono',monospace; color:var(--text2); margin-bottom:3px; }
 .ev-countdown-badge { display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-family:'Space Mono',monospace; font-weight:800; padding:4px 10px; border-radius:12px; margin-left:6px; vertical-align:middle; letter-spacing:.4px; }

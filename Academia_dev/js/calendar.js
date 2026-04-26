@@ -51,6 +51,8 @@ function _renderCalendar() {
     let cellClass = 'cal-cell';
     if (isT) cellClass += ' today';
     else if (isPast) cellClass += ' past';
+    if (d === 1) cellClass += ' first-day';
+    if (d === daysInMonth) cellClass += ' last-day';
 
     html += `<div class="${cellClass}" onclick="calDayClick('${ds}')">
       <div class="cal-num">${d}</div>
