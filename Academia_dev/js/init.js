@@ -105,10 +105,12 @@ function init() {
         const hasLocalData =
           !!localStorage.getItem('academia_v4_semestres') ||
           !!localStorage.getItem('academia_v3_settings');
+        const hasKnownUser = !!localStorage.getItem('_academia_last_user');
         const isOffline = navigator.onLine === false;
+        const canUseLocalAccess = hasLocalData && (isOffline || hasKnownUser);
 
-        if (isOffline && hasLocalData) {
-          console.warn('⚠️ Modo offline: continuando con datos locales cacheados');
+        if (canUseLocalAccess) {
+          console.warn('⚠️ Acceso local habilitado: no se pudo validar sesión remota, continuando con datos cacheados');
           const overlay = document.getElementById('auth-check-overlay');
           if (overlay) overlay.remove();
           continueInit(null);
@@ -207,13 +209,16 @@ function init() {
       const hasLocalData =
         !!localStorage.getItem('academia_v4_semestres') ||
         !!localStorage.getItem('academia_v3_settings');
+      const hasKnownUser = !!localStorage.getItem('_academia_last_user');
       const isOffline = navigator.onLine === false;
+      const canUseLocalAccess = hasLocalData && (isOffline || hasKnownUser);
       // En caso de error, si es invitado igual dejamos pasar
       if (localStorage.getItem('academia_guest_mode') === '1') {
         const overlay = document.getElementById('auth-check-overlay');
         if (overlay) overlay.remove();
         continueInit(null);
-      } else if (isOffline && hasLocalData) {
+      } else if (canUseLocalAccess) {
+        console.warn('⚠️ Acceso local por fallback de error de auth');
         const overlay = document.getElementById('auth-check-overlay');
         if (overlay) overlay.remove();
         continueInit(null);
