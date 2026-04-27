@@ -600,9 +600,11 @@ function restorePomRunningState() {
     savePomRunning(null);
     return;
   }
-  if (document.getElementById('pom-work') && saved.workMins) document.getElementById('pom-work').value = saved.workMins;
-  if (document.getElementById('pom-break') && saved.breakMins) document.getElementById('pom-break').value = saved.breakMins;
-  if (document.getElementById('pom-cycles') && saved.cyclesGoal) document.getElementById('pom-cycles').value = saved.cyclesGoal;
+  // Solo restaurar si el partial de pomodoro está cargado
+  if (!document.getElementById('pom-work')) return;
+  if (saved.workMins) document.getElementById('pom-work').value = saved.workMins;
+  if (saved.breakMins) document.getElementById('pom-break').value = saved.breakMins;
+  if (saved.cyclesGoal) document.getElementById('pom-cycles').value = saved.cyclesGoal;
   if (document.getElementById('pom-subject')) document.getElementById('pom-subject').value = saved.subjectId || '';
   if (document.getElementById('pom-task-sel')) document.getElementById('pom-task-sel').value = saved.taskId || '';
   pomB = !!saved.isBreak;
@@ -673,7 +675,9 @@ function pomReset() {
   if (pomI) { clearInterval(pomI); pomI=null; }
   pomR=false; pomB=false; pomSL=pomTS=pomWork();
   savePomRunning(null);
-  _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp();
+  const btn = _el('pom-btn');
+  if (btn) btn.textContent='▶ Iniciar';
+  updatePomDisp();
 }
 
 // ── Countdown beep (5s before switch) ────────────────────────
@@ -780,17 +784,22 @@ function pomSkip() {
   _el('pom-btn').textContent='▶ Iniciar'; updatePomDisp(); updatePomDots();
 }
 function updatePomDisp() {
+  const timeEl = document.getElementById('pom-time');
+  const ringEl = document.getElementById('pom-ring');
+  const modeEl = document.getElementById('pom-mode');
+  if (!timeEl || !ringEl || !modeEl) return;
   const m=Math.floor(pomSL/60), s=pomSL%60;
-  document.getElementById('pom-time').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  timeEl.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   const circ=2*Math.PI*82, prog=pomTS>0?pomSL/pomTS:1;
-  const ring=document.getElementById('pom-ring');
-  ring.style.strokeDashoffset=circ*(1-prog);
-  ring.style.stroke=pomB?'#4ade80':'var(--accent)';
-  document.getElementById('pom-mode').textContent=pomB?'DESCANSO':'ENFOQUE';
+  ringEl.style.strokeDashoffset=circ*(1-prog);
+  ringEl.style.stroke=pomB?'#4ade80':'var(--accent)';
+  modeEl.textContent=pomB?'DESCANSO':'ENFOQUE';
 }
 function updatePomDots() {
+  const dotsEl = document.getElementById('pom-dots');
+  if (!dotsEl) return;
   const cycles = parseInt(document.getElementById('pom-cycles')?.value) || 4;
-  document.getElementById('pom-dots').innerHTML=Array.from({length:cycles},(_,i)=>
+  dotsEl.innerHTML=Array.from({length:cycles},(_,i)=>
     `<div style="width:9px;height:9px;border-radius:50%;background:${i<pomD%cycles?'var(--accent)':'var(--border2)'};"></div>`
   ).join('');
 }

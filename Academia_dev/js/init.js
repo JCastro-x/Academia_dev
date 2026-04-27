@@ -317,8 +317,10 @@ function continueInit(auth) {
     });
 
     fillMatSels(); fillPomSel(); fillTopicMatSel(); fillNotesSel(); fillExamSel();
-    renderOverview(); renderMaterias(); updateBadge(); updatePomDots(); pomReset(); restorePomRunningState(); initCal();
+    renderOverview(); renderMaterias(); updateBadge(); initCal();
     renderSemesterBadge();
+    // Pomodoro functions now have guards - safe to call even if partial not loaded
+    updatePomDots(); pomReset(); restorePomRunningState();
 
     document.querySelectorAll('.modal-overlay').forEach(o =>
       o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })
