@@ -284,9 +284,9 @@ function saveFlashcard() {
   const question = gv('fc-question-input');
   const answer   = gv('fc-answer-input');
   const tags     = gv('fc-tags').split(',').map(t => t.trim()).filter(Boolean);
-  if (!matId)    { alert('Selecciona una materia'); document.getElementById('fc-mat')?.focus(); return; }
-  if (!question) { alert('Escribe una pregunta'); document.getElementById('fc-question-input')?.focus(); return; }
-  if (!answer)   { alert('Escribe una respuesta'); document.getElementById('fc-answer-input')?.focus(); return; }
+  if (!matId)    { if (typeof _appNotify === 'function') _appNotify('Selecciona una materia', 'warning'); document.getElementById('fc-mat')?.focus(); return; }
+  if (!question) { if (typeof _appNotify === 'function') _appNotify('Escribe una pregunta', 'warning'); document.getElementById('fc-question-input')?.focus(); return; }
+  if (!answer)   { if (typeof _appNotify === 'function') _appNotify('Escribe una respuesta', 'warning'); document.getElementById('fc-answer-input')?.focus(); return; }
   const cards = fcGetCards();
   if (_fcEditCardId) {
     const idx = cards.findIndex(c => c.id === _fcEditCardId);
@@ -302,59 +302,57 @@ function closeFlashcardModal() {
   document.getElementById('modal-flashcard')?.classList.remove('open'); _fcEditCardId = null;
 }
 
-/* ── Double-tap delete — sin confirm() (evita focus events que disparan sync) ── */
-function deleteFlashcard(cardId, btn) {
-  if (!btn || btn.dataset.confirming === '1') {
-    // Sin botón O segunda pulsación → borrar
-    const card = fcGetCards().find(c => c.id === cardId);
-    if (!card) return;
+/* ── Delete with confirmation popup ── */
+async function deleteFlashcard(cardId, btn) {
+  const card = fcGetCards().find(c => c.id === cardId);
+  if (!card) return;
 
-    const deletedCard = { ...card };
+  const confirmed = await showConfirm(`¿Eliminar la flashcard "${card.question}"?`, { danger: true });
+  if (!confirmed) return;
 
-    if (btn) { clearTimeout(btn._fcTimer); btn.dataset.confirming = ''; }
-    fcSetCards(fcGetCards().filter(c => c.id !== cardId));
-    _fcRefresh(); updateFcHeaderStats();
-    if (typeof _uiClick === 'function') _uiClick('delete');
+  const deletedCard = { ...card };
 
-    // Show undo toast
-    if (typeof showUndoToast === 'function') {
-      showUndoToast(`Flashcard eliminada`, () => {
-        const cards = fcGetCards();
-        cards.push(deletedCard);
-        fcSetCards(cards);
-        _fcRefresh();
-        updateFcHeaderStats();
-      });
-    }
-    return;
+  fcSetCards(fcGetCards().filter(c => c.id !== cardId));
+  _fcRefresh(); updateFcHeaderStats();
+  if (typeof _uiClick === 'function') _uiClick('delete');
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Flashcard eliminada`, () => {
+      const cards = fcGetCards();
+      cards.push(deletedCard);
+      fcSetCards(cards);
+      _fcRefresh();
+      updateFcHeaderStats();
+    });
   }
-  // Primera pulsación — mostrar confirmación
-  btn.dataset.confirming = '1';
-  const orig = btn.innerHTML;
-  btn.innerHTML = '¿Seguro?';
-  btn.style.cssText = 'background:rgba(248,113,113,.25);color:#f87171;border-color:rgba(248,113,113,.5);width:auto;padding:0 8px;font-size:11px;font-weight:700;border-radius:6px;';
-  btn._fcTimer = setTimeout(() => {
-    btn.dataset.confirming = ''; btn.innerHTML = orig; btn.style.cssText = '';
-  }, 2500);
 }
 
-function deleteFolder(folderId, btn) {
-  if (!btn || btn.dataset.confirming === '1') {
-    if (btn) { clearTimeout(btn._fcTimer); btn.dataset.confirming = ''; }
-    fcSetCards(fcGetCards().map(c => c.folderId === folderId ? { ...c, folderId: null } : c));
-    fcSetFolders(fcGetFolders().filter(f => f.id !== folderId));
-    if (_fcMatId) fcOpenMateria(_fcMatId);
-    updateFcHeaderStats();
-    if (typeof _uiClick === 'function') _uiClick('delete');
-    return;
+async function deleteFolder(folderId, btn) {
+  const folder = fcGetFolders().find(f => f.id === folderId);
+  if (!folder) return;
+
+  const confirmed = await showConfirm(`¿Eliminar la carpeta "${folder.name}"?`, { danger: true });
+  if (!confirmed) return;
+
+  const deletedFolder = { ...folder };
+  const affectedCards = fcGetCards().filter(c => c.folderId === folderId);
+
+  fcSetCards(fcGetCards().map(c => c.folderId === folderId ? { ...c, folderId: null } : c));
+  fcSetFolders(fcGetFolders().filter(f => f.id !== folderId));
+  if (_fcMatId) fcOpenMateria(_fcMatId);
+  updateFcHeaderStats();
+  if (typeof _uiClick === 'function') _uiClick('delete');
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Carpeta "${folder.name}" eliminada`, () => {
+      fcSetFolders([...fcGetFolders(), deletedFolder]);
+      fcSetCards(fcGetCards().map(c => affectedCards.find(ac => ac.id === c.id) ? { ...c, folderId: folderId } : c));
+      if (_fcMatId) fcOpenMateria(_fcMatId);
+      updateFcHeaderStats();
+    });
   }
-  btn.dataset.confirming = '1';
-  const orig = btn.innerHTML;
-  btn.innerHTML = '¿Seguro?';
-  btn.style.cssText = 'background:rgba(248,113,113,.25);color:#f87171;border-color:rgba(248,113,113,.5);width:auto;padding:0 8px;font-size:11px;font-weight:700;border-radius:6px;';
-  btn._fcTimer = setTimeout(() => {
-    btn.dataset.confirming = ''; btn.innerHTML = orig; btn.style.cssText = '';
-  }, 2500);
 }
 
 function _fcRefresh() {
@@ -391,7 +389,7 @@ function _resetIconPicker(icon) {
 }
 function saveFolder() {
   const name = (document.getElementById('fc-folder-name-input')?.value || '').trim();
-  if (!name) { alert('Escribe un nombre para la carpeta'); return; }
+  if (!name) { if (typeof _appNotify === 'function') _appNotify('Escribe un nombre para la carpeta', 'warning'); return; }
   const icon    = document.querySelector('.fc-icon-opt.selected')?.dataset.icon || '📁';
   const folders = fcGetFolders();
   if (_fcEditFolderId) {
@@ -432,7 +430,7 @@ function startStudyMode(mode) {
               : _fcFolderIdState           ? cards.filter(c => c.folderId === _fcFolderIdState)
               : [...cards];
   
-  if (!pool.length) { alert('No hay tarjetas para estudiar'); return; }
+  if (!pool.length) { if (typeof _appNotify === 'function') _appNotify('No hay tarjetas para estudiar', 'warning'); return; }
   
   // Filtrar según modo seleccionado
   if (mode === 'difficult') {
@@ -443,7 +441,7 @@ function startStudyMode(mode) {
   // 'general' usa todas las tarjetas del pool
   
   if (!pool.length) { 
-    alert('No hay tarjetas que coincidan con este modo de estudio'); 
+    if (typeof _appNotify === 'function') _appNotify('No hay tarjetas que coincidan con este modo de estudio', 'warning'); 
     return; 
   }
   
@@ -560,7 +558,7 @@ function rateCard(rating) {
       const reviewed = _fcReviewedCount;
       exitStudyMode(); 
       updateFcHeaderStats(); 
-      alert(`¡Sesión completada! Repasaste ${reviewed} tarjeta${reviewed !== 1 ? 's' : ''} 🎉`); 
+      if (typeof _appNotify === 'function') _appNotify(`¡Sesión completada! Repasaste ${reviewed} tarjeta${reviewed !== 1 ? 's' : ''} 🎉`, 'ok'); 
     }
   }, 800);
 }

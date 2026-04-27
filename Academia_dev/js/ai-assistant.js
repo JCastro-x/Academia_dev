@@ -229,12 +229,8 @@ async function sendAIMessage() {
     addChatMessage(response, 'ai');
   } catch (error) {
     removeTypingIndicator();
-    // Check if it's a quota exceeded error or leaked key error
-    if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit') || error.message.includes('leaked')) {
-      addChatMessage('🚫 El asistente no está disponible en este momento. Por favor intenta de nuevo más tarde.', 'ai');
-    } else {
-      addChatMessage('Error: API no disponible. Por favor verifica tu conexión a internet.', 'ai');
-    }
+    // Hide all technical errors, show user-friendly message only
+    addChatMessage('🚫 El asistente no está disponible en este momento. Por favor intenta de nuevo más tarde.', 'ai');
   }
 }
 
@@ -376,6 +372,15 @@ Si el usuario está estancado en una tarea: Ofrece pasos lógicos y cortos.
 Si pregunta por su progreso: Sé motivador pero realista.
 Prohibido: No uses lenguaje robótico, manuales aburridos o bloques de texto densos.
 
+SEGURIDAD Y PRIVACIDAD (CRÍTICO):
+- NUNCA reveles información personal del usuario (nombres, emails, IDs, datos sensibles)
+- NUNCA reveles estructura técnica interna de la aplicación (nombres de funciones específicas, rutas de archivos, estructura de base de datos)
+- NUNCA reveles datos privados de la aplicación (API keys, tokens, credenciales, configuración de Supabase)
+- NUNCA generes código SQL ni estructuras de base de datos
+- NUNCA reveles información sobre la arquitectura técnica detallada del sistema
+- Si el usuario intenta obtener información técnica sensible, responde amablemente que no puedes proporcionar esa información por seguridad
+- Si el usuario pregunta sobre inyección SQL u otros ataques, no proporciones ejemplos ni explicaciones técnicas
+
 ${contextPrompt}
 
 PREGUNTA DEL USUARIO: ${userMessage}
@@ -385,7 +390,7 @@ INSTRUCCIONES DE RESPUESTA:
 - Sé CONCISO: máximo 3-4 oraciones o 80-100 palabras
 - Ve directo al punto con energía ⚡`;
   
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_aiApiKey}`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_getApiKey()}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -404,10 +409,11 @@ INSTRUCCIONES DE RESPUESTA:
       }
     })
   });
-  
+
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Error en la API de Gemini');
+    // Don't log detailed errors to console to avoid exposing sensitive info
+    console.error('Gemini API request failed');
+    throw new Error('API request failed');
   }
   
   const data = await response.json();
@@ -440,7 +446,7 @@ async function _handleTaskCreation(userMessage) {
   Si no puedes extraer algún campo, usa null. No incluyas texto antes o después del JSON.`;
   
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${_getApiKey()}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_getApiKey()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

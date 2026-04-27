@@ -1,40 +1,15 @@
-# Requisitos para Migración a Supabase Storage
+# Requisitos para Migración a Supabase
 
-## Tarea 1: Migración de Archivos a Supabase Storage
+## Nota Importante
+El módulo social (Study Space) ha sido eliminado. Este archivo ahora solo documenta la sincronización de datos de Academia.
 
-### Bucket Requerido
-- **Nombre**: `social-files`
-- **Tipo**: Público (para acceso vía URL pública)
-- **Política**: Habilitar upload y lectura pública
-
-### Cambios en Tabla `social_files`
-
-#### Columnas Nuevas (Agregar)
-```sql
-ALTER TABLE social_files ADD COLUMN storage_path TEXT;
-ALTER TABLE social_files ADD COLUMN public_url TEXT;
-```
-
-#### Columna Obsoleta (Opcional - Eliminar después de migrar datos existentes)
-```sql
--- Solo ejecutar después de que todos los archivos existentes hayan sido migrados
-ALTER TABLE social_files DROP COLUMN data;
-```
-
-### Notas
-- Los archivos nuevos se guardarán en Storage con ruta: `groups/{groupId}/{timestamp}_{filename}`
-- La tabla solo guardará metadatos: `storage_path` y `public_url`
-- La función `getFiles()` ya no solicita la columna `data` para reducir egress
-- La función `deleteFile()` elimina del Storage y de la tabla
-
----
-
-## Tarea 2: Optimización de Sincronización
+## Optimización de Sincronización
 
 ### Cambios en Código (Ya Implementados)
 - `academia-sync.js`: La función `load()` ahora acepta parámetro opcional `localUpdatedAt`
 - `academia-sync.js`: Preflight check usando `getRemoteUpdatedAt()` antes de descargar JSONB completo
-- `init.js`: Ya tiene lógica de preflight implementada (líneas 374-392) - NO requiere cambios
+- `init.js`: Ya tiene lógica de preflight implementada - NO requiere cambios
+- `state.js`: Debounce de saveState aumentado a 3000ms para reducir egress
 
 ### Comportamiento
 1. Cada 90s, el intervalo en `init.js` verifica si hay cambios locales recientes
@@ -50,14 +25,15 @@ ALTER TABLE social_files DROP COLUMN data;
 
 ## Resumen de Archivos Modificados
 
-### `js/db.js`
-- `uploadFile()`: Migrado a usar Supabase Storage
-- `getFiles()`: Excluye columna `data` del SELECT
-- `deleteFile()`: Elimina del Storage antes de borrar registro
-
 ### `js/academia-sync.js`
 - `load()`: Acepta parámetro opcional `localUpdatedAt` para preflight
 - `getRemoteUpdatedAt()`: Ya existía, se usa para preflight
 
+### `js/state.js`
+- `saveState()`: Debounce aumentado de 400ms a 3000ms para reducir egress
+
 ### `js/init.js`
 - NO requiere cambios (ya tiene lógica de preflight implementada)
+
+### `js/db.js`
+- Módulo social eliminado - Study Space ya no está activo

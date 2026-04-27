@@ -160,13 +160,15 @@ async function handleLogout() {
   const isGuest = localStorage.getItem('academia_guest_mode') === '1';
 
   if (isGuest) {
-    if (!confirm('¿Salir del modo invitado? Tus datos guardados en este dispositivo se eliminarán.')) return;
+    const confirmed = await showConfirm('¿Salir del modo invitado? Tus datos guardados en este dispositivo se eliminarán.', { danger: true });
+    if (!confirmed) return;
     if (window.Auth?.clearAcademiaStorage) window.Auth.clearAcademiaStorage();
     window.location.href = 'auth-page.html';
     return;
   }
 
-  if (!confirm('¿Estás seguro de que quieres cerrar sesión?')) return;
+  const confirmed = await showConfirm('¿Estás seguro de que quieres cerrar sesión?');
+  if (!confirmed) return;
 
   const result = await window.Auth.logoutUser();
   if (result.success) {
@@ -174,6 +176,6 @@ async function handleLogout() {
     if (window.Auth?.clearAcademiaStorage) window.Auth.clearAcademiaStorage();
     window.location.href = 'auth-page.html';
   } else {
-    alert('Error al cerrar sesión: ' + result.error);
+    if (typeof _appNotify === 'function') _appNotify('Error al cerrar sesión: ' + result.error, 'error');
   }
 }

@@ -477,5 +477,294 @@
     });
   </script>
   
+  <!-- Enhanced Animations Script -->
+  <script>
+    console.log('🚀 Loading enhanced futuristic animations...');
+    
+    // Enhanced Parallax with depth
+    function initEnhancedParallax() {
+      const orbs = document.querySelectorAll('.orb');
+      const hero = document.querySelector('.hero');
+      
+      // Scroll parallax with depth
+      window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const depth = scrolled * 0.3;
+        
+        orbs.forEach((orb, index) => {
+          const speed = (index + 1) * 0.2;
+          const yPos = -(scrolled * speed);
+          orb.style.transform = `translateY(${yPos}px) scale(${1 + (scrolled * 0.0005)})`;
+        });
+        
+        // Hero section parallax
+        if (hero) {
+          hero.style.transform = `translateY(${scrolled * 0.4}px)`;
+        }
+      });
+      
+      // Mouse movement parallax with 3D effect
+      document.addEventListener('mousemove', (e) => {
+        const { clientX, clientY } = e;
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        
+        orbs.forEach((orb, index) => {
+          const speed = (index + 1) * 0.04;
+          const x = (clientX - centerX) * speed;
+          const y = (clientY - centerY) * speed;
+          const z = (index + 1) * 10;
+          orb.style.transform = `translate3d(${x}px, ${y}px, ${z}px)`;
+        });
+      });
+    }
+    
+    // Dramatic Waterfall Cascade Animations
+    function initWaterfallCascade() {
+      console.log('💦 Initializing waterfall cascade...');
+      
+      const taskRows = document.querySelectorAll('.task-row');
+      const gradeItems = document.querySelectorAll('.grade-item');
+      const featureCards = document.querySelectorAll('.feature-card');
+      const techChips = document.querySelectorAll('.tech-chip');
+      
+      // Animate tasks with dramatic entrance
+      taskRows.forEach((row, index) => {
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(-50px) scale(0.8) rotateX(20deg)';
+        setTimeout(() => {
+          row.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+          row.style.opacity = '1';
+          row.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+        }, 300 + (index * 200));
+      });
+      
+      // Animate grades with dramatic entrance
+      gradeItems.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(-50px) scale(0.8) rotateY(20deg)';
+        setTimeout(() => {
+          item.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+          item.style.opacity = '1';
+          item.style.transform = 'translateY(0) scale(1) rotateY(0deg)';
+        }, 1000 + (index * 200));
+      });
+      
+      // Scroll-triggered cascade for features
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '0';
+            entry.target.style.transform = 'translateY(60px) scale(0.9)';
+            setTimeout(() => {
+              entry.target.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+              entry.target.style.opacity = '1';
+              entry.target.style.transform = 'translateY(0) scale(1)';
+            }, 100);
+          }
+        });
+      }, { threshold: 0.2 });
+      
+      featureCards.forEach(card => observer.observe(card));
+      techChips.forEach(chip => observer.observe(chip));
+      
+      // Re-trigger animations periodically for demo effect
+      setInterval(() => {
+        taskRows.forEach((row, index) => {
+          row.style.transition = 'none';
+          row.style.opacity = '0';
+          row.style.transform = 'translateY(-50px) scale(0.8) rotateX(20deg)';
+          setTimeout(() => {
+            row.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            row.style.opacity = '1';
+            row.style.transform = 'translateY(0) scale(1) rotateX(0deg)';
+          }, index * 150);
+        });
+      }, 12000);
+      
+      setInterval(() => {
+        gradeItems.forEach((item, index) => {
+          item.style.transition = 'none';
+          item.style.opacity = '0';
+          item.style.transform = 'translateY(-50px) scale(0.8) rotateY(20deg)';
+          setTimeout(() => {
+            item.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0) scale(1) rotateY(0deg)';
+          }, index * 150);
+        });
+      }, 15000);
+    }
+    
+    // Video-like Dashboard Presentation Mode
+    function initVideoPresentation() {
+      console.log('🎬 Initializing video presentation mode...');
+      
+      const sidebarItems = document.querySelectorAll('.ps-item');
+      const pomodoroCard = document.querySelector('.preview-card');
+      const pomodoroTimer = document.querySelector('.pom-time');
+      const pomodoroBar = document.querySelector('.pom-bar-fill');
+      
+      let currentMode = 0;
+      const modes = ['resumen', 'pomodoro', 'tareas', 'calificaciones'];
+      
+      // Auto-rotate through dashboard states
+      setInterval(() => {
+        // Fade out current state
+        if (pomodoroCard) {
+          pomodoroCard.style.opacity = '0.5';
+          pomodoroCard.style.transform = 'scale(0.98)';
+        }
+        
+        setTimeout(() => {
+          // Update sidebar
+          sidebarItems.forEach(item => item.classList.remove('active'));
+          currentMode = (currentMode + 1) % sidebarItems.length;
+          sidebarItems[currentMode].classList.add('active');
+          
+          // Update Pomodoro timer for demo effect
+          if (pomodoroTimer && modes[currentMode] === 'pomodoro') {
+            const minutes = Math.floor(Math.random() * 25);
+            const seconds = Math.floor(Math.random() * 60);
+            pomodoroTimer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            if (pomodoroBar) {
+              const progress = Math.random() * 100;
+              pomodoroBar.style.width = `${progress}%`;
+            }
+          }
+          
+          // Fade in new state
+          if (pomodoroCard) {
+            pomodoroCard.style.opacity = '1';
+            pomodoroCard.style.transform = 'scale(1)';
+          }
+        }, 300);
+      }, 5000);
+      
+      // Auto-complete tasks for demo
+      const taskChecks = document.querySelectorAll('.task-check');
+      taskChecks.forEach((check, index) => {
+        setInterval(() => {
+          check.classList.add('done');
+          createExplosion(check);
+          
+          const taskTitle = check.closest('.task-row')?.querySelector('.task-title');
+          if (taskTitle) taskTitle.classList.add('done');
+          
+          setTimeout(() => {
+            check.classList.remove('done');
+            if (taskTitle) taskTitle.classList.remove('done');
+          }, 4000);
+        }, 8000 + (index * 5000));
+      });
+    }
+    
+    // Ultra particle explosion effect
+    function createExplosion(element) {
+      const rect = element.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'explosion-particle';
+        document.body.appendChild(particle);
+        
+        const angle = (i / 20) * Math.PI * 2;
+        const velocity = 40 + Math.random() * 60;
+        const tx = Math.cos(angle) * velocity;
+        const ty = Math.sin(angle) * velocity;
+        const size = 4 + Math.random() * 8;
+        
+        particle.style.cssText = `
+          position: fixed;
+          left: ${centerX}px;
+          top: ${centerY}px;
+          width: ${size}px;
+          height: ${size}px;
+          background: linear-gradient(135deg, #7c6aff, #a78bfa, #f472b6);
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 9999;
+          opacity: 1;
+          box-shadow: 0 0 10px rgba(124,106,255,0.8);
+        `;
+        
+        particle.animate([
+          { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+          { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+        ], {
+          duration: 800,
+          easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+        });
+        
+        setTimeout(() => particle.remove(), 800);
+      }
+    }
+    
+    // Ultra-glow effect for CTA buttons
+    function initUltraGlow() {
+      console.log('✨ Initializing ultra-glow effects...');
+      
+      const navCta = document.querySelector('.nav-cta');
+      const mainCta = document.querySelector('.btn-main.neon');
+      
+      if (navCta) {
+        navCta.style.animation = 'ultraPulse 1.5s ease-in-out infinite';
+      }
+      
+      if (mainCta) {
+        mainCta.style.animation = 'ultraFire 2s ease-in-out infinite';
+      }
+    }
+    
+    // Initialize all effects
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        initEnhancedParallax();
+        initWaterfallCascade();
+        initVideoPresentation();
+        initUltraGlow();
+        console.log('✨ All enhanced animations loaded!');
+      }, 1000);
+    });
+    
+    // Add dynamic CSS for new animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes ultraPulse {
+        0%, 100% { 
+          box-shadow: 0 0 20px rgba(124,106,255,.4), 0 0 40px rgba(124,106,255,.2);
+          transform: scale(1);
+        }
+        50% { 
+          box-shadow: 0 0 50px rgba(124,106,255,.8), 0 0 100px rgba(124,106,255,.5), 0 0 150px rgba(124,106,255,.3);
+          transform: scale(1.08);
+        }
+      }
+      
+      @keyframes ultraFire {
+        0%, 100% { 
+          box-shadow: 0 0 30px rgba(124,106,255,.5), 0 0 60px rgba(124,106,255,.3), 0 0 90px rgba(124,106,255,.2);
+        }
+        25% { 
+          box-shadow: 0 0 50px rgba(124,106,255,.7), 0 0 100px rgba(124,106,255,.5), 0 0 150px rgba(124,106,255,.3);
+        }
+        50% { 
+          box-shadow: 0 0 40px rgba(124,106,255,.6), 0 0 80px rgba(124,106,255,.4), 0 0 120px rgba(124,106,255,.25);
+        }
+        75% { 
+          box-shadow: 0 0 60px rgba(124,106,255,.8), 0 0 120px rgba(124,106,255,.6), 0 0 180px rgba(124,106,255,.4);
+        }
+      }
+      
+      .explosion-particle {
+        pointer-events: none;
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+  
 </body>
 </html>

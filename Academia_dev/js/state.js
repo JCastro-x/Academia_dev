@@ -49,7 +49,7 @@ function _openIDB() {
 }
 
 // ─── Image compression ───────────────────────────────────────────
-async function compressImage(dataUrl, maxWidth = 1920, quality = 0.75) {
+async function compressImage(dataUrl, maxWidth = 1920, quality = 0.5) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -113,6 +113,114 @@ async function idbDeleteImage(key) {
     });
   } catch(e) { return false; }
 }
+
+// Limpiar imágenes no usadas de IndexedDB
+async function cleanupUnusedImages() {
+  try {
+    const db = await _openIDB();
+    const tx = db.transaction('images','readonly');
+    const store = tx.objectStore('images');
+    const request = store.getAllKeys();
+    
+    request.onsuccess = async () => {
+      const allKeys = request.result;
+      const usedKeys = new Set();
+      
+      // Recolectar claves usadas en notas
+      const semestres = State.semestres || [];
+      semestres.forEach(sem => {
+        const notes = sem.notesArray || [];
+        notes.forEach(note => {
+          // Check canvasData
+          if (note.canvasData?.startsWith('IDB:')) {
+            usedKeys.add(note.canvasData.replace('IDB:', ''));
+          }
+          // Check images
+          if (note.images) {
+            Object.values(note.images).forEach(val => {
+              if (val?.startsWith('IDB:')) {
+                usedKeys.add(val.replace('IDB:', ''));
+              }
+            });
+          }
+          // Check PDFs
+          if (note.pdfAttachments) {
+            note.pdfAttachments.forEach(pdf => {
+              if (pdf.data?.startsWith('IDB:')) {
+                usedKeys.add(pdf.data.replace('IDB:', ''));
+              }
+            });
+          }
+        });
+      });
+      
+      // Eliminar claves no usadas
+      const unusedKeys = allKeys.filter(key => !usedKeys.has(key));
+      if (unusedKeys.length > 0) {
+        const deleteTx = db.transaction('images','readwrite');
+        const deleteStore = deleteTx.objectStore('images');
+        unusedKeys.forEach(key => deleteStore.delete(key));
+        console.log(`🧹 Limpieza IndexedDB: ${unusedKeys.length} imágenes no usadas eliminadas`);
+      }
+    };
+  } catch(e) { console.warn('Error limpiando IndexedDB:', e); }
+}
+
+// Exponer globalmente para uso manual
+window.cleanupUnusedImages = cleanupUnusedImages;
+
+// ─── Modal de confirmación personalizado ─────────────────────────
+let _confirmCallback = null;
+
+function showConfirmModal(options) {
+  const modal = document.getElementById('confirm-modal');
+  const titleEl = document.getElementById('confirm-modal-title');
+  const messageEl = document.getElementById('confirm-modal-message');
+  const confirmBtn = document.getElementById('confirm-modal-confirm');
+  const cancelBtn = document.getElementById('confirm-modal-cancel');
+
+  titleEl.textContent = options.title || 'Confirmar acción';
+  messageEl.textContent = options.message || '';
+  confirmBtn.textContent = options.confirmText || 'Confirmar';
+  cancelBtn.textContent = options.cancelText || 'Cancelar';
+
+  // Estilo de botón de confirmación
+  if (options.danger) {
+    confirmBtn.classList.add('danger');
+  } else {
+    confirmBtn.classList.remove('danger');
+  }
+
+  // Mostrar modal
+  modal.classList.add('open');
+
+  return new Promise((resolve) => {
+    _confirmCallback = resolve;
+
+    cancelBtn.onclick = () => {
+      modal.classList.remove('open');
+      resolve(false);
+      _confirmCallback = null;
+    };
+
+    confirmBtn.onclick = () => {
+      modal.classList.remove('open');
+      resolve(true);
+      _confirmCallback = null;
+    };
+  });
+}
+
+// Función asíncrona para confirmaciones (para usar con await)
+window.showConfirm = function(message, options = {}) {
+  return showConfirmModal({
+    title: options.title || 'Confirmar',
+    message: message,
+    confirmText: options.confirmText || 'Confirmar',
+    cancelText: options.cancelText || 'Cancelar',
+    danger: options.danger || false
+  });
+};
 
 const DEFAULT_MATERIAS = [];
 
@@ -341,7 +449,7 @@ function saveState(keys = ['all']) {
   window._localModifiedAt = Date.now(); // marcar modificación local
   keys.forEach(k => _pendingKeys.add(k));
   clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(_flushSave, 400);
+  _saveTimer = setTimeout(_flushSave, 3000);
 }
 function _flushSave() {
   const keys = [..._pendingKeys]; _pendingKeys.clear(); _saveTimer = null;

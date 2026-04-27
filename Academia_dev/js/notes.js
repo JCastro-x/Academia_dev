@@ -3,7 +3,7 @@ function handleImportFile(input) {
   const reader = new FileReader();
   reader.onload = e => {
     const result = importData(e.target.result);
-    alert(result.msg);
+    if (typeof _appNotify === 'function') _appNotify(result.msg, result.success ? 'ok' : 'error');
     if (result.ok) {
       fillMatSels(); fillTopicMatSel(); fillPomSel();
       renderOverview(); renderMaterias(); renderGrades(); renderTasks(); renderCalendar(); updateBadge();
@@ -58,7 +58,7 @@ function applyUsacZones() {
   const get = id => parseFloat(document.getElementById('uz-'+id+'-pts')?.value) || 0;
   const getN= id => Math.max(1, parseInt(document.getElementById('uz-'+id+'-n')?.value) || 1);
   const suma = ['lab','tar','par','fin','extra'].reduce((a,z) => a + (on(z) ? get(z) : 0), 0);
-  if (suma !== 100) { alert(`La suma debe ser exactamente 100 pts (actualmente ${suma}). Ajusta los valores.`); return; }
+  if (suma !== 100) { if (typeof _appNotify === 'function') _appNotify(`La suma debe ser exactamente 100 pts (actualmente ${suma}). Ajusta los valores.`, 'warning'); return; }
 
   // Si estamos editando una clase, NO borrar las zonas ya existentes — solo agregar las nuevas.
   // Si estamos creando, limpiar y empezar de cero.
@@ -215,7 +215,7 @@ function renderHorario() {
 
 function exportHorario() {
   const container = document.getElementById('horario-table-container');
-  if (!container || !container.innerHTML.trim()) { alert('Sin horario para exportar.'); return; }
+  if (!container || !container.innerHTML.trim()) { if (typeof _appNotify === 'function') _appNotify('Sin horario para exportar.', 'warning'); return; }
   const win = window.open('','_blank','width=900,height=700');
   const semName = document.querySelector('.sem-val')?.textContent || 'Mi Horario';
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Horario</title>
@@ -494,7 +494,7 @@ function _renderNotesFolderGrid(folderId) {
         ${mat?`<div style="width:8px;height:8px;border-radius:50%;background:${mat.color};flex-shrink:0;margin-top:4px;"></div>`:''}
       </div>
       ${isDraw && note.canvasData
-        ? `<img src="${note.canvasData}" style="width:100%;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">`
+        ? `<img src="" data-canvas-key="${note.canvasData.startsWith('IDB:') ? note.canvasData.replace('IDB:', '') : ''}" data-canvas-legacy="${!note.canvasData.startsWith('IDB:') ? note.canvasData : ''}" style="width:100%;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border);" class="lazy-canvas">`
         : preview
           ? `<div style="font-size:11px;color:var(--text3);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${preview}</div>`
           : `<div style="font-size:11px;color:var(--text3);">Sin contenido</div>`
@@ -507,6 +507,30 @@ function _renderNotesFolderGrid(folderId) {
   });
   html += `</div>`;
   grid.innerHTML = html;
+
+  // Lazy load canvas images con Intersection Observer
+  const canvasObserver = new IntersectionObserver((entries) => {
+    entries.forEach(async entry => {
+      if (entry.isIntersecting) {
+        const imgEl = entry.target;
+        const canvasKey = imgEl.dataset.canvasKey;
+        const legacyData = imgEl.dataset.canvasLegacy;
+
+        if (canvasKey) {
+          const data = await idbGetImage(canvasKey);
+          if (data) imgEl.src = data;
+        } else if (legacyData) {
+          imgEl.src = legacyData;
+        }
+
+        canvasObserver.unobserve(imgEl);
+      }
+    });
+  }, { rootMargin: '50px' });
+
+  document.querySelectorAll('.lazy-canvas').forEach(img => {
+    canvasObserver.observe(img);
+  });
 }
 
 
@@ -757,8 +781,9 @@ function saveNewFolder() {
   if (_notesInHub) { _renderNotesHub(); } else { renderFoldersList(); }
 }
 
-window.deleteNotesFolder = function(folderId) {
-  if (!confirm('¿Eliminar esta carpeta de notas?')) return;
+async function deleteNotesFolder(folderId) {
+  const confirmed = await showConfirm('¿Eliminar esta carpeta de notas?', { danger: true });
+  if (!confirmed) return;
 
   const folders = _getFoldersArray();
   const index = folders.findIndex(f => f.id === folderId);
@@ -766,7 +791,6 @@ window.deleteNotesFolder = function(folderId) {
   if (index !== -1) {
     folders.splice(index, 1);
     saveState(['all']); 
-    
     // Refrescar UI
     if (_notesInHub) _renderNotesHub();
     else renderFoldersList();
@@ -876,7 +900,16 @@ function _loadNoteInProEditor(noteId) {
       const titleLbl = drawArea.querySelector('#canvas-toolbar-inline span');
       if (titleLbl) titleLbl.textContent = note.title || 'Dibujo sin título';
       const prev = document.getElementById('notes-drawing-preview');
-      if (prev) prev.src = note.canvasData || '';
+      if (prev) {
+        if (note.canvasData?.startsWith('IDB:')) {
+          const key = note.canvasData.replace('IDB:', '');
+          idbGetImage(key).then(data => {
+            if (data) prev.src = data;
+          });
+        } else {
+          prev.src = note.canvasData || '';
+        }
+      }
     }
     if (toolbar) {
       toolbar.innerHTML = `<span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);">🎨 NOTA DE DIBUJO</span>
@@ -962,20 +995,22 @@ function _showNotesEmptyState() {
 
 // ── IMAGES STRIP ──────────────────────────────────────────────
 /* ── Adjuntar imágenes desde el botón de la barra ── */
-function attachImagesToNote(files) {
+async function attachImagesToNote(files) {
   if (!files || !files.length) return;
-  if (!_currentNoteId) { alert('Selecciona o crea una nota primero.'); return; }
+  if (!_currentNoteId) { if (typeof _appNotify === 'function') _appNotify('Selecciona o crea una nota primero.', 'warning'); return; }
   const note = _getNotesArray().find(n => n.id === _currentNoteId);
   if (!note) return;
   if (!note.images) note.images = {};
 
   let loaded = 0;
-  Array.from(files).forEach(file => {
-    if (!file.type.startsWith('image/')) return;
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith('image/')) continue;
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
       const key = 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-      note.images[key] = ev.target.result;   // base64 data URL
+      // Store image in IndexedDB to avoid syncing to Supabase
+      await idbSetImage(key, ev.target.result);
+      note.images[key] = 'IDB:' + key; // placeholder reference
       note.updatedAt = Date.now();
       loaded++;
       if (loaded === files.length) {
@@ -984,7 +1019,7 @@ function attachImagesToNote(files) {
       }
     };
     reader.readAsDataURL(file);
-  });
+  }
 }
 
 function _renderImagesStrip(note) {
@@ -1048,14 +1083,32 @@ function closeLightbox() {
   if (lb) lb.classList.remove('open');
   document.body.style.overflow = '';
 }
-function deleteNoteImage(noteId, imgKey) {
+async function deleteNoteImage(noteId, imgKey) {
   const note = _getNotesArray().find(n => n.id === noteId);
   if (!note || !note.images) return;
+
+  const confirmed = await showConfirm('¿Eliminar esta imagen?', { danger: true });
+  if (!confirmed) return;
+
   const val = note.images[imgKey];
+  const deletedImageData = { imgKey, val, noteId };
+  
   if (val && val.startsWith('IDB:')) idbDeleteImage(val.slice(4));
   delete note.images[imgKey];
   saveState(['all']);
   _renderImagesStrip(note);
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast('Imagen eliminada', () => {
+      const note = _getNotesArray().find(n => n.id === noteId);
+      if (note && note.images) {
+        note.images[imgKey] = val;
+        saveState(['all']);
+        _renderImagesStrip(note);
+      }
+    });
+  }
 }
 
 // ── ADD NOTES ─────────────────────────────────────────────────
@@ -1102,18 +1155,37 @@ function addNewDrawingNote() {
   setTimeout(() => openCanvasForNote(), 120);
 }
 
-function deleteCurrentNote() {
+async function deleteCurrentNote() {
   if (!_currentNoteId) return;
-  if (!confirm('¿Eliminar esta nota?')) return;
+  const note = _getNotesArray().find(n => n.id === _currentNoteId);
+  const confirmed = await showConfirm('¿Eliminar esta nota?', { danger: true });
+  if (!confirmed) return;
   clearTimeout(_noteAutoSaveTimer);
   _noteAutoSaveTimer = null;
   const idToDelete = _currentNoteId;
+  const deletedNote = note ? { ...note } : null;
   _currentNoteId = null;
   const sem = State._activeSem;
   if (sem.notesArray) sem.notesArray = sem.notesArray.filter(n => n.id !== idToDelete);
   saveState(['all']);
   // closeNoteEditorModal now handles re-rendering the correct view
   closeNoteEditorModal();
+
+  // Show undo toast
+  if (deletedNote && typeof showUndoToast === 'function') {
+    showUndoToast(`Nota "${deletedNote.title || 'Sin título'}" eliminada`, () => {
+      const sem = State._activeSem;
+      if (sem && sem.notesArray) {
+        sem.notesArray.push(deletedNote);
+        saveState(['all']);
+        if (_notesInHub) {
+          _renderNotesHub();
+        } else {
+          _renderNotesFolderGrid(_currentFolderId);
+        }
+      }
+    });
+  }
 }
 
 // ── INPUT HANDLERS ────────────────────────────────────────────
@@ -1204,7 +1276,7 @@ function _scanSetStatus(msg, pct) {
 
 async function scanDocumentFiles(files) {
   if (!files || !files.length) return;
-  if (!_currentNoteId) { alert('Selecciona una nota primero.'); return; }
+  if (!_currentNoteId) { if (typeof _appNotify === 'function') _appNotify('Selecciona una nota primero.', 'warning'); return; }
 
   _scanCancelled = false;
   openModal('modal-scanner');
@@ -1231,7 +1303,7 @@ async function scanDocumentFiles(files) {
   if (_scanCancelled) return;
   closeModal('modal-scanner');
 
-  if (!allText.trim()) { alert('No se pudo extraer texto del documento.'); return; }
+  if (!allText.trim()) { if (typeof _appNotify === 'function') _appNotify('No se pudo extraer texto del documento.', 'warning'); return; }
 
   // Insert scanned text into current note
   const note = _getNotesArray().find(n => n.id === _currentNoteId);
@@ -1248,7 +1320,7 @@ async function scanDocumentFiles(files) {
   saveState(['all']);
   renderNotesList();
   _updateWordCount(rte ? rte.textContent : (note.content || ''));
-  alert(`✅ Texto extraído (${allText.trim().split(/\s+/).length} palabras)`);
+  if (typeof _appNotify === 'function') _appNotify(`✅ Texto extraído (${allText.trim().split(/\s+/).length} palabras)`, 'ok');
 }
 
 async function _scanPDF(file, fi, total) {
@@ -1437,13 +1509,12 @@ function _flattenImagesToCanvas() {
 function _addImageObjectToCanvas(file, x, y) {
   if (!file || !_canvas || !_ctx) return;
   const reader = new FileReader();
-  reader.onload = ev => {
+  reader.onload = async ev => {
     const img = new Image();
     img.onload = () => {
       /* Save undo snapshot before adding */
       _undoStack.push(_ctx.getImageData(0, 0, _canvas.width, _canvas.height));
       if (_undoStack.length > 20) _undoStack.shift();
-
       const maxW = Math.min(img.width, _canvas.width * 0.55);
       const scale = maxW / img.width;
       const w = img.width  * scale;
@@ -1461,115 +1532,6 @@ function _addImageObjectToCanvas(file, x, y) {
   };
   reader.readAsDataURL(file);
 } // stored before preview
-
-function expandCurrentNote() {
-  if (!_currentNoteId) return;
-  const note = _getNotesArray().find(n => n.id === _currentNoteId);
-  if (!note) return;
-
-  // Remove any existing overlay
-  const old = document.getElementById('note-expand-overlay');
-  if (old) old.remove();
-
-  const isCanvas = note.type === 'canvas';
-  const overlay  = document.createElement('div');
-  overlay.className = 'note-expand-overlay';
-  overlay.id = 'note-expand-overlay';
-
-  overlay.innerHTML = `
-    <div class="note-expand-toolbar">
-      <span class="note-expand-title">${note.title || 'Nota sin título'}</span>
-      ${!isCanvas ? `
-      <div style="display:flex;gap:3px;align-items:center;">
-        <button class="rte-btn" onclick="document.execCommand('bold')" title="Negrita"><b>B</b></button>
-        <button class="rte-btn" onclick="document.execCommand('italic')" title="Itálica"><i>I</i></button>
-        <button class="rte-btn" onclick="document.execCommand('underline')" title="Subrayado"><u>U</u></button>
-        <div class="rte-sep"></div>
-        <button class="rte-btn" onclick="document.execCommand('formatBlock',false,'h1')" title="H1" style="font-size:10px;font-weight:800;">H1</button>
-        <button class="rte-btn" onclick="document.execCommand('formatBlock',false,'h2')" title="H2" style="font-size:10px;font-weight:700;">H2</button>
-        <button class="rte-btn" onclick="document.execCommand('formatBlock',false,'h3')" title="H3" style="font-size:10px;">H3</button>
-        <button class="rte-btn" onclick="document.execCommand('formatBlock',false,'p')" title="Párrafo" style="font-size:10px;">P</button>
-      </div>
-      <span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);" id="exp-wordcount">—</span>` : ''}
-      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('note-expand-overlay').remove()" title="Cerrar pantalla completa">✕ Cerrar</button>
-    </div>
-    <div class="note-expand-body" id="exp-body">
-      ${isCanvas
-        ? `<canvas class="note-expand-canvas" id="exp-canvas"></canvas>`
-        : `<div id="exp-rte" contenteditable="true" class="notes-richtext-editor" style="flex:1;height:100%;padding:32px 10%;"></div>`
-      }
-    </div>
-    ${!isCanvas ? `<div class="notes-wordcount" id="exp-bottom" style="padding:6px 10%;"></div>` : ''}
-  `;
-  document.body.appendChild(overlay);
-
-  if (!isCanvas) {
-    const expRte = document.getElementById('exp-rte');
-    const wc   = document.getElementById('exp-wordcount');
-    const bot  = document.getElementById('exp-bottom');
-    const stored = note.content || '';
-    expRte.innerHTML = (stored.trim().startsWith('<') || /<[bhi][1-3rp][\s>]/i.test(stored))
-      ? stored : _plaintextToRteHtml(stored);
-    const sync = () => {
-      const mainRte = document.getElementById('notes-rte');
-      if (mainRte) { mainRte.innerHTML = expRte.innerHTML; onRteInput(); }
-      const words = expRte.textContent.trim() ? expRte.textContent.trim().split(/\s+/).length : 0;
-      const chars = expRte.textContent.length;
-      const wStr  = `${words} palabras · ${chars} chars`;
-      if (wc)  wc.textContent  = wStr;
-      if (bot) bot.textContent = wStr;
-    };
-    expRte.addEventListener('input', sync);
-    sync();
-    expRte.focus();
-  } else {
-    // Mirror canvas - just show a static note that canvas is separate
-    const body = document.getElementById('exp-body');
-    body.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text3);">
-      <div style="font-size:48px;">🎨</div>
-      <div style="font-size:14px;font-weight:700;color:var(--text);">${note.title || 'Canvas'}</div>
-      <div style="font-size:12px;">El canvas se edita en la ventana principal. Cierra pantalla completa para dibujar.</div>
-    </div>`;
-  }
-}
-
-function openCanvasForNote() {
-  if (!_currentNoteId) return;
-  const note = _getNotesArray().find(n => n.id === _currentNoteId);
-  const lbl  = document.getElementById('canvas-note-title-lbl');
-  if (lbl) lbl.textContent = note?.title || 'Dibujo';
-
-  document.getElementById('modal-canvas').classList.add('open');
-
-  // Init canvas after modal is visible
-  requestAnimationFrame(() => {
-    _canvas = document.getElementById('notes-canvas');
-    _canvas.width  = window.innerWidth;
-    _canvas.height = window.innerHeight - (document.getElementById('canvas-toolbar-modal')?.offsetHeight || 52);
-    _ctx = _canvas.getContext('2d');
-
-    // Dark background
-    _ctx.fillStyle = '#1a1f2e';
-    _ctx.fillRect(0, 0, _canvas.width, _canvas.height);
-
-    // Load existing drawing
-    if (note?.canvasData) {
-      const img = new Image();
-      img.onload = () => _ctx.drawImage(img, 0, 0);
-      img.src = note.canvasData;
-    }
-    _undoStack = [];
-    _shapeStart = null;
-    _shapePreviewData = null;
-    _canvasImageObjects = [];
-    _dragImg = null;
-    /* Remove old overlay if exists */
-    const oldOv = document.getElementById('canvas-img-overlay');
-    if (oldOv) oldOv.remove();
-    _canvasOverlay = null;
-    _initCanvasEvents();
-  });
-}
 
 function _canvasGetPos(e) {
   const r = _canvas.getBoundingClientRect();
@@ -1851,61 +1813,6 @@ function setCanvasTool(btn, tool) {
   }
 }
 
-function _openCanvasTextInput(x, y) {
-  if (!_canvas) return;
-  const r = _canvas.getBoundingClientRect();
-  // Remove any existing text input
-  const existing = document.getElementById('canvas-text-overlay');
-  if (existing) existing.remove();
-
-  const inp = document.createElement('textarea');
-  inp.id = 'canvas-text-overlay';
-  inp.placeholder = 'Escribe aquí...';
-  inp.style.cssText = `
-    position:fixed;
-    left:${r.left + x}px;
-    top:${r.top + y - 4}px;
-    min-width:120px; max-width:320px;
-    min-height:32px;
-    background:rgba(26,31,46,0.92);
-    color:${_canvasColor};
-    border:2px solid ${_canvasColor};
-    border-radius:6px;
-    padding:4px 8px;
-    font-size:${Math.max(14, _canvasSize * 2.5)}px;
-    font-family:'Space Mono',monospace;
-    z-index:5000;
-    resize:both;
-    outline:none;
-    line-height:1.4;
-    box-shadow:0 4px 20px rgba(0,0,0,.5);
-  `;
-
-  document.body.appendChild(inp);
-  inp.focus();
-
-  const commit = () => {
-    const text = inp.value.trim();
-    inp.remove();
-    if (!text || !_ctx) return;
-    _undoStack.push(_ctx.getImageData(0, 0, _canvas.width, _canvas.height));
-    if (_undoStack.length > 20) _undoStack.shift();
-    _ctx.font = `${Math.max(14, _canvasSize * 2.5)}px 'Space Mono', monospace`;
-    _ctx.fillStyle = _canvasColor;
-    _ctx.textBaseline = 'top';
-    // Handle multi-line
-    const lines = text.split('\n');
-    const lineH = Math.max(14, _canvasSize * 2.5) * 1.4;
-    lines.forEach((line, i) => _ctx.fillText(line, x, y + i * lineH));
-  };
-
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { inp.remove(); }
-    else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); }
-  });
-  inp.addEventListener('blur', commit, { once: true });
-}
-
 function setCanvasColor(btn, color) {
   _canvasColor = color; _canvasEraser = false;
   document.querySelectorAll('.canvas-color-btn').forEach(b => b.classList.remove('active'));
@@ -1924,9 +1831,10 @@ function toggleCanvasEraser() {
   const btn = document.getElementById('canvas-eraser-btn');
   if (btn) btn.classList.toggle('active', _canvasEraser);
 }
-function clearCanvas() {
+async function clearCanvas() {
   if (!_ctx || !_canvas) return;
-  if (!confirm('¿Limpiar todo el dibujo?')) return;
+  const confirmed = await showConfirm('¿Limpiar todo el dibujo?', { danger: true });
+  if (!confirmed) return;
   _undoStack.push(_ctx.getImageData(0, 0, _canvas.width, _canvas.height));
   _ctx.fillStyle = '#1a1f2e';
   _ctx.fillRect(0, 0, _canvas.width, _canvas.height);
@@ -1936,11 +1844,15 @@ function undoCanvas() {
   _ctx.putImageData(_undoStack.pop(), 0, 0);
 }
 
-function saveCanvasAndClose() {
+async function saveCanvasAndClose() {
   if (!_canvas || !_currentNoteId) { closeModal('modal-canvas'); return; }
   const note = _getNotesArray().find(n => n.id === _currentNoteId);
   if (note) {
-    note.canvasData  = _canvas.toDataURL('image/png');
+    const base64 = _canvas.toDataURL('image/png');
+    const canvasKey = 'canvas_' + note.id;
+    // Store canvas data in IndexedDB to avoid syncing to Supabase
+    await idbSetImage(canvasKey, base64);
+    note.canvasData = 'IDB:' + canvasKey; // placeholder reference
     note.updatedAt   = Date.now();
     // Only change type to 'draw' if the note was originally created as a drawing note (has no text content)
     // Don't override text notes' type - they can have both text AND canvas
@@ -1951,7 +1863,7 @@ function saveCanvasAndClose() {
     saveState(['all']);
     // refresh preview
     const prev = document.getElementById('notes-drawing-preview');
-    if (prev) prev.src = note.canvasData;
+    if (prev) prev.src = base64;
     renderNotesList();
     // If it's a text note, re-render the images strip to show the canvas thumbnail
     if (note.type !== 'draw') {
@@ -2119,7 +2031,7 @@ function saveEditClass() {
 
   const name = document.getElementById('ec-name').value.trim();
   const code = document.getElementById('ec-code').value.trim();
-  if (!name || !code) { alert('Nombre y código son requeridos.'); return; }
+  if (!name || !code) { if (typeof _appNotify === 'function') _appNotify('Nombre y código son requeridos.', 'warning'); return; }
 
   mat.name        = name;
   mat.code        = code;
@@ -2292,8 +2204,9 @@ function _renderOverview() {
       const extraDots  = matIds.length > 5 ? `<div class="agenda-dot-more">+${matIds.length-5}</div>` : '';
       const totalCount = dayTasks.length + dayEvents.length;
       const isSunday = d.getDay() === 0;
+      const isSaturday = d.getDay() === 6;
 
-      return `<div class="agenda-day-card${isToday?' today':''}${isSelected?' selected':''}${isSunday?' sunday':''}" onclick="openAgendaDayModal('${dStr}')" title="${isToday?'Hoy · ':''} ${d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}">
+      return `<div class="agenda-day-card${isToday?' today':''}${isSelected?' selected':''}${isSunday?' sunday':''}${isSaturday?' sunday':''}" onclick="openAgendaDayModal('${dStr}')" title="${isToday?'Hoy · ':''} ${d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'})}">
         <div class="adc-dayname">${daysFull[d.getDay()]}</div>
         <div class="adc-daynum">${d.getDate()}</div>
         <div class="adc-month">${monthNames[d.getMonth()]}</div>
@@ -2715,7 +2628,7 @@ function saveProfile() {
       grEl.textContent = `${g}, ${p.name.split(' ')[0]} `;
     }
   }
-  alert('✅ Perfil guardado correctamente');
+  if (typeof _appNotify === 'function') _appNotify('✅ Perfil guardado correctamente', 'ok');
 }
 
 function recalcProfile() {
@@ -2811,7 +2724,7 @@ function editApprovedCourse(idx) {
 
 function saveApprovedCourse() {
   const name = document.getElementById('ac-name')?.value.trim();
-  if (!name) { alert('El nombre del curso es obligatorio'); return; }
+  if (!name) { if (typeof _appNotify === 'function') _appNotify('El nombre del curso es obligatorio', 'warning'); return; }
   const data = {
     name,
     code:     document.getElementById('ac-code')?.value.trim()    || '',
@@ -2832,8 +2745,9 @@ function saveApprovedCourse() {
   renderApprovedCourses();
 }
 
-function deleteApprovedCourse(idx) {
-  if (!confirm('¿Eliminar este curso?')) return;
+async function deleteApprovedCourse(idx) {
+  const confirmed = await showConfirm('¿Eliminar este curso?', { danger: true });
+  if (!confirmed) return;
   _getApprovedCourses().splice(idx, 1);
   saveState(['all']);
   recalcProfile();

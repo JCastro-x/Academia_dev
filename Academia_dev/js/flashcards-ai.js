@@ -178,7 +178,7 @@ function loadNoteText() {
 async function generateAIFlashcards() {
   const apiKey = document.getElementById('ai-api-key')?.value?.trim();
   if (!apiKey) {
-    alert('Por favor ingresa tu API Key de Gemini');
+    if (typeof _appNotify === 'function') _appNotify('Por favor ingresa tu API Key de Gemini', 'warning');
     document.getElementById('ai-api-key').focus();
     return;
   }
@@ -188,7 +188,7 @@ async function generateAIFlashcards() {
   
   const matId = document.getElementById('ai-mat-sel')?.value;
   if (!matId) {
-    alert('Selecciona una materia destino');
+    if (typeof _appNotify === 'function') _appNotify('Selecciona una materia destino', 'warning');
     return;
   }
   
@@ -207,7 +207,7 @@ async function generateAIFlashcards() {
   }
   
   if (!materialText.trim()) {
-    alert('Por favor proporciona material de estudio (texto, archivo o nota)');
+    if (typeof _appNotify === 'function') _appNotify('Por favor proporciona material de estudio (texto, archivo o nota)', 'warning');
     return;
   }
   
@@ -220,7 +220,7 @@ async function generateAIFlashcards() {
     console.log('Calling Gemini API with text length:', materialText.length);
     const apiKey = localStorage.getItem('gemini_api_key') || '';
     if (!apiKey) {
-      alert('Por favor ingresa tu API Key de Gemini en Configuración (click en 🔧)');
+      if (typeof _appNotify === 'function') _appNotify('Por favor ingresa tu API Key de Gemini en Configuración (click en 🔧)', 'warning');
       btn.disabled = false;
       btn.textContent = '✨ Generar Flashcards';
       return;
@@ -233,9 +233,9 @@ async function generateAIFlashcards() {
     console.error('Error generating flashcards:', error);
     // Check if it's a quota exceeded error or leaked key error
     if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit') || error.message.includes('leaked')) {
-      alert('🚫 El servicio de IA no está disponible en este momento. Por favor intenta de nuevo más tarde.');
+      if (typeof _appNotify === 'function') _appNotify('🚫 El servicio de IA no está disponible en este momento. Por favor intenta de nuevo más tarde.', 'error');
     } else {
-      alert('Error: API no disponible. Por favor verifica tu conexión a internet e intenta de nuevo.');
+      if (typeof _appNotify === 'function') _appNotify('Error: API no disponible. Por favor verifica tu conexión a internet e intenta de nuevo.', 'error');
     }
     btn.disabled = false;
     btn.textContent = '✨ Generar Flashcards';
@@ -410,7 +410,7 @@ function _renderAIPreview() {
   
   if (!previewArea || !previewList) {
     console.error('Preview elements not found in DOM');
-    alert('Error: No se encontraron los elementos de vista previa. Por favor cierra y vuelve a abrir el modal.');
+    if (typeof _appNotify === 'function') _appNotify('Error: No se encontraron los elementos de vista previa. Por favor cierra y vuelve a abrir el modal.', 'error');
     return;
   }
   
@@ -452,7 +452,7 @@ function _renderAIPreview() {
 /* ── SAVE GENERATED FLASHCARDS ───────────────────────────────── */
 function saveAIFlashcards() {
   if (!_aiGeneratedCards.length) {
-    alert('No hay flashcards para guardar');
+    if (typeof _appNotify === 'function') _appNotify('No hay flashcards para guardar', 'warning');
     return;
   }
   
@@ -462,13 +462,13 @@ function saveAIFlashcards() {
   console.log('Saving flashcards:', { matId, folderId, cardsCount: _aiGeneratedCards.length });
   
   if (!matId) {
-    alert('Selecciona una materia destino');
+    if (typeof _appNotify === 'function') _appNotify('Selecciona una materia destino', 'warning');
     return;
   }
   
   const sem = typeof State !== 'undefined' ? State._activeSem : null;
   if (!sem) {
-    alert('No hay semestre activo');
+    if (typeof _appNotify === 'function') _appNotify('No hay semestre activo', 'warning');
     return;
   }
   
@@ -510,7 +510,7 @@ function saveAIFlashcards() {
   
   // Show success message before closing
   const savedCount = _aiGeneratedCards.length;
-  alert(`✅ Se guardaron ${savedCount} flashcards generadas por IA`);
+  if (typeof _appNotify === 'function') _appNotify(`✅ Se guardaron ${savedCount} flashcards generadas por IA`, 'ok');
   
   // Close modal
   closeAIGenerateModal();

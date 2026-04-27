@@ -329,16 +329,34 @@ function saveFlashcard() {
   _uiClick('save');
 }
 
-function deleteFlashcard(id) {
+async function deleteFlashcard(id) {
+  const card = _getFlashcards().find(c => c.id === id);
+  if (!card) return;
+
+  const confirmed = await showConfirm(`¿Eliminar la flashcard "${card.question}"?`, { danger: true });
+  if (!confirmed) return;
+
+  const deletedCard = { ...card };
+
   const cards = _getFlashcards().filter(c => c.id !== id);
   _saveFlashcards(cards);
   renderFlashcards();
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Flashcard "${card.question}" eliminada`, () => {
+      const cards = _getFlashcards();
+      cards.push(deletedCard);
+      _saveFlashcards(cards);
+      renderFlashcards();
+    });
+  }
 }
 
 // Create flashcard from selected note text
 function createFlashcardFromSelection() {
   const sel = window.getSelection()?.toString().trim();
-  if (!sel) { alert('Selecciona texto en la nota primero'); return; }
+  if (!sel) { if (typeof _appNotify === 'function') _appNotify('Selecciona texto en la nota primero', 'warning'); return; }
   openNewFlashcardModal();
   setTimeout(() => { document.getElementById('fc-front').value = sel; }, 50);
 }
@@ -348,7 +366,7 @@ let _studyDeck = [], _studyIdx = 0, _studyFlipped = false;
 
 function startFlashcardStudy() {
   const cards = _getFlashcards();
-  if (!cards.length) { alert('No tienes flashcards aún. ¡Crea algunas primero!'); return; }
+  if (!cards.length) { if (typeof _appNotify === 'function') _appNotify('No tienes flashcards aún. ¡Crea algunas primero!', 'warning'); return; }
   // Prioritize: overdue first, then unseen/low-score
   const now = Date.now();
   _studyDeck = [...cards].sort((a,b) => {
@@ -984,9 +1002,10 @@ function chronoSwitchPhase() {
   _chronoUpdateUI();
 }
 
-function chronoReset() {
+async function chronoReset() {
   if (chronoTotalSec > 0) {
-    if (!confirm('¿Reiniciar el cronómetro? Se perderá el tiempo acumulado.')) return;
+    const confirmed = await showConfirm('¿Reiniciar el cronómetro? Se perderá el tiempo acumulado.', { danger: true });
+    if (!confirmed) return;
   }
   chronoR = false; chronoPhase = 'work'; chronoPomLive = false; chronoPomLinked = false;
   chronoWorkSec = 0; chronoBreakSec = 0; chronoTotalSec = 0;
@@ -1002,7 +1021,7 @@ function chronoReset() {
 
 function chronoSave() {
   if (chronoTotalSec < 60) {
-    alert('Menos de 1 minuto registrado. ¡Estudia un poco más! 😄'); return;
+    if (typeof _appNotify === 'function') _appNotify('Menos de 1 minuto registrado. ¡Estudia un poco más! 😄', 'warning'); return;
   }
   chronoR = false; chronoPomLive = false;
   if (chronoI) { clearInterval(chronoI); chronoI = null; }
@@ -1029,13 +1048,13 @@ function chronoSave() {
   document.getElementById('chrono-mode-badge').textContent = 'GUARDADO';
   if (workMins >= 1) { _recordPomWeekSession(workMins); _updateStreak(); renderPomGoal(); }
   _chronoUpdateUI();
-  alert(`✅ Sesión guardada!\n📚 Efectivo: ${workMins} min\n☕ Descanso: ${breakMins} min\n⏱️ Real: ${totalMins} min\n📊 ${pct}% eficiencia`);
+  if (typeof _appNotify === 'function') _appNotify(`✅ Sesión guardada!\n📚 Efectivo: ${workMins} min\n☕ Descanso: ${breakMins} min\n⏱️ Real: ${totalMins} min\n📊 ${pct}% eficiencia`, 'ok');
 }
 
 // ═══ PDF ADJUNTO EN NOTAS — chip + visor iframe ═══
 // Los PDFs se guardan como base64 en note.pdfAttachments = [{name, data}]
 
-function loadPDFIntoNotes(filesInput) {
+async function loadPDFIntoNotes(filesInput) {
   const files = filesInput instanceof FileList
     ? Array.from(filesInput)
     : filesInput instanceof File
@@ -1043,20 +1062,23 @@ function loadPDFIntoNotes(filesInput) {
       : Array.isArray(filesInput) ? filesInput : [];
 
   if (!files.length) return;
-  if (!_currentNoteId) { alert('Selecciona o crea una nota primero.'); return; }
+  if (!_currentNoteId) { if (typeof _appNotify === 'function') _appNotify('Selecciona o crea una nota primero.', 'warning'); return; }
 
   const note = _getNotesArray().find(n => n.id === _currentNoteId);
   if (!note) return;
   if (!note.pdfAttachments) note.pdfAttachments = [];
 
   let loaded = 0;
-  files.forEach(file => {
-    if (file.type !== 'application/pdf') return;
+  for (const file of files) {
+    if (file.type !== 'application/pdf') continue;
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
       const base64 = e.target.result;
+      const pdfKey = 'pdf_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+      // Store PDF in IndexedDB to avoid syncing to Supabase
+      await idbSetImage(pdfKey, base64);
       if (!note.pdfAttachments.some(p => p.name === file.name)) {
-        note.pdfAttachments.push({ name: file.name, data: base64 });
+        note.pdfAttachments.push({ name: file.name, data: 'IDB:' + pdfKey });
       }
       loaded++;
       if (loaded === files.length) {
@@ -1066,7 +1088,7 @@ function loadPDFIntoNotes(filesInput) {
       }
     };
     reader.readAsDataURL(file);
-  });
+  }
 }
 
 function _renderPDFStrip(note) {
@@ -1101,14 +1123,28 @@ let _pdfPage     = 1;
 let _pdfRendering = false;
 let _pdfBlobUrl  = null;
 
-function openPDFModal(name, idx) {
+async function openPDFModal(name, idx) {
   const note = _getNotesArray().find(n => n.id === _currentNoteId);
   if (!note || !note.pdfAttachments) return;
   const pdf = note.pdfAttachments[idx];
   if (!pdf) return;
 
+  let base64Data;
+  if (pdf.data.startsWith('IDB:')) {
+    // Load from IndexedDB
+    const key = pdf.data.replace('IDB:', '');
+    base64Data = await idbGetImage(key);
+    if (!base64Data) {
+      if (typeof _appNotify === 'function') _appNotify('Error: PDF no encontrado en IndexedDB', 'error');
+      return;
+    }
+  } else {
+    // Legacy: direct base64
+    base64Data = pdf.data;
+  }
+
   // Convertir base64 → Uint8Array
-  const base64 = pdf.data.split(',')[1];
+  const base64 = base64Data.split(',')[1];
   const binary = atob(base64);
   const bytes  = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);

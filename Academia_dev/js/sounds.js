@@ -920,14 +920,14 @@ function _renderPomWeekStats() {
 function pomSavePartial() {
   const saved = _savePomPartialInternal({ silent: false });
   if (!saved) return;
-  alert(`✅ Sesión parcial guardada: ${saved} min de estudio`);
+  if (typeof _appNotify === 'function') _appNotify(`✅ Sesión parcial guardada: ${saved} min de estudio`, 'ok');
 }
 
 function _savePomPartialInternal({ silent = false } = {}) {
   const totalWork = pomWork();
   const elapsed = pomB ? totalWork : (totalWork - pomSL);
   if (elapsed < 60) {
-    if (!silent) alert('Debes estudiar al menos 1 minuto para guardar.');
+    if (!silent) { if (typeof _appNotify === 'function') _appNotify('Debes estudiar al menos 1 minuto para guardar.', 'warning'); }
     return null;
   }
   const mins = Math.round(elapsed / 60);
@@ -959,8 +959,9 @@ function _savePomPartialInternal({ silent = false } = {}) {
   return mins;
 }
 
-function clearPomHistory() {
-  if (!confirm('¿Limpiar historial de sesiones de hoy?')) return;
+async function clearPomHistory() {
+  const confirmed = await showConfirm('¿Limpiar historial de sesiones de hoy?');
+  if (!confirmed) return;
   _ensurePomStateContainers();
   const todayKey = _pomTodayKey();
   State.pomSessions = [];

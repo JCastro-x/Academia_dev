@@ -16,10 +16,11 @@ function createSemester(nombre, promedioObjetivo) {
   renderSemesterBadge();
 }
 
-function closeSemester(id) {
+async function closeSemester(id) {
   const s = State.semestres.find(x => x.id === id);
   if (!s) return;
-  if (!confirm(`¿Cerrar el semestre "${s.nombre}"? Quedará archivado y no podrás editarlo.`)) return;
+  const confirmed = await showConfirm(`¿Cerrar el semestre "${s.nombre}"? Quedará archivado y no podrás editarlo.`);
+  if (!confirmed) return;
   s.cerrado = true;
   s.activo  = false;
 

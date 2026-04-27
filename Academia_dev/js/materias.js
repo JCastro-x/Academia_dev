@@ -316,7 +316,7 @@ function saveSemestreModal() {
   const activar  = document.getElementById('ns-activar')?.checked ?? true;
   const prevAvg  = parseFloat(document.getElementById('ns-prev-avg')?.value)  || 0;
   const prevCred = parseFloat(document.getElementById('ns-prev-cred')?.value) || 0;
-  if (!nombre) { alert('Ingresa un nombre para el semestre.'); return; }
+  if (!nombre) { if (typeof _appNotify === 'function') _appNotify('Ingresa un nombre para el semestre.', 'warning'); return; }
 
   if (_editSemId) {
     const sem = State.semestres.find(s => s.id === _editSemId);
@@ -337,19 +337,23 @@ function saveSemestreModal() {
   renderSemesterBadge();
 }
 
-function deleteSemester(id) {
+async function deleteSemester(id) {
   const sem = State.semestres.find(s => s.id === id);
   if (!sem) return;
-  if (sem.activo) { alert('No puedes eliminar el semestre activo.'); return; }
-  if (!confirm(`¿Eliminar "${sem.nombre}" y todos sus datos? Esta acción es irreversible.`)) return;
+  if (sem.activo) { if (typeof _appNotify === 'function') _appNotify('No puedes eliminar el semestre activo.', 'warning'); return; }
+  const confirmed = await showConfirm(`¿Eliminar "${sem.nombre}" y todos sus datos? Esta acción es irreversible.`, { danger: true });
+  if (!confirmed) return;
   State.semestres = State.semestres.filter(s => s.id !== id);
   saveState(['semestres']);
   renderSemestresList();
 }
 
-function deleteClass(matId) {
+async function deleteClass(matId) {
   const mat = getMat(matId);
   if (!mat) return;
+
+  const confirmed = await showConfirm(`¿Eliminar la materia "${mat.name}"?`, { danger: true });
+  if (!confirmed) return;
 
   // Store data for undo
   const deletedData = {
@@ -427,7 +431,7 @@ function saveSemestreModal() {
   const activar  = document.getElementById('ns-activar')?.checked ?? true;
   const prevAvg  = parseFloat(document.getElementById('ns-prev-avg')?.value)  || 0;
   const prevCred = parseFloat(document.getElementById('ns-prev-cred')?.value) || 0;
-  if (!nombre) { alert('Ingresa un nombre para el semestre.'); return; }
+  if (!nombre) { if (typeof _appNotify === 'function') _appNotify('Ingresa un nombre para el semestre.', 'warning'); return; }
 
   if (_editSemId) {
     const sem = State.semestres.find(s => s.id === _editSemId);
@@ -448,19 +452,23 @@ function saveSemestreModal() {
   renderSemesterBadge();
 }
 
-function deleteSemester(id) {
+async function deleteSemester(id) {
   const sem = State.semestres.find(s => s.id === id);
   if (!sem) return;
-  if (sem.activo) { alert('No puedes eliminar el semestre activo.'); return; }
-  if (!confirm(`¿Eliminar "${sem.nombre}" y todos sus datos? Esta acción es irreversible.`)) return;
+  if (sem.activo) { if (typeof _appNotify === 'function') _appNotify('No puedes eliminar el semestre activo.', 'warning'); return; }
+  const confirmed = await showConfirm(`¿Eliminar "${sem.nombre}" y todos sus datos? Esta acción es irreversible.`, { danger: true });
+  if (!confirmed) return;
   State.semestres = State.semestres.filter(s => s.id !== id);
   saveState(['semestres']);
   renderSemestresList();
 }
 
-function deleteClass(matId) {
+async function deleteClass(matId) {
   const mat = getMat(matId);
   if (!mat) return;
+
+  const confirmed = await showConfirm(`¿Eliminar la materia "${mat.name}"?`, { danger: true });
+  if (!confirmed) return;
 
   // Store data for undo
   const deletedData = {
@@ -642,7 +650,7 @@ function removeZoneSub(zoneId, idx) {
 function saveNewClass() {
   const name = document.getElementById('nc-name').value.trim();
   const code = document.getElementById('nc-code').value.trim();
-  if (!name || !code) { alert('Ingresa nombre y código.'); return; }
+  if (!name || !code) { if (typeof _appNotify === 'function') _appNotify('Ingresa nombre y código.', 'warning'); return; }
   const credits  = document.getElementById('nc-credits').value.trim() || '3 cred';
   const hasLab   = document.getElementById('nc-haslab').checked;
   const parentId = document.getElementById('nc-parent').value || null;
@@ -668,7 +676,7 @@ function saveNewClass() {
       zones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
     }
   });
-  if (!zones.length) { alert('Agrega al menos una zona de calificación.\n\nUsa "✅ Generar Zonas" para crear las zonas de calificación.'); return; }
+  if (!zones.length) { if (typeof _appNotify === 'function') _appNotify('Agrega al menos una zona de calificación.\n\nUsa "✅ Generar Zonas" para crear las zonas de calificación.', 'warning'); return; }
 
   const newId  = 'mat_' + Date.now();
   const ncDias = Array.from(document.querySelectorAll('#nc-dias-checks input[type=checkbox]:checked')).map(cb=>cb.value).join(', ');
@@ -743,7 +751,28 @@ function saveTopic() {
     parcial:document.getElementById('tp-parcial').value, name, seen:false, comp:0, subs });
   saveState(['topics']); closeModal('modal-topic'); renderTopics();
 }
-function deleteTopic(id)  { State.topics = State.topics.filter(t=>t.id!==id); saveState(['topics']); renderTopics(); }
+async function deleteTopic(id) {
+  const topic = State.topics.find(t => t.id === id);
+  if (!topic) return;
+
+  const confirmed = await showConfirm(`¿Eliminar el tema "${topic.name}"?`, { danger: true });
+  if (!confirmed) return;
+
+  const deletedTopic = { ...topic };
+
+  State.topics = State.topics.filter(t=>t.id!==id);
+  saveState(['topics']);
+  renderTopics();
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Tema "${topic.name}" eliminado`, () => {
+      State.topics.push(deletedTopic);
+      saveState(['topics']);
+      renderTopics();
+    });
+  }
+}
 function toggleTopicSeen(id) {
   const t = State.topics.find(x=>x.id===id); if (!t) return;
   t.seen = !t.seen;
@@ -1199,7 +1228,7 @@ function saveEditClass() {
   if (!mat) return;
   const name = document.getElementById('ec-name')?.value.trim();
   const code = document.getElementById('ec-code')?.value.trim();
-  if (!name || !code) { alert('Ingresa nombre y código.'); return; }
+  if (!name || !code) { if (typeof _appNotify === 'function') _appNotify('Ingresa nombre y código.', 'warning'); return; }
 
   mat.name        = name;
   mat.code        = code;
@@ -1241,7 +1270,7 @@ if (totalPts === 0 && subs.length > 0) {
     newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
   });
 
-  if (!newZones.length) { alert('Agrega al menos una zona con nombre y puntos.'); return; }
+  if (!newZones.length) { if (typeof _appNotify === 'function') _appNotify('Agrega al menos una zona con nombre y puntos.', 'warning'); return; }
   mat.zones = [...newZones, ...labZones];
 
   getMat.bust();
@@ -1263,7 +1292,7 @@ function saveEditClassFromCreate() {
 
   const name = document.getElementById('nc-name').value.trim();
   const code = document.getElementById('nc-code').value.trim();
-  if (!name || !code) { alert('Ingresa nombre y código.'); return; }
+  if (!name || !code) { if (typeof _appNotify === 'function') _appNotify('Ingresa nombre y código.', 'warning'); return; }
 
   mat.name        = name;
   mat.code        = code;
@@ -1314,7 +1343,7 @@ function saveEditClassFromCreate() {
     newZones.push({ key, label: lbl, maxPts: totalPts, color: newColorSel, subs });
   });
 
-  if (!newZones.length) { alert('Agrega al menos una zona de calificación.'); return; }
+  if (!newZones.length) { if (typeof _appNotify === 'function') _appNotify('Agrega al menos una zona de calificación.', 'warning'); return; }
   mat.zones = [...newZones, ...labZones];
 
   getMat.bust();

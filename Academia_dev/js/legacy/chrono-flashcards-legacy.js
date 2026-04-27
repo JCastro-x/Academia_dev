@@ -108,16 +108,34 @@ function saveFlashcard() {
   _uiClick('save');
 }
 
-function deleteFlashcard(id) {
+async function deleteFlashcard(id) {
+  const card = _getFlashcards().find(c => c.id === id);
+  if (!card) return;
+
+  const confirmed = await showConfirm(`¿Eliminar la flashcard "${card.front}"?`, { danger: true });
+  if (!confirmed) return;
+
+  const deletedCard = { ...card };
+
   const cards = _getFlashcards().filter(c => c.id !== id);
   _saveFlashcards(cards);
   renderFlashcards();
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Flashcard "${card.front}" eliminada`, () => {
+      const cards = _getFlashcards();
+      cards.push(deletedCard);
+      _saveFlashcards(cards);
+      renderFlashcards();
+    });
+  }
 }
 
 // Create flashcard from selected note text
 function createFlashcardFromSelection() {
   const sel = window.getSelection()?.toString().trim();
-  if (!sel) { alert('Selecciona texto en la nota primero'); return; }
+  if (!sel) { if (typeof _appNotify === 'function') _appNotify('Selecciona texto en la nota primero', 'warning'); return; }
   openNewFlashcardModal();
   setTimeout(() => { document.getElementById('fc-front').value = sel; }, 50);
 }
@@ -127,7 +145,7 @@ let _studyDeck = [], _studyIdx = 0, _studyFlipped = false;
 
 function startFlashcardStudy() {
   const cards = _getFlashcards();
-  if (!cards.length) { alert('No tienes flashcards aún. ¡Crea algunas primero!'); return; }
+  if (!cards.length) { if (typeof _appNotify === 'function') _appNotify('No tienes flashcards aún. ¡Crea algunas primero!', 'warning'); return; }
   // Prioritize: overdue first, then unseen/low-score
   const now = Date.now();
   _studyDeck = [...cards].sort((a,b) => {

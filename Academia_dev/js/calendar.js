@@ -353,7 +353,23 @@ function saveEvent() {
   renderCalendar();
   renderOverview();
 }
-function deleteEvent(id) {
+async function deleteEvent(id) {
+  const event = State.events.find(e => e.id === id);
+  if (!event) return;
+
+  const confirmed = await showConfirm(`¿Eliminar el evento "${event.title}"?`, { danger: true });
+  if (!confirmed) return;
+
+  const deletedEvent = { ...event };
+
   State.events = State.events.filter(e => e.id !== id);
   saveState(['events']); renderCalendar(); renderOverview();
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Evento "${event.title}" eliminado`, () => {
+      State.events.push(deletedEvent);
+      saveState(['events']); renderCalendar(); renderOverview();
+    });
+  }
 }

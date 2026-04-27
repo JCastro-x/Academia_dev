@@ -194,8 +194,8 @@ function _onbPrev() {
   _showOnboardingStep(_onbStep - 1);
 }
 
-function _skipOnboarding() {
-  if (confirm('¿Saltar el tutorial? Puedes verlo de nuevo desde el menú ❓')) {
+async function _skipOnboarding() {
+  if (await showConfirm('¿Saltar el tutorial? Puedes verlo de nuevo desde el menú ❓')) {
     _finishOnboarding();
   }
 }

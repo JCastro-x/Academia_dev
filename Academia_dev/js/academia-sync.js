@@ -39,7 +39,7 @@
   // Si se proporciona localUpdatedAt, hace preflight check antes de descargar
   async function load(localUpdatedAt) {
     if (!_ready) return null;
-    
+
     // Preflight: si hay timestamp local, verificar si remoto es más reciente
     if (localUpdatedAt && typeof localUpdatedAt === 'number') {
       const remoteUpdatedAt = await getRemoteUpdatedAt();
@@ -48,7 +48,7 @@
         return null;
       }
     }
-    
+
     try {
       const { data, error } = await _getClient()
         .from('user_data')
@@ -64,7 +64,9 @@
         console.log('📭 DB.load: sin datos previos en Supabase (usuario nuevo)');
         return null;
       }
-      console.log('📥 DB.load: datos cargados desde Supabase');
+      // Log egress size
+      const dataSize = JSON.stringify({ semestres: data.semestres, settings: data.settings }).length;
+      console.log(`📥 DB.load: datos cargados desde Supabase (${Math.round(dataSize/1024)} KB egress)`);
       return {
         semestres: data.semestres || [],
         settings:  data.settings  || {},
@@ -99,6 +101,8 @@
   async function _doSave(semestres, settings) {
     if (!_ready) return;
     try {
+      // Log egress size for upload
+      const dataSize = JSON.stringify({ semestres, settings }).length;
       const { error } = await _getClient()
         .from('user_data')
         .upsert(
@@ -113,7 +117,7 @@
       if (error) {
         console.warn('⚠️ DB.save error:', error.message);
       } else {
-        console.log('☁️ DB.save: datos guardados en Supabase');
+        console.log(`☁️ DB.save: datos guardados en Supabase (${Math.round(dataSize/1024)} KB egress)`);
       }
     } catch (err) {
       console.warn('⚠️ DB.save excepción:', err.message);

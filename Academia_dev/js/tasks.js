@@ -354,9 +354,12 @@ function _updateSingleTaskProgressUI(taskId) {
     }
   });
 }
-function deleteTask(id) {
+async function deleteTask(id) {
   const task = State.tasks.find(t => t.id === id);
   if (!task) return;
+
+  const confirmed = await showConfirm(`¿Eliminar la tarea "${task.title}"?`, { danger: true });
+  if (!confirmed) return;
 
   const deletedTask = { ...task };
   
@@ -432,10 +435,11 @@ function _dateFmt(d) {
 }
 
 // ── Borrar tareas completadas (bulk) ─────────────────────────
-function deleteCompletedTasks() {
+async function deleteCompletedTasks() {
   const count = State.tasks.filter(t => t.done).length;
-  if (!count) { alert('No hay tareas completadas.'); return; }
-  if (!confirm(`¿Eliminar ${count} tarea${count > 1 ? 's' : ''} completada${count > 1 ? 's' : ''}?`)) return;
+  if (!count) { if (typeof _appNotify === 'function') _appNotify('No hay tareas completadas.', 'warning'); return; }
+  const confirmed = await showConfirm(`¿Eliminar ${count} tarea${count > 1 ? 's' : ''} completada${count > 1 ? 's' : ''}?`, { danger: true });
+  if (!confirmed) return;
   State.tasks = State.tasks.filter(t => !t.done);
   saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
 }
@@ -600,7 +604,7 @@ function _renderTasks() {
 function handleAttachmentUpload(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { alert('Máximo 5MB por archivo.'); input.value=''; return; }
+  if (file.size > 5 * 1024 * 1024) { if (typeof _appNotify === 'function') _appNotify('Máximo 5MB por archivo.', 'error'); input.value=''; return; }
   const reader = new FileReader();
   reader.onload = function(e) {
     _editAttachments.push({
@@ -628,7 +632,7 @@ function previewTaskAttachment(taskId, i) {
   if (t?.attachments?.[i]) _openAttachmentPreview(t.attachments[i]);
 }
 function _openAttachmentPreview(a) {
-  if (!a?.data) { alert('Sin datos para previsualizar.'); return; }
+  if (!a?.data) { if (typeof _appNotify === 'function') _appNotify('Sin datos para previsualizar.', 'warning'); return; }
   if (a.type === 'image') {
     const w = window.open('', '_blank');
     w.document.write('<!DOCTYPE html><html><head><title>' + a.name + '</title><style>body{margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;max-height:100vh;object-fit:contain;}</style></head><body><img src="' + a.data + '" alt="' + a.name + '"></body></html>');

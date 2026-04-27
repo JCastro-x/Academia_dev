@@ -973,7 +973,7 @@ input[type="checkbox"]:checked {
 
 #tasks-list .task-item,
 #ov-tasks-list .task-item {
-  animation: slideInRow .38s cubic-bezier(.22,.68,0,1.1) both;
+  animation: slideInRow .38s cubic-bezier(.22,.68,0,1.1) forwards;
 }
 
 /* Stagger: cada tarea entra 55ms despuÃ©s que la anterior */
