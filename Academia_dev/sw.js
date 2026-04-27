@@ -4,7 +4,7 @@
 // Compatible con PWABuilder, TWA (Play Store) y Widgets futuros
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_VERSION  = 'academia-v10';
+const CACHE_VERSION  = 'academia-v11';
 const CACHE_STATIC   = `${CACHE_VERSION}-static`;
 const CACHE_PAGES    = `${CACHE_VERSION}-pages`;
 const CACHE_ASSETS   = `${CACHE_VERSION}-assets`;
