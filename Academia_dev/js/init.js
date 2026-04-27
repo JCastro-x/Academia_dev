@@ -458,14 +458,16 @@ function continueInit(auth) {
       if (document.visibilityState === 'hidden') {
         if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
       }
+      // Deshabilitado sync al volver a la pestaña para reducir ancho de banda
       // if (document.visibilityState === 'visible') _syncFromSupabase();
     });
     window.addEventListener('pagehide', () => {
       if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
     });
+    // Deshabilitado sync al enfocar la ventana para reducir ancho de banda
     // window.addEventListener('focus', () => _syncFromSupabase());
 
-    // Sync periódico cada hora (bajo consumo, mantiene sincronización entre dispositivos)
+    // Sync periódico cada 6 horas (reducido de 1 hora para ahorrar ancho de banda)
     setInterval(() => {
       const canSync = (Date.now() - (window._localModifiedAt || 0)) > 30000;
       const db = getAcademiaDB();
@@ -473,7 +475,7 @@ function continueInit(auth) {
         _lastSync = 0;
         _syncFromSupabase();
       }
-    }, 3600000); // 1 hora en lugar de 5 minutos
+    }, 21600000); // 6 horas en lugar de 1 hora (ahorro de ancho de banda)
   }
 
   _maybeShowOnboarding();

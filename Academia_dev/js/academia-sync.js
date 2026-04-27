@@ -53,7 +53,7 @@
     try {
       // Select solo columnas necesarias
       let selectColumns = 'semestres, settings, updated_at';
-      
+
       const { data, error } = await _getClient()
         .from('user_data')
         .select(selectColumns)
@@ -68,17 +68,27 @@
         console.log('📭 DB.load: sin datos previos en Supabase (usuario nuevo)');
         return null;
       }
-      
+
       // Filtrar datos excluidos si se especificaron
       let settings = data.settings || {};
+      // Siempre excluir pomData snapshots y history por defecto para reducir ancho de banda
+      if (settings.pomData) {
+        console.log('📉 Excluyendo pomData (snapshots, history) del sync para reducir egress');
+        settings = {
+          ...settings,
+          pomData: {
+            today: settings.pomData.today || [],
+            date: settings.pomData.date,
+            goal: settings.pomData.goal || 4,
+            updatedAt: settings.pomData.updatedAt
+            // No sync history ni snapshots (son muy pesados)
+          }
+        };
+      }
       if (options.exclude && options.exclude.includes('pomData') && settings.pomData) {
-        console.log('📉 Excluyendo pomData del sync para reducir egress');
         settings = { ...settings, pomData: null };
       }
-      if (options.exclude && options.exclude.includes('snapshots') && settings.pomData?.snapshots) {
-        settings.pomData = { ...settings.pomData, snapshots: null };
-      }
-      
+
       // Log egress size
       const dataSize = JSON.stringify({ semestres: data.semestres, settings }).length;
       console.log(`📥 DB.load: datos cargados desde Supabase (${Math.round(dataSize/1024)} KB egress)`);
@@ -118,17 +128,15 @@
     try {
       // Log egress size for upload
       const dataSize = JSON.stringify({ semestres, settings }).length;
-      
-      // Si el tamaño es muy grande (>500KB), optimizar antes de enviar
-      let dataToSend = { semestres, settings };
-      if (dataSize > 500000) {
-        console.warn(`⚠️ Datos grandes (${Math.round(dataSize/1024)} KB), intentando optimizar...`);
-        // Implementar optimización básica: eliminar datos innecesarios
-        dataToSend = _optimizeData(semestres, settings);
-        const optimizedSize = JSON.stringify(dataToSend).length;
-        console.log(`✅ Optimizado: ${Math.round(dataSize/1024)} KB → ${Math.round(optimizedSize/1024)} KB`);
+
+      // SIEMPRE optimizar antes de enviar para reducir ancho de banda
+      let dataToSend = _optimizeData(semestres, settings);
+      const optimizedSize = JSON.stringify(dataToSend).length;
+      const savings = dataSize - optimizedSize;
+      if (savings > 0) {
+        console.log(`📉 Optimización de ancho de banda: ${Math.round(dataSize/1024)} KB → ${Math.round(optimizedSize/1024)} KB (ahorrados ${Math.round(savings/1024)} KB)`);
       }
-      
+
       const { error } = await _getClient()
         .from('user_data')
         .upsert(
@@ -143,8 +151,7 @@
       if (error) {
         console.warn('⚠️ DB.save error:', error.message);
       } else {
-        const finalSize = JSON.stringify(dataToSend).length;
-        console.log(`☁️ DB.save: datos guardados en Supabase (${Math.round(finalSize/1024)} KB egress)`);
+        console.log(`☁️ DB.save: datos guardados en Supabase (${Math.round(optimizedSize/1024)} KB egress)`);
       }
     } catch (err) {
       console.warn('⚠️ DB.save excepción:', err.message);
@@ -160,48 +167,48 @@
       notesArray: (sem.notesArray || []).map(note => ({
         ...note,
         // Las imágenes ya están en IndexedDB, no en el estado
-        content: note.content || ''
+        content: note.content || '',
+        // No sincronizar canvasData (referencias IDB son suficientes)
+        canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
       }))
     }));
-    
-    // Eliminar datos de pomodoro de settings si son muy grandes
+
+    // Eliminar datos de pomodoro de settings - AGRESIVO para reducir ancho de banda
     const optimizedSettings = { ...settings };
     if (optimizedSettings.pomData) {
       const pomSize = JSON.stringify(optimizedSettings.pomData).length;
-      if (pomSize > 50000) {
-        // Solo guardar datos esenciales de pomodoro (últimos 7 días + hoy)
-        const today = new Date().toDateString();
-        const history = optimizedSettings.pomData.history || {};
-        const recentHistory = {};
-        
-        // Solo guardar últimos 7 días de historial
-        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-        Object.keys(history).forEach(date => {
-          const dateTs = new Date(date).getTime();
-          if (dateTs >= sevenDaysAgo || date === today) {
-            recentHistory[date] = history[date];
-          }
-        });
-        
-        optimizedSettings.pomData = {
-          today: optimizedSettings.pomData.today || [],
-          date: today,
-          goal: optimizedSettings.pomData.goal || 4,
-          history: recentHistory,
-          // No sincronizar snapshots (son muy pesados)
-          updatedAt: optimizedSettings.pomData.updatedAt
-        };
-        console.log(`📉 Pomodoro optimizado: ${Math.round(pomSize/1024)} KB → ${Math.round(JSON.stringify(optimizedSettings.pomData).length/1024)} KB`);
-      }
+      // Siempre optimizar pomodoro, no solo si es > 50KB
+      const today = new Date().toDateString();
+      const history = optimizedSettings.pomData.history || {};
+      const recentHistory = {};
+
+      // Solo guardar últimos 3 días de historial (reducido de 7 días)
+      const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
+      Object.keys(history).forEach(date => {
+        const dateTs = new Date(date).getTime();
+        if (dateTs >= threeDaysAgo || date === today) {
+          recentHistory[date] = history[date];
+        }
+      });
+
+      optimizedSettings.pomData = {
+        today: optimizedSettings.pomData.today || [],
+        date: today,
+        goal: optimizedSettings.pomData.goal || 4,
+        history: recentHistory,
+        // NUNCA sincronizar snapshots (son muy pesados)
+        updatedAt: optimizedSettings.pomData.updatedAt
+      };
+      console.log(`📉 Pomodoro optimizado: ${Math.round(pomSize/1024)} KB → ${Math.round(JSON.stringify(optimizedSettings.pomData).length/1024)} KB`);
     }
-    
+
     return { semestres: optimizedSemestres, settings: optimizedSettings };
   }
 
-  // ── save(semestres, settings) — debounced 5000ms ────────────
+  // ── save(semestres, settings) — debounced 10000ms (aumentado para reducir syncs) ────────────
   function save(semestres, settings) {
     clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => _doSave(semestres, settings), 5000);
+    _saveTimer = setTimeout(() => _doSave(semestres, settings), 10000);
   }
 
   // ── saveNow(semestres, settings) — inmediato ────────────────
