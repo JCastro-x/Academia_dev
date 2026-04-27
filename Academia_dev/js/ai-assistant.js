@@ -8,7 +8,13 @@ let _aiChatHistory = [];
 let _aiContext = null; // { type: 'note'|'flashcard'|'file', data: ... }
 
 function _getApiKey() {
-  return localStorage.getItem('gemini_api_key') || '';
+  const key = localStorage.getItem('gemini_api_key') || '';
+  // Limpiar si se guardó el mensaje de error por error
+  if (key.includes('asistente no está disponible') || key.length < 10) {
+    localStorage.removeItem('gemini_api_key');
+    return '';
+  }
+  return key;
 }
 
 /* ── MODAL CONTROLS ─────────────────────────────────────────── */

@@ -35,9 +35,10 @@
     }
   }
 
-  // load(localUpdatedAt?) -> { semestres, settings, updatedAt } | null
+  // load(localUpdatedAt?, options?) -> { semestres, settings, updatedAt } | null
   // Si se proporciona localUpdatedAt, hace preflight check antes de descargar
-  async function load(localUpdatedAt) {
+  // options: { exclude: ['pomData', 'snapshots'] } para cargar solo datos esenciales
+  async function load(localUpdatedAt, options = {}) {
     if (!_ready) return null;
 
     // Preflight: si hay timestamp local, verificar si remoto es más reciente
@@ -50,9 +51,12 @@
     }
 
     try {
+      // Select solo columnas necesarias
+      let selectColumns = 'semestres, settings, updated_at';
+      
       const { data, error } = await _getClient()
         .from('user_data')
-        .select('semestres, settings, updated_at')
+        .select(selectColumns)
         .eq('user_id', _userId)
         .maybeSingle();           // null si no existe, sin error
 
@@ -64,12 +68,23 @@
         console.log('📭 DB.load: sin datos previos en Supabase (usuario nuevo)');
         return null;
       }
+      
+      // Filtrar datos excluidos si se especificaron
+      let settings = data.settings || {};
+      if (options.exclude && options.exclude.includes('pomData') && settings.pomData) {
+        console.log('📉 Excluyendo pomData del sync para reducir egress');
+        settings = { ...settings, pomData: null };
+      }
+      if (options.exclude && options.exclude.includes('snapshots') && settings.pomData?.snapshots) {
+        settings.pomData = { ...settings.pomData, snapshots: null };
+      }
+      
       // Log egress size
-      const dataSize = JSON.stringify({ semestres: data.semestres, settings: data.settings }).length;
+      const dataSize = JSON.stringify({ semestres: data.semestres, settings }).length;
       console.log(`📥 DB.load: datos cargados desde Supabase (${Math.round(dataSize/1024)} KB egress)`);
       return {
         semestres: data.semestres || [],
-        settings:  data.settings  || {},
+        settings:  settings,
         updatedAt: data.updated_at || null,
       };
     } catch (err) {
@@ -103,13 +118,24 @@
     try {
       // Log egress size for upload
       const dataSize = JSON.stringify({ semestres, settings }).length;
+      
+      // Si el tamaño es muy grande (>500KB), optimizar antes de enviar
+      let dataToSend = { semestres, settings };
+      if (dataSize > 500000) {
+        console.warn(`⚠️ Datos grandes (${Math.round(dataSize/1024)} KB), intentando optimizar...`);
+        // Implementar optimización básica: eliminar datos innecesarios
+        dataToSend = _optimizeData(semestres, settings);
+        const optimizedSize = JSON.stringify(dataToSend).length;
+        console.log(`✅ Optimizado: ${Math.round(dataSize/1024)} KB → ${Math.round(optimizedSize/1024)} KB`);
+      }
+      
       const { error } = await _getClient()
         .from('user_data')
         .upsert(
           {
             user_id:    _userId,
-            semestres:  semestres || [],
-            settings:   settings  || {},
+            semestres:  dataToSend.semestres || [],
+            settings:   dataToSend.settings  || {},
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'user_id' }
@@ -117,11 +143,59 @@
       if (error) {
         console.warn('⚠️ DB.save error:', error.message);
       } else {
-        console.log(`☁️ DB.save: datos guardados en Supabase (${Math.round(dataSize/1024)} KB egress)`);
+        const finalSize = JSON.stringify(dataToSend).length;
+        console.log(`☁️ DB.save: datos guardados en Supabase (${Math.round(finalSize/1024)} KB egress)`);
       }
     } catch (err) {
       console.warn('⚠️ DB.save excepción:', err.message);
     }
+  }
+
+  // ── _optimizeData(semestres, settings) ────────────────────────
+  function _optimizeData(semestres, settings) {
+    // Eliminar datos pesados que no necesitan sincronizarse
+    const optimizedSemestres = (semestres || []).map(sem => ({
+      ...sem,
+      // Eliminar datos de IndexedDB que no deben sincronizarse
+      notesArray: (sem.notesArray || []).map(note => ({
+        ...note,
+        // Las imágenes ya están en IndexedDB, no en el estado
+        content: note.content || ''
+      }))
+    }));
+    
+    // Eliminar datos de pomodoro de settings si son muy grandes
+    const optimizedSettings = { ...settings };
+    if (optimizedSettings.pomData) {
+      const pomSize = JSON.stringify(optimizedSettings.pomData).length;
+      if (pomSize > 50000) {
+        // Solo guardar datos esenciales de pomodoro (últimos 7 días + hoy)
+        const today = new Date().toDateString();
+        const history = optimizedSettings.pomData.history || {};
+        const recentHistory = {};
+        
+        // Solo guardar últimos 7 días de historial
+        const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+        Object.keys(history).forEach(date => {
+          const dateTs = new Date(date).getTime();
+          if (dateTs >= sevenDaysAgo || date === today) {
+            recentHistory[date] = history[date];
+          }
+        });
+        
+        optimizedSettings.pomData = {
+          today: optimizedSettings.pomData.today || [],
+          date: today,
+          goal: optimizedSettings.pomData.goal || 4,
+          history: recentHistory,
+          // No sincronizar snapshots (son muy pesados)
+          updatedAt: optimizedSettings.pomData.updatedAt
+        };
+        console.log(`📉 Pomodoro optimizado: ${Math.round(pomSize/1024)} KB → ${Math.round(JSON.stringify(optimizedSettings.pomData).length/1024)} KB`);
+      }
+    }
+    
+    return { semestres: optimizedSemestres, settings: optimizedSettings };
   }
 
   // ── save(semestres, settings) — debounced 5000ms ────────────

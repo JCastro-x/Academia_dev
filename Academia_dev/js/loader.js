@@ -1,7 +1,8 @@
 /**
  * loader.js — Academia
- * Carga los HTML partials de forma paralela e inyecta el DOM
- * antes de que el resto de scripts inicialice la app.
+ * Carga los HTML partials con lazy loading para reducir egress.
+ * - Critical partials (overview, modals, overlays) cargan al inicio
+ * - Other pages cargan on-demand cuando el usuario navega
  *
  * ⚠️  Requiere servidor HTTP (no funciona con file://)
  *     En local: usa Live Server, Vite, o `npx serve .`
@@ -9,9 +10,15 @@
 
 (function () {
 
-  // ── Páginas: van dentro de .content ──────────────────────────
-  var PAGE_PARTIALS = [
-    'overview',
+  // ── Critical partials: cargan al inicio ────────────────────────
+  var CRITICAL_PARTIALS = [
+    'overview',  // Página principal
+    'modals',    // Modales necesarios
+    'overlays'   // Overlays necesarios
+  ];
+
+  // ── Lazy-load partials: cargan on-demand ───────────────────────
+  var LAZY_PARTIALS = [
     'semestres',
     'perfil',
     'materias',
@@ -27,13 +34,8 @@
     'flashcards',
   ];
 
-  // ── Overlays/Modales: van directo al <body> ───────────────────
-  var BODY_PARTIALS = [
-    'modals',
-    'overlays',
-  ];
-
   var BASE = 'partials/';
+  var loadedPartials = new Set();
 
   function fetchPartial(name) {
     return fetch(BASE + name + '.html')
@@ -43,47 +45,41 @@
       });
   }
 
-  function injectAll() {
-    var content = document.getElementById('pages-content');
+  function injectPartial(name, html, isBody = false) {
+    var target = isBody ? document.body : document.getElementById('pages-content');
+    var wrapper = document.createElement('div');
+    wrapper.setAttribute('data-partial', name);
+    wrapper.innerHTML = html;
+    while (wrapper.firstChild) {
+      target.appendChild(wrapper.firstChild);
+    }
+    loadedPartials.add(name);
+    console.log('📥 Partial cargado:', name);
+  }
 
-    var allNames   = PAGE_PARTIALS.concat(BODY_PARTIALS);
-    var allFetches = allNames.map(fetchPartial);
+  function loadCriticalPartials() {
+    var content = document.getElementById('pages-content');
+    var allFetches = CRITICAL_PARTIALS.map(fetchPartial);
 
     Promise.all(allFetches)
       .then(function (htmls) {
-
         // Quitar spinner de carga
         var spinner = document.getElementById('partials-loading');
         if (spinner) spinner.remove();
 
-        // Inyectar páginas en .content
-        PAGE_PARTIALS.forEach(function (name, i) {
-          var wrapper = document.createElement('div');
-          wrapper.setAttribute('data-partial', name);
-          wrapper.innerHTML = htmls[i];
-          // Insertar el primer hijo directamente (el div.page)
-          while (wrapper.firstChild) {
-            content.appendChild(wrapper.firstChild);
-          }
-        });
+        // Inyectar overview en .content
+        injectPartial('overview', htmls[0]);
 
-        // Inyectar modales/overlays al final del body
-        var bodyOffset = PAGE_PARTIALS.length;
-        BODY_PARTIALS.forEach(function (name, i) {
-          var wrapper = document.createElement('div');
-          wrapper.setAttribute('data-partial', name);
-          wrapper.innerHTML = htmls[bodyOffset + i];
-          while (wrapper.firstChild) {
-            document.body.appendChild(wrapper.firstChild);
-          }
-        });
+        // Inyectar modales y overlays al body
+        injectPartial('modals', htmls[1], true);
+        injectPartial('overlays', htmls[2], true);
 
         // Disparar evento para que bootstrap.js sepa que el DOM está listo
         document.dispatchEvent(new Event('partials-loaded'));
-        console.log('✅ Academia — todos los partials cargados');
+        console.log('✅ Academia — partials críticos cargados (lazy loading activado)');
       })
       .catch(function (err) {
-        console.error('❌ Error cargando partials:', err);
+        console.error('❌ Error cargando partials críticos:', err);
         var spinner = document.getElementById('partials-loading');
         if (spinner) {
           spinner.innerHTML =
@@ -96,11 +92,30 @@
       });
   }
 
+  // Función pública para cargar partials on-demand
+  window.loadPartial = function(name) {
+    if (loadedPartials.has(name)) {
+      console.log('⏭️ Partial ya cargado:', name);
+      return Promise.resolve();
+    }
+    if (!LAZY_PARTIALS.includes(name) && !CRITICAL_PARTIALS.includes(name)) {
+      console.warn('⚠️ Partial no reconocido:', name);
+      return Promise.reject(new Error('Partial no reconocido'));
+    }
+
+    console.log('📥 Cargando partial on-demand:', name);
+    return fetchPartial(name).then(function(html) {
+      injectPartial(name, html, name === 'modals' || name === 'overlays');
+      // Disparar evento para que la página se inicialice
+      document.dispatchEvent(new CustomEvent('partial-loaded', { detail: { name: name } }));
+    });
+  };
+
   // Arrancar tan pronto el DOM base esté listo
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectAll);
+    document.addEventListener('DOMContentLoaded', loadCriticalPartials);
   } else {
-    injectAll();
+    loadCriticalPartials();
   }
 
 })();

@@ -10,13 +10,36 @@ function onGoPage(fn) {
   };
 }
 
-function goPage(id, el) {
+async function goPage(id, el) {
   _uiClick('nav');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  // Lazy load partial if not already loaded
   const pageEl = document.getElementById('page-' + id);
-  if (!pageEl) return;
-  pageEl.classList.add('active');
+  if (!pageEl) {
+    // Try to load the partial on-demand
+    if (typeof window.loadPartial === 'function') {
+      try {
+        await window.loadPartial(id);
+        // After loading, get the element again
+        const newPageEl = document.getElementById('page-' + id);
+        if (!newPageEl) {
+          console.error('❌ Partial cargado pero elemento no encontrado:', id);
+          return;
+        }
+      } catch (err) {
+        console.error('❌ Error cargando partial:', id, err);
+        return;
+      }
+    } else {
+      console.error('❌ loadPartial no disponible');
+      return;
+    }
+  }
+  
+  const finalPageEl = document.getElementById('page-' + id);
+  finalPageEl.classList.add('active');
   if (el) el.classList.add('active');
   _el('page-title').textContent = PAGE_TITLES[id] || id;
   closeCompPopup();
