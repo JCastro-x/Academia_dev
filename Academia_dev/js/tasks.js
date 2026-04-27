@@ -478,6 +478,7 @@ function renderTasks() {
 function _renderTasks() {
   const list = _el('tasks-list');
   if (!list) return;
+  list.classList.remove('skeleton-loading');
   const blinkDueTodayNow = _consumeDueTodayBlinkOnRender();
   const todayIso = _todayLocalISO();
 

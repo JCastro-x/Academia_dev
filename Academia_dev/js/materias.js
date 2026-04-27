@@ -13,6 +13,7 @@ function _renderMaterias() {
   const min  = parseFloat(document.getElementById('min-grade')?.value) || State.settings.minGrade;
   const grid = _el('materias-grid');
   if (!grid) return;
+  grid.classList.remove('skeleton-loading');
   const roots = State.materias.filter(m => !m.parentId);
   let html = '';
 

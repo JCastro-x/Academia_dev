@@ -171,6 +171,7 @@ function renderGrades() {
   }
 }
 function _renderGrades() {
+  _el('grades-grid')?.classList.remove('skeleton-loading');
   // If in index mode (no mat selected), render card grid
   if (!_gradesDetailMatId) {
     _renderGradeCards();

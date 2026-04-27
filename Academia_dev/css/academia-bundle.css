@@ -1876,11 +1876,14 @@ button[onclick*="enterFloatingMode"]:hover {
 
 /* La animaciÃ³n de entrada no debe afectar la opacidad final
    de tareas completadas/tachadas */
-.task-item.done,
-.task-item[data-done="true"],
-.task-item.completed {
+.task-item.done {
   opacity: .42 !important;
   animation: fadeInDone .38s ease both !important;
+}
+
+/* Protección: una tarea no completada nunca debe quedar opaca */
+.task-item:not(.done) {
+  opacity: 1 !important;
 }
 
 @keyframes fadeInDone {
@@ -1889,8 +1892,7 @@ button[onclick*="enterFloatingMode"]:hover {
 }
 
 /* El label tachado tambiÃ©n se mantiene oscuro */
-.task-item.done .task-label,
-.task-item.completed .task-label {
+.task-item.done .task-label {
   color: var(--text3) !important;
   text-decoration: line-through;
 }
@@ -2068,8 +2070,7 @@ button[onclick*="enterFloatingMode"]:hover {
   .day-chip:hover {
     transform: none !important;
   }
-  .task-item.done,
-  .task-item.completed {
+  .task-item.done {
     opacity: .38 !important;
   }
 }
