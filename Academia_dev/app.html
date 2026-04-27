@@ -130,8 +130,9 @@
         <!-- Global search -->
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
-          <input id="global-search" class="search-input-bar" type="search" placeholder="Buscar..."
-            oninput="globalSearch(this.value)" autocomplete="nope" formnovalidate data-lpignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly')">
+          <input type="password" name="fake-password-field" style="display:none" tabindex="-1" autocomplete="off">
+          <input id="global-search" class="search-input-bar" type="text" name="search-field-not-password" placeholder="Buscar..."
+            oninput="globalSearch(this.value)" autocomplete="off" formnovalidate data-lpignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly')" spellcheck="false" onmousedown="this.value=''" onmouseenter="this.setAttribute('readonly','true')" onblur="this.setAttribute('readonly','true')">
           <div id="search-results"></div>
         </div>
         <div class="date-chip" id="topbar-date"></div>

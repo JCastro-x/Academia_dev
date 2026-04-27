@@ -15,6 +15,15 @@ async function goPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   
+  // Limpiar el buscador global al navegar
+  const globalSearch = document.getElementById('global-search');
+  if (globalSearch) {
+    globalSearch.value = '';
+    globalSearch.setAttribute('readonly', 'true');
+  }
+  const searchResults = _el('search-results');
+  if (searchResults) searchResults.style.display = 'none';
+  
   // Lazy load partial if not already loaded
   const pageEl = document.getElementById('page-' + id);
   if (!pageEl) {
