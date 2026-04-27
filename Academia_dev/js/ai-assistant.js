@@ -6,7 +6,10 @@
 
 let _aiChatHistory = [];
 let _aiContext = null; // { type: 'note'|'flashcard'|'file', data: ... }
-const _aiApiKey = localStorage.getItem('gemini_api_key') || '';
+
+function _getApiKey() {
+  return localStorage.getItem('gemini_api_key') || '';
+}
 
 /* ── MODAL CONTROLS ─────────────────────────────────────────── */
 function toggleAIChat() {
@@ -226,11 +229,11 @@ async function sendAIMessage() {
     addChatMessage(response, 'ai');
   } catch (error) {
     removeTypingIndicator();
-    // Check if it's a quota exceeded error
-    if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit')) {
-      addChatMessage('🚫 El asistente no está disponible en este momento. Has alcanzado el límite diario de 20 mensajes. Por favor intenta de nuevo mañana.', 'ai');
+    // Check if it's a quota exceeded error or leaked key error
+    if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit') || error.message.includes('leaked')) {
+      addChatMessage('🚫 El asistente no está disponible en este momento. Por favor intenta de nuevo más tarde.', 'ai');
     } else {
-      addChatMessage('Error: ' + error.message, 'ai');
+      addChatMessage('Error: API no disponible. Por favor verifica tu conexión a internet.', 'ai');
     }
   }
 }
@@ -437,7 +440,7 @@ async function _handleTaskCreation(userMessage) {
   Si no puedes extraer algún campo, usa null. No incluyas texto antes o después del JSON.`;
   
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_aiApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${_getApiKey()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

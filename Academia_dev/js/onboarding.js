@@ -9,8 +9,9 @@ const _ONBOARDING_STEPS = [
     title: '¡Bienvenido a Academia Dev! 🎓',
     desc: 'Tu dashboard académico personal. Te mostramos las funciones principales en menos de 2 minutos.',
     icon: '🎓',
-    target: null, // sin highlight, pantalla completa
+    target: null,
     position: 'center',
+    action: null,
   },
   {
     title: 'Semestres & Materias 📚',
@@ -18,6 +19,7 @@ const _ONBOARDING_STEPS = [
     icon: '📚',
     target: 'nav-materias',
     position: 'right',
+    action: 'click',
   },
   {
     title: 'Tareas & Pendientes ✅',
@@ -25,6 +27,7 @@ const _ONBOARDING_STEPS = [
     icon: '✅',
     target: 'nav-tareas',
     position: 'right',
+    action: 'click',
   },
   {
     title: 'Notas 📝',
@@ -32,6 +35,7 @@ const _ONBOARDING_STEPS = [
     icon: '📝',
     target: 'nav-notas',
     position: 'right',
+    action: 'click',
   },
   {
     title: 'Calificaciones 📊',
@@ -39,6 +43,7 @@ const _ONBOARDING_STEPS = [
     icon: '📊',
     target: 'nav-calificaciones',
     position: 'right',
+    action: 'click',
   },
   {
     title: 'Pomodoro & Cronómetro ⏱',
@@ -46,13 +51,15 @@ const _ONBOARDING_STEPS = [
     icon: '⏱',
     target: 'nav-pomodoro',
     position: 'right',
+    action: 'click',
   },
   {
     title: 'Sincronización automática ☁️',
-    desc: 'Tus datos se guardan en la nube automáticamente. Puedes acceder desde tu PC, celular o cualquier dispositivo.',
+    desc: 'Tus datos se guardan en la nube automáticamente. Sync cada hora para mantener todo actualizado entre dispositivos.',
     icon: '☁️',
     target: null,
     position: 'center',
+    action: null,
   },
   {
     title: '¡Todo listo! 🚀',
@@ -61,6 +68,7 @@ const _ONBOARDING_STEPS = [
     target: null,
     position: 'center',
     isLast: true,
+    action: null,
   },
 ];
 
@@ -195,7 +203,10 @@ function _skipOnboarding() {
 function _finishOnboarding() {
   _clearOnbHighlights();
   const overlay = document.getElementById('onboarding-overlay');
-  if (overlay) overlay.remove();
+  if (overlay) {
+    overlay.classList.add('onb-exit');
+    setTimeout(() => overlay.remove(), 300);
+  }
   localStorage.setItem(_ONBOARDING_KEY, '1');
 }
 
@@ -223,3 +234,187 @@ function showTutorial() {
   _showOnboardingStep(0);
 }
 
+// ── CSS Styles Mejorados ──────────────────────────────────────────────
+const onboardingStyles = `
+<style>
+#onb-backdrop {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+  backdrop-filter:blur(2px);
+  z-index:10000;
+}
+
+#onb-card {
+  position:fixed;
+  z-index:10002;
+  background:var(--surface,#111118);
+  border:1px solid var(--border,#2a2a38);
+  border-radius:20px;
+  padding:32px;
+  width:min(380px,90vw);
+  box-shadow:0 32px 80px rgba(0,0,0,0.5);
+  animation: onbSlideIn 0.4s cubic-bezier(0.16,1,0.3,1);
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+}
+
+#onb-card.onb-exit {
+  animation: onbSlideOut 0.3s ease-in forwards;
+}
+
+.onb-progress {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+
+.onb-step-num {
+  font-size:10px;
+  color:var(--text3,#5a5a72);
+  font-family:'Space Mono',monospace;
+  letter-spacing:1px;
+}
+
+.onb-skip {
+  background:none;
+  border:none;
+  color:var(--text3,#5a5a72);
+  cursor:pointer;
+  font-size:11px;
+  padding:4px 8px;
+  border-radius:6px;
+  transition:all 0.2s;
+}
+
+.onb-skip:hover {
+  background:var(--surface2,#18181f);
+  color:var(--text,#e8e8f0);
+}
+
+.onb-dots {
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-bottom:24px;
+}
+
+.onb-dot {
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--border,#2a2a38);
+  transition:all 0.3s;
+}
+
+.onb-dot.active {
+  background:var(--accent,#7c6aff);
+  width:20px;
+  border-radius:3px;
+}
+
+.onb-icon {
+  font-size:48px;
+  text-align:center;
+  margin-bottom:16px;
+  animation: onbBounce 0.6s ease;
+}
+
+.onb-title {
+  font-size:18px;
+  font-weight:800;
+  text-align:center;
+  margin-bottom:12px;
+  color:var(--text,#e8e8f0);
+  line-height:1.3;
+}
+
+.onb-desc {
+  font-size:14px;
+  color:var(--text2,#9090a8);
+  text-align:center;
+  line-height:1.6;
+  margin-bottom:28px;
+}
+
+.onb-buttons {
+  display:flex;
+  gap:12px;
+}
+
+.onb-btn-primary {
+  flex:2;
+  padding:12px 20px;
+  background:linear-gradient(135deg,#a78bfa,#7c6aff);
+  border:none;
+  border-radius:12px;
+  color:white;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:700;
+  transition:all 0.2s;
+  box-shadow:0 4px 12px rgba(124,106,255,0.3);
+}
+
+.onb-btn-primary:hover {
+  transform:translateY(-2px);
+  box-shadow:0 6px 16px rgba(124,106,255,0.4);
+}
+
+.onb-btn-secondary {
+  flex:1;
+  padding:12px 16px;
+  background:var(--surface2,#18181f);
+  border:1px solid var(--border,#2a2a38);
+  border-radius:12px;
+  color:var(--text2,#9090a8);
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  transition:all 0.2s;
+}
+
+.onb-btn-secondary:hover {
+  background:var(--border,#2a2a38);
+  color:var(--text,#e8e8f0);
+}
+
+.onb-hint {
+  text-align:center;
+  font-size:12px;
+  color:var(--accent,#7c6aff);
+  margin-top:16px;
+  animation: onbPulse 2s infinite;
+}
+
+@keyframes onbSlideIn {
+  from { opacity:0; transform:translate(-50%,-45%) scale(0.95); }
+  to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
+}
+
+@keyframes onbSlideOut {
+  from { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  to   { opacity:0; transform:translate(-50%,-45%) scale(0.95); }
+}
+
+@keyframes onbBounce {
+  0%, 100% { transform:scale(1); }
+  50% { transform:scale(1.1); }
+}
+
+@keyframes onbPulse {
+  0%, 100% { opacity:0.7; }
+  50% { opacity:1; }
+}
+</style>
+`;
+
+// Inject styles
+if (!document.getElementById('onboarding-styles')) {
+  const styleEl = document.createElement('div');
+  styleEl.id = 'onboarding-styles';
+  styleEl.innerHTML = onboardingStyles;
+  document.head.appendChild(styleEl);
+}

@@ -196,8 +196,15 @@
 
   <!-- ─── State & Core ─── -->
   <script src="js/state.js"></script>
+  <script src="js/undo-system.js"></script>
+  <script src="js/skeleton-loading.js"></script>
   <script src="js/calificaciones.js"></script>
   <script src="js/semestres.js"></script>
+
+  <!-- ─── Módulos separados (cargar antes de ui.js) ─── -->
+  <script src="js/notes.js"></script>
+
+  <!-- ─── UI (cargar después de notes.js) ─── -->
   <script src="js/ui.js"></script>
 
   <!-- ─── Features ─── -->
@@ -206,11 +213,8 @@
   <script src="js/search.js"></script>
   <script src="js/sounds.js"></script>
   <script src="js/pomodoro.js"></script>
-
-  <!-- ─── Módulos separados ─── -->
   <script src="js/tasks.js"></script>
   <script src="js/calendar.js"></script>
-  <script src="js/notes.js"></script>
   <script src="js/chrono.js"></script>
   <script src="js/flashcards.js"></script>
   <script src="js/ai-assistant.js"></script>

@@ -218,17 +218,24 @@ async function generateAIFlashcards() {
   
   try {
     console.log('Calling Gemini API with text length:', materialText.length);
+    const apiKey = localStorage.getItem('gemini_api_key') || '';
+    if (!apiKey) {
+      alert('Por favor ingresa tu API Key de Gemini en Configuración (click en 🔧)');
+      btn.disabled = false;
+      btn.textContent = '✨ Generar Flashcards';
+      return;
+    }
     const cards = await _callGeminiAPI(apiKey, materialText, count, type, customPrompt);
     console.log('Generated cards:', cards);
     _aiGeneratedCards = cards;
     _renderAIPreview();
   } catch (error) {
     console.error('Error generating flashcards:', error);
-    // Check if it's a quota exceeded error
-    if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit')) {
-      alert('🚫 El servicio de IA no está disponible en este momento. Has alcanzado el límite diario de 20 mensajes. Por favor intenta de nuevo mañana.');
+    // Check if it's a quota exceeded error or leaked key error
+    if (error.message.includes('quota') || error.message.includes('limit') || error.message.includes('rate-limit') || error.message.includes('leaked')) {
+      alert('🚫 El servicio de IA no está disponible en este momento. Por favor intenta de nuevo más tarde.');
     } else {
-      alert('Error al generar flashcards: ' + error.message + '\n\nPor favor verifica tu conexión a internet e intenta de nuevo.');
+      alert('Error: API no disponible. Por favor verifica tu conexión a internet e intenta de nuevo.');
     }
     btn.disabled = false;
     btn.textContent = '✨ Generar Flashcards';
@@ -271,8 +278,8 @@ async function _extractPDFText(file) {
 async function _callGeminiAPI(apiKey, text, count, type, customPrompt) {
   const prompt = _buildPrompt(text, count, type, customPrompt);
   
-  // Use gemini-2.5-flash which is available and supports generateContent
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+  // Use gemini-1.5-flash which is available and supports generateContent
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

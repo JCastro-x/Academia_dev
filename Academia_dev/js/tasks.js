@@ -355,8 +355,29 @@ function _updateSingleTaskProgressUI(taskId) {
   });
 }
 function deleteTask(id) {
+  const task = State.tasks.find(t => t.id === id);
+  if (!task) return;
+
+  const deletedTask = { ...task };
+  
   State.tasks = State.tasks.filter(t => t.id !== id);
-  saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
+  saveState(['tasks']);
+  renderTasks();
+  updateBadge();
+  renderOverview();
+  renderCalendar();
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Tarea "${task.title}" eliminada`, () => {
+      State.tasks.push(deletedTask);
+      saveState(['tasks']);
+      renderTasks();
+      updateBadge();
+      renderOverview();
+      renderCalendar();
+    });
+  }
 }
 // ── Tareas repetitivas ───────────────────────────────────────
 function _generateRepeatTasks(baseTask) {
@@ -440,7 +461,16 @@ function updateBadge() {
   if (badge) { badge.style.display = urgent > 0 ? 'inline' : 'none'; badge.textContent = urgent; }
 }
 
-function renderTasks() { _schedRender(_renderTasks); }
+function renderTasks() { 
+  const list = _el('tasks-list');
+  if (list && !list.dataset.loaded) {
+    showSkeleton(list, 'list', 3);
+    list.dataset.loaded = 'true';
+    setTimeout(() => _schedRender(_renderTasks), 300);
+  } else {
+    _schedRender(_renderTasks);
+  }
+}
 function _renderTasks() {
   const list = _el('tasks-list');
   if (!list) return;

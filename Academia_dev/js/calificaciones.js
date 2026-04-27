@@ -160,7 +160,16 @@ function calcMinNeeded(matId, targetPts) {
   return { needed, remainingMax, pct: (needed / remainingMax) * 100 };
 }
 
-function renderGrades() { _schedRender(_renderGrades); }
+function renderGrades() { 
+  const grid = _el('grades-grid');
+  if (grid && !grid.dataset.loaded) {
+    showSkeleton(grid, 'grid', 4);
+    grid.dataset.loaded = 'true';
+    setTimeout(() => _schedRender(_renderGrades), 300);
+  } else {
+    _schedRender(_renderGrades);
+  }
+}
 function _renderGrades() {
   // If in index mode (no mat selected), render card grid
   if (!_gradesDetailMatId) {

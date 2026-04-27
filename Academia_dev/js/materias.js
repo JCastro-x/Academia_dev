@@ -1,5 +1,14 @@
 
-function renderMaterias() { _schedRender(_renderMaterias); }
+function renderMaterias() { 
+  const grid = _el('materias-grid');
+  if (grid && !grid.dataset.loaded) {
+    showSkeleton(grid, 'grid', 4);
+    grid.dataset.loaded = 'true';
+    setTimeout(() => _schedRender(_renderMaterias), 300);
+  } else {
+    _schedRender(_renderMaterias);
+  }
+}
 function _renderMaterias() {
   const min  = parseFloat(document.getElementById('min-grade')?.value) || State.settings.minGrade;
   const grid = _el('materias-grid');
@@ -211,8 +220,22 @@ function openConfigModal() {
   document.getElementById('cfg-prev-cred').value  = sem.prevCred || '';
   document.getElementById('cfg-min-grade').value  = State.settings.minGrade || 70;
   document.getElementById('cfg-sem-target').value = sem.promedioObjetivo || 70;
+  
+  // Load API key
+  const savedApiKey = localStorage.getItem('gemini_api_key') || '';
+  document.getElementById('cfg-api-key').value = savedApiKey;
+  
   _updateConfigPreview();
   document.getElementById('modal-config').classList.add('open');
+  
+  // Setup version click to reveal API section
+  const versionClick = document.getElementById('cfg-version-click');
+  if (versionClick) {
+    versionClick.onclick = () => {
+      const apiSection = document.getElementById('cfg-api-section');
+      apiSection.style.display = apiSection.style.display === 'none' ? 'block' : 'none';
+    };
+  }
 }
 function _updateConfigPreview() {
   const prevAvg  = parseFloat(document.getElementById('cfg-prev-avg')?.value)  || 0;
@@ -245,6 +268,13 @@ function saveConfigModal() {
   State.settings.minGrade = parseFloat(document.getElementById('cfg-min-grade').value) || 70;
   const mgEl = document.getElementById('min-grade');
   if (mgEl) mgEl.value = State.settings.minGrade;
+  
+  // Save API key
+  const apiKey = document.getElementById('cfg-api-key').value.trim();
+  if (apiKey) {
+    localStorage.setItem('gemini_api_key', apiKey);
+  }
+  
   saveState(['all']);
   closeModal('modal-config');
   renderOverview(); renderGrades(); updateGPADisplay();
@@ -319,6 +349,17 @@ function deleteSemester(id) {
 
 function deleteClass(matId) {
   const mat = getMat(matId);
+  if (!mat) return;
+
+  // Store data for undo
+  const deletedData = {
+    mat: { ...mat },
+    linkedLab: mat.linkedLabId ? getMat(mat.linkedLabId) : null,
+    grades: State.grades[matId] ? { [matId]: { ...State.grades[matId] } } : null,
+    topics: State.topics.filter(t => t.matId === matId).map(t => ({ ...t }))
+  };
+
+  // Perform delete
   if (mat.linkedLabId) {
     State.materias = State.materias.filter(m => m.id !== mat.linkedLabId);
     delete State.grades[mat.linkedLabId];
@@ -329,6 +370,139 @@ function deleteClass(matId) {
   State.topics = State.topics.filter(t => t.matId !== matId);
   saveState(['materias','grades','topics']);
   renderMaterias(); renderGrades(); renderOverview(); fillMatSels(); fillTopicMatSel(); fillPomSel();
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Materia "${mat.name}" eliminada`, () => {
+      const sem = getActiveSem();
+      if (!sem) return;
+
+      sem.materias.push(deletedData.mat);
+      if (deletedData.linkedLab) {
+        sem.materias.push(deletedData.linkedLab);
+      }
+      if (deletedData.grades) {
+        Object.assign(State.grades, deletedData.grades);
+      }
+      if (deletedData.topics) {
+        State.topics = [...State.topics, ...deletedData.topics];
+      }
+
+      saveState(['materias', 'grades', 'topics']);
+      renderMaterias(); renderGrades(); renderOverview(); fillMatSels(); fillTopicMatSel(); fillPomSel();
+    });
+  }
+}
+
+function openAddClassModal() {
+  // Asegurarse de que el modal esté en modo "crear", no "editar"
+  window._editClassMatId = null;
+  document.getElementById('ns-nombre').value    = '';
+  document.getElementById('ns-objetivo').value  = '70';
+  document.getElementById('ns-prev-avg').value  = '';
+  document.getElementById('ns-prev-cred').value = '';
+  const cb = document.getElementById('ns-activar');
+  if (cb) { cb.checked = true; cb.disabled = false; }
+  document.querySelector('#modal-semestre .modal-title').textContent = '🗂️ Nuevo Semestre';
+  document.getElementById('modal-semestre').classList.add('open');
+}
+
+function openSemestreEditModal(id) {
+  _editSemId = id;
+  const sem = State.semestres.find(s => s.id === id);
+  if (!sem) return;
+  document.getElementById('ns-nombre').value    = sem.nombre;
+  document.getElementById('ns-objetivo').value  = sem.promedioObjetivo || 70;
+  document.getElementById('ns-prev-avg').value  = sem.prevAvg  || '';
+  document.getElementById('ns-prev-cred').value = sem.prevCred || '';
+  const cb = document.getElementById('ns-activar');
+  if (cb) { cb.checked = sem.activo; cb.disabled = sem.activo; }
+  document.querySelector('#modal-semestre .modal-title').textContent = '✏️ Editar Semestre';
+  document.getElementById('modal-semestre').classList.add('open');
+}
+
+function saveSemestreModal() {
+  const nombre   = document.getElementById('ns-nombre').value.trim();
+  const objetivo = parseFloat(document.getElementById('ns-objetivo').value) || 70;
+  const activar  = document.getElementById('ns-activar')?.checked ?? true;
+  const prevAvg  = parseFloat(document.getElementById('ns-prev-avg')?.value)  || 0;
+  const prevCred = parseFloat(document.getElementById('ns-prev-cred')?.value) || 0;
+  if (!nombre) { alert('Ingresa un nombre para el semestre.'); return; }
+
+  if (_editSemId) {
+    const sem = State.semestres.find(s => s.id === _editSemId);
+    if (sem) { sem.nombre = nombre; sem.promedioObjetivo = objetivo; sem.prevAvg = prevAvg; sem.prevCred = prevCred; }
+    if (activar && !sem?.activo) switchSemester(_editSemId);
+  } else {
+    if (activar) State.semestres.forEach(s => s.activo = false);
+    const sem = _buildDefaultSemester('sem_' + Date.now(), nombre);
+    sem.promedioObjetivo = objetivo;
+    sem.prevAvg  = prevAvg;
+    sem.prevCred = prevCred;
+    sem.activo   = activar;
+    State.semestres.push(sem);
+  }
+  saveState(['semestres']);
+  closeModal('modal-semestre');
+  _refreshAllViews();
+  renderSemesterBadge();
+}
+
+function deleteSemester(id) {
+  const sem = State.semestres.find(s => s.id === id);
+  if (!sem) return;
+  if (sem.activo) { alert('No puedes eliminar el semestre activo.'); return; }
+  if (!confirm(`¿Eliminar "${sem.nombre}" y todos sus datos? Esta acción es irreversible.`)) return;
+  State.semestres = State.semestres.filter(s => s.id !== id);
+  saveState(['semestres']);
+  renderSemestresList();
+}
+
+function deleteClass(matId) {
+  const mat = getMat(matId);
+  if (!mat) return;
+
+  // Store data for undo
+  const deletedData = {
+    mat: { ...mat },
+    linkedLab: mat.linkedLabId ? getMat(mat.linkedLabId) : null,
+    grades: State.grades[matId] ? { [matId]: { ...State.grades[matId] } } : null,
+    topics: State.topics.filter(t => t.matId === matId).map(t => ({ ...t }))
+  };
+
+  // Perform delete
+  if (mat.linkedLabId) {
+    State.materias = State.materias.filter(m => m.id !== mat.linkedLabId);
+    delete State.grades[mat.linkedLabId];
+    State.topics = State.topics.filter(t => t.matId !== mat.linkedLabId);
+  }
+  State.materias = State.materias.filter(m => m.id !== matId);
+  delete State.grades[matId];
+  State.topics = State.topics.filter(t => t.matId !== matId);
+  saveState(['materias','grades','topics']);
+  renderMaterias(); renderGrades(); renderOverview(); fillMatSels(); fillTopicMatSel(); fillPomSel();
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast(`Materia "${mat.name}" eliminada`, () => {
+      const sem = getActiveSem();
+      if (!sem) return;
+
+      sem.materias.push(deletedData.mat);
+      if (deletedData.linkedLab) {
+        sem.materias.push(deletedData.linkedLab);
+      }
+      if (deletedData.grades) {
+        Object.assign(State.grades, deletedData.grades);
+      }
+      if (deletedData.topics) {
+        State.topics = [...State.topics, ...deletedData.topics];
+      }
+
+      saveState(['materias', 'grades', 'topics']);
+      renderMaterias(); renderGrades(); renderOverview(); fillMatSels(); fillTopicMatSel(); fillPomSel();
+    });
+  }
 }
 
 function openAddClassModal() {

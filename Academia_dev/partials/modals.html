@@ -18,7 +18,7 @@
       <div class="form-group"><label class="form-label">Título *</label>
         <input type="text" class="form-input" id="t-title" placeholder="Ej: Ejercicios cap.3 — Límites" autocomplete="off"></div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="t-mat"></select></div>
+        <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="t-mat" autocomplete="off"></select></div>
         <div class="form-group"><label class="form-label">Tipo</label>
           <select class="form-select" id="t-type">
             <option>Tarea</option><option>Parcial</option><option>Lab</option><option>Proyecto</option>
@@ -70,9 +70,9 @@
         </div>
       </div>
       <div class="form-group"><label class="form-label">🏷 Tags (separados por coma)</label>
-        <input type="text" class="form-input" id="t-tags" placeholder="ej: parcial, urgente, lab"></div>
+        <input type="text" class="form-input" id="t-tags" placeholder="ej: parcial, urgente, lab" autocomplete="off"></div>
       <div class="form-group"><label class="form-label">Descripción / Notas</label>
-        <textarea class="form-textarea" id="t-notes" rows="3" placeholder="Detalles adicionales, instrucciones..."></textarea></div>
+        <textarea class="form-textarea" id="t-notes" rows="3" placeholder="Detalles adicionales, instrucciones..." autocomplete="off"></textarea></div>
 
       <!-- Repetición -->
       <div class="form-group">
@@ -151,9 +151,9 @@
     <div class="modal-close" onclick="closeModal('modal-event')">✕</div>
     <div class="modal-title">📅 Nuevo Evento / Parcial</div>
     <div class="form-group"><label class="form-label">Título</label>
-      <input type="text" class="form-input" id="ev-title" placeholder="Ej: Parcial 1 — Física I"></div>
+      <input type="text" class="form-input" id="ev-title" placeholder="Ej: Parcial 1 — Física I" autocomplete="off"></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="ev-mat"></select></div>
+      <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="ev-mat" autocomplete="off"></select></div>
       <div class="form-group"><label class="form-label">Tipo</label>
         <select class="form-select" id="ev-type">
           <option>Parcial</option><option>Lab</option><option>Entrega</option><option>Taller</option>
@@ -167,7 +167,7 @@
       <div class="form-group"><label class="form-label">🕕 Hora fin</label><input type="time" class="form-input" id="ev-time-end"></div>
     </div>
     <div class="form-group"><label class="form-label">Descripción</label>
-      <input type="text" class="form-input" id="ev-desc" placeholder="Ej: Capítulos 1-4, traer calculadora"></div>
+      <input type="text" class="form-input" id="ev-desc" placeholder="Ej: Capítulos 1-4, traer calculadora" autocomplete="off"></div>
     <div class="form-actions">
       <button class="btn btn-ghost" onclick="closeModal('modal-event')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveEvent()">💾 Guardar</button>
@@ -199,7 +199,7 @@
         </select></div>
     </div>
     <div class="form-group"><label class="form-label">Nombre del tema</label>
-      <input type="text" class="form-input" id="tp-name" placeholder="Ej: Derivadas — Regla de la cadena"></div>
+      <input type="text" class="form-input" id="tp-name" placeholder="Ej: Derivadas — Regla de la cadena" autocomplete="off"></div>
     <div class="form-group">
       <label class="form-label">Subtemas (uno por línea) <span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;">→ marcar como visto activa el repaso</span></label>
       <textarea class="form-textarea" id="tp-subs" rows="3" placeholder="Derivada implícita&#10;Derivadas de orden superior&#10;Regla de la cadena"></textarea></div>
@@ -227,13 +227,13 @@
     <div class="modal-title">📚 Nueva Clase</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Nombre de la clase *</label>
-        <input type="text" class="form-input" id="nc-name" placeholder="Ej: Física I"></div>
+        <input type="text" class="form-input" id="nc-name" placeholder="Ej: Física I" autocomplete="off"></div>
       <div class="form-group"><label class="form-label">Código *</label>
-        <input type="text" class="form-input" id="nc-code" placeholder="Ej: FIS-1"></div>
+        <input type="text" class="form-input" id="nc-code" placeholder="Ej: FIS-1" autocomplete="off"></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Créditos</label>
-        <input type="text" class="form-input" id="nc-credits" placeholder="Ej: 3 cred"></div>
+        <input type="text" class="form-input" id="nc-credits" placeholder="Ej: 3 cred" autocomplete="off"></div>
       <div class="form-group"><label class="form-label">Icono</label>
         <div class="icon-picker" id="icon-picker">
           <div class="icon-opt selected" data-icon="📚" onclick="selectIcon(this)">📚</div>
@@ -279,9 +279,9 @@
         <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Las notas del lab se reflejarán automáticamente en esta clase magistral.</div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Nombre del lab</label>
-            <input type="text" class="form-input" id="nc-lab-name" placeholder="Ej: Lab. Física I"></div>
+            <input type="text" class="form-input" id="nc-lab-name" placeholder="Ej: Lab. Física I" autocomplete="off"></div>
           <div class="form-group"><label class="form-label">Código del lab</label>
-            <input type="text" class="form-input" id="nc-lab-code" placeholder="Ej: FIS-1L"></div>
+            <input type="text" class="form-input" id="nc-lab-code" placeholder="Ej: FIS-1L" autocomplete="off"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Puntos máx en la clase magistral</label>
@@ -310,9 +310,9 @@
       <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏛️ Datos del Curso</div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Sección</label>
-          <input type="text" class="form-input" id="nc-seccion" placeholder="Ej: A, B, N+"></div>
+          <input type="text" class="form-input" id="nc-seccion" placeholder="Ej: A, B, N+" autocomplete="off"></div>
         <div class="form-group"><label class="form-label">Nombre del Catedrático</label>
-          <input type="text" class="form-input" id="nc-catedratico" placeholder="Ej: Ing. Pérez García"></div>
+          <input type="text" class="form-input" id="nc-catedratico" placeholder="Ej: Ing. Pérez García" autocomplete="off"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Días de clase</label>
@@ -348,7 +348,7 @@
           </div>
           <input type="hidden" id="nc-dias"></div>
         <div class="form-group"><label class="form-label">Horario</label>
-          <input type="text" class="form-input" id="nc-horario" placeholder="Ej: 07:00–09:00"></div>
+          <input type="text" class="form-input" id="nc-horario" placeholder="Ej: 07:00–09:00" autocomplete="off"></div>
       </div>
     </div>
 
@@ -415,8 +415,8 @@
           <span>➕ Zona extra</span>
         </label>
         <div class="usac-zone-ctrl" id="uzc-extra" style="display:none;">
-          <input type="text" class="form-input" id="uz-extra-name" placeholder="Nombre" style="width:110px;font-size:12px;">
-          <input type="number" class="form-input usac-pts-inp" id="uz-extra-pts" value="5" min="1" max="99" oninput="updateUsacSuma()" style="width:68px;">
+          <input type="text" class="form-input" id="uz-extra-name" placeholder="Nombre" style="width:110px;font-size:12px;" autocomplete="off">
+          <input type="number" class="form-input usac-pts-inp" id="uz-extra-pts" value="5" min="1" max="99" oninput="updateUsacSuma()" style="width:68px;" autocomplete="off">
           <span style="font-size:11px;color:var(--text3);">pts</span>
         </div>
       </div>
@@ -467,7 +467,7 @@
     </div>
     <div class="form-group">
       <label class="form-label">🏷 Tags (separados por coma)</label>
-      <input type="text" class="form-input" id="fc-tags" placeholder="ej: parcial1, definicion, formula">
+      <input type="text" class="form-input" id="fc-tags" placeholder="ej: parcial1, definicion, formula" autocomplete="off">
     </div>
     <div class="form-actions" style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px;">
       <button class="btn btn-ghost" onclick="closeModal('modal-flashcard')">Cancelar</button>
@@ -506,7 +506,7 @@
     <div class="search-wrap" style="position:relative;margin-bottom:16px;">
       <span class="search-icon" style="left:10px;top:50%;transform:translateY(-50%);position:absolute;">🔍</span>
       <input type="text" class="form-input" id="notes-search-inp" placeholder="Busca en títulos y contenido de tus notas..."
-        style="padding-left:34px;font-size:14px;" oninput="renderNotesSearchResults()" autofocus>
+        style="padding-left:34px;font-size:14px;" oninput="renderNotesSearchResults()" autofocus autocomplete="off">
     </div>
     <div id="notes-search-results" style="max-height:400px;overflow-y:auto;"></div>
   </div>
@@ -545,13 +545,13 @@
     <div class="modal-title" id="editclass-title">✏️ Editar Clase</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Nombre de la clase *</label>
-        <input type="text" class="form-input" id="ec-name" placeholder="Ej: Física I"></div>
+        <input type="text" class="form-input" id="ec-name" placeholder="Ej: Física I" autocomplete="off"></div>
       <div class="form-group"><label class="form-label">Código *</label>
-        <input type="text" class="form-input" id="ec-code" placeholder="Ej: FIS-1"></div>
+        <input type="text" class="form-input" id="ec-code" placeholder="Ej: FIS-1" autocomplete="off"></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Créditos</label>
-        <input type="text" class="form-input" id="ec-credits" placeholder="Ej: 3 cred"></div>
+        <input type="number" class="form-input" id="ec-credits" placeholder="Ej: 3 cred" autocomplete="off"></div>
       <div class="form-group"><label class="form-label">Icono</label>
         <div class="icon-picker" id="ec-icon-picker">
           <div class="icon-opt selected" data-icon="📚" onclick="ecSelectIcon(this)">📚</div>
@@ -586,9 +586,9 @@
       <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;">🏛️ Datos del Curso</div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Sección</label>
-          <input type="text" class="form-input" id="ec-seccion" placeholder="Ej: A, B, N+"></div>
+          <input type="text" class="form-input" id="ec-seccion" placeholder="Ej: A, B, N+" autocomplete="off"></div>
         <div class="form-group"><label class="form-label">Nombre del Catedrático</label>
-          <input type="text" class="form-input" id="ec-catedratico" placeholder="Ej: Ing. Pérez García"></div>
+          <input type="text" class="form-input" id="ec-catedratico" placeholder="Ej: Ing. Pérez García" autocomplete="off"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Días de clase</label>
@@ -624,7 +624,7 @@
           </div>
           <input type="hidden" id="ec-dias"></div>
         <div class="form-group"><label class="form-label">Horario</label>
-          <input type="text" class="form-input" id="ec-horario" placeholder="Ej: 07:00–09:00"></div>
+          <input type="text" class="form-input" id="ec-horario" placeholder="Ej: 07:00–09:00" autocomplete="off"></div>
       </div>
     </div>
     <!-- Zones Distribution Editor -->
@@ -662,7 +662,7 @@
     <div class="modal-title" id="sem-modal-title">🗂️ Nuevo Semestre</div>
     <div class="form-group">
       <label class="form-label">Nombre del semestre *</label>
-      <input type="text" class="form-input" id="ns-nombre" placeholder="Ej: 2do Año · 1er Sem">
+      <input type="text" class="form-input" id="ns-nombre" placeholder="Ej: 2do Año · 1er Sem" autocomplete="off">
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -710,12 +710,12 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">📈 Promedio Acumulado Previo</label>
-          <input type="number" class="form-input" id="cfg-prev-avg" placeholder="Ej: 75.5" min="0" max="100" step="0.01">
+          <input type="number" class="form-input" id="cfg-prev-avg" placeholder="Ej: 75.5" min="0" max="100" step="0.01" autocomplete="off">
           <div style="font-size:10px;color:var(--text3);margin-top:3px;">Deja vacío si es tu primer semestre</div>
         </div>
         <div class="form-group">
           <label class="form-label">🪙 Créditos Aprobados Previos</label>
-          <input type="number" class="form-input" id="cfg-prev-cred" placeholder="Ej: 32" min="0" step="1">
+          <input type="number" class="form-input" id="cfg-prev-cred" placeholder="Ej: 32" min="0" step="1" autocomplete="off">
           <div style="font-size:10px;color:var(--text3);margin-top:3px;">Total acumulado antes de este semestre</div>
         </div>
       </div>
@@ -726,11 +726,11 @@
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Nota mínima de aprobación (pts)</label>
-          <input type="number" class="form-input" id="cfg-min-grade" placeholder="70" min="0" max="100">
+          <input type="number" class="form-input" id="cfg-min-grade" placeholder="70" min="0" max="100" autocomplete="off">
         </div>
         <div class="form-group">
           <label class="form-label">🎯 Promedio objetivo del semestre</label>
-          <input type="number" class="form-input" id="cfg-sem-target" placeholder="Ej: 80" min="0" max="100" step="0.1">
+          <input type="number" class="form-input" id="cfg-sem-target" placeholder="Ej: 80" min="0" max="100" step="0.1" autocomplete="off">
         </div>
       </div>
     </div>
@@ -765,6 +765,16 @@
       </div>
     </div>
 
+    <!-- API Key (oculto - revelar al hacer click en versión) -->
+    <div class="cfg-section" id="cfg-api-section" style="display:none;margin-top:4px;">
+      <div class="cfg-section-title">🔑 API Key (Solo Desarrollador)</div>
+      <div class="form-group">
+        <label class="form-label">Gemini API Key</label>
+        <input type="password" class="form-input" id="cfg-api-key" placeholder="AIzaSy..." autocomplete="off">
+        <div style="font-size:10px;color:var(--text3);margin-top:3px;">API key para funciones de IA (chat, flashcards)</div>
+      </div>
+    </div>
+
     <!-- LOGOUT BUTTON -->
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
       <button onclick="handleLogout()" class="btn btn-danger" style="width: 100%; background: #f87171; margin-top: 16px;">
@@ -772,6 +782,7 @@
       </button>
       <p style="font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px;">
         Versión 1.0 — Google OAuth + Responsive
+        <span id="cfg-version-click" style="cursor:pointer;opacity:0.5;margin-left:8px;">🔧</span>
       </p>
     </div>
 

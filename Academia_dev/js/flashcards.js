@@ -306,10 +306,26 @@ function closeFlashcardModal() {
 function deleteFlashcard(cardId, btn) {
   if (!btn || btn.dataset.confirming === '1') {
     // Sin botón O segunda pulsación → borrar
+    const card = fcGetCards().find(c => c.id === cardId);
+    if (!card) return;
+
+    const deletedCard = { ...card };
+
     if (btn) { clearTimeout(btn._fcTimer); btn.dataset.confirming = ''; }
     fcSetCards(fcGetCards().filter(c => c.id !== cardId));
     _fcRefresh(); updateFcHeaderStats();
     if (typeof _uiClick === 'function') _uiClick('delete');
+
+    // Show undo toast
+    if (typeof showUndoToast === 'function') {
+      showUndoToast(`Flashcard eliminada`, () => {
+        const cards = fcGetCards();
+        cards.push(deletedCard);
+        fcSetCards(cards);
+        _fcRefresh();
+        updateFcHeaderStats();
+      });
+    }
     return;
   }
   // Primera pulsación — mostrar confirmación
