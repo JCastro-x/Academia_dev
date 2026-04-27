@@ -88,11 +88,19 @@ let prueba12;
   }
 
   // ── Check auth ───────────────────────────────────────────────
-  async function checkAuth() {
+  async function checkAuth(timeoutMs = 5000) {
     try {
       if (!supabaseClient) initSupabase();
       if (!supabaseClient) return null;
-      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      
+      // Add timeout for offline scenarios
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Auth timeout')), timeoutMs);
+      });
+      
+      const authPromise = supabaseClient.auth.getSession();
+      const { data: { session }, error } = await Promise.race([authPromise, timeoutPromise]);
+      
       if (error || !session?.user) return null;
       return {
         user:  session.user,
@@ -101,6 +109,10 @@ let prueba12;
         name:  session.user.user_metadata?.full_name || session.user.email?.split('@')[0]
       };
     } catch (err) {
+      // If timeout or network error, return null to trigger offline fallback
+      if (err.message === 'Auth timeout' || !navigator.onLine) {
+        console.warn('⚠️ Auth check timed out or offline - will use cached data if available');
+      }
       return null;
     }
   }

@@ -357,6 +357,11 @@ function continueInit(auth) {
     let _lastRemoteUpdatedAt = 0;
     let _lastRemoteCheckAt = 0;
 
+    // Sync al cargar la página (incluye restauración de pestañas)
+    window.addEventListener('load', () => {
+      setTimeout(() => _syncFromSupabase(true), 1000);
+    });
+
     async function _syncFromSupabase(force = false) {
       const db = getAcademiaDB();
       if (!db || !db._ready) return;
@@ -451,13 +456,14 @@ function continueInit(auth) {
       if (document.visibilityState === 'hidden') {
         if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
       }
-      if (document.visibilityState === 'visible') _syncFromSupabase();
+      // if (document.visibilityState === 'visible') _syncFromSupabase();
     });
     window.addEventListener('pagehide', () => {
       if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
     });
-    window.addEventListener('focus', () => _syncFromSupabase());
+    // window.addEventListener('focus', () => _syncFromSupabase());
 
+    // Sync periódico cada hora (bajo consumo, mantiene sincronización entre dispositivos)
     setInterval(() => {
       const canSync = (Date.now() - (window._localModifiedAt || 0)) > 30000;
       const db = getAcademiaDB();
@@ -465,7 +471,7 @@ function continueInit(auth) {
         _lastSync = 0;
         _syncFromSupabase();
       }
-    }, 300000); // 5 minutos en lugar de 90s
+    }, 3600000); // 1 hora en lugar de 5 minutos
   }
 
   _maybeShowOnboarding();
