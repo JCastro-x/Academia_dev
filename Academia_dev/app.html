@@ -130,8 +130,8 @@
         <!-- Global search -->
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
-          <input id="global-search" class="search-input-bar" type="text" placeholder="Buscar..."
-            oninput="globalSearch(this.value)" autocomplete="off" formnovalidate data-lpignore="true" data-form-type="other">
+          <input id="global-search" class="search-input-bar" type="search" placeholder="Buscar..."
+            oninput="globalSearch(this.value)" autocomplete="nope" formnovalidate data-lpignore="true" data-form-type="other" readonly onfocus="this.removeAttribute('readonly')">
           <div id="search-results"></div>
         </div>
         <div class="date-chip" id="topbar-date"></div>
