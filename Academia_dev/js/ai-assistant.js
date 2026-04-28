@@ -18,7 +18,13 @@ function _getApiKey() {
 }
 
 function _checkApiKey() {
-  // Ahora usamos el proxy, no necesitamos API key del usuario
+  const key = _getApiKey();
+  if (!key) {
+    addSystemMessage('⚠️ Para usar el asistente, necesitas configurar tu API Key de Gemini.');
+    addSystemMessage('🔧 Ve a Configuración (click en ⚙️) y agrega tu API Key de Gemini.');
+    addSystemMessage('📝 Obtén tu API Key gratis en: https://makersuite.google.com/app/apikey');
+    return false;
+  }
   return true;
 }
 
@@ -404,19 +410,23 @@ INSTRUCCIONES DE RESPUESTA:
 - Sé CONCISO: máximo 3-4 oraciones o 80-100 palabras
 - Ve directo al punto con energía ⚡`;
   
-  // Usar proxy en desarrollo, API directa en producción
-  const PROXY_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:3001/api/chat' 
-    : 'https://tu-proxy-production.com/api/chat'; // Reemplaza con tu URL de producción
-
-  const response = await fetch(PROXY_URL, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_getApiKey()}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      message: userMessage,
-      context: contextPrompt
+      contents: [{
+        parts: [{
+          text: fullPrompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 2048,
+      }
     })
   });
 

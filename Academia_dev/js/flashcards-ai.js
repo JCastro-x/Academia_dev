@@ -218,8 +218,14 @@ async function generateAIFlashcards() {
   
   try {
     console.log('Calling Gemini API with text length:', materialText.length);
-    // Ya no necesitamos API key - usamos el proxy
-    const cards = await _callGeminiAPI(null, materialText, count, type, customPrompt);
+    const apiKey = localStorage.getItem('gemini_api_key') || '';
+    if (!apiKey) {
+      if (typeof _appNotify === 'function') _appNotify('Por favor ingresa tu API Key de Gemini en Configuración (click en 🔧)', 'warning');
+      btn.disabled = false;
+      btn.textContent = '✨ Generar Flashcards';
+      return;
+    }
+    const cards = await _callGeminiAPI(apiKey, materialText, count, type, customPrompt);
     console.log('Generated cards:', cards);
     _aiGeneratedCards = cards;
     _renderAIPreview();
@@ -272,38 +278,36 @@ async function _extractPDFText(file) {
 async function _callGeminiAPI(apiKey, text, count, type, customPrompt) {
   const prompt = _buildPrompt(text, count, type, customPrompt);
   
-  // Usar proxy en desarrollo, API directa en producción
-  const PROXY_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:3001/api/flashcards' 
-    : 'https://tu-proxy-production.com/api/flashcards'; // Reemplaza con tu URL de producción
-
-  const response = await fetch(PROXY_URL, {
+  // Use gemini-1.5-flash which is available and supports generateContent
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      material: text,
-      materia: customPrompt || 'General',
-      count: count,
-      type: type
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 8192,
+      }
     })
   });
   
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Error en el servicio de flashcards');
+    throw new Error(error.error?.message || 'Error en la API de Gemini');
   }
   
   const data = await response.json();
+  const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   
-  // Si el proxy devuelve flashcards directamente
-  if (data.flashcards && Array.isArray(data.flashcards)) {
-    return data.flashcards;
-  }
-  
-  // Fallback: parsear respuesta de Gemini
-  const generatedText = data.response || '';
+  // Parse JSON from response
   return _parseGeminiResponse(generatedText, type);
 }
 
