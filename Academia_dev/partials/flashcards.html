@@ -16,9 +16,7 @@
           </div>
         </div>
         <div class="fc-header-actions">
-          <button class="btn btn-ghost" onclick="openAIGenerateModal()" style="border-color:rgba(124,106,255,.4);color:var(--accent2);">
-            ✨ <span class="hide-mobile">Generar con IA</span>
-          </button>
+          <!-- AI Generation Disabled -->
           <button class="btn btn-primary" onclick="openAddFlashcardModal()">
             ➕ <span class="hide-mobile">Nueva Tarjeta</span>
           </button>
@@ -65,9 +63,7 @@
           </div>
         </div>
         <div class="fc-header-actions">
-          <button class="btn btn-ghost" onclick="openAIGenerateModal()" style="border-color:rgba(124,106,255,.4);color:var(--accent2);">
-            ✨ <span class="hide-mobile">Generar con IA</span>
-          </button>
+          <!-- AI Generation Disabled -->
           <button class="btn btn-ghost" onclick="openCreateFolderModal()">
             📁 <span class="hide-mobile">Nueva Carpeta</span>
           </button>
@@ -94,9 +90,7 @@
           </div>
         </div>
         <div class="fc-header-actions">
-          <button class="btn btn-ghost" onclick="openAIGenerateModal()" style="border-color:rgba(124,106,255,.4);color:var(--accent2);">
-            ✨ <span class="hide-mobile">Generar con IA</span>
-          </button>
+          <!-- AI Generation Disabled -->
           <button class="btn btn-ghost" id="fc-study-btn-header" onclick="enterStudyMode()" style="display:none;">
             📖 <span class="hide-mobile">Modo Estudio</span>
           </button>
@@ -288,108 +282,7 @@
   </div>
 </div>
 
-<!-- ═══ MODAL: Generar con IA ═══ -->
-<div id="modal-ai-generate" class="modal-overlay">
-  <div class="modal" style="max-width:640px;width:96vw;max-height:85vh;overflow-y:auto;display:flex;flex-direction:column;">
-    <div class="modal-title">
-      <span>✨ Generar Flashcards con IA</span>
-      <button class="modal-close" onclick="closeAIGenerateModal()">✕</button>
-    </div>
-
-    <!-- API Key (hidden - uses default) -->
-    <div style="display:none;">
-      <input type="text" id="ai-api-key" class="fc-input" autocomplete="off">
-    </div>
-
-    <!-- Material Source -->
-    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
-      <label class="fc-label">Material de estudio</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('ai-file-input').click()" style="flex:1;">
-          📁 Subir archivo (PDF/TXT/IMG)
-        </button>
-        <input type="file" id="ai-file-input" multiple accept=".pdf,.txt,image/*" style="display:none;" onchange="handleAIFileSelect(this)">
-        <button class="btn btn-sm btn-ghost" onclick="toggleAIPasteArea()" style="flex:1;">
-          📋 Pegar texto
-        </button>
-      </div>
-      <div id="ai-file-list" style="margin-top:8px;font-size:11px;color:var(--text3);"></div>
-    </div>
-
-    <!-- Paste Text Area (hidden by default) -->
-    <div id="ai-paste-area" style="display:none;margin-bottom:14px;">
-      <label class="fc-label">Texto del material</label>
-      <textarea id="ai-text-input" class="fc-input" rows="6" placeholder="Pega aquí el texto del que quieres generar flashcards..." autocomplete="off"></textarea>
-    </div>
-
-    <!-- Select Note Source -->
-    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
-      <label class="fc-label">O usa una nota existente</label>
-      <select id="ai-note-sel" class="fc-input" onchange="loadNoteText()">
-        <option value="">— Selecciona una nota —</option>
-      </select>
-    </div>
-
-    <!-- Destination -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label class="fc-label">Materia destino <span style="color:var(--red,#f87171);">*</span></label>
-        <select id="ai-mat-sel" class="fc-input" onchange="updateAIFolderSelect()">
-          <option value="">— Selecciona —</option>
-        </select>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label class="fc-label">Carpeta destino</label>
-        <select id="ai-folder-sel" class="fc-input">
-          <option value="">Sin carpeta</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Configuration -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label class="fc-label">Cantidad de flashcards</label>
-        <input type="number" id="ai-count" class="fc-input" value="5" min="1" max="20">
-      </div>
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <label class="fc-label">Tipo de preguntas</label>
-        <select id="ai-type" class="fc-input">
-          <option value="qa">Pregunta / Respuesta</option>
-          <option value="mc">Opción Múltiple</option>
-          <option value="tf">Verdadero / Falso</option>
-          <option value="mixed">Mixto</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Custom Prompt -->
-    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px;">
-      <label class="fc-label">Instrucciones adicionales <span style="color:var(--text3);">(opcional)</span></label>
-      <textarea id="ai-custom-prompt" class="fc-input" rows="2" placeholder="Ej: Enfócate en fórmulas, incluye ejemplos prácticos..." autocomplete="off"></textarea>
-    </div>
-
-    <!-- Generate Button -->
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
-      <button class="btn btn-ghost" onclick="closeAIGenerateModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="generateAIFlashcards()" id="ai-generate-btn">
-        ✨ Generar Flashcards
-      </button>
-    </div>
-
-    <!-- Preview Area -->
-    <div id="ai-preview-area" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">📋 Vista previa</div>
-      <div id="ai-preview-list" style="display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;"></div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
-        <button class="btn btn-ghost" onclick="closeAIGenerateModal()">Descartar</button>
-        <button class="btn btn-primary" onclick="saveAIFlashcards()">
-          💾 Guardar todas
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- AI Modal Disabled -->
 
 <style>
 /* ══════════════════════════════════════

@@ -223,7 +223,7 @@
   <script src="js/calendar.js"></script>
   <script src="js/chrono.js"></script>
   <script src="js/flashcards.js"></script>
-  <script src="js/ai-assistant.js"></script>
+  <!-- AI Assistant Disabled - script src="js/ai-assistant.js" -->
 
   <!-- ─── Init & Bootstrap ─── -->
   <script src="js/init.js"></script>
@@ -270,114 +270,7 @@
 })();
 </script>
 
-<!-- ═══ AI ASSISTANT FAB & MODAL ═══ -->
-<button id="ai-assistant-fab" onclick="toggleAIChat()" style="position:fixed;bottom:80px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#9b6fff);border:none;cursor:pointer;box-shadow:0 8px 24px rgba(124,106,255,.4);z-index:999;display:flex;align-items:center;justify-content:center;font-size:26px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-  🐮
-</button>
-
-<div id="ai-chat-modal" class="modal-overlay" style="display:none;">
-  <div class="modal" style="max-width:700px;width:95vw;max-height:85vh;display:flex;flex-direction:column;">
-    <div class="modal-title">
-      <span>🐮 Asistente Académico</span>
-      <button class="modal-close" onclick="toggleAIChat()">✕</button>
-    </div>
-    
-    <!-- Context Selection -->
-    <div id="ai-chat-context-bar" style="padding:12px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <span style="font-size:12px;color:var(--text3);">Contexto:</span>
-      <button class="btn btn-sm btn-ghost" onclick="attachFullContext()" style="font-size:12px;padding:6px 10px;background:rgba(124,106,255,.15);color:var(--accent2);border:1px solid rgba(124,106,255,.3);">📊 Todo mi semestre</button>
-      <button class="btn btn-sm btn-ghost" onclick="showMyActivities()" style="font-size:12px;padding:6px 10px;background:rgba(124,106,255,.15);color:var(--accent2);border:1px solid rgba(124,106,255,.3);">📋 ¿Qué actividades tengo?</button>
-      <button class="btn btn-sm btn-ghost" onclick="attachCurrentNote()" style="font-size:12px;padding:6px 10px;">📝 Nota actual</button>
-      <button class="btn btn-sm btn-ghost" onclick="attachCurrentFlashcard()" style="font-size:12px;padding:6px 10px;">🎴 Flashcard actual</button>
-      <button class="btn btn-sm btn-ghost" onclick="clearAIContext()" style="font-size:12px;padding:6px 10px;">🗑️ Limpiar</button>
-    </div>
-    
-    <!-- Chat Messages -->
-    <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
-      <div class="ai-message ai-message-ai">
-        <div class="ai-message-content">¡Hola! Soy tu asistente académico. Puedo ayudarte a entender tus notas, flashcards, o responder preguntas sobre tus materiales de estudio. ¿En qué te ayudo hoy?</div>
-      </div>
-    </div>
-    
-    <!-- Input Area -->
-    <div style="padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;">
-      <input type="text" id="ai-chat-input" class="fc-input" placeholder="Escribe tu pregunta..." style="flex:1;color:#ffffff !important;background:#1a1a2e !important;" autocomplete="off" onkeypress="if(event.key==='Enter')sendAIMessage()">
-      <button class="btn btn-primary" onclick="sendAIMessage()" style="padding:8px 16px;">Enviar</button>
-    </div>
-  </div>
-</div>
-
-<style>
-.ai-message {
-  max-width:95%;
-  padding:14px 18px;
-  border-radius:12px;
-  font-size:16px;
-  line-height:1.6;
-}
-#ai-chat-input {
-  color: #ffffff !important;
-  background: #1a1a2e !important;
-}
-#ai-chat-input:focus {
-  color: #ffffff !important;
-  background: #1a1a2e !important;
-}
-.ai-message-user {
-  align-self:flex-end;
-  background:var(--accent);
-  color:#fff;
-}
-.ai-message-ai {
-  align-self:flex-start;
-  background:var(--surface2);
-  border:1px solid var(--border);
-}
-.ai-message-content {
-  word-wrap:break-word;
-}
-.ai-typing {
-  display:inline-flex;gap:4px;
-}
-.ai-typing span {
-  width:6px;height:6px;background:var(--text3);
-  border-radius:50%;animation:typing 1.4s infinite;
-}
-.ai-typing span:nth-child(2){animation-delay:.2s;}
-.ai-typing span:nth-child(3){animation-delay:.4s;}
-@keyframes typing {
-  0%,60%,100%{transform:translateY(0);}
-  30%{transform:translateY(-4px);}
-}
-
-/* Mobile adjustments */
-@media (max-width: 768px) {
-  #ai-assistant-fab {
-    bottom: 76px !important;
-    right: 16px !important;
-    width: 52px !important;
-    height: 52px !important;
-    font-size: 24px !important;
-  }
-  #ai-chat-modal .modal {
-    max-width: 100vw !important;
-    width: 100vw !important;
-    max-height: 100vh !important;
-    border-radius: 0 !important;
-  }
-  #ai-chat-context-bar {
-    flex-wrap: wrap !important;
-  }
-  #ai-chat-context-bar button {
-    font-size: 11px !important;
-    padding: 5px 8px !important;
-  }
-  .ai-message {
-    font-size: 16px !important;
-    padding: 14px 18px !important;
-    max-width: 95% !important;
-  }
-}
+<!-- AI ASSISTANT DISABLED -->
 
 /* Samsung-style loading animation */
 .samsung-loader {
