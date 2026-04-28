@@ -17,6 +17,11 @@ function _getApiKey() {
   return key;
 }
 
+function _checkApiKey() {
+  // Ahora usamos el proxy, no necesitamos API key del usuario
+  return true;
+}
+
 /* ── MODAL CONTROLS ─────────────────────────────────────────── */
 function toggleAIChat() {
   const modal = document.getElementById('ai-chat-modal');
@@ -221,7 +226,10 @@ async function sendAIMessage() {
   const message = input.value.trim();
   
   if (!message) return;
-  
+
+  // Check if API key is configured
+  if (!_checkApiKey()) return;
+
   // Add user message
   addChatMessage(message, 'user');
   input.value = '';
@@ -396,23 +404,19 @@ INSTRUCCIONES DE RESPUESTA:
 - Sé CONCISO: máximo 3-4 oraciones o 80-100 palabras
 - Ve directo al punto con energía ⚡`;
   
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${_getApiKey()}`, {
+  // Usar proxy en desarrollo, API directa en producción
+  const PROXY_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:3001/api/chat' 
+    : 'https://tu-proxy-production.com/api/chat'; // Reemplaza con tu URL de producción
+
+  const response = await fetch(PROXY_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: fullPrompt
-        }]
-      }],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 2048,
-      }
+      message: userMessage,
+      context: contextPrompt
     })
   });
 

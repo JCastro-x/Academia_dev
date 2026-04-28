@@ -1,0 +1,24 @@
+{
+  "name": "academia-gemini-proxy",
+  "version": "1.0.0",
+  "description": "Backend proxy para Gemini API - permite usar asistente sin configurar API key",
+  "main": "gemini-proxy.js",
+  "scripts": {
+    "start": "node gemini-proxy.js",
+    "dev": "nodemon gemini-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.7",
+    "express-rate-limit": "^6.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "keywords": ["gemini", "proxy", "ai", "assistant"],
+  "author": "Academia Dev",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -452,7 +452,7 @@ function _renderNotesFolderGrid(folderId) {
   if (folderId !== null) {
     if (String(folderId).startsWith('mat_')) {
       const matId = folderId.replace('mat_','');
-      notes = notes.filter(n => n.matId === matId || n.folderId === folderId);
+      notes = notes.filter(n => n.matId === matId);
     } else {
       notes = notes.filter(n => n.folderId === folderId);
     }
@@ -1003,6 +1003,13 @@ async function attachImagesToNote(files) {
   if (!note.images) note.images = {};
 
   let loaded = 0;
+  let totalImages = 0;
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith('image/')) continue;
+    totalImages++;
+  }
+  if (totalImages === 0) return;
+
   for (const file of Array.from(files)) {
     if (!file.type.startsWith('image/')) continue;
     const reader = new FileReader();
@@ -1013,9 +1020,21 @@ async function attachImagesToNote(files) {
       note.images[key] = 'IDB:' + key; // placeholder reference
       note.updatedAt = Date.now();
       loaded++;
-      if (loaded === files.length) {
+      if (loaded === totalImages) {
         saveState(['all']);
-        _renderImagesStrip(note);
+        // Get fresh note reference and render
+        const freshNote = _getNotesArray().find(n => n.id === _currentNoteId);
+        if (freshNote) {
+          _renderImagesStrip(freshNote);
+          // Force show strip
+          const strip = document.getElementById('notes-images-strip');
+          if (strip) strip.style.display = 'flex';
+          // Scroll to show images
+          setTimeout(() => {
+            if (strip) strip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 100);
+          if (typeof _appNotify === 'function') _appNotify(`${loaded} imagen(es) cargada(s)`, 'ok');
+        }
       }
     };
     reader.readAsDataURL(file);
@@ -1036,7 +1055,21 @@ function _renderImagesStrip(note) {
       <button class="nit-del" onclick="event.stopPropagation();deleteNoteImage('${noteId}','${k}')">✕</button>
     </div>`).join('');
   
-  // Lazy load images con Intersection Observer
+  // Load images immediately (don't wait for intersection observer)
+  keys.forEach(async k => {
+    const imgEl = document.getElementById('img-' + k);
+    if (!imgEl) return;
+    const val = imgs[k];
+    if (val && val.startsWith('IDB:')) {
+      const idbKey = val.slice(4);
+      const data = await idbGetImage(idbKey);
+      if (data) imgEl.src = data;
+    } else if (val) {
+      imgEl.src = val;
+    }
+  });
+  
+  // Lazy load images con Intersection Observer (for scrolling optimization)
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(async entry => {
       if (entry.isIntersecting) {
@@ -1842,6 +1875,71 @@ async function clearCanvas() {
 function undoCanvas() {
   if (!_ctx || !_undoStack.length) return;
   _ctx.putImageData(_undoStack.pop(), 0, 0);
+}
+
+async function openCanvasForNote() {
+  if (!_currentNoteId) return;
+  const note = _getNotesArray().find(n => n.id === _currentNoteId);
+  if (!note) return;
+
+  // Reset canvas state
+  _canvasImageObjects = [];
+  _undoStack = [];
+  _currentTool = 'pen';
+  _canvasEraser = false;
+
+  // Open the modal
+  openModal('modal-canvas');
+
+  // Initialize canvas after modal is visible
+  setTimeout(() => {
+    _canvas = document.getElementById('notes-canvas');
+    if (!_canvas) return;
+
+    // Set canvas size to match display size
+    const rect = _canvas.parentNode.getBoundingClientRect();
+    _canvas.width = rect.width - 40;  // padding
+    _canvas.height = rect.height - 100; // toolbar space
+
+    _ctx = _canvas.getContext('2d');
+
+    // Fill with dark background
+    _ctx.fillStyle = '#1a1f2e';
+    _ctx.fillRect(0, 0, _canvas.width, _canvas.height);
+
+    // Set default styles
+    _ctx.lineCap = 'round';
+    _ctx.lineJoin = 'round';
+    _ctx.lineWidth = _canvasSize;
+    _ctx.strokeStyle = _canvasColor;
+
+    // Load existing canvas data if available
+    if (note.canvasData) {
+      const img = new Image();
+      img.onload = () => {
+        _ctx.drawImage(img, 0, 0);
+        // Save initial state to undo stack
+        _undoStack.push(_ctx.getImageData(0, 0, _canvas.width, _canvas.height));
+      };
+      if (note.canvasData.startsWith('IDB:')) {
+        idbGetImage(note.canvasData.replace('IDB:', '')).then(data => {
+          if (data) img.src = data;
+        });
+      } else {
+        img.src = note.canvasData;
+      }
+    } else {
+      // Save initial blank state
+      _undoStack.push(_ctx.getImageData(0, 0, _canvas.width, _canvas.height));
+    }
+
+    // Initialize events
+    _initCanvasEvents();
+
+    // Update title in toolbar
+    const titleLbl = document.getElementById('canvas-note-title-lbl');
+    if (titleLbl) titleLbl.textContent = note.title || 'Dibujo';
+  }, 100);
 }
 
 async function saveCanvasAndClose() {
