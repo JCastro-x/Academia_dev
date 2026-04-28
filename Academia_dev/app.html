@@ -272,6 +272,7 @@
 
 <!-- AI ASSISTANT DISABLED -->
 
+<style>
 /* Samsung-style loading animation */
 .samsung-loader {
   position: relative;
@@ -336,22 +337,18 @@
     transform: rotate(360deg);
   }
 }
-</style>
 
-<!-- Modal de confirmación personalizado -->
-<style>
+/* Modal de confirmación */
 #confirm-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 0, 0.7);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 5000;
 }
+
 #confirm-modal.open {
   display: flex;
 }
