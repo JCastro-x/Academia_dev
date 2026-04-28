@@ -77,6 +77,61 @@
     max-width: 100% !important;
   }
 
+  /* ──────────────────────────────────────────────────────────────
+     2.5 RELOJ — Selector y modos en móvil
+     ────────────────────────────────────────────────────────────── */
+  
+  /* Selector de Reloj: 1 columna en móvil */
+  #page-p-reloj .reloj-selector {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
+  #page-p-reloj .reloj-card {
+    padding: 20px !important;
+  }
+  
+  #page-p-reloj .reloj-card-icon {
+    font-size: 40px !important;
+    width: 64px !important;
+    height: 64px !important;
+  }
+  
+  #page-p-reloj .reloj-card-title {
+    font-size: 18px !important;
+  }
+  
+  #page-p-reloj .reloj-card-desc {
+    font-size: 13px !important;
+  }
+  
+  /* Cronómetro en móvil */
+  #page-cronometro .timer-container {
+    padding: 10px 0 !important;
+  }
+  
+  #page-cronometro .chrono-display {
+    font-size: clamp(32px, 10vw, 48px) !important;
+  }
+  
+  /* Temporizador en móvil */
+  #page-temporizador .timer-container {
+    padding: 10px 0 !important;
+  }
+  
+  #page-temporizador .timer-display {
+    font-size: clamp(32px, 10vw, 48px) !important;
+  }
+  
+  #page-temporizador .timer-presets {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  
+  #page-temporizador .time-input-group input {
+    font-size: 22px !important;
+    padding: 12px !important;
+  }
+
   /* Cronómetro: números grandes → más pequeños */
   #chrono-work {
     font-size: clamp(32px, 10vw, 52px) !important;

@@ -7,6 +7,12 @@
   .notes-pro-sidebar { border-right:none; border-bottom:1px solid var(--border); flex-direction:row !important; }
   .notes-folders-panel { max-height:100%; width:120px; border-bottom:none; border-right:1px solid var(--border); }
   .notes-list-panel { border-bottom:none; }
+  
+  /* Ocultar botones de agregar del header en móvil (ya están en navbar) */
+  .topbar-actions button[onclick="openAddClassModal()"],
+  .topbar-actions button[onclick="openQuickAdd()"] {
+    display: none !important;
+  }
 }
 
 .mc-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:18px; flex-wrap:wrap; }

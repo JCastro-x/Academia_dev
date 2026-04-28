@@ -335,10 +335,16 @@
   margin-top: 10px;
 }
 
-/* Cuadrícula específica para General: 4 columnas x 2 filas */
+/* Cuadrícula específica para General: responsive */
 #page-general .smart-grid {
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+/* En móvil, hacer tarjetas más grandes y responsive */
+@media (max-width: 768px) {
+  #page-general .smart-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
 }
 
 /* Ajuste para que las tarjetas se vean uniformes */

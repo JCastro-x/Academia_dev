@@ -9,7 +9,7 @@ const _MOBILE_MORE_ITEMS = [
   { icon: '🗓️', label: 'Horario',     page: 'horario'       },
   { icon: '📚', label: 'Materias',    page: 'materias'      },
   // ── Herramientas ─────────────────────────────────────────────
-  { icon: '⏱️', label: 'Pomodoro',    page: 'pomodoro'      },
+  { icon: '⏱️', label: 'Reloj',       page: 'p-reloj'       },
   { icon: '📝', label: 'Notas',       page: 'notas'         },
   // ── General ──────────────────────────────────────────────────
   { icon: '🎯', label: 'Calific.',    page: 'calificaciones'},

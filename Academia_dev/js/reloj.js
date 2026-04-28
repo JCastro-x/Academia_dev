@@ -42,7 +42,10 @@
           modePage.classList.add('active');
           console.log('✅ Modo mostrado:', mode);
           
-          // Inicializar el modo específico
+          // Inicializar el modo específico con delay mayor para móvil
+          const isMobile = window.innerWidth <= 768;
+          const delay = isMobile ? 300 : 200;
+          
           setTimeout(() => {
             console.log('🔄 Inicializando modo:', mode);
             if (mode === 'pomodoro') {
@@ -61,7 +64,7 @@
               if (typeof initTimerData === 'function') initTimerData();
               if (typeof renderTimerHistory === 'function') renderTimerHistory();
             }
-          }, 100);
+          }, delay);
         } else {
           console.error('❌ No se encontró page-${mode}');
         }

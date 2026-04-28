@@ -1521,6 +1521,23 @@ textarea:hover:not(:focus) { border-color:var(--border2); }
   pointer-events:none;
 }
 
+/* Skeleton loader para partials */
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.skeleton-card {
+  height: 80px;
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+  background-size: 400px 100%;
+  animation: skeletonPulse 1.8s ease-in-out infinite;
+  border-radius: 12px;
+}
+
 
 /* ╔══════════════════════════════════════════════════════════════╗
    ║  23. MOBILE — desactivar transforms y fixes                 ║
