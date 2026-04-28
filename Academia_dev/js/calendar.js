@@ -7,7 +7,8 @@ const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto
 function renderCalendar() { _schedRender(_renderCalendar); }
 function _renderCalendar() {
   const monthStr = `${calY}-${String(calM+1).padStart(2,'0')}`;
-  document.getElementById('cal-month-title').textContent = `${MONTHS[calM]} ${calY}`;
+  const calMonthTitleEl = document.getElementById('cal-month-title');
+  if (calMonthTitleEl) calMonthTitleEl.textContent = `${MONTHS[calM]} ${calY}`;
 
   const today = new Date(); today.setHours(0,0,0,0);
   const first = new Date(calY, calM, 1).getDay();

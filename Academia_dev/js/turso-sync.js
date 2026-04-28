@@ -315,6 +315,7 @@
     getRemoteUpdatedAt,
     save,
     saveNow,
+    _doSave, // Exponer para que academia-sync.js pueda llamarlo
     configure,
     clearUserData,
     get _ready() { return _ready; },

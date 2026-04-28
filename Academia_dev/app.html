@@ -298,7 +298,7 @@
     
     <!-- Input Area -->
     <div style="padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;">
-      <input type="text" id="ai-chat-input" class="fc-input" placeholder="Escribe tu pregunta..." style="flex:1;" autocomplete="off" onkeypress="if(event.key==='Enter')sendAIMessage()">
+      <input type="text" id="ai-chat-input" class="fc-input" placeholder="Escribe tu pregunta..." style="flex:1;color:#ffffff !important;background:#1a1a2e !important;" autocomplete="off" onkeypress="if(event.key==='Enter')sendAIMessage()">
       <button class="btn btn-primary" onclick="sendAIMessage()" style="padding:8px 16px;">Enviar</button>
     </div>
   </div>
@@ -311,6 +311,14 @@
   border-radius:12px;
   font-size:16px;
   line-height:1.6;
+}
+#ai-chat-input {
+  color: #ffffff !important;
+  background: #1a1a2e !important;
+}
+#ai-chat-input:focus {
+  color: #ffffff !important;
+  background: #1a1a2e !important;
 }
 .ai-message-user {
   align-self:flex-end;
