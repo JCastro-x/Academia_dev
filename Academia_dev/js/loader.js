@@ -30,8 +30,12 @@
     'estadisticas',
     'horario',
     'notas',
-    'pomodoro',
+    'p-reloj',
+    'p-reloj-pomodoro',
+    'p-reloj-crono',
+    'p-reloj-timer',
     'flashcards',
+    'p-habits',
   ];
 
   var BASE = 'partials/';

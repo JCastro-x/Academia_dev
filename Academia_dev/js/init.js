@@ -232,33 +232,17 @@ function init() {
 
 function continueInit(auth) {
 
-  const now = new Date();
-  const topbarDateEl = document.getElementById('topbar-date');
-  const ovDateEl = document.getElementById('ov-date');
-  if (topbarDateEl) topbarDateEl.textContent = now.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
-  if (ovDateEl) ovDateEl.textContent = now.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+  // Inicialización TEMPRANA de fecha en topbar (disponible inmediatamente, no espera partials)
+  (function initTopbarDate() {
+    const now = new Date();
+    const topbarDateEl = document.getElementById('topbar-date');
+    if (topbarDateEl) {
+      topbarDateEl.textContent = now.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+    }
+  })();
 
-  function _updateOvClock() {
-    const d = new Date();
-    let h = d.getHours(); const m = d.getMinutes();
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    let icon = '☀️';
-    if      (h >= 5 && h < 7)   icon = '🌅';
-    else if (h >= 7 && h < 18)  icon = '☀️';
-    else if (h >= 18 && h < 20) icon = '🌆';
-    else if (h >= 20 || h < 5)  icon = '🌙';
-    h = h % 12 || 12;
-    const hStr = String(h).padStart(2,'0');
-    const mStr = String(m).padStart(2,'0');
-    const clk  = document.getElementById('ov-clock');
-    const amp  = document.getElementById('ov-clock-ampm');
-    const icn  = document.getElementById('ov-clock-icon');
-    if (clk) clk.textContent = `${hStr}:${mStr}`;
-    if (amp) amp.textContent = ampm;
-    if (icn) icn.textContent = icon;
-  }
-  _updateOvClock();
-  setInterval(_updateOvClock, 10000);
+  // Inicialización de fecha/hora en overview se hace dentro de _onPartialsReady()
+  // para asegurar que los elementos del DOM existan
 
   // Nombre del usuario (Google o "Invitado")
   if (auth && auth.name) {
@@ -302,10 +286,45 @@ function continueInit(auth) {
     const grEl = document.getElementById('ov-greeting');
     if (grEl) grEl.textContent = `${greet}, ${firstName || 'estudiante'} ${isGuest ? '👀' : ''}`;
 
-    // Fecha en topbar y overview (los elementos ya existen)
-    const now2 = new Date();
-    const dateEl = document.getElementById('ov-date');
-    if (dateEl) dateEl.textContent = now2.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+    // Inicializar fecha y hora (asegurar que elementos existan en DOM)
+    const now = new Date();
+    const topbarDateEl = document.getElementById('topbar-date');
+    const ovDateEl = document.getElementById('ov-date');
+    const ovDateShortEl = document.getElementById('ov-date-short');
+    if (topbarDateEl) topbarDateEl.textContent = now.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+    if (ovDateEl) ovDateEl.textContent = now.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+    // ov-date-short es el elemento visible en el overview (formato corto: Lun 28 Abr)
+    if (ovDateShortEl) {
+      const days = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      ovDateShortEl.textContent = days[now.getDay()] + ' ' + now.getDate() + ' ' + months[now.getMonth()];
+    }
+
+    // Inicializar reloj con actualización periódica
+    function _updateOvClock() {
+      const d = new Date();
+      let h = d.getHours(); const m = d.getMinutes();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      let icon = '☀️';
+      if      (h >= 5 && h < 7)   icon = '🌅';
+      else if (h >= 7 && h < 18)  icon = '☀️';
+      else if (h >= 18 && h < 20) icon = '🌆';
+      else if (h >= 20 || h < 5)  icon = '🌙';
+      h = h % 12 || 12;
+      const hStr = String(h).padStart(2,'0');
+      const mStr = String(m).padStart(2,'0');
+      const clk  = document.getElementById('ov-clock');
+      const amp  = document.getElementById('ov-clock-ampm');
+      const icn  = document.getElementById('ov-clock-icon');
+      if (clk) clk.textContent = `${hStr}:${mStr}`;
+      if (amp) amp.textContent = ampm;
+      if (icn) icn.textContent = icon;
+    }
+    _updateOvClock();
+    // Solo crear el intervalo si no existe ya
+    if (!window._ovClockInterval) {
+      window._ovClockInterval = setInterval(_updateOvClock, 10000);
+    }
 
     const minGradeEl = document.getElementById('min-grade');
     if (minGradeEl) {

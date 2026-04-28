@@ -1,0 +1,211 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     PÁGINA: CRONÓMETRO — Cuenta hacia arriba
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<div class="page" id="page-cronometro" style="display:none;">
+  <!-- Botón volver al selector -->
+  <div style="margin-bottom: 16px;">
+    <button onclick="backToRelojSelector()" class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+      ← Volver a Reloj
+    </button>
+  </div>
+
+  <div class="chrono-container">
+    <!-- Display principal -->
+    <div class="chrono-display">
+      <div class="chrono-time" id="chrono-display">00:00:00</div>
+      <div class="chrono-label">Cronómetro</div>
+    </div>
+
+    <!-- Controles -->
+    <div class="chrono-controls">
+      <button id="chrono-start-btn" class="btn btn-primary btn-lg" onclick="startChrono()">
+        ▶ Iniciar
+      </button>
+      <button id="chrono-pause-btn" class="btn btn-ghost btn-lg" onclick="pauseChrono()" style="display:none;">
+        ⏸ Pausar
+      </button>
+      <button id="chrono-stop-btn" class="btn btn-ghost btn-lg" onclick="stopChrono()" disabled>
+        ⏹ Detener
+      </button>
+      <button id="chrono-reset-btn" class="btn btn-ghost btn-lg" onclick="resetChrono()" disabled>
+        ↺ Reiniciar
+      </button>
+    </div>
+
+    <!-- Vueltas -->
+    <div class="chrono-laps-section">
+      <div class="laps-header">
+        <h3>Vueltas</h3>
+        <button id="chrono-lap-btn" class="btn btn-ghost btn-sm" onclick="addLap()" disabled>
+          ⏱ Marcar vuelta
+        </button>
+      </div>
+      <div class="laps-list" id="chrono-laps">
+        <div class="laps-empty">Sin vueltas registradas</div>
+      </div>
+    </div>
+
+    <!-- Historial de sesiones -->
+    <div class="chrono-history-section">
+      <h3>Historial de sesiones</h3>
+      <div class="chrono-sessions" id="chrono-sessions">
+        <!-- Se llena dinámicamente -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   ESTILOS: Cronómetro
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.chrono-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.chrono-display {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.chrono-time {
+  font-family: 'Space Mono', monospace;
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 2px;
+}
+
+.chrono-label {
+  font-size: 14px;
+  color: var(--text2);
+  margin-top: 8px;
+}
+
+.chrono-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.chrono-controls .btn-lg {
+  padding: 14px 28px;
+  font-size: 16px;
+}
+
+.chrono-laps-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.laps-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.laps-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.laps-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.laps-empty {
+  text-align: center;
+  color: var(--text3);
+  padding: 20px;
+  font-size: 13px;
+}
+
+.lap-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.lap-item:last-child {
+  border-bottom: none;
+}
+
+.lap-number {
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.lap-time {
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.chrono-history-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.chrono-history-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+}
+
+.chrono-sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--surface2);
+  border-radius: 8px;
+}
+
+.session-date {
+  font-size: 13px;
+  color: var(--text2);
+}
+
+.session-duration {
+  font-family: 'Space Mono', monospace;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .chrono-time {
+    font-size: 36px;
+  }
+  
+  .chrono-controls .btn-lg {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
+</style>

@@ -335,6 +335,12 @@
   margin-top: 10px;
 }
 
+/* Cuadrícula específica para General: 4 columnas x 2 filas */
+#page-general .smart-grid {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+}
+
 /* Ajuste para que las tarjetas se vean uniformes */
 .smart-grid > div {
   width: 100% !important;

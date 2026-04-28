@@ -1,0 +1,446 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     PÁGINA: HÁBITOS — Vista de seguimiento de hábitos diarios
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<div id="page-p-habits" class="page">
+  <div class="page-header">
+    <h1>🌱 Hábitos</h1>
+    <p class="page-subtitle">Construye rachas y mejora día a día</p>
+  </div>
+
+  <div id="habits-container" class="habits-container">
+    <!-- Se llena dinámicamente con js/habits.js -->
+    <div class="habits-empty">
+      <div class="habits-empty-icon">🌱</div>
+      <div class="habits-empty-text">Cargando hábitos...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODAL: Agregar/Editar Hábito
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<div id="modal-add-habit" class="modal-overlay">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h3 id="habit-modal-title">🌱 Nuevo Hábito</h3>
+      <button class="modal-close" onclick="closeAddHabitModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="habit-form" onsubmit="event.preventDefault(); saveHabitFromForm();">
+        <input type="hidden" id="habit-edit-id" value="">
+        
+        <div class="form-group">
+          <label>Nombre del hábito</label>
+          <input type="text" id="habit-nombre" placeholder="Ej: Leer 30 minutos" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Emoji</label>
+            <select id="habit-emoji">
+              <option value="✅">✅ General</option>
+              <option value="📚">📚 Estudio</option>
+              <option value="🏃">🏃 Ejercicio</option>
+              <option value="💧">💧 Agua</option>
+              <option value="🧘">🧘 Meditación</option>
+              <option value="🎸">🎸 Instrumento</option>
+              <option value="✍️">✍️ Escritura</option>
+              <option value="🌱">🌱 Crecimiento</option>
+              <option value="💤">💤 Sueño</option>
+              <option value="🥗">🥗 Comida sana</option>
+              <option value="💪">💪 Fuerza</option>
+              <option value="🎯">🎯 Objetivo</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Color</label>
+            <input type="color" id="habit-color" value="#4ade80">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Días de la semana</label>
+          <div class="habit-days-selector">
+            <label class="day-checkbox">
+              <input type="checkbox" class="habit-day-checkbox" value="1" checked>
+              <span class="day-label">Lun</span>
+            </label>
+            <label class="day-checkbox">
+              <input type="checkbox" class="habit-day-checkbox" value="2" checked>
+              <span class="day-label">Mar</span>
+            </label>
+            <label class="day-checkbox">
+              <input type="checkbox" class="habit-day-checkbox" value="3" checked>
+              <span class="day-label">Mie</span>
+            </label>
+            <label class="day-checkbox">
+              <input type="checkbox" class="habit-day-checkbox" value="4" checked>
+              <span class="day-label">Jue</span>
+            </label>
+            <label class="day-checkbox">
+              <input type="checkbox" class="habit-day-checkbox" value="5" checked>
+              <span class="day-label">Vie</span>
+            </label>
+            <label class="day-checkbox">
+              <input type="checkbox" class="habit-day-checkbox" value="6">
+              <span class="day-label">Sab</span>
+            </label>
+            <label class="day-checkbox">
+              <input type="checkbox" class="habit-day-checkbox" value="0">
+              <span class="day-label">Dom</span>
+            </label>
+          </div>
+        </div>
+
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAddHabitModal()">Cancelar</button>
+      <button id="habit-save-btn" class="btn btn-primary" onclick="saveHabitFromForm()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════
+   ESTILOS: Hábitos
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.habits-container {
+  padding: 20px 0;
+}
+
+.habits-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.habits-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.habits-empty {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.habits-empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.habits-empty-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.habits-empty-sub {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 24px;
+}
+
+/* Habit Card */
+.habit-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-left: 4px solid;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.habit-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.habit-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.habit-emoji {
+  font-size: 32px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  border-radius: 12px;
+}
+
+.habit-details {
+  flex: 1;
+}
+
+.habit-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.habit-streak {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.streak-fire {
+  font-size: 14px;
+  animation: fireFlicker 1.8s ease-in-out infinite;
+}
+
+@keyframes fireFlicker {
+  0%, 100% { opacity: .8; transform: scale(1); }
+  20% { opacity: .5; transform: scale(0.95); }
+  40% { opacity: .9; transform: scale(1.05); }
+  60% { opacity: .7; transform: scale(0.98); }
+  80% { opacity: .85; transform: scale(1.02); }
+}
+
+.streak-count {
+  font-weight: 700;
+  color: #f97316;
+}
+
+.streak-label {
+  color: var(--text2);
+}
+
+.habit-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  opacity: 0.6;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.btn-icon:hover {
+  opacity: 1;
+  background: var(--surface2);
+}
+
+/* Habit Week Calendar */
+.habit-week {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.habit-day {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.habit-day:hover {
+  transform: scale(1.05);
+}
+
+.day-name {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.day-marker {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Day Status Colors */
+.day-completed {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+.day-completed .day-name {
+  color: #4ade80;
+}
+
+.day-missed {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.day-missed .day-name {
+  color: #f87171;
+}
+
+.day-none {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--text3);
+  cursor: pointer;
+}
+
+.day-none:hover {
+  transform: scale(1.05);
+  background: var(--surface3);
+}
+
+.day-none .day-name {
+  color: #60a5fa;
+}
+
+.day-pending {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--text3);
+}
+
+.day-pending .day-name {
+  color: var(--text2);
+}
+
+.day-today {
+  box-shadow: 0 0 0 2px #f97316;
+  background: rgba(249, 115, 22, 0.15);
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.day-today .day-name {
+  color: #f97316;
+}
+
+/* Days Selector in Modal */
+.habit-days-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.day-checkbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.day-checkbox input {
+  display: none;
+}
+
+.day-checkbox .day-label {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.day-checkbox input:checked + .day-label {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* Modal Adjustments */
+.modal-md {
+  max-width: 480px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+input[type="color"] {
+  height: 44px;
+  padding: 4px;
+  cursor: pointer;
+}
+</style>
+
+<script>
+// Renderizar hábitos cuando se carga esta partial
+document.addEventListener('partial-loaded', function(e) {
+  console.log('📥 Evento partial-loaded:', e.detail);
+  if (e.detail && e.detail.name === 'p-habits') {
+    console.log('✅ Partial p-habits cargado, renderizando...');
+    setTimeout(() => {
+      if (typeof Habits !== 'undefined' && Habits.render) {
+        console.log('🎨 Llamando Habits.render()');
+        Habits.render();
+      } else {
+        console.warn('❌ Habits no está disponible');
+      }
+    }, 150);
+  }
+});
+</script>

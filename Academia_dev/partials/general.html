@@ -35,8 +35,51 @@
               <div class="hub-stat" id="hub-stat-temas"></div>
             </div>
           </div>
+          <div class="card hub-card" onclick="goPage('p-habits')">
+            <div class="card-body hub-card-body">
+              <div class="hub-icon">🌱</div>
+              <div class="hub-label">Hábitos</div>
+              <div class="hub-desc">Seguimiento diario de hábitos y rachas</div>
+              <div class="hub-stat" id="hub-stat-habits"></div>
+            </div>
+          </div>
         </div>
       </div>
 
+<script>
+// Actualizar estadísticas de Hábitos en el hub
+document.addEventListener('partial-loaded', function(e) {
+  if (e.detail && e.detail.name === 'general') {
+    updateHubHabitsStat();
+  }
+});
 
-
+function updateHubHabitsStat() {
+  const statEl = document.getElementById('hub-stat-habits');
+  if (!statEl) return;
+  
+  const habits = State.settings?.habits || [];
+  if (habits.length === 0) {
+    statEl.textContent = 'Sin hábitos — crea tu primero';
+    return;
+  }
+  
+  // Contar hábitos activos hoy
+  const today = new Date().getDay(); // 0=dom, 1=lun, ..., 6=sab
+  const todayMap = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
+  const todayKey = todayMap[today];
+  
+  const activeToday = habits.filter(h => h.days && h.days[todayKey]).length;
+  const completedToday = habits.filter(h => {
+    if (!h.days || !h.days[todayKey]) return false;
+    const todayStr = new Date().toDateString();
+    return h.history && h.history[todayStr];
+  }).length;
+  
+  if (activeToday === 0) {
+    statEl.textContent = `${habits.length} hábito(s) — ninguno para hoy`;
+  } else {
+    statEl.textContent = `${completedToday}/${activeToday} completados hoy`;
+  }
+}
+</script>

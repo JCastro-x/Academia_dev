@@ -224,7 +224,15 @@ window.showConfirm = function(message, options = {}) {
 
 const DEFAULT_MATERIAS = [];
 
-const DEFAULT_SETTINGS = { minGrade: 70, theme: 'dark', semester: '1er Año · 2do Sem', font: 'Syne', soundVariant: 'classic', accentColor: '#7c6aff' };
+const DEFAULT_SETTINGS = { 
+  minGrade: 70, 
+  theme: 'dark', 
+  semester: '1er Año · 2do Sem', 
+  font: 'Syne', 
+  soundVariant: 'classic', 
+  accentColor: '#7c6aff',
+  habits: [] // Hábitos globales (independientes del semestre)
+};
 
 function dbGet(key, fallback = null) {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }

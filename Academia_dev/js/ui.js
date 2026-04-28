@@ -15,6 +15,15 @@ async function goPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   
+  // Ocultar sub-partials de Reloj (pomodoro, cronometro, temporizador) al navegar
+  ['pomodoro', 'cronometro', 'temporizador'].forEach(mode => {
+    const page = document.getElementById(`page-${mode}`);
+    if (page) {
+      page.style.display = 'none';
+      page.classList.remove('active');
+    }
+  });
+  
   // Limpiar el buscador global al navegar
   const globalSearch = document.getElementById('global-search');
   if (globalSearch) {
@@ -70,12 +79,23 @@ async function goPage(id, el) {
     case 'temas':          fillMatSels(); fillTopicMatSel(); renderTopics(); break;
     case 'estadisticas':   renderStats(); break;
     case 'pomodoro':       fillPomSel(); renderPomHistory(); renderPomGoal(); break;
+    case 'p-reloj':
+      // Inicializar estadísticas del selector de reloj
+      setTimeout(() => {
+        if (typeof updateRelojStats === 'function') updateRelojStats();
+      }, 100);
+      break;
     case 'semestres':      renderSemestresList(); break;
     case 'horario':        renderHorario(); break;
     case 'notas':          fillNotesSel(); renderNotesProPage(); break;
     case 'perfil':         renderProfilePage(); break;
     case 'general':        renderGeneralHub(); break;
     case 'flashcards':     renderFlashcards(); break;
+    case 'p-habits':
+      if (typeof Habits !== 'undefined' && Habits.render) {
+        setTimeout(() => Habits.render(), 100);
+      }
+      break;
   }
 
   // Post-navigation hooks for modules that need page-change side effects.
