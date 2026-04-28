@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Datos de Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0a0a0f;
+            color: #e8e8f0;
+        }
+        .container {
+            background: #1a1a2e;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+        }
+        h1 { color: #7c6aff; margin-bottom: 20px; }
+        .warning {
+            background: #3a1a1a;
+            border: 1px solid #ff4444;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .info {
+            background: #1a2a3a;
+            border: 1px solid #4a8aff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #3a3a5e;
+            border-radius: 8px;
+            background: #0a0a1e;
+            color: #e8e8f0;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-check {
+            background: #4a8aff;
+            color: white;
+        }
+        .btn-check:hover { background: #3a7aff; }
+        .btn-clean {
+            background: #ff4444;
+            color: white;
+        }
+        .btn-clean:hover { background: #ff3333; }
+        .btn-clean:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0a0a1e;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            display: none;
+        }
+        .success { color: #44ff44; }
+        .error { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpiar Datos de Supabase</h1>
+        
+        <div class="warning">
+            <strong>⚠️ ADVERTENCIA:</strong> Este script eliminará permanentemente datos de tu cuenta Supabase.
+            <br><br>
+            Se eliminará:
+            <ul>
+                <li>pomData.snapshots (muy pesado)</li>
+                <li>pomData.history (historial antiguo)</li>
+                <li>Contenido de notas > 10,000 caracteres</li>
+                <li>CanvasData completo (solo referencias IDB)</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <strong>ℹ️ Por qué hacer esto:</strong>
+            <br>
+            Tienes 13.24 GB de 5.5 GB de límite (240% sobre el límite).
+            <br>
+            Los datos viejos con snapshots e historial están causando este egress excesivo.
+        </div>
+
+        <label>Supabase URL:</label>
+        <input type="text" id="supabaseUrl" placeholder="https://xyz.supabase.co">
+        
+        <label>Supabase Anon Key:</label>
+        <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        
+        <button class="btn-check" onclick="checkData()">📊 Ver Datos Actuales</button>
+        <button class="btn-clean" id="btnClean" onclick="cleanData()" disabled>🧹 Limpiar Datos</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let client = null;
+        let currentData = null;
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            results.style.display = 'block';
+            const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            results.innerHTML += `<div class="${type}">${prefix} ${message}</div>`;
+        }
+
+        window.checkData = async function() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+
+            if (!url || !key) {
+                log('Por favor ingresa URL y Key', 'error');
+                return;
+            }
+
+            try {
+                client = window.supabase.createClient(url, key);
+                log('Conectando a Supabase...', 'info');
+
+                const { data: { user } } = await client.auth.getUser();
+                if (!user) {
+                    log('No hay usuario autenticado. Por favor inicia sesión primero en tu app.', 'error');
+                    return;
+                }
+
+                log(`Usuario: ${user.email}`, 'success');
+
+                const { data, error } = await client
+                    .from('user_data')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (error) throw error;
+                if (!data) {
+                    log('No se encontraron datos para este usuario', 'info');
+                    return;
+                }
+
+                currentData = data;
+                
+                // Calcular tamaños
+                const totalSize = JSON.stringify(data).length;
+                const semestresSize = JSON.stringify(data.semestres || []).length;
+                const settingsSize = JSON.stringify(data.settings || {}).length;
+                const pomDataSize = JSON.stringify(data.settings?.pomData || {}).length;
+                const snapshotsSize = JSON.stringify(data.settings?.pomData?.snapshots || {}).length;
+                const historySize = JSON.stringify(data.settings?.pomData?.history || {}).length;
+
+                log('\n📊 TAMAÑO ACTUAL DE DATOS:', 'info');
+                log(`Total: ${(totalSize / 1024).toFixed(2)} KB`, 'info');
+                log(`Semestres: ${(semestresSize / 1024).toFixed(2)} KB`, 'info');
+                log(`Settings: ${(settingsSize / 1024).toFixed(2)} KB`, 'info');
+                log(`Pomodoro Data: ${(pomDataSize / 1024).toFixed(2)} KB`, 'info');
+                log(`  - Snapshots: ${(snapshotsSize / 1024).toFixed(2)} KB`, snapshotsSize > 100000 ? 'error' : 'info');
+                log(`  - History: ${(historySize / 1024).toFixed(2)} KB`, historySize > 50000 ? 'error' : 'info');
+
+                // Contar notas largas
+                let longNotes = 0;
+                let totalNotes = 0;
+                (data.semestres || []).forEach(sem => {
+                    (sem.notesArray || []).forEach(note => {
+                        totalNotes++;
+                        if (note.content && note.content.length > 10000) longNotes++;
+                    });
+                });
+
+                log(`\n📝 NOTAS:`, 'info');
+                log(`Total notas: ${totalNotes}`, 'info');
+                log(`Notas > 10,000 chars: ${longNotes}`, longNotes > 0 ? 'error' : 'info');
+
+                document.getElementById('btnClean').disabled = false;
+                log('\n✅ Datos cargados. Puedes proceder con la limpieza.', 'success');
+
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        window.cleanData = async function() {
+            if (!currentData || !client) {
+                log('Primero verifica los datos', 'error');
+                return;
+            }
+
+            try {
+                log('\n🧹 INICIANDO LIMPIEZA...', 'info');
+
+                // Optimizar settings
+                let optimizedSettings = { ...currentData.settings };
+                if (optimizedSettings.pomData) {
+                    const oldPomSize = JSON.stringify(optimizedSettings.pomData).length;
+                    
+                    optimizedSettings.pomData = {
+                        today: optimizedSettings.pomData.today || [],
+                        date: optimizedSettings.pomData.date,
+                        goal: optimizedSettings.pomData.goal || 4,
+                        history: {}, // Eliminar history
+                        updatedAt: optimizedSettings.pomData.updatedAt
+                        // Eliminar snapshots completamente
+                    };
+
+                    const newPomSize = JSON.stringify(optimizedSettings.pomData).length;
+                    log(`Pomodoro: ${(oldPomSize / 1024).toFixed(2)} KB → ${(newPomSize / 1024).toFixed(2)} KB (ahorrados ${((oldPomSize - newPomSize) / 1024).toFixed(2)} KB)`, 'success');
+                }
+
+                // Optimizar semestres
+                let optimizedSemestres = (currentData.semestres || []).map(sem => {
+                    const optimizedNotes = (sem.notesArray || []).map(note => ({
+                        ...note,
+                        content: note.content && note.content.length > 10000 
+                            ? note.content.substring(0, 10000) + '...[TRUNCADO]' 
+                            : (note.content || ''),
+                        canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
+                    }));
+                    return { ...sem, notesArray: optimizedNotes };
+                });
+
+                const oldSemSize = JSON.stringify(currentData.semestres || []).length;
+                const newSemSize = JSON.stringify(optimizedSemestres).length;
+                log(`Semestres: ${(oldSemSize / 1024).toFixed(2)} KB → ${(newSemSize / 1024).toFixed(2)} KB (ahorrados ${((oldSemSize - newSemSize) / 1024).toFixed(2)} KB)`, 'success');
+
+                // Guardar datos optimizados
+                const { error } = await client
+                    .from('user_data')
+                    .upsert({
+                        user_id: currentData.user_id,
+                        semestres: optimizedSemestres,
+                        settings: optimizedSettings,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+
+                if (error) throw error;
+
+                const oldTotal = JSON.stringify(currentData).length;
+                const newTotal = JSON.stringify({ semestres: optimizedSemestres, settings: optimizedSettings }).length;
+                log(`\n✅ LIMPIEZA COMPLETADA`, 'success');
+                log(`Total: ${(oldTotal / 1024).toFixed(2)} KB → ${(newTotal / 1024).toFixed(2)} KB`, 'success');
+                log(`Ahorrado: ${((oldTotal - newTotal) / 1024).toFixed(2)} KB`, 'success');
+                log('\n📝 Recarga tu app para ver los cambios.', 'info');
+
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

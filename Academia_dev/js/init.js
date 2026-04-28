@@ -163,9 +163,10 @@ function init() {
               State.pomHistory = pomData.history;
               localStorage.setItem('academia_v3_pom_history', JSON.stringify(pomData.history));
             }
+            // NO cargar snapshots desde Supabase - son muy pesados y causan egress excesivo
+            // Los snapshots se generan localmente y no necesitan sincronizarse
             if (pomData.snapshots && typeof pomData.snapshots === 'object') {
-              State.pomSnapshots = pomData.snapshots;
-              localStorage.setItem('academia_v3_pom_daily_snapshots', JSON.stringify(pomData.snapshots));
+              console.log('📉 Ignorando snapshots de Supabase para reducir egress');
             }
           }
           console.log('✅ Datos sincronizados desde Supabase');
@@ -232,8 +233,10 @@ function init() {
 function continueInit(auth) {
 
   const now = new Date();
-  document.getElementById('topbar-date').textContent = now.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
-  document.getElementById('ov-date').textContent     = now.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+  const topbarDateEl = document.getElementById('topbar-date');
+  const ovDateEl = document.getElementById('ov-date');
+  if (topbarDateEl) topbarDateEl.textContent = now.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+  if (ovDateEl) ovDateEl.textContent = now.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
 
   function _updateOvClock() {
     const d = new Date();
@@ -264,7 +267,8 @@ function continueInit(auth) {
     window._currentUserName = 'Invitado';
   }
 
-  document.getElementById('ov-greeting').textContent = _getGreeting();
+  const ovGreetingEl = document.getElementById('ov-greeting');
+  if (ovGreetingEl) ovGreetingEl.textContent = _getGreeting();
   document.documentElement.setAttribute('data-theme', State.settings.theme||'dark');
 
   const themeBtn = document.getElementById('theme-btn');

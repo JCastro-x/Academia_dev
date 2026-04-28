@@ -441,13 +441,32 @@ if (!State.settings.pomDailyGoal || Number.isNaN(Number(State.settings.pomDailyG
 /* ─── Debounced save: batches rapid saveState calls into one write every 400ms ─── */
 let _saveTimer = null;
 let _pendingKeys = new Set();
+// Delta sync: rastrear campos específicos que cambiaron
+let _changedFields = new Set();
 
 // Guard para evitar que el sync de Supabase sobreescriba cambios locales recientes
 window._localModifiedAt = 0;
 
 function saveState(keys = ['all']) {
   window._localModifiedAt = Date.now(); // marcar modificación local
-  keys.forEach(k => _pendingKeys.add(k));
+  keys.forEach(k => {
+    _pendingKeys.add(k);
+    // Mapear keys a campos específicos para delta sync
+    if (k === 'all') {
+      _changedFields.add('semestres');
+      _changedFields.add('settings');
+    } else if (k === 'semestres') {
+      _changedFields.add('semestres');
+    } else if (k === 'settings') {
+      _changedFields.add('settings');
+    } else if (k === 'materias' || k === 'grades' || k === 'topics') {
+      _changedFields.add('semestres');
+    } else if (k === 'tasks') {
+      _changedFields.add('semestres');
+    } else if (k === 'events') {
+      _changedFields.add('settings');
+    }
+  });
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(_flushSave, 3000);
 }
@@ -457,10 +476,12 @@ function _flushSave() {
   if (all || keys.includes('materias')) getMat.bust();
   dbSet(DB_KEYS.SEMESTRES, State.semestres);
   if (all || keys.includes('settings')) dbSet(DB_KEYS.SETTINGS, State.settings);
-  // Guardar en Supabase
+  // Guardar en Supabase con delta sync
   const db = _getAcademiaDB();
   if (db && db._ready) {
-    db.save(State.semestres, State.settings);
+    const changedFields = [..._changedFields];
+    _changedFields.clear();
+    db.save(State.semestres, State.settings, changedFields);
   }
 }
 function saveStateNow(keys = ['all']) {
@@ -470,10 +491,13 @@ function saveStateNow(keys = ['all']) {
   if (all || keys.includes('materias')) getMat.bust();
   dbSet(DB_KEYS.SEMESTRES, State.semestres);
   if (all || keys.includes('settings')) dbSet(DB_KEYS.SETTINGS, State.settings);
-  // Guardar en Supabase inmediatamente
+  // Guardar en Supabase inmediatamente con delta sync
   const db = _getAcademiaDB();
   if (db && db._ready) {
-    db.saveNow(State.semestres, State.settings);
+    const changedFields = keys.includes('all') ? ['semestres', 'settings'] : 
+                          keys.includes('semestres') ? ['semestres'] :
+                          keys.includes('settings') ? ['settings'] : [];
+    db.saveNow(State.semestres, State.settings, changedFields);
   }
 }
 function savePom() {

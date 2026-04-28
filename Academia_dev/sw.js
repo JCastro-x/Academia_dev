@@ -25,6 +25,7 @@ const STATIC_SHELL = [
 // JS de la app — se cachean en install
 const APP_SCRIPTS = [
   '/js/auth.js',
+  '/js/turso-sync.js',
   '/js/academia-sync.js',
   // ── Módulos de app.js (dividido) ──
   '/js/state.js',

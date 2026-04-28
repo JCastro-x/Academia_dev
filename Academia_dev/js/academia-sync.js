@@ -3,7 +3,11 @@
  *
  * Exposes `window.AcademiaDB` as the canonical sync API.
  * Legacy alias `window.DB` is kept for backward compatibility.
- * Data source: Supabase table `user_data` keyed by `user_id`.
+ * 
+ * Data source strategy:
+ * - Supabase: Used only for auth (Google Login)
+ * - Turso: Used for heavy data (semestres, settings) - separated by user_id
+ * - Fallback: Can use Supabase for data if Turso not configured
  */
 
 (function () {
@@ -13,6 +17,7 @@
   let _client  = null;
   let _ready   = false;
   let _saveTimer = null;
+  let _useTurso = false; // Flag para usar Turso en lugar de Supabase
 
   // ── Obtener cliente Supabase (del módulo Auth) ──────────────
   function _getClient() {
@@ -23,15 +28,39 @@
     return _client;
   }
 
+  // ── Verificar si Turso está configurado ──────────────────────
+  function _isTursoConfigured() {
+    return !!(localStorage.getItem('turso_url') && localStorage.getItem('turso_auth_token'));
+  }
+
   // ── init(userId) ────────────────────────────────────────────
-  function init(userId) {
+  async function init(userId) {
     _userId = userId;
     _client = _getClient();
-    if (_client && _userId) {
-      _ready = true;
-      console.log('✅ window.DB listo para usuario:', _userId);
-    } else {
-      console.warn('⚠️ window.DB: cliente Supabase no disponible todavía');
+    
+    // Detectar si usar Turso
+    _useTurso = _isTursoConfigured();
+    
+    if (_useTurso) {
+      // Usar Turso para datos
+      if (window.TursoDB && typeof window.TursoDB.init === 'function') {
+        await window.TursoDB.init(userId);
+        _ready = window.TursoDB._ready;
+        console.log('✅ window.DB usando Turso para usuario:', _userId);
+      } else {
+        console.warn('⚠️ Turso configurado pero turso-sync.js no cargado');
+        _useTurso = false; // Fallback a Supabase
+      }
+    }
+    
+    // Fallback a Supabase si Turso no está configurado
+    if (!_useTurso) {
+      if (_client && _userId) {
+        _ready = true;
+        console.log('✅ window.DB usando Supabase para usuario:', _userId);
+      } else {
+        console.warn('⚠️ window.DB: cliente Supabase no disponible todavía');
+      }
     }
   }
 
@@ -41,6 +70,12 @@
   async function load(localUpdatedAt, options = {}) {
     if (!_ready) return null;
 
+    // Delegar a Turso si está configurado
+    if (_useTurso && window.TursoDB) {
+      return await window.TursoDB.load(localUpdatedAt, options);
+    }
+
+    // Fallback a Supabase
     // Preflight: si hay timestamp local, verificar si remoto es más reciente
     if (localUpdatedAt && typeof localUpdatedAt === 'number') {
       const remoteUpdatedAt = await getRemoteUpdatedAt();
@@ -80,8 +115,9 @@
             today: settings.pomData.today || [],
             date: settings.pomData.date,
             goal: settings.pomData.goal || 4,
+            history: {}, // Siempre vacío - no sync history
             updatedAt: settings.pomData.updatedAt
-            // No sync history ni snapshots (son muy pesados)
+            // No sync snapshots (son muy pesados)
           }
         };
       }
@@ -89,11 +125,25 @@
         settings = { ...settings, pomData: null };
       }
 
+      // Optimizar semestres: eliminar contenido de notas muy largas y datos innecesarios
+      let optimizedSemestres = (data.semestres || []).map(sem => {
+        const optimizedNotes = (sem.notesArray || []).map(note => ({
+          ...note,
+          // Truncar contenido muy largo para reducir egress
+          content: note.content && note.content.length > 10000 
+            ? note.content.substring(0, 10000) + '...[TRUNCADO]' 
+            : (note.content || ''),
+          // Mantener solo referencias IDB para canvas
+          canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
+        }));
+        return { ...sem, notesArray: optimizedNotes };
+      });
+
       // Log egress size
-      const dataSize = JSON.stringify({ semestres: data.semestres, settings }).length;
+      const dataSize = JSON.stringify({ semestres: optimizedSemestres, settings }).length;
       console.log(`📥 DB.load: datos cargados desde Supabase (${Math.round(dataSize/1024)} KB egress)`);
       return {
-        semestres: data.semestres || [],
+        semestres: optimizedSemestres || [],
         settings:  settings,
         updatedAt: data.updated_at || null,
       };
@@ -107,6 +157,13 @@
   // Cheap preflight to avoid downloading large JSONB when unchanged.
   async function getRemoteUpdatedAt() {
     if (!_ready) return 0;
+
+    // Delegar a Turso si está configurado
+    if (_useTurso && window.TursoDB) {
+      return await window.TursoDB.getRemoteUpdatedAt();
+    }
+
+    // Fallback a Supabase
     try {
       const { data, error } = await _getClient()
         .from('user_data')
@@ -122,28 +179,44 @@
     }
   }
 
-  // ── _doSave(semestres, settings) ────────────────────────────
-  async function _doSave(semestres, settings) {
+  // ── _doSave(semestres, settings, changedFields) ─────────────────
+  async function _doSave(semestres, settings, changedFields = ['semestres', 'settings']) {
     if (!_ready) return;
-    try {
-      // Log egress size for upload
-      const dataSize = JSON.stringify({ semestres, settings }).length;
 
-      // SIEMPRE optimizar antes de enviar para reducir ancho de banda
+    // Delegar a Turso si está configurado
+    if (_useTurso && window.TursoDB) {
+      return await window.TursoDB._doSave(semestres, settings, changedFields);
+    }
+
+    // Fallback a Supabase
+    try {
+      // Delta sync: construir payload solo con campos cambiados
+      let payload = {};
       let dataToSend = _optimizeData(semestres, settings);
-      const optimizedSize = JSON.stringify(dataToSend).length;
-      const savings = dataSize - optimizedSize;
-      if (savings > 0) {
-        console.log(`📉 Optimización de ancho de banda: ${Math.round(dataSize/1024)} KB → ${Math.round(optimizedSize/1024)} KB (ahorrados ${Math.round(savings/1024)} KB)`);
+
+      if (changedFields.includes('semestres')) {
+        payload.semestres = dataToSend.semestres || [];
       }
+      if (changedFields.includes('settings')) {
+        payload.settings = dataToSend.settings || {};
+      }
+
+      // Si no hay campos cambiados, no hacer nada
+      if (Object.keys(payload).length === 0) {
+        console.log('⏭️ DB.save: sin cambios para sincronizar');
+        return;
+      }
+
+      // Log egress size
+      const dataSize = JSON.stringify(payload).length;
+      console.log(`☁️ DB.save: subiendo ${Math.round(dataSize/1024)} KB (delta sync: ${changedFields.join(', ')})`);
 
       const { error } = await _getClient()
         .from('user_data')
         .upsert(
           {
             user_id:    _userId,
-            semestres:  dataToSend.semestres || [],
-            settings:   dataToSend.settings  || {},
+            ...payload,
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'user_id' }
@@ -151,7 +224,7 @@
       if (error) {
         console.warn('⚠️ DB.save error:', error.message);
       } else {
-        console.log(`☁️ DB.save: datos guardados en Supabase (${Math.round(optimizedSize/1024)} KB egress)`);
+        console.log(`✅ DB.save: datos guardados en Supabase (${Math.round(dataSize/1024)} KB egress)`);
       }
     } catch (err) {
       console.warn('⚠️ DB.save excepción:', err.message);
@@ -205,16 +278,16 @@
     return { semestres: optimizedSemestres, settings: optimizedSettings };
   }
 
-  // ── save(semestres, settings) — debounced 10000ms (aumentado para reducir syncs) ────────────
-  function save(semestres, settings) {
+  // ── save(semestres, settings, changedFields) — debounced 10000ms ────────────
+  function save(semestres, settings, changedFields = ['semestres', 'settings']) {
     clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => _doSave(semestres, settings), 10000);
+    _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields), 10000);
   }
 
-  // ── saveNow(semestres, settings) — inmediato ────────────────
-  async function saveNow(semestres, settings) {
+  // ── saveNow(semestres, settings, changedFields) — inmediato ────────────────
+  async function saveNow(semestres, settings, changedFields = ['semestres', 'settings']) {
     clearTimeout(_saveTimer);
-    await _doSave(semestres, settings);
+    await _doSave(semestres, settings, changedFields);
   }
 
   const API = {

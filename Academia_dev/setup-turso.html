@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurar Turso</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0f;
+      color: #e8e8f0;
+      padding: 40px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 24px; margin-bottom: 20px; color: #7c6aff; }
+    .section {
+      background: #15151a;
+      border: 1px solid #2a2a35;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #e8e8f0;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #3a3a45;
+      border-radius: 8px;
+      background: #0a0a0f;
+      color: #e8e8f0;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #7c6aff;
+    }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-right: 10px;
+    }
+    .btn-primary {
+      background: #7c6aff;
+      color: white;
+    }
+    .btn-primary:hover { background: #6a5af0; }
+    .btn-secondary {
+      background: #2a2a35;
+      color: #e8e8f0;
+    }
+    .btn-secondary:hover { background: #3a3a45; }
+    .status {
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .status.success { background: rgba(74, 222, 128, 0.1); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
+    .status.error { background: rgba(248, 113, 113, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+    .status.info { background: rgba(124, 106, 255, 0.1); color: #7c6aff; border: 1px solid rgba(124, 106, 255, 0.3); }
+  </style>
+</head>
+<body>
+  <h1>⚙️ Configurar Turso</h1>
+
+  <div class="section">
+    <label for="turso-url">Turso URL:</label>
+    <input type="text" id="turso-url" value="libsql://academia-dev-db-academia-dev.aws-us-east-1.turso.io">
+
+    <label for="turso-token">Turso Auth Token:</label>
+    <input type="password" id="turso-token" value="eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzczMzI0MzcsImlkIjoiMDE5ZGQxNDQtNzgwMS03MjMyLTkyZjYtOTk5ZjRmOTg0ODkzIiwicmlkIjoiMWQ0ODJmMDYtMDNjZi00ZTJkLTkyZmItYWNhNTQzZmNiNTkxIn0.Ly-i-PLr-HdABfj96YEYfLF-pR8jBSz1VgPwAYMAfKDtskQmCohIFGtFRGKyFKuK22cuoWZa3i_wuiGjKwbnBw">
+
+    <button class="btn-primary" onclick="configureAndTest()">💾 Guardar y Probar</button>
+    <button class="btn-secondary" onclick="clearConfig()">🗑️ Limpiar</button>
+    <div id="status" class="status info" style="display: none;"></div>
+  </div>
+
+  <div class="section">
+    <p style="color: #b0b0c0; font-size: 13px;">
+      Después de configurar, recarga tu app (<code>app.html</code>) para usar Turso.
+    </p>
+  </div>
+
+  <script>
+    function showStatus(message, type = 'info') {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+      statusEl.style.display = 'block';
+    }
+
+    function configureAndTest() {
+      const url = document.getElementById('turso-url').value.trim();
+      const token = document.getElementById('turso-token').value.trim();
+
+      if (!url || !token) {
+        showStatus('❌ Por favor completa la URL y token', 'error');
+        return;
+      }
+
+      // Guardar en localStorage
+      localStorage.setItem('turso_url', url);
+      localStorage.setItem('turso_auth_token', token);
+
+      showStatus('✅ Credenciales guardadas. Probando conexión...', 'info');
+
+      // Convertir libsql:// a https:// para el test
+      const httpsUrl = url.replace('libsql://', 'https://');
+
+      fetch(httpsUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          statements: [{
+            q: 'SELECT 1 as test',
+            params: []
+          }]
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          showStatus(`❌ Error de conexión: ${data.error}`, 'error');
+        } else {
+          showStatus('✅ Conexión exitosa con Turso. Recarga tu app para aplicar.', 'success');
+        }
+      })
+      .catch(err => {
+        showStatus(`❌ Error: ${err.message}`, 'error');
+      });
+    }
+
+    function clearConfig() {
+      localStorage.removeItem('turso_url');
+      localStorage.removeItem('turso_auth_token');
+      showStatus('🗑️ Credenciales eliminadas. Tu app volverá a usar Supabase.', 'info');
+    }
+
+    // Cargar valores actuales si existen
+    window.onload = function() {
+      const currentUrl = localStorage.getItem('turso_url');
+      const currentToken = localStorage.getItem('turso_auth_token');
+      if (currentUrl) document.getElementById('turso-url').value = currentUrl;
+      if (currentToken) document.getElementById('turso-token').value = currentToken;
+    };
+  </script>
+</body>
+</html>

@@ -34,14 +34,14 @@ function _renderMaterias() {
     const hasZona  = totalPts !== null && totalPts >= zonaMin;
     const usacBanner = totalPts !== null ? (
       isGanada
-        ? `<div style="margin-top:8px;background:rgba(74,222,128,.15);border:2px solid #4ade80;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:800;color:#4ade80;display:flex;align-items:center;gap:6px;">🏆 GANADA — ${totalPts.toFixed(1)} pts ≥ 61</div>`
+        ? `<div style="margin-top:8px;background:${m.color}22;border:2px solid ${m.color};border-radius:8px;padding:7px 10px;font-size:11px;font-weight:800;color:${m.color};display:flex;align-items:center;gap:6px;">🏆 GANADA — ${totalPts.toFixed(1)} pts ≥ 61</div>`
         : hasZona
           ? `<div class="usac-zona-min-ok" style="margin-top:8px;">✅ Zona mín. alcanzada (${totalPts.toFixed(1)} ≥ ${zonaMin}) — Faltan ${(zonaGanada-totalPts).toFixed(1)} pts para ganar</div>`
           : `<div class="usac-zona-min-no" style="margin-top:8px;">⚠ Sin zona mín. — Faltan ${(zonaMin-totalPts).toFixed(1)} pts</div>`
     ) : '';
 
     const cardStyle = isGanada
-      ? `--mc:${m.color}; border:2px solid #4ade80; box-shadow:0 0 20px rgba(74,222,128,.2);`
+      ? `--mc:${m.color}; border:2px solid ${m.color}; box-shadow:0 0 20px ${m.color}33;`
       : `--mc:${m.color};`;
 
     const catedratico = m.catedratico ? `<div style="font-size:10px;color:var(--text3);">👤 ${m.catedratico}</div>` : '';
@@ -69,7 +69,7 @@ function _renderMaterias() {
         </div>
         <div class="prog-bar"><div class="prog-fill" style="background:${m.color};width:${Math.min(pct,100)}%;"></div></div>
         ${usacBanner}
-        ${labData ? `<div style="margin-top:8px;font-size:11px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:6px;padding:6px 8px;color:#4ade80;">🧪 Lab: ${labData.labGrade.toFixed(0)}/${labData.labScale} → <strong>${labData.netPts.toFixed(2)}/${labData.labMaxPts} pts</strong></div>` : ''}
+        ${labData ? `<div style="margin-top:8px;font-size:11px;background:${m.color}15;border:1px solid ${m.color}33;border-radius:6px;padding:6px 8px;color:${m.color};">🧪 Lab: ${labData.labGrade.toFixed(0)}/${labData.labScale} → <strong>${labData.netPts.toFixed(2)}/${labData.labMaxPts} pts</strong></div>` : ''}
         <div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap;">
           ${t ? `<span style="font-size:11px;background:${m.color}1a;color:${m.color};padding:2px 8px;border-radius:4px;font-weight:700;">${pct.toFixed(1)}%</span>` : ''}
           ${pend > 0 ? `<span style="font-size:11px;background:var(--red-dim);color:var(--red);padding:2px 8px;border-radius:4px;font-weight:700;">✅ ${pend}</span>` : ''}
@@ -402,124 +402,9 @@ async function deleteClass(matId) {
 function openAddClassModal() {
   // Asegurarse de que el modal esté en modo "crear", no "editar"
   window._editClassMatId = null;
-  document.getElementById('ns-nombre').value    = '';
-  document.getElementById('ns-objetivo').value  = '70';
-  document.getElementById('ns-prev-avg').value  = '';
-  document.getElementById('ns-prev-cred').value = '';
-  const cb = document.getElementById('ns-activar');
-  if (cb) { cb.checked = true; cb.disabled = false; }
-  document.querySelector('#modal-semestre .modal-title').textContent = '🗂️ Nuevo Semestre';
-  document.getElementById('modal-semestre').classList.add('open');
-}
-
-function openSemestreEditModal(id) {
-  _editSemId = id;
-  const sem = State.semestres.find(s => s.id === id);
-  if (!sem) return;
-  document.getElementById('ns-nombre').value    = sem.nombre;
-  document.getElementById('ns-objetivo').value  = sem.promedioObjetivo || 70;
-  document.getElementById('ns-prev-avg').value  = sem.prevAvg  || '';
-  document.getElementById('ns-prev-cred').value = sem.prevCred || '';
-  const cb = document.getElementById('ns-activar');
-  if (cb) { cb.checked = sem.activo; cb.disabled = sem.activo; }
-  document.querySelector('#modal-semestre .modal-title').textContent = '✏️ Editar Semestre';
-  document.getElementById('modal-semestre').classList.add('open');
-}
-
-function saveSemestreModal() {
-  const nombre   = document.getElementById('ns-nombre').value.trim();
-  const objetivo = parseFloat(document.getElementById('ns-objetivo').value) || 70;
-  const activar  = document.getElementById('ns-activar')?.checked ?? true;
-  const prevAvg  = parseFloat(document.getElementById('ns-prev-avg')?.value)  || 0;
-  const prevCred = parseFloat(document.getElementById('ns-prev-cred')?.value) || 0;
-  if (!nombre) { if (typeof _appNotify === 'function') _appNotify('Ingresa un nombre para el semestre.', 'warning'); return; }
-
-  if (_editSemId) {
-    const sem = State.semestres.find(s => s.id === _editSemId);
-    if (sem) { sem.nombre = nombre; sem.promedioObjetivo = objetivo; sem.prevAvg = prevAvg; sem.prevCred = prevCred; }
-    if (activar && !sem?.activo) switchSemester(_editSemId);
-  } else {
-    if (activar) State.semestres.forEach(s => s.activo = false);
-    const sem = _buildDefaultSemester('sem_' + Date.now(), nombre);
-    sem.promedioObjetivo = objetivo;
-    sem.prevAvg  = prevAvg;
-    sem.prevCred = prevCred;
-    sem.activo   = activar;
-    State.semestres.push(sem);
-  }
-  saveState(['semestres']);
-  closeModal('modal-semestre');
-  _refreshAllViews();
-  renderSemesterBadge();
-}
-
-async function deleteSemester(id) {
-  const sem = State.semestres.find(s => s.id === id);
-  if (!sem) return;
-  if (sem.activo) { if (typeof _appNotify === 'function') _appNotify('No puedes eliminar el semestre activo.', 'warning'); return; }
-  const confirmed = await showConfirm(`¿Eliminar "${sem.nombre}" y todos sus datos? Esta acción es irreversible.`, { danger: true });
-  if (!confirmed) return;
-  State.semestres = State.semestres.filter(s => s.id !== id);
-  saveState(['semestres']);
-  renderSemestresList();
-}
-
-async function deleteClass(matId) {
-  const mat = getMat(matId);
-  if (!mat) return;
-
-  const confirmed = await showConfirm(`¿Eliminar la materia "${mat.name}"?`, { danger: true });
-  if (!confirmed) return;
-
-  // Store data for undo
-  const deletedData = {
-    mat: { ...mat },
-    linkedLab: mat.linkedLabId ? getMat(mat.linkedLabId) : null,
-    grades: State.grades[matId] ? { [matId]: { ...State.grades[matId] } } : null,
-    topics: State.topics.filter(t => t.matId === matId).map(t => ({ ...t }))
-  };
-
-  // Perform delete
-  if (mat.linkedLabId) {
-    State.materias = State.materias.filter(m => m.id !== mat.linkedLabId);
-    delete State.grades[mat.linkedLabId];
-    State.topics = State.topics.filter(t => t.matId !== mat.linkedLabId);
-  }
-  State.materias = State.materias.filter(m => m.id !== matId);
-  delete State.grades[matId];
-  State.topics = State.topics.filter(t => t.matId !== matId);
-  saveState(['materias','grades','topics']);
-  renderMaterias(); renderGrades(); renderOverview(); fillMatSels(); fillTopicMatSel(); fillPomSel();
-
-  // Show undo toast
-  if (typeof showUndoToast === 'function') {
-    showUndoToast(`Materia "${mat.name}" eliminada`, () => {
-      const sem = getActiveSem();
-      if (!sem) return;
-
-      sem.materias.push(deletedData.mat);
-      if (deletedData.linkedLab) {
-        sem.materias.push(deletedData.linkedLab);
-      }
-      if (deletedData.grades) {
-        Object.assign(State.grades, deletedData.grades);
-      }
-      if (deletedData.topics) {
-        State.topics = [...State.topics, ...deletedData.topics];
-      }
-
-      saveState(['materias', 'grades', 'topics']);
-      renderMaterias(); renderGrades(); renderOverview(); fillMatSels(); fillTopicMatSel(); fillPomSel();
-    });
-  }
-}
-
-function openAddClassModal() {
-  // Asegurarse de que el modal esté en modo "crear", no "editar"
-  window._editClassMatId = null;
   const titleEl = document.querySelector('#modal-addclass .modal-title');
   const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
-  if (titleEl) titleEl.textContent = '📚 Nueva Clase';
+  if (titleEl) titleEl.textContent = '� Nueva Clase';
   if (saveBtn) { saveBtn.onclick = saveNewClass; saveBtn.textContent = '💾 Crear Clase'; }
 
   document.getElementById('nc-name').value    = '';
@@ -568,6 +453,7 @@ function openAddClassModal() {
   document.querySelectorAll('.icon-opt').forEach(el  => el.classList.toggle('selected', el.dataset.icon  === newIconSel));
   document.getElementById('modal-addclass').classList.add('open');
 }
+
 function toggleLabSection() {
   document.getElementById('lab-section').style.display =
     document.getElementById('nc-haslab').checked ? 'block' : 'none';
