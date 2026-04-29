@@ -252,4 +252,3 @@ if (!document.getElementById('skeleton-styles')) {
   document.head.appendChild(styleEl);
 }
 
-console.log('📦 Skeleton Loading States loaded');

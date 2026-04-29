@@ -46,7 +46,6 @@
       if (window.TursoDB && typeof window.TursoDB.init === 'function') {
         await window.TursoDB.init(userId);
         _ready = window.TursoDB._ready;
-        console.log('✅ window.DB usando Turso para usuario:', _userId);
       } else {
         console.warn('⚠️ Turso configurado pero turso-sync.js no cargado');
         _useTurso = false; // Fallback a Supabase
@@ -57,7 +56,6 @@
     if (!_useTurso) {
       if (_client && _userId) {
         _ready = true;
-        console.log('✅ window.DB usando Supabase para usuario:', _userId);
       } else {
         console.warn('⚠️ window.DB: cliente Supabase no disponible todavía');
       }
@@ -80,7 +78,6 @@
     if (localUpdatedAt && typeof localUpdatedAt === 'number') {
       const remoteUpdatedAt = await getRemoteUpdatedAt();
       if (remoteUpdatedAt && remoteUpdatedAt <= localUpdatedAt) {
-        console.log('⏭️ DB.load: remoto no más nuevo que local (preflight), omitiendo descarga');
         return null;
       }
     }
@@ -100,7 +97,6 @@
         return null;
       }
       if (!data) {
-        console.log('📭 DB.load: sin datos previos en Supabase (usuario nuevo)');
         return null;
       }
 
@@ -108,7 +104,6 @@
       let settings = data.settings || {};
       // Siempre excluir pomData snapshots y history por defecto para reducir ancho de banda
       if (settings.pomData) {
-        console.log('📉 Excluyendo pomData (snapshots, history) del sync para reducir egress');
         settings = {
           ...settings,
           pomData: {
@@ -141,7 +136,6 @@
 
       // Log egress size
       const dataSize = JSON.stringify({ semestres: optimizedSemestres, settings }).length;
-      console.log(`📥 DB.load: datos cargados desde Supabase (${Math.round(dataSize/1024)} KB egress)`);
       return {
         semestres: optimizedSemestres || [],
         settings:  settings,
@@ -203,13 +197,11 @@
 
       // Si no hay campos cambiados, no hacer nada
       if (Object.keys(payload).length === 0) {
-        console.log('⏭️ DB.save: sin cambios para sincronizar');
         return;
       }
 
       // Log egress size
       const dataSize = JSON.stringify(payload).length;
-      console.log(`☁️ DB.save: subiendo ${Math.round(dataSize/1024)} KB (delta sync: ${changedFields.join(', ')})`);
 
       const { error } = await _getClient()
         .from('user_data')
@@ -224,7 +216,6 @@
       if (error) {
         console.warn('⚠️ DB.save error:', error.message);
       } else {
-        console.log(`✅ DB.save: datos guardados en Supabase (${Math.round(dataSize/1024)} KB egress)`);
       }
     } catch (err) {
       console.warn('⚠️ DB.save excepción:', err.message);
@@ -272,7 +263,6 @@
         // NUNCA sincronizar snapshots (son muy pesados)
         updatedAt: optimizedSettings.pomData.updatedAt
       };
-      console.log(`📉 Pomodoro optimizado: ${Math.round(pomSize/1024)} KB → ${Math.round(JSON.stringify(optimizedSettings.pomData).length/1024)} KB`);
     }
 
     return { semestres: optimizedSemestres, settings: optimizedSettings };
@@ -311,5 +301,4 @@
     configurable: true,
   });
 
-  console.log('📦 academia-sync.js cargado (window.AcademiaDB / window.DB)');
 })();

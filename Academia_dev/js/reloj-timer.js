@@ -328,12 +328,10 @@
     }).join('');
   };
 
-  console.log('⏱️ Temporizador module loaded');
 
   // Inicializar cuando se carga el partial
   document.addEventListener('partial-loaded', function(e) {
     if (e.detail && e.detail.name === 'p-reloj-timer') {
-      console.log('✅ Partial p-reloj-timer cargado, inicializando...');
       setTimeout(() => {
         initTimerData();
         renderTimerHistory();
@@ -348,7 +346,6 @@
           if (minutesInput) minutesInput.value = minutes || 0;
           if (secondsInput) secondsInput.value = seconds || 0;
         }
-        console.log('✅ Temporizador inicializado');
       }, 150);
     }
   });

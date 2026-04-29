@@ -187,19 +187,16 @@
     `).join('');
   };
 
-  console.log('⏱️ Cronómetro module loaded');
 
   // Inicializar cuando se carga el partial
   document.addEventListener('partial-loaded', function(e) {
     if (e.detail && e.detail.name === 'p-reloj-crono') {
-      console.log('✅ Partial p-reloj-crono cargado, inicializando...');
       setTimeout(() => {
         initChronoData();
         updateChronoDisplay();
         updateChronoButtons();
         renderLaps();
         renderChronoSessions();
-        console.log('✅ Cronómetro inicializado');
       }, 150);
     }
   });

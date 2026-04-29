@@ -58,17 +58,33 @@
       target.appendChild(wrapper.firstChild);
     }
     loadedPartials.add(name);
-    console.log('📥 Partial cargado:', name);
+  }
+
+  // Crear HTML del spinner de 4 puntitos
+  function createSpinnerHTML(label) {
+    return '<div class="spinner-container">' +
+      '<div class="spinner-dot"></div>' +
+      '<div class="spinner-dot"></div>' +
+      '<div class="spinner-dot"></div>' +
+      '<div class="spinner-dot"></div>' +
+    '</div>' +
+    (label ? '<div class="spinner-label">' + label + '</div>' : '');
   }
 
   function loadCriticalPartials() {
     var content = document.getElementById('pages-content');
     var allFetches = CRITICAL_PARTIALS.map(fetchPartial);
 
+    // Actualizar spinner con nuevo diseño
+    var spinner = document.getElementById('partials-loading');
+    if (spinner) {
+      spinner.innerHTML = createSpinnerHTML('Cargando aplicación...');
+      spinner.className = 'global-spinner';
+    }
+
     Promise.all(allFetches)
       .then(function (htmls) {
         // Quitar spinner de carga
-        var spinner = document.getElementById('partials-loading');
         if (spinner) spinner.remove();
 
         // Inyectar overview en .content
@@ -80,16 +96,14 @@
 
         // Disparar evento para que bootstrap.js sepa que el DOM está listo
         document.dispatchEvent(new Event('partials-loaded'));
-        console.log('✅ Academia — partials críticos cargados (lazy loading activado)');
       })
       .catch(function (err) {
         console.error('❌ Error cargando partials críticos:', err);
-        var spinner = document.getElementById('partials-loading');
         if (spinner) {
           spinner.innerHTML =
-            '<div style="font-size:20px;">❌</div>' +
-            '<div style="font-family:\'Space Mono\',monospace;font-size:11px;color:#f87171;">' +
-            'Error cargando la app. ¿Estás usando un servidor HTTP?<br>' +
+            '<div style="font-size:32px;margin-bottom:8px;">❌</div>' +
+            '<div style="font-family:\'Space Mono\',monospace;font-size:11px;color:#f87171;text-align:center;">' +
+            'Error cargando la app.<br>¿Estás usando un servidor HTTP?<br>' +
             '<span style="opacity:.6">' + err.message + '</span>' +
             '</div>';
         }
@@ -99,7 +113,6 @@
   // Función pública para cargar partials on-demand
   window.loadPartial = function(name) {
     if (loadedPartials.has(name)) {
-      console.log('⏭️ Partial ya cargado:', name);
       return Promise.resolve();
     }
     if (!LAZY_PARTIALS.includes(name) && !CRITICAL_PARTIALS.includes(name)) {
@@ -107,7 +120,6 @@
       return Promise.reject(new Error('Partial no reconocido'));
     }
 
-    console.log('📥 Cargando partial on-demand:', name);
     return fetchPartial(name).then(function(html) {
       injectPartial(name, html, name === 'modals' || name === 'overlays');
       // Disparar evento para que la página se inicialice

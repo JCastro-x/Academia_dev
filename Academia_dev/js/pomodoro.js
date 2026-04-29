@@ -41,7 +41,9 @@ if (pomChannel) {
   };
 }
 
-let pomI=null, pomR=false, pomB=false, pomSL=0, pomTS=0, pomD=0;
+// NOTA: Variables pomR, pomB, pomSL, pomTS, pomD, pomI ahora están definidas
+// globalmente en window por js/pomodoro/timer-core.js
+// Este archivo solo proporciona la sincronización PiP/BroadcastChannel
 
 let _pomAudioCtx = null;
 function initAudioContext() {

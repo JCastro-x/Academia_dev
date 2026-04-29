@@ -91,7 +91,6 @@
 
     await _ensureTable();
     _ready = true;
-    console.log('✅ Turso-sync listo para usuario:', _userId);
   }
 
   // ── load(localUpdatedAt?, options?) ────────────────────────────
@@ -104,7 +103,6 @@
     if (localUpdatedAt && typeof localUpdatedAt === 'number') {
       const remoteUpdatedAt = await getRemoteUpdatedAt(semesterId);
       if (remoteUpdatedAt && remoteUpdatedAt <= localUpdatedAt) {
-        console.log('⏭️ Turso.load: remoto no más nuevo que local (preflight), omitiendo descarga');
         return null;
       }
     }
@@ -137,7 +135,6 @@
         }
 
         if (!data || data.length === 0) {
-          console.log('📭 Turso.load: sin datos previos (usuario nuevo)');
           return { settings, semestres: [], updatedAt: settingsUpdatedAt };
         }
 
@@ -163,7 +160,6 @@
         });
 
         const dataSize = JSON.stringify({ semestres: optimizedSemestres, settings }).length;
-        console.log(`📥 Turso.load: todos los semestres cargados (${Math.round(dataSize/1024)} KB egress)`);
 
         return {
           semestres: optimizedSemestres,
@@ -184,7 +180,6 @@
       }
 
       if (!data || data.length === 0) {
-        console.log(`📭 Turso.load: sin datos para semestre ${semesterId}`);
         return { settings, semester: null, updatedAt: settingsUpdatedAt };
       }
 
@@ -203,7 +198,6 @@
       }
 
       const dataSize = JSON.stringify({ semester, settings }).length;
-      console.log(`📥 Turso.load: semestre ${semesterId} cargado (${Math.round(dataSize/1024)} KB egress)`);
 
       return {
         semester,
@@ -251,7 +245,6 @@
       if (changedFields.includes('settings')) {
         const optimizedSettings = _optimizeSettings(settings);
         const settingsSize = JSON.stringify(optimizedSettings).length;
-        console.log(`☁️ Turso.save: guardando settings (${Math.round(settingsSize/1024)} KB)`);
         
         const { error: settingsError } = await _tursoRequest(
           `INSERT INTO user_settings (user_id, settings, updated_at) 
@@ -275,7 +268,6 @@
           if (semester) {
             const optimizedSemester = _optimizeSemester(semester);
             const dataSize = JSON.stringify(optimizedSemester).length;
-            console.log(`☁️ Turso.save: guardando semestre ${semesterId} (${Math.round(dataSize/1024)} KB)`);
             
             const { error } = await _tursoRequest(
               `INSERT INTO user_data (user_id, semester_id, data, updated_at) 
@@ -293,7 +285,6 @@
         } else {
           // Guardar todos los semestres
           const totalSize = JSON.stringify(semestres).length;
-          console.log(`☁️ Turso.save: guardando todos los semestres (${Math.round(totalSize/1024)} KB)`);
           
           for (const semester of (semestres || [])) {
             const optimizedSemester = _optimizeSemester(semester);
@@ -313,7 +304,6 @@
         }
       }
 
-      console.log('✅ Turso.save: sincronización completada');
     } catch (err) {
       console.warn('⚠️ Turso.save excepción:', err.message);
     }
@@ -353,7 +343,6 @@
         history: recentHistory,
         updatedAt: optimizedSettings.pomData.updatedAt
       };
-      console.log(`📉 Pomodoro optimizado: ${Math.round(pomSize/1024)} KB → ${Math.round(JSON.stringify(optimizedSettings.pomData).length/1024)} KB`);
     }
     return optimizedSettings;
   }
@@ -381,7 +370,6 @@
   function configure(url, authToken) {
     localStorage.setItem('turso_url', url);
     localStorage.setItem('turso_auth_token', authToken);
-    console.log('✅ Turso configurado. Recarga la página para aplicar.');
   }
 
   // ── Limpiar datos del usuario ────────────────────────────────────
@@ -395,7 +383,6 @@
       if (error) {
         console.warn('⚠️ Turso.clearUserData error:', error);
       } else {
-        console.log('✅ Turso.clearUserData: datos eliminados');
       }
     } catch (err) {
       console.warn('⚠️ Turso.clearUserData excepción:', err.message);
@@ -420,5 +407,4 @@
     configurable: true,
   });
 
-  console.log('📦 turso-sync.js cargado (window.TursoDB)');
 })();

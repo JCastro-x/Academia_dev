@@ -160,4 +160,3 @@ if (!document.getElementById('shortcuts-styles')) {
   document.head.appendChild(styleEl);
 }
 
-console.log('📦 Keyboard Shortcuts loaded');

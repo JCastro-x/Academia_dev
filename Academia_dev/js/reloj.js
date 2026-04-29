@@ -10,7 +10,6 @@
 
   // Navegar a modo específico del reloj
   window.goRelojMode = function(mode) {
-    console.log('🔄 goRelojMode llamado con modo:', mode);
     
     // Guardar modo actual en state (si está disponible)
     try {
@@ -28,26 +27,21 @@
     };
     
     if (modes[mode]) {
-      console.log('📥 Cargando partial:', modes[mode]);
       loadPartial(modes[mode]).then(() => {
-        console.log('✅ Partial cargado:', modes[mode]);
         // Ocultar selector, mostrar modo
         const selector = document.getElementById('page-p-reloj');
         if (selector) selector.classList.remove('active');
         
         const modePage = document.getElementById(`page-${mode}`);
-        console.log('🔍 Buscando elemento:', `page-${mode}`, 'encontrado:', !!modePage);
         if (modePage) {
           modePage.style.display = 'block';
           modePage.classList.add('active');
-          console.log('✅ Modo mostrado:', mode);
           
           // Inicializar el modo específico con delay mayor para móvil
           const isMobile = window.innerWidth <= 768;
           const delay = isMobile ? 300 : 200;
           
           setTimeout(() => {
-            console.log('🔄 Inicializando modo:', mode);
             if (mode === 'pomodoro') {
               if (typeof fillPomSel === 'function') fillPomSel();
               if (typeof renderPomHistory === 'function') renderPomHistory();
@@ -78,7 +72,6 @@
 
   // Volver al selector desde cualquier modo
   window.backToRelojSelector = function() {
-    console.log('🔙 Volviendo al selector de Reloj');
     
     // Ocultar todos los modos
     ['pomodoro', 'cronometro', 'temporizador'].forEach(mode => {
@@ -105,7 +98,7 @@
   window.updateRelojStats = function() {
     try {
       if (!window.State) return;
-      
+
       // Pomodoro stats
       const pomStreak = State.pomSessions?.length || 0;
       const pomGoal = State.settings?.pomDailyGoal || 4;
@@ -113,7 +106,29 @@
       const pomGoalEl = document.getElementById('pom-goal-display');
       if (pomStreakEl) pomStreakEl.textContent = pomStreak;
       if (pomGoalEl) pomGoalEl.textContent = pomGoal;
-      
+
+      // Renderizar sesiones de Pomodoro en la vista Reloj
+      const sessionsContainer = document.getElementById('reloj-pom-sessions');
+      if (sessionsContainer) {
+        const sessions = State.pomSessions || [];
+        if (sessions.length === 0) {
+          sessionsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text3); font-size: 13px;">Sin sesiones hoy. ¡Inicia tu primer Pomodoro!</div>';
+        } else {
+          sessionsContainer.innerHTML = sessions.map((session, idx) => {
+            const time = session.time || '00:00';
+            const completed = session.completed ? '✅' : '⏹️';
+            const task = session.task || 'Sin tarea';
+            return `<div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 14px;">${completed}</span>
+                <span style="font-size: 13px; color: var(--text);">${task}</span>
+              </div>
+              <span style="font-size: 12px; font-family: 'Space Mono', monospace; color: var(--accent);">${time}</span>
+            </div>`;
+          }).join('');
+        }
+      }
+
       // Cronometro stats
       const chronoData = State.settings?.chronoData;
       const lastEl = document.getElementById('chrono-last');
@@ -123,16 +138,12 @@
     } catch(e) { console.warn('Error actualizando stats:', e); }
   };
 
-  console.log('⏱️ Reloj module loaded');
 
   // Inicializar cuando se carga el partial
   document.addEventListener('partial-loaded', function(e) {
-    console.log('📥 Evento partial-loaded:', e.detail);
     if (e.detail && e.detail.name === 'p-reloj') {
-      console.log('✅ Partial p-reloj cargado, actualizando stats...');
       setTimeout(() => {
         updateRelojStats();
-        console.log('✅ Stats actualizadas');
       }, 150);
     }
   });

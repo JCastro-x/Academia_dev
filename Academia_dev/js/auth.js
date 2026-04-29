@@ -24,7 +24,6 @@ let prueba12;
         storageKey: 'academia_auth_session'
       }
     });
-    console.log('✅ Supabase initialized');
     return supabaseClient;
   }
 
@@ -121,7 +120,6 @@ let prueba12;
   function onAuthChange(callback) {
     if (!supabaseClient) return;
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      console.log('🔔 Auth event:', event);
       callback(event, session);
     });
   }
@@ -136,5 +134,4 @@ let prueba12;
     getClient: () => supabaseClient
   };
 
-  console.log('📦 Auth module loaded');
 })();

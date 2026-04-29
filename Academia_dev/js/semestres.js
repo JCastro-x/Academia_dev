@@ -242,9 +242,6 @@ const HEX_COLORS = [
 ];
 const ICONS      = ['📚','🔬','🧪','📐','💻','📊','✏️','🧮','🌐','⚡','🎓','📋','🔭','🧬','📝',
                     '🏗️','🎯','🔐','🧠','📡','⚗️','🗜️','🔋','🧲','🎨','🛠️','📈','🔢'];
-let newColorSel  = '#7c6aff';
-let newIconSel   = '📚';
-let zoneRowCount = 0;
 
 const PAGE_TITLES = {
   overview:'Resumen', materias:'Materias', tareas:'Tareas',

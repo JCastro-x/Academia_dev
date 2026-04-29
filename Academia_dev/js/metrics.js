@@ -167,5 +167,4 @@
     setLogLevel: (level) => { CONFIG.LOG_LEVEL = level; }
   };
 
-  console.log('📊 DataMetrics module loaded');
-})();
+  })();

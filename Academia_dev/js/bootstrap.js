@@ -172,7 +172,6 @@ async function handleLogout() {
 
   const result = await window.Auth.logoutUser();
   if (result.success) {
-    console.log('✅ Sesión cerrada');
     if (window.Auth?.clearAcademiaStorage) window.Auth.clearAcademiaStorage();
     window.location.href = 'auth-page.html';
   } else {

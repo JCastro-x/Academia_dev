@@ -75,7 +75,6 @@ function init() {
       // MODO INVITADO — saltar Supabase completamente
       // ════════════════════════════════════════════════════════
       if (isGuest) {
-        console.log('👀 Modo invitado activo — usando solo localStorage');
 
         // Quitar overlay y continuar sin auth
         const overlay = document.getElementById('auth-check-overlay');
@@ -117,17 +116,14 @@ function init() {
           return;
         }
 
-        console.log('❌ NO AUTENTICADO - Redirigiendo a login');
         redirectToAuthSafely('no-auth');
         return;
       }
 
-      console.log('✅ AUTENTICADO:', auth.email);
 
       // Si el usuario cambió, limpiar datos del anterior
       const lastUser = localStorage.getItem('_academia_last_user');
       if (lastUser && lastUser !== auth.id) {
-        console.log('🔄 Usuario diferente, limpiando datos anteriores...');
         localStorage.removeItem('academia_v4_semestres');
         localStorage.removeItem('academia_v3_settings');
       }
@@ -166,10 +162,8 @@ function init() {
             // NO cargar snapshots desde Supabase - son muy pesados y causan egress excesivo
             // Los snapshots se generan localmente y no necesitan sincronizarse
             if (pomData.snapshots && typeof pomData.snapshots === 'object') {
-              console.log('📉 Ignorando snapshots de Supabase para reducir egress');
             }
           }
-          console.log('✅ Datos sincronizados desde Supabase');
         } else {
           // Usuario nuevo — verificar si viene de modo invitado
           const guestSems     = localStorage.getItem('academia_v4_semestres');
@@ -177,14 +171,12 @@ function init() {
           const hadGuestData  = guestSems || guestSettings;
 
           if (hadGuestData) {
-            console.log('📤 Migrando datos de invitado a Supabase...');
             await db.saveNow(
               guestSems     ? JSON.parse(guestSems)     : [],
               guestSettings ? JSON.parse(guestSettings) : {}
             );
             // Limpiar flag de invitado — ahora tiene cuenta real
             localStorage.removeItem('academia_guest_mode');
-            console.log('✅ Datos de invitado migrados a la cuenta');
           }
         }
       }
@@ -395,13 +387,11 @@ function continueInit(auth) {
 
       // Si hay un guardado local pendiente, nunca hacer pull remoto todavía.
       if (!force && typeof _saveTimer !== 'undefined' && _saveTimer) {
-        console.log('⏭️ Sync omitido: guardado local pendiente');
         return;
       }
 
       const msSinceLocalMod = now - (window._localModifiedAt || 0);
       if (msSinceLocalMod < 30000) {
-        console.log('⏭️ Sync omitido: cambios locales recientes (' + Math.round(msSinceLocalMod/1000) + 's)');
         return;
       }
       const localModifiedAt = window._localModifiedAt || 0;
@@ -420,7 +410,6 @@ function continueInit(auth) {
         }
 
         if (remoteUpdatedAt && remoteUpdatedAt <= localModifiedAt) {
-          console.log('⏭️ Sync omitido: remoto no más nuevo que local (preflight)');
           _lastSync = now;
           return;
         }
@@ -433,7 +422,6 @@ function continueInit(auth) {
       remoteUpdatedAt = dbData.updatedAt ? Date.parse(dbData.updatedAt) : 0;
       if (remoteUpdatedAt) _lastRemoteUpdatedAt = remoteUpdatedAt;
       if (!force && remoteUpdatedAt && remoteUpdatedAt <= localModifiedAt) {
-        console.log('⏭️ Sync omitido: datos locales son mas recientes o iguales al servidor');
         return;
       }
 
@@ -450,7 +438,6 @@ function continueInit(auth) {
         if (localJson !== dbJson) { localStorage.setItem('academia_v3_settings', dbJson); changed = true; }
       }
       if (changed) {
-        console.log('🔄 Datos actualizados desde Supabase — recargando UI...');
         if (Array.isArray(dbData.semestres)) {
           State.semestres.length = 0;
           dbData.semestres.forEach(s => State.semestres.push(s));

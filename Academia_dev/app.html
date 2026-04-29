@@ -125,9 +125,9 @@
     </div>
   </aside>
 
-  <!-- ═══════════════════════════════════════════════
+  <!-- 
        MAIN CONTENT
-  ══════════════════════════════════════════════════ -->
+  -->
   <div class="main">
 
     <!-- TOP BAR -->
@@ -216,14 +216,36 @@
   <!-- ─── UI (cargar después de notes.js) ─── -->
   <script src="js/ui.js"></script>
 
+  <!-- ─── Audio System (base para pomodoro) ─── -->
+  <script src="js/sounds.js"></script>
+
+  <!-- ─── Pomodoro Modular ─── -->
+  <script src="js/pomodoro/timer-core.js"></script>
+  <script src="js/pomodoro/timer-ui.js"></script>
+  <script src="js/pomodoro.js"></script>
+
+  <!-- ─── Subjects Modular ─── -->
+  <script src="js/subjects/subjects-core.js"></script>
+  <script src="js/subjects/subjects-ui.js"></script>
+  <script src="js/subjects/subjects-modal.js"></script>
+  <script src="js/subjects/topics-core.js"></script>
+
   <!-- ─── Features ─── -->
   <script src="js/materias.js"></script>
   <script src="js/stats.js"></script>
   <script src="js/search.js"></script>
-  <script src="js/sounds.js"></script>
-  <script src="js/pomodoro.js"></script>
   <script src="js/tasks.js"></script>
   <script src="js/calendar.js"></script>
+  <!-- ─── Chrono Modular (Bloque A: Streaks, Cronómetro, Flashcards) ─── -->
+  <script src="js/chrono/chrono-core.js"></script>
+  <script src="js/chrono/chrono-ui.js"></script>
+  <script src="js/chrono/flashcards-core.js"></script>
+  <script src="js/chrono/flashcards-ui.js"></script>
+
+  <!-- ─── Chrono Modular (Bloque B: Focus) ─── -->
+  <script src="js/chrono/focus-core.js"></script>
+
+  <!-- ─── Legacy (mantener para compatibilidad, vacíos) ─── -->
   <script src="js/chrono.js"></script>
   <script src="js/flashcards.js"></script>
   <script src="js/habits.js"></script>

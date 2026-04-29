@@ -524,5 +524,4 @@
   window.deleteHabitConfirm = deleteHabitConfirm;
   window.editHabit = editHabit;
 
-  console.log('🌱 Habits module loaded');
-})();
+  })();

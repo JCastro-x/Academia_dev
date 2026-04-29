@@ -249,4 +249,3 @@ if (!document.getElementById('undo-styles')) {
   document.head.appendChild(styleEl);
 }
 
-console.log('📦 Undo System loaded');

@@ -1000,13 +1000,13 @@ function _loadNoteInProEditor(noteId) {
 }
 
 function _showNotesEmptyState() {
-  const emptyState = document.getElementById('notes-empty-state');
-  const titleWrap  = document.getElementById('notes-title-wrap');
-  const ta         = _el('notes-main-ta');
-  const wc         = document.getElementById('notes-wordcount');
-  const drawArea   = document.getElementById('notes-drawing-area');
-  const imgStrip   = document.getElementById('notes-images-strip');
-  const toolbar    = document.getElementById('notes-toolbar');
+  const emptyState  = document.getElementById('notes-empty-state');
+  const titleWrap   = document.getElementById('notes-title-wrap');
+  const ta          = _el('notes-main-ta');
+  const wc          = document.getElementById('notes-wordcount');
+  const drawArea    = document.getElementById('notes-drawing-area');
+  const imgStrip    = document.getElementById('notes-images-strip');
+  const toolbar     = document.getElementById('notes-toolbar');
   const rte        = document.getElementById('notes-rte');
   const rteToolbar = document.getElementById('notes-rte-toolbar');
   if (emptyState) emptyState.style.display = 'flex';
@@ -1018,6 +1018,59 @@ function _showNotesEmptyState() {
   if (drawArea) drawArea.style.display = 'none';
   if (imgStrip) imgStrip.style.display = 'none';
   if (toolbar) toolbar.innerHTML = '<span style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;">Selecciona o crea una nota</span>';
+}
+
+// Convert plain text to HTML for RTE (converts line breaks to <br> or <p>)
+function _plaintextToRteHtml(text) {
+  if (!text) return '';
+  // Escape HTML entities first
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // Convert line breaks to <br>
+  return escaped.replace(/\n/g, '<br>');
+}
+
+// Handle paste event in RTE to clean HTML or handle images
+function _handleRtePaste(e) {
+  e.preventDefault();
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  
+  // Check for images
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result;
+        const note = _getNotesArray().find(n => n.id === _currentNoteId);
+        if (!note) return;
+        if (!note.images) note.images = {};
+        const key = 'IMG_' + Date.now();
+        // Store in IndexedDB
+        if (typeof idbSetImage === 'function') {
+          await idbSetImage(key, base64);
+          note.images[key] = 'IDB:' + key;
+        } else {
+          note.images[key] = base64;
+        }
+        saveState(['all']);
+        if (typeof _renderImagesStrip === 'function') _renderImagesStrip(note);
+        onNotesInput();
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+  }
+  
+  // Handle text paste - get plain text and insert as HTML
+  const text = e.clipboardData.getData('text/plain');
+  if (text) {
+    document.execCommand('insertHTML', false, _plaintextToRteHtml(text));
+  }
 }
 
 // ── IMAGES STRIP ──────────────────────────────────────────────
@@ -1081,7 +1134,7 @@ function _renderImagesStrip(note) {
       <img src="" alt="img" id="img-${k}" data-img-key="${k}" loading="lazy" style="max-height:160px;max-width:240px;object-fit:cover;">
       <button class="nit-del" onclick="event.stopPropagation();deleteNoteImage('${noteId}','${k}')">✕</button>
     </div>`).join('');
-  
+
   // Load images immediately (don't wait for intersection observer)
   keys.forEach(async k => {
     const imgEl = document.getElementById('img-' + k);
@@ -1095,7 +1148,7 @@ function _renderImagesStrip(note) {
       imgEl.src = val;
     }
   });
-  
+
   // Lazy load images con Intersection Observer (for scrolling optimization)
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(async entry => {
@@ -1103,7 +1156,7 @@ function _renderImagesStrip(note) {
         const imgEl = entry.target;
         const k = imgEl.dataset.imgKey;
         if (!k) return;
-        
+
         const val = imgs[k];
         if (val && val.startsWith('IDB:')) {
           const idbKey = val.slice(4);
@@ -1112,16 +1165,41 @@ function _renderImagesStrip(note) {
         } else if (val) {
           imgEl.src = val;
         }
-        
+
         observer.unobserve(imgEl);
       }
     });
   }, { rootMargin: '50px' });
-  
+
   keys.forEach(k => {
     const imgEl = document.getElementById('img-' + k);
     if (imgEl) observer.observe(imgEl);
   });
+}
+
+// Render PDF attachments strip
+function _renderPDFStrip(note) {
+  const strip = document.getElementById('notes-pdf-strip');
+  if (!strip) return;
+  const pdfs = note.pdfs || note.attachments?.pdfs || {};
+  const keys = Object.keys(pdfs);
+  if (!keys.length) { strip.style.display = 'none'; return; }
+  strip.style.display = 'flex';
+  const noteId = note.id;
+  strip.innerHTML = keys.map(k => {
+    const pdf = pdfs[k];
+    const name = pdf.name || pdf.filename || 'PDF';
+    const size = pdf.size ? `(${(pdf.size / 1024).toFixed(1)} KB)` : '';
+    return `
+    <div class="notes-pdf-item" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">
+      <span style="font-size:20px;">📄</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sanitizeHtml(name)}</div>
+        <div style="font-size:10px;color:var(--text3);">${size}</div>
+      </div>
+      <button onclick="event.stopPropagation();deleteNotePDF('${noteId}','${k}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:4px;" title="Eliminar PDF">✕</button>
+    </div>`;
+  }).join('');
 }
 
 function openLightbox(noteId, imgKey) {
@@ -1152,7 +1230,7 @@ async function deleteNoteImage(noteId, imgKey) {
 
   const val = note.images[imgKey];
   const deletedImageData = { imgKey, val, noteId };
-  
+
   if (val && val.startsWith('IDB:')) idbDeleteImage(val.slice(4));
   delete note.images[imgKey];
   saveState(['all']);
@@ -1166,6 +1244,38 @@ async function deleteNoteImage(noteId, imgKey) {
         note.images[imgKey] = val;
         saveState(['all']);
         _renderImagesStrip(note);
+      }
+    });
+  }
+}
+
+async function deleteNotePDF(noteId, pdfKey) {
+  const note = _getNotesArray().find(n => n.id === noteId);
+  if (!note) return;
+
+  const confirmed = await showConfirm('¿Eliminar este PDF?', { danger: true });
+  if (!confirmed) return;
+
+  const pdfs = note.pdfs || note.attachments?.pdfs || {};
+  const val = pdfs[pdfKey];
+  if (!val) return;
+
+  delete pdfs[pdfKey];
+  if (note.attachments && note.attachments.pdfs && note.attachments.pdfs[pdfKey]) {
+    delete note.attachments.pdfs[pdfKey];
+  }
+  saveState(['all']);
+  _renderPDFStrip(note);
+
+  // Show undo toast
+  if (typeof showUndoToast === 'function') {
+    showUndoToast('PDF eliminado', () => {
+      const note = _getNotesArray().find(n => n.id === noteId);
+      if (note) {
+        if (!note.pdfs) note.pdfs = {};
+        note.pdfs[pdfKey] = val;
+        saveState(['all']);
+        _renderPDFStrip(note);
       }
     });
   }
