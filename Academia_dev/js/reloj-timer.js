@@ -353,3 +353,117 @@
     }
   });
 })();
+
+// ════════════════════════════════════════════════════════════════
+// POMODORO EVENT DELEGATION
+// Replaces inline onclick handlers from partials/pomodoro.html
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Header buttons
+  if (actionType === 'enter-floating-mode') {
+    if (typeof enterFloatingMode === 'function') enterFloatingMode();
+    return;
+  }
+  if (actionType === 'enter-focus-mode') {
+    if (typeof enterFocusMode === 'function') enterFocusMode();
+    return;
+  }
+
+  // Pomodoro controls
+  if (actionType === 'pom-reset') {
+    if (typeof pomReset === 'function') pomReset();
+    return;
+  }
+  if (actionType === 'pom-toggle') {
+    if (typeof pomToggle === 'function') pomToggle();
+    return;
+  }
+  if (actionType === 'pom-skip') {
+    if (typeof pomSkip === 'function') pomSkip();
+    return;
+  }
+  if (actionType === 'pom-save-partial') {
+    if (typeof pomSavePartial === 'function') pomSavePartial();
+    return;
+  }
+
+  // Chrono controls
+  if (actionType === 'chrono-toggle') {
+    if (typeof chronoToggle === 'function') chronoToggle();
+    return;
+  }
+  if (actionType === 'chrono-reset') {
+    if (typeof chronoReset === 'function') chronoReset();
+    return;
+  }
+  if (actionType === 'chrono-switch-phase') {
+    if (typeof chronoSwitchPhase === 'function') chronoSwitchPhase();
+    return;
+  }
+
+  // Noise buttons
+  if (actionType === 'toggle-noise') {
+    const noise = action.dataset.noise;
+    if (noise && typeof toggleNoise === 'function') toggleNoise(noise);
+    return;
+  }
+
+  // Music buttons
+  if (actionType === 'trigger-mp3-input') {
+    const input = document.getElementById('pom-mp3-input');
+    if (input) input.click();
+    return;
+  }
+  if (actionType === 'toggle-pom-music') {
+    if (typeof togglePomMusic === 'function') togglePomMusic();
+    return;
+  }
+
+  // History
+  if (actionType === 'clear-pom-history') {
+    if (typeof clearPomHistory === 'function') clearPomHistory();
+    return;
+  }
+});
+
+// Handle input/change events for pomodoro
+document.addEventListener('input', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  if (actionType === 'set-noise-vol') {
+    if (typeof setNoiseVol === 'function') setNoiseVol(action.value);
+    return;
+  }
+  if (actionType === 'set-pom-vol') {
+    if (typeof setPomVol === 'function') setPomVol(action.value);
+    return;
+  }
+  if (actionType === 'render-pom-goal') {
+    if (typeof renderPomGoal === 'function') renderPomGoal();
+    return;
+  }
+});
+
+document.addEventListener('change', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  if (actionType === 'pom-settings-change') {
+    if (typeof pomReset === 'function') pomReset();
+    return;
+  }
+  if (actionType === 'load-local-music') {
+    if (typeof loadLocalMusic === 'function') loadLocalMusic(action);
+    return;
+  }
+});

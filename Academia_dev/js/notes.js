@@ -2880,7 +2880,8 @@ async function deleteApprovedCourse(idx) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Notes Search Modal Event Delegation (replaces inline handlers)
+// GLOBAL EVENT DELEGATION FOR NOTES MODULE
+// Replaces all inline onclick handlers from partials/notas.html
 // ══════════════════════════════════════════════════════════════
 document.addEventListener('click', (e) => {
   const action = e.target.closest('[data-action]');
@@ -2888,34 +2889,272 @@ document.addEventListener('click', (e) => {
 
   const actionType = action.dataset.action;
 
-  // Close modal
+  // ═══════════════════════════════════════════════════════════════
+  // NOTES MODULE EVENT DELEGATION
+  // ═══════════════════════════════════════════════════════════════
+
+  // Top bar actions
+  if (actionType === 'notes-go-back') {
+    if (typeof _notesGoBack === 'function') _notesGoBack();
+    return;
+  }
+  if (actionType === 'notes-new-note') {
+    if (typeof _notesNewNote === 'function') _notesNewNote();
+    return;
+  }
+  if (actionType === 'notes-new-drawing') {
+    if (typeof _notesNewDrawing === 'function') _notesNewDrawing();
+    return;
+  }
+  if (actionType === 'open-new-folder-modal') {
+    if (typeof openNewFolderModal === 'function') openNewFolderModal();
+    return;
+  }
+
+  // Note editor actions
+  if (actionType === 'close-note-editor') {
+    if (typeof closeNoteEditorModal === 'function') closeNoteEditorModal();
+    return;
+  }
+  if (actionType === 'expand-current-note') {
+    if (typeof expandCurrentNote === 'function') expandCurrentNote();
+    return;
+  }
+  if (actionType === 'export-current-note') {
+    if (typeof exportCurrentNote === 'function') exportCurrentNote();
+    return;
+  }
+  if (actionType === 'delete-current-note') {
+    if (typeof deleteCurrentNote === 'function') deleteCurrentNote();
+    return;
+  }
+  if (actionType === 'open-canvas') {
+    if (typeof openCanvasForNote === 'function') openCanvasForNote();
+    return;
+  }
+
+  // RTE (Rich Text Editor) actions
+  if (actionType === 'rte-exec') {
+    const cmd = action.dataset.command;
+    const val = action.dataset.value || null;
+    if (typeof rteExec === 'function') rteExec(cmd, val);
+    return;
+  }
+  if (actionType === 'rte-copy-formatted') {
+    if (typeof rteCopyFormatted === 'function') rteCopyFormatted();
+    return;
+  }
+  if (actionType === 'rte-copy-plain') {
+    if (typeof rteCopyPlain === 'function') rteCopyPlain();
+    return;
+  }
+
+  // Canvas actions
+  if (actionType === 'set-canvas-color') {
+    const color = action.dataset.color;
+    if (typeof setCanvasColor === 'function') setCanvasColor(action, color);
+    return;
+  }
+  if (actionType === 'set-canvas-size') {
+    const size = parseInt(action.dataset.size);
+    if (typeof setCanvasSize === 'function') setCanvasSize(action, size);
+    return;
+  }
+  if (actionType === 'set-canvas-tool') {
+    const tool = action.dataset.tool;
+    if (typeof setCanvasTool === 'function') setCanvasTool(action, tool);
+    return;
+  }
+  if (actionType === 'toggle-canvas-eraser') {
+    if (typeof toggleCanvasEraser === 'function') toggleCanvasEraser();
+    return;
+  }
+  if (actionType === 'undo-canvas') {
+    if (typeof undoCanvas === 'function') undoCanvas();
+    return;
+  }
+  if (actionType === 'clear-canvas') {
+    if (typeof clearCanvas === 'function') clearCanvas();
+    return;
+  }
+  if (actionType === 'save-canvas-and-close') {
+    if (typeof saveCanvasAndClose === 'function') saveCanvasAndClose();
+    return;
+  }
+
+  // Folder modal actions
+  if (actionType === 'select-folder-icon') {
+    if (typeof selectFolderIcon === 'function') selectFolderIcon(action);
+    return;
+  }
+  if (actionType === 'select-folder-color') {
+    if (typeof selectFolderColor === 'function') selectFolderColor(action);
+    return;
+  }
+  if (actionType === 'save-new-folder') {
+    if (typeof saveNewFolder === 'function') saveNewFolder();
+    return;
+  }
+
+  // Lightbox
+  if (actionType === 'close-lightbox') {
+    if (typeof closeLightbox === 'function') closeLightbox();
+    return;
+  }
+
+  // Scanner
+  if (actionType === 'cancel-scan') {
+    if (typeof cancelScan === 'function') cancelScan();
+    return;
+  }
+
+  // Generic modal close
   if (actionType === 'close-modal') {
     const target = action.dataset.target;
     if (target && typeof closeModal === 'function') closeModal(target);
+    return;
   }
-});
 
-document.addEventListener('input', (e) => {
-  const action = e.target.closest('[data-action]');
-  if (!action) return;
-
-  const actionType = action.dataset.action;
+  // Generic modal open
+  if (actionType === 'open-modal') {
+    const target = action.dataset.target;
+    if (target && typeof openModal === 'function') openModal(target);
+    return;
+  }
 
   // Notes search - render results
   if (actionType === 'render-notes-search-results') {
     if (typeof renderNotesSearchResults === 'function') renderNotesSearchResults();
+    return;
   }
 });
 
+// Handle input/change events for file inputs and RTE
 document.addEventListener('change', (e) => {
   const action = e.target.closest('[data-action]');
   if (!action) return;
 
   const actionType = action.dataset.action;
 
-  // Handle import file
+  // File inputs
   if (actionType === 'handle-import-file') {
     if (typeof handleImportFile === 'function') handleImportFile(action);
+    return;
+  }
+  if (actionType === 'scan-document') {
+    if (typeof scanDocumentFiles === 'function') scanDocumentFiles(action.files);
+    action.value = '';
+    return;
+  }
+  if (actionType === 'attach-images') {
+    if (typeof attachImagesToNote === 'function') attachImagesToNote(action.files);
+    action.value = '';
+    return;
+  }
+  if (actionType === 'load-pdf') {
+    if (typeof loadPDFIntoNotes === 'function' && action.files[0]) loadPDFIntoNotes(action.files[0]);
+    action.value = '';
+    return;
+  }
+  if (actionType === 'paste-image-canvas') {
+    if (typeof _pasteImageToCanvas === 'function' && action.files[0]) _pasteImageToCanvas(action.files[0], 50, 50);
+    action.value = '';
+    return;
+  }
+
+  // Selects
+  if (actionType === 'render-notes-page') {
+    if (typeof renderNotesPage === 'function') renderNotesPage();
+    return;
+  }
+  if (actionType === 'note-folder-change') {
+    if (typeof onNoteFolderChange === 'function') onNoteFolderChange();
+    return;
+  }
+  if (actionType === 'note-mat-change') {
+    if (typeof onNoteMatChange === 'function') onNoteMatChange();
+    return;
+  }
+  if (actionType === 'rte-apply-heading') {
+    if (typeof rteApplyHeading === 'function') rteApplyHeading(action.value);
+    return;
+  }
+  if (actionType === 'pom-settings-change') {
+    if (typeof pomReset === 'function') pomReset();
+    return;
+  }
+  if (actionType === 'load-local-music') {
+    if (typeof loadLocalMusic === 'function') loadLocalMusic(action);
+    return;
+  }
+});
+
+// Handle input events
+document.addEventListener('input', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  if (actionType === 'notes-title-input') {
+    if (typeof onNotesTitleInput === 'function') onNotesTitleInput();
+    return;
+  }
+  if (actionType === 'note-tags-input') {
+    if (typeof onNoteTagsInput === 'function') onNoteTagsInput();
+    return;
+  }
+  if (actionType === 'rte-input') {
+    if (typeof onRteInput === 'function') onRteInput();
+    return;
+  }
+  if (actionType === 'notes-input') {
+    if (typeof onNotesInput === 'function') onNotesInput();
+    return;
+  }
+  if (actionType === 'render-pom-goal') {
+    if (typeof renderPomGoal === 'function') renderPomGoal();
+    return;
+  }
+  if (actionType === 'set-noise-vol') {
+    if (typeof setNoiseVol === 'function') setNoiseVol(action.value);
+    return;
+  }
+  if (actionType === 'set-pom-vol') {
+    if (typeof setPomVol === 'function') setPomVol(action.value);
+    return;
+  }
+});
+
+// Handle keydown events
+document.addEventListener('keydown', (e) => {
+  const action = e.target.closest('[data-keydown-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.keydownAction;
+
+  if (actionType === 'rte-keydown') {
+    if (typeof onRteKeydown === 'function') onRteKeydown(e);
+    return;
+  }
+});
+
+// Handle mouseup/keyup for toolbar updates
+document.addEventListener('mouseup', (e) => {
+  const action = e.target.closest('[data-mouseup-action]');
+  if (!action) return;
+
+  if (action.dataset.mouseupAction === 'rte-update-toolbar') {
+    if (typeof rteUpdateToolbarState === 'function') rteUpdateToolbarState();
+  }
+});
+
+document.addEventListener('keyup', (e) => {
+  const action = e.target.closest('[data-keyup-action]');
+  if (!action) return;
+
+  if (action.dataset.keyupAction === 'rte-update-toolbar') {
+    if (typeof rteUpdateToolbarState === 'function') rteUpdateToolbarState();
   }
 });
 

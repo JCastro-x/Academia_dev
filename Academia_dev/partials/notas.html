@@ -2,16 +2,16 @@
       <div class="page" id="page-notas">
 
         <!-- ── Top bar ── -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <button id="notes-back-btn" class="btn btn-ghost btn-sm" onclick="_notesGoBack()" style="display:none;">← Volver</button>
-            <span style="font-size:16px;font-weight:700;" id="notes-page-title">📝 Bloc de Notas</span>
+        <div class="notes-top-bar">
+          <div class="notes-top-bar-left">
+            <button id="notes-back-btn" class="btn btn-ghost btn-sm" data-action="notes-go-back" style="display:none;">← Volver</button>
+            <span class="notes-page-title" id="notes-page-title">📝 Bloc de Notas</span>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button class="btn btn-ghost btn-sm" onclick="openModal('modal-notes-search')">🔍 Buscar</button>
-            <button class="btn btn-ghost btn-sm" onclick="_notesNewNote()">📄 Nueva nota</button>
-            <button class="btn btn-ghost btn-sm" onclick="_notesNewDrawing()">🎨 Nuevo dibujo</button>
-            <button class="btn btn-primary btn-sm" onclick="openNewFolderModal()">📁 Carpeta</button>
+          <div class="notes-btn-group">
+            <button class="btn btn-ghost btn-sm" data-action="open-modal" data-target="modal-notes-search">🔍 Buscar</button>
+            <button class="btn btn-ghost btn-sm" data-action="notes-new-note">📄 Nueva nota</button>
+            <button class="btn btn-ghost btn-sm" data-action="notes-new-drawing">🎨 Nuevo dibujo</button>
+            <button class="btn btn-primary btn-sm" data-action="open-new-folder-modal">📁 Carpeta</button>
           </div>
         </div>
 
@@ -26,239 +26,228 @@
         </div>
 
         <!-- Hidden compat -->
-        <select id="notes-mat-sel" style="display:none;" onchange="renderNotesPage()"></select>
-        <div id="notes-container" style="display:none;"></div>
+        <select id="notes-mat-sel" class="pom-hidden" data-action="render-notes-page"></select>
+        <div id="notes-container" class="pom-hidden"></div>
         <!-- legacy layout hidden but kept for compat functions -->
-        <div class="notes-pro-layout" id="notes-pro-layout" style="display:none !important;position:absolute;pointer-events:none;opacity:0;"></div>
+        <div class="notes-pro-layout pom-hidden" id="notes-pro-layout" style="position:absolute;pointer-events:none;opacity:0;"></div>
       </div>
 
       <!-- ══════════════════════════════════════════
            EDITOR FLOTANTE (modal de nota)
       ═══════════════════════════════════════════ -->
-      <div id="note-editor-backdrop" onclick="closeNoteEditorModal()"
-        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;backdrop-filter:blur(4px);"></div>
+      <div id="note-editor-backdrop" class="note-editor-backdrop" data-action="close-note-editor"></div>
 
-      <div id="note-editor-modal"
-        style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);
-          width:min(780px,96vw);max-height:90vh;
-          background:var(--surface);border:1px solid var(--border);border-radius:18px;
-          z-index:601;display:none;flex-direction:column;overflow:hidden;
-          box-shadow:0 24px 80px rgba(0,0,0,.6);transition:transform .22s cubic-bezier(.4,0,.2,1),opacity .22s;">
+      <div id="note-editor-modal" class="note-editor-modal">
 
         <!-- Modal header -->
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
-          <input type="text" id="notes-title-inp" class="form-input"
-            placeholder="Título de la nota..."
-            style="font-size:15px;font-weight:700;border:none;background:transparent;padding:4px 0;outline:none;flex:1;min-width:0;" autocomplete="off" oninput="onNotesTitleInput()">
-          <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;" id="notes-autosave-indicator">—</span>
-          <button class="btn btn-ghost btn-sm" onclick="expandCurrentNote()" title="Pantalla completa" style="flex-shrink:0;">⛶</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportCurrentNote()" style="flex-shrink:0;">⬇️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteCurrentNote()" style="flex-shrink:0;">🗑️</button>
-          <button onclick="closeNoteEditorModal()"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 11px;color:var(--text2);cursor:pointer;font-size:13px;font-weight:700;flex-shrink:0;">✕</button>
+        <div class="note-editor-header">
+          <input type="text" id="notes-title-inp" class="form-input note-editor-title-input"
+            placeholder="Título de la nota..." autocomplete="off" data-action="notes-title-input">
+          <span class="note-editor-autosave" id="notes-autosave-indicator">—</span>
+          <button class="btn btn-ghost btn-sm" data-action="expand-current-note" title="Pantalla completa">⛶</button>
+          <button class="btn btn-ghost btn-sm" data-action="export-current-note">⬇️</button>
+          <button class="btn btn-danger btn-sm" data-action="delete-current-note">🗑️</button>
+          <button class="note-editor-close-btn" data-action="close-note-editor">✕</button>
         </div>
 
         <!-- Meta row -->
-        <div id="notes-title-wrap" style="padding:8px 16px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <select id="notes-folder-sel-editor" class="form-select" style="padding:4px 8px;font-size:11px;width:auto;" onchange="onNoteFolderChange()">
+        <div id="notes-title-wrap" class="note-editor-meta">
+          <select id="notes-folder-sel-editor" class="form-select note-editor-meta-select" data-action="note-folder-change">
             <option value="">— Sin carpeta —</option>
           </select>
-          <select id="notes-mat-sel-editor" class="form-select" style="padding:4px 8px;font-size:11px;width:auto;" onchange="onNoteMatChange()">
+          <select id="notes-mat-sel-editor" class="form-select note-editor-meta-select" data-action="note-mat-change">
             <option value="">— Sin materia —</option>
           </select>
-          <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;" id="notes-timestamp">—</span>
-          <button class="btn btn-ghost btn-sm" onclick="openCanvasForNote()" title="Abrir canvas" style="font-size:13px;">🎨</button>
-          <label class="btn btn-ghost btn-sm" title="Escanear PDF/imagen" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-            📄 Escanear<input type="file" accept=".pdf,image/*" multiple style="display:none;" onchange="scanDocumentFiles(this.files);this.value=''">
+          <span class="note-editor-timestamp" id="notes-timestamp">—</span>
+          <button class="btn btn-ghost btn-sm" data-action="open-canvas" title="Abrir canvas">🎨</button>
+          <label class="btn btn-ghost btn-sm" title="Escanear PDF/imagen">
+            📄 Escanear<input type="file" accept=".pdf,image/*" multiple class="pom-hidden" data-action="scan-document">
           </label>
-          <label class="btn btn-ghost btn-sm" title="Adjuntar imágenes" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-            🖼️<input type="file" accept="image/*" multiple style="display:none;" onchange="attachImagesToNote(this.files);this.value=''">
+          <label class="btn btn-ghost btn-sm" title="Adjuntar imágenes">
+            🖼️<input type="file" accept="image/*" multiple class="pom-hidden" data-action="attach-images">
           </label>
-          <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-            📑 PDF<input type="file" accept=".pdf" style="display:none;" onchange="loadPDFIntoNotes(this.files[0]);this.value=''">
+          <label class="btn btn-ghost btn-sm">
+            📑 PDF<input type="file" accept=".pdf" class="pom-hidden" data-action="load-pdf">
           </label>
-          <div style="padding:0;display:flex;gap:5px;align-items:center;flex:1;">
-            <span style="font-size:10px;color:var(--text3);">🏷</span>
-            <input type="text" id="notes-tags-inp" class="form-input"
+          <div class="note-editor-tags-wrap">
+            <span class="note-editor-tags-label">🏷</span>
+            <input type="text" id="notes-tags-inp" class="form-input note-editor-tags-input"
               placeholder="tags, separados, por coma"
-              style="flex:1;min-width:80px;padding:3px 7px;font-size:11px;border:none;background:var(--surface2);border-radius:6px;"
-              autocomplete="off" oninput="onNoteTagsInput()">
-            <div id="notes-tags-display" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+              autocomplete="off" data-action="note-tags-input">
+            <div id="notes-tags-display" class="note-editor-tags-display"></div>
           </div>
         </div>
 
         <!-- RTE toolbar -->
-        <div class="notes-richtext-toolbar" id="notes-rte-toolbar" style="flex-shrink:0;">
-          <select class="rte-select" id="rte-heading" title="Estilo" onchange="rteApplyHeading(this.value)">
+        <div class="notes-richtext-toolbar" id="notes-rte-toolbar">
+          <select class="rte-select" id="rte-heading" title="Estilo" data-action="rte-apply-heading">
             <option value="p">Párrafo</option>
             <option value="h1">H1</option>
             <option value="h2">H2</option>
             <option value="h3">H3</option>
           </select>
           <div class="rte-sep"></div>
-          <button class="rte-btn" id="rte-bold"          onclick="rteExec('bold')"            title="Negrita"><b>B</b></button>
-          <button class="rte-btn" id="rte-italic"        onclick="rteExec('italic')"          title="Itálica"><i>I</i></button>
-          <button class="rte-btn" id="rte-underline"     onclick="rteExec('underline')"       title="Subrayado"><u>U</u></button>
-          <button class="rte-btn" id="rte-strikethrough" onclick="rteExec('strikeThrough')"   title="Tachado" style="text-decoration:line-through;">S</button>
+          <button class="rte-btn" id="rte-bold"          data-action="rte-exec" data-command="bold"            title="Negrita"><b>B</b></button>
+          <button class="rte-btn" id="rte-italic"        data-action="rte-exec" data-command="italic"          title="Itálica"><i>I</i></button>
+          <button class="rte-btn" id="rte-underline"     data-action="rte-exec" data-command="underline"       title="Subrayado"><u>U</u></button>
+          <button class="rte-btn" id="rte-strikethrough" data-action="rte-exec" data-command="strikeThrough"   title="Tachado">S</button>
           <div class="rte-sep"></div>
-          <button class="rte-btn" onclick="rteExec('insertUnorderedList')" title="Lista">☰</button>
-          <button class="rte-btn" onclick="rteExec('insertOrderedList')"   title="Numerada">①</button>
-          <button class="rte-btn" onclick="rteExec('formatBlock','blockquote')" title="Cita">❝</button>
+          <button class="rte-btn" data-action="rte-exec" data-command="insertUnorderedList" title="Lista">☰</button>
+          <button class="rte-btn" data-action="rte-exec" data-command="insertOrderedList"   title="Numerada">①</button>
+          <button class="rte-btn" data-action="rte-exec" data-command="formatBlock" data-value="blockquote" title="Cita">❝</button>
           <div class="rte-sep"></div>
-          <button class="rte-btn" onclick="rteCopyFormatted()" style="font-size:10px;">📋</button>
-          <button class="rte-btn" onclick="rteCopyPlain()"     style="font-size:10px;">📄</button>
+          <button class="rte-btn" data-action="rte-copy-formatted">📋</button>
+          <button class="rte-btn" data-action="rte-copy-plain">📄</button>
         </div>
 
         <!-- Editor area (scrollable) -->
-        <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;">
+        <div class="note-editor-area">
           <div class="notes-richtext-editor" id="notes-rte"
             contenteditable="true"
             data-placeholder="Escribe tus apuntes aquí..."
-            oninput="onRteInput()"
-            onkeydown="onRteKeydown(event)"
-            onmouseup="rteUpdateToolbarState()"
-            onkeyup="rteUpdateToolbarState()"
-            style="display:none;flex:1;padding:16px 20px;min-height:200px;"></div>
+            data-action="rte-input"
+            data-keydown-action="rte-keydown"
+            data-mouseup-action="rte-update-toolbar"
+            data-keyup-action="rte-update-toolbar"></div>
 
           <textarea class="notes-main-textarea" id="notes-main-ta"
-            placeholder="Escribe tus apuntes aquí..." oninput="onNotesInput()"
-            style="display:none;position:absolute;pointer-events:none;opacity:0;"></textarea>
+            placeholder="Escribe tus apuntes aquí..." data-action="notes-input"></textarea>
 
-          <div class="notes-images-strip" id="notes-images-strip" style="display:none;"></div>
-          <div class="notes-wordcount"    id="notes-wordcount"    style="display:none;padding:6px 20px;"></div>
+          <div class="notes-images-strip" id="notes-images-strip"></div>
+          <div class="notes-wordcount"    id="notes-wordcount"></div>
 
           <!-- Drawing view -->
-          <div class="notes-drawing-area" id="notes-drawing-area" style="display:none;flex-direction:column;flex:1;">
-            <div class="canvas-toolbar" id="canvas-toolbar-inline" style="padding:8px 14px;border-bottom:1px solid var(--border);">
-              <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">Vista previa del dibujo</span>
-              <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openCanvasForNote()">✏️ Editar dibujo</button>
+          <div class="notes-drawing-area" id="notes-drawing-area">
+            <div class="canvas-toolbar canvas-toolbar-inline" id="canvas-toolbar-inline">
+              <span class="canvas-toolbar-label">Vista previa del dibujo</span>
+              <button class="btn btn-primary btn-sm" data-action="open-canvas">✏️ Editar dibujo</button>
             </div>
-            <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:20px;">
-              <img id="notes-drawing-preview" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" src="" alt="dibujo">
+            <div class="canvas-preview-container">
+              <img id="notes-drawing-preview" class="canvas-preview-img" src="" alt="dibujo">
             </div>
           </div>
 
-          <div id="notes-pdf-strip" style="display:none;padding:8px 16px;border-top:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;gap:8px;"></div>
+          <div id="notes-pdf-strip" class="notes-pdf-strip"></div>
 
           <!-- Empty state inside modal (shouldn't normally show) -->
-          <div id="notes-empty-state" style="display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px;color:var(--text3);">
-            <div style="font-size:40px;margin-bottom:10px;">📝</div>
-            <div style="font-size:13px;font-weight:700;">Sin nota seleccionada</div>
-            <div style="display:flex;gap:8px;margin-top:14px;">
-              <button class="btn btn-primary btn-sm" onclick="_notesNewNote()">📄 Nueva nota</button>
-              <button class="btn btn-ghost btn-sm"   onclick="_notesNewDrawing()">🎨 Nuevo dibujo</button>
+          <div id="notes-empty-state" class="notes-empty-state">
+            <div class="notes-empty-state-icon">📝</div>
+            <div class="notes-empty-state-text">Sin nota seleccionada</div>
+            <div class="notes-empty-state-actions">
+              <button class="btn btn-primary btn-sm" data-action="notes-new-note">📄 Nueva nota</button>
+              <button class="btn btn-ghost btn-sm"   data-action="notes-new-drawing">🎨 Nuevo dibujo</button>
             </div>
           </div>
         </div>
 
         <!-- Toolbar de nota (bottom, para dibujos) -->
-        <div class="notes-editor-toolbar" id="notes-toolbar" style="display:none;padding:6px 14px;border-top:1px solid var(--border);flex-shrink:0;"></div>
+        <div class="notes-editor-toolbar" id="notes-toolbar"></div>
       </div>
 
       <!-- ═══ CANVAS MODAL ═══ -->
-      <div class="modal-overlay" id="modal-canvas" style="z-index:2500;padding:0;">
-        <div class="modal" style="width:100vw;height:100vh;max-height:100vh;max-width:100vw;display:flex;flex-direction:column;padding:0;overflow:hidden;border-radius:0;">
-          <div class="canvas-toolbar" id="canvas-toolbar-modal" style="padding:8px 14px;border-bottom:1px solid var(--border);gap:8px;flex-shrink:0;flex-wrap:wrap;">
-            <span style="font-size:13px;font-weight:700;" id="canvas-note-title-lbl">Dibujo</span>
-            <div style="width:1px;height:20px;background:var(--border);margin:0 3px;"></div>
-            <div style="display:flex;gap:5px;align-items:center;" id="canvas-colors">
-              <div class="canvas-color-btn active" data-color="#e2e8f0" style="background:#e2e8f0;" onclick="setCanvasColor(this,'#e2e8f0')"></div>
-              <div class="canvas-color-btn" data-color="#f87171" style="background:#f87171;" onclick="setCanvasColor(this,'#f87171')"></div>
-              <div class="canvas-color-btn" data-color="#fbbf24" style="background:#fbbf24;" onclick="setCanvasColor(this,'#fbbf24')"></div>
-              <div class="canvas-color-btn" data-color="#4ade80" style="background:#4ade80;" onclick="setCanvasColor(this,'#4ade80')"></div>
-              <div class="canvas-color-btn" data-color="#60a5fa" style="background:#60a5fa;" onclick="setCanvasColor(this,'#60a5fa')"></div>
-              <div class="canvas-color-btn" data-color="#c084fc" style="background:#c084fc;" onclick="setCanvasColor(this,'#c084fc')"></div>
+      <div class="modal-overlay modal-canvas-overlay" id="modal-canvas">
+        <div class="modal modal-canvas-full">
+          <div class="canvas-toolbar canvas-toolbar-modal" id="canvas-toolbar-modal">
+            <span class="canvas-note-title" id="canvas-note-title-lbl">Dibujo</span>
+            <div class="canvas-toolbar-divider"></div>
+            <div class="canvas-colors" id="canvas-colors">
+              <div class="canvas-color-btn active" data-action="set-canvas-color" data-color="#e2e8f0" style="background:#e2e8f0;"></div>
+              <div class="canvas-color-btn" data-action="set-canvas-color" data-color="#f87171" style="background:#f87171;"></div>
+              <div class="canvas-color-btn" data-action="set-canvas-color" data-color="#fbbf24" style="background:#fbbf24;"></div>
+              <div class="canvas-color-btn" data-action="set-canvas-color" data-color="#4ade80" style="background:#4ade80;"></div>
+              <div class="canvas-color-btn" data-action="set-canvas-color" data-color="#60a5fa" style="background:#60a5fa;"></div>
+              <div class="canvas-color-btn" data-action="set-canvas-color" data-color="#c084fc" style="background:#c084fc;"></div>
             </div>
-            <div style="display:flex;gap:6px;align-items:center;" id="canvas-sizes">
-              <div class="canvas-size-btn active" data-size="2"  style="width:6px;height:6px;"   onclick="setCanvasSize(this,2)"></div>
-              <div class="canvas-size-btn"        data-size="5"  style="width:10px;height:10px;" onclick="setCanvasSize(this,5)"></div>
-              <div class="canvas-size-btn"        data-size="10" style="width:16px;height:16px;" onclick="setCanvasSize(this,10)"></div>
-              <div class="canvas-size-btn"        data-size="20" style="width:22px;height:22px;" onclick="setCanvasSize(this,20)"></div>
+            <div class="canvas-sizes" id="canvas-sizes">
+              <div class="canvas-size-btn active" data-action="set-canvas-size" data-size="2"  style="width:6px;height:6px;"></div>
+              <div class="canvas-size-btn" data-action="set-canvas-size" data-size="5"  style="width:10px;height:10px;"></div>
+              <div class="canvas-size-btn" data-action="set-canvas-size" data-size="10" style="width:16px;height:16px;"></div>
+              <div class="canvas-size-btn" data-action="set-canvas-size" data-size="20" style="width:22px;height:22px;"></div>
             </div>
-            <div style="width:1px;height:20px;background:var(--border);margin:0 3px;"></div>
-            <div style="display:flex;gap:5px;align-items:center;">
-              <button class="btn btn-ghost btn-sm canvas-tool-btn active" id="tool-pen-btn"    onclick="setCanvasTool(this,'pen')"    title="Lápiz">✏️</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-line-btn"   onclick="setCanvasTool(this,'line')"   title="Línea">╱</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-rect-btn"   onclick="setCanvasTool(this,'rect')"   title="Rect">▭</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-circle-btn" onclick="setCanvasTool(this,'circle')" title="Círculo">⭕</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-text-btn"   onclick="setCanvasTool(this,'text')"   title="Texto">T</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-move-btn"   onclick="setCanvasTool(this,'move')"   title="Mover">↕ Mover</button>
-              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-ai-btn"     onclick="setCanvasTool(this,'ai')"     style="color:var(--accent);">🪄 Auto</button>
+            <div class="canvas-toolbar-divider"></div>
+            <div class="canvas-tools">
+              <button class="btn btn-ghost btn-sm canvas-tool-btn active" id="tool-pen-btn"    data-action="set-canvas-tool" data-tool="pen"    title="Lápiz">✏️</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-line-btn"   data-action="set-canvas-tool" data-tool="line"   title="Línea">╱</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-rect-btn"   data-action="set-canvas-tool" data-tool="rect"   title="Rect">▭</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-circle-btn" data-action="set-canvas-tool" data-tool="circle" title="Círculo">⭕</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-text-btn"   data-action="set-canvas-tool" data-tool="text"   title="Texto">T</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-move-btn"   data-action="set-canvas-tool" data-tool="move"   title="Mover">↕ Mover</button>
+              <button class="btn btn-ghost btn-sm canvas-tool-btn"        id="tool-ai-btn"     data-action="set-canvas-tool" data-tool="ai"     data-ai="true">🪄 Auto</button>
             </div>
-            <div style="width:1px;height:20px;background:var(--border);margin:0 3px;"></div>
-            <button id="canvas-eraser-btn" class="btn btn-ghost btn-sm" onclick="toggleCanvasEraser()">🧹</button>
-            <button class="btn btn-ghost btn-sm" onclick="undoCanvas()">↩️</button>
-            <button class="btn btn-ghost btn-sm" onclick="clearCanvas()">🗑️</button>
-            <label class="btn btn-ghost btn-sm" style="cursor:pointer;">🖼️ Imagen<input type="file" accept="image/*" style="display:none;" onchange="_pasteImageToCanvas(this.files[0],50,50);this.value=''"></label>
+            <div class="canvas-toolbar-divider"></div>
+            <button id="canvas-eraser-btn" class="btn btn-ghost btn-sm" data-action="toggle-canvas-eraser">🧹</button>
+            <button class="btn btn-ghost btn-sm" data-action="undo-canvas">↩️</button>
+            <button class="btn btn-ghost btn-sm" data-action="clear-canvas">🗑️</button>
+            <label class="btn btn-ghost btn-sm">🖼️ Imagen<input type="file" accept="image/*" class="pom-hidden" data-action="paste-image-canvas"></label>
             <div style="flex:1;"></div>
-            <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">Ctrl+V para pegar imagen</span>
-            <button class="btn btn-primary btn-sm" onclick="saveCanvasAndClose()">💾 Guardar</button>
-            <button class="btn btn-ghost btn-sm"   onclick="closeModal('modal-canvas')">✕</button>
+            <span class="canvas-hint">Ctrl+V para pegar imagen</span>
+            <button class="btn btn-primary btn-sm" data-action="save-canvas-and-close">💾 Guardar</button>
+            <button class="btn btn-ghost btn-sm" data-action="close-modal" data-target="modal-canvas">✕</button>
           </div>
-          <canvas id="notes-canvas" style="flex:1;width:100%;cursor:crosshair;touch-action:none;"></canvas>
+          <canvas id="notes-canvas" class="canvas-canvas"></canvas>
         </div>
       </div>
 
       <!-- ═══ NEW FOLDER MODAL ═══ -->
       <div class="modal-overlay" id="modal-new-folder">
-        <div class="modal" style="width:min(400px,95vw);">
+        <div class="modal">
           <div class="modal-header">
             <span class="modal-title" id="new-folder-modal-title">📁 Nueva Carpeta</span>
-            <button class="modal-close" onclick="closeModal('modal-new-folder')">✕</button>
+            <button class="modal-close" data-action="close-modal" data-target="modal-new-folder">✕</button>
           </div>
-          <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-            <input type="text" id="new-folder-name" class="form-input" placeholder="Nombre de la carpeta..." style="font-size:14px;" autocomplete="off">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <div class="scanner-modal">
+            <input type="text" id="new-folder-name" class="form-input" placeholder="Nombre de la carpeta..." autocomplete="off">
+            <div class="note-editor-meta">
               <span style="font-size:12px;color:var(--text2);">Icono:</span>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;" id="folder-icon-picker">
-                <span data-icon="📁" onclick="selectFolderIcon(this)" class="folder-icon-opt active" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid var(--accent);">📁</span>
-                <span data-icon="📚" onclick="selectFolderIcon(this)" class="folder-icon-opt" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;">📚</span>
-                <span data-icon="🗂️" onclick="selectFolderIcon(this)" class="folder-icon-opt" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;">🗂️</span>
-                <span data-icon="📌" onclick="selectFolderIcon(this)" class="folder-icon-opt" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;">📌</span>
-                <span data-icon="🧪" onclick="selectFolderIcon(this)" class="folder-icon-opt" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;">🧪</span>
-                <span data-icon="💡" onclick="selectFolderIcon(this)" class="folder-icon-opt" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;">💡</span>
-                <span data-icon="🎯" onclick="selectFolderIcon(this)" class="folder-icon-opt" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;">🎯</span>
-                <span data-icon="⚡" onclick="selectFolderIcon(this)" class="folder-icon-opt" style="font-size:20px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;">⚡</span>
+              <div class="folder-icon-picker" id="folder-icon-picker">
+                <span data-icon="📁" data-action="select-folder-icon" class="folder-icon-opt active">📁</span>
+                <span data-icon="📚" data-action="select-folder-icon" class="folder-icon-opt">📚</span>
+                <span data-icon="🗂️" data-action="select-folder-icon" class="folder-icon-opt">🗂️</span>
+                <span data-icon="📌" data-action="select-folder-icon" class="folder-icon-opt">📌</span>
+                <span data-icon="🧪" data-action="select-folder-icon" class="folder-icon-opt">🧪</span>
+                <span data-icon="💡" data-action="select-folder-icon" class="folder-icon-opt">💡</span>
+                <span data-icon="🎯" data-action="select-folder-icon" class="folder-icon-opt">🎯</span>
+                <span data-icon="⚡" data-action="select-folder-icon" class="folder-icon-opt">⚡</span>
               </div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
               <span style="font-size:12px;color:var(--text2);">Color:</span>
-              <div style="display:flex;gap:6px;" id="folder-color-picker">
-                <div data-fc="#6366f1" onclick="selectFolderColor(this)" class="folder-color-opt active" style="width:20px;height:20px;border-radius:50%;background:#6366f1;cursor:pointer;border:3px solid var(--text);"></div>
-                <div data-fc="#3b82f6" onclick="selectFolderColor(this)" class="folder-color-opt" style="width:20px;height:20px;border-radius:50%;background:#3b82f6;cursor:pointer;border:3px solid transparent;"></div>
-                <div data-fc="#10b981" onclick="selectFolderColor(this)" class="folder-color-opt" style="width:20px;height:20px;border-radius:50%;background:#10b981;cursor:pointer;border:3px solid transparent;"></div>
-                <div data-fc="#f59e0b" onclick="selectFolderColor(this)" class="folder-color-opt" style="width:20px;height:20px;border-radius:50%;background:#f59e0b;cursor:pointer;border:3px solid transparent;"></div>
-                <div data-fc="#ef4444" onclick="selectFolderColor(this)" class="folder-color-opt" style="width:20px;height:20px;border-radius:50%;background:#ef4444;cursor:pointer;border:3px solid transparent;"></div>
-                <div data-fc="#8b5cf6" onclick="selectFolderColor(this)" class="folder-color-opt" style="width:20px;height:20px;border-radius:50%;background:#8b5cf6;cursor:pointer;border:3px solid transparent;"></div>
+              <div class="folder-color-picker" id="folder-color-picker">
+                <div data-fc="#6366f1" data-action="select-folder-color" class="folder-color-opt active" style="background:#6366f1;"></div>
+                <div data-fc="#3b82f6" data-action="select-folder-color" class="folder-color-opt" style="background:#3b82f6;"></div>
+                <div data-fc="#10b981" data-action="select-folder-color" class="folder-color-opt" style="background:#10b981;"></div>
+                <div data-fc="#f59e0b" data-action="select-folder-color" class="folder-color-opt" style="background:#f59e0b;"></div>
+                <div data-fc="#ef4444" data-action="select-folder-color" class="folder-color-opt" style="background:#ef4444;"></div>
+                <div data-fc="#8b5cf6" data-action="select-folder-color" class="folder-color-opt" style="background:#8b5cf6;"></div>
               </div>
             </div>
-            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px;">
-              <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-new-folder')">Cancelar</button>
-              <button class="btn btn-primary btn-sm" onclick="saveNewFolder()" id="save-folder-btn">Crear carpeta</button>
+            <div class="scanner-actions">
+              <button class="btn btn-ghost btn-sm" data-action="close-modal" data-target="modal-new-folder">Cancelar</button>
+              <button class="btn btn-primary btn-sm" data-action="save-new-folder" id="save-folder-btn">Crear carpeta</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- ═══ LIGHTBOX ═══ -->
-      <div class="notes-lightbox" id="notes-lightbox" onclick="closeLightbox()">
-        <button class="notes-lightbox-close" onclick="closeLightbox()">✕</button>
-        <div class="notes-lightbox-content" onclick="event.stopPropagation()">
+      <div class="notes-lightbox" id="notes-lightbox" data-action="close-lightbox">
+        <button class="notes-lightbox-close" data-action="close-lightbox">✕</button>
+        <div class="notes-lightbox-content" data-stop-propagation="true">
           <img id="notes-lightbox-img" src="" alt="imagen ampliada">
         </div>
       </div>
 
       <!-- ═══ SCANNER PROGRESS MODAL ═══ -->
-      <div class="modal-overlay" id="modal-scanner" style="z-index:3100;">
-        <div class="modal" style="width:min(480px,95vw);padding:28px;">
-          <div style="font-size:16px;font-weight:800;margin-bottom:6px;">📄 Escanear Documento</div>
-          <div style="font-size:12px;color:var(--text3);margin-bottom:20px;" id="scanner-file-name">Procesando...</div>
-          <div style="background:var(--surface3);border-radius:8px;overflow:hidden;height:8px;margin-bottom:10px;">
-            <div id="scanner-progress-bar" style="height:100%;background:var(--accent2);width:0%;transition:width .3s;"></div>
+      <div class="modal-overlay scanner-modal-overlay" id="modal-scanner">
+        <div class="modal scanner-modal">
+          <div class="scanner-title">📄 Escanear Documento</div>
+          <div class="scanner-filename" id="scanner-file-name">Procesando...</div>
+          <div class="scanner-progress-container">
+            <div id="scanner-progress-bar" class="scanner-progress-bar"></div>
           </div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:20px;" id="scanner-status">Iniciando...</div>
-          <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button class="btn btn-ghost btn-sm" id="scanner-cancel-btn" onclick="cancelScan()">Cancelar</button>
+          <div class="scanner-status" id="scanner-status">Iniciando...</div>
+          <div class="scanner-actions">
+            <button class="btn btn-ghost btn-sm" id="scanner-cancel-btn" data-action="cancel-scan">Cancelar</button>
           </div>
         </div>
       </div>

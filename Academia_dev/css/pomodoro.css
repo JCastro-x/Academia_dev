@@ -1,0 +1,557 @@
+/* ════════════════════════════════════════════════════════════════
+   POMODORO MODULE - CSS Styles
+   Extracted from inline styles in partials/pomodoro.html
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Layout Grid ─────────────────────────────────────────────────── */
+.pomodoro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.pomodoro-fullwidth {
+  margin-bottom: 16px;
+}
+
+.pomodoro-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ── Card Variants ───────────────────────────────────────────────── */
+.card-full-height {
+  height: 100%;
+}
+
+/* ── Pomodoro Timer Section ────────────────────────────────────── */
+.pom-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pom-header-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+}
+
+.pom-header-btn:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+}
+
+.pom-header-btn-accent {
+  color: var(--accent2);
+}
+
+.pom-timer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.pom-subject-select {
+  width: 100%;
+}
+
+.pom-task-section {
+  width: 100%;
+}
+
+.pom-task-label {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
+}
+
+.pom-task-select {
+  width: 100%;
+  font-size: 12px;
+}
+
+/* Pomodoro Ring - existing classes maintained */
+.pom-ring {
+  /* existing styles */
+}
+
+.pom-svg {
+  /* existing styles */
+}
+
+.pom-bg {
+  /* existing styles */
+}
+
+.pom-prog {
+  /* existing styles */
+}
+
+.pom-center {
+  /* existing styles */
+}
+
+.pom-time {
+  /* existing styles */
+}
+
+.pom-mode {
+  /* existing styles */
+}
+
+.pom-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.pom-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.pom-settings-grid {
+  display: flex;
+  gap: 16px;
+}
+
+.pom-setting-item {
+  text-align: center;
+}
+
+.pom-setting-label {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.pom-setting-input {
+  width: 58px;
+}
+
+.pom-save-btn {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ── Chrono Section ──────────────────────────────────────────────── */
+.chrono-badge {
+  font-size: 10px;
+  color: var(--accent2);
+  font-family: 'Space Mono', monospace;
+  background: var(--accent-glow);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.chrono-work-block {
+  background: rgba(74, 222, 128, 0.1);
+  border: 2px solid rgba(74, 222, 128, 0.3);
+  border-radius: 14px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: all 0.25s;
+}
+
+.chrono-work-label {
+  font-size: 10px;
+  color: var(--green);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.chrono-work-time {
+  font-size: 52px;
+  font-weight: 800;
+  font-family: 'Space Mono', monospace;
+  color: var(--green);
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.chrono-work-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+
+.chrono-secondary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.chrono-break-block {
+  background: rgba(96, 165, 250, 0.08);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  transition: all 0.25s;
+}
+
+.chrono-break-label {
+  font-size: 9px;
+  color: var(--blue);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.chrono-break-time {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'Space Mono', monospace;
+  color: var(--blue);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.chrono-total-block {
+  background: rgba(124, 106, 255, 0.08);
+  border: 1px solid rgba(124, 106, 255, 0.25);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  transition: all 0.25s;
+}
+
+.chrono-total-label {
+  font-size: 9px;
+  color: var(--accent2);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.chrono-total-time {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'Space Mono', monospace;
+  color: var(--accent2);
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.chrono-efficiency {
+  margin-top: 12px;
+}
+
+.chrono-efficiency-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.chrono-status {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.chrono-pct {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  color: var(--green);
+}
+
+.chrono-efficiency-sub {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+  text-align: right;
+}
+
+.chrono-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.chrono-btn-full {
+  flex: 1;
+}
+
+.chrono-switch-btn {
+  width: 100%;
+  font-size: 11px;
+}
+
+.chrono-summary {
+  display: none;
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.chrono-summary-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent2);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.chrono-summary-text {
+  font-size: 12px;
+  color: var(--text2);
+  font-family: 'Space Mono', monospace;
+  line-height: 2;
+}
+
+/* ── Sound Section ──────────────────────────────────────────────── */
+.sound-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.sound-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sound-section-title {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+}
+
+.sound-btn-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pom-music-btn {
+  /* inherits from existing class */
+}
+
+.sound-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sound-volume-label {
+  font-size: 11px;
+}
+
+.sound-volume-slider {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.sound-music-status {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+
+.sound-music-fullwidth {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+/* ── Stats Section ────────────────────────────────────────────── */
+.pom-stats-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pom-goal-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pom-goal-input-group {
+  flex: 1;
+}
+
+.pom-goal-label {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 5px;
+}
+
+.pom-goal-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pom-goal-input-field {
+  width: 58px;
+}
+
+.pom-goal-suffix {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.pom-goal-display {
+  text-align: center;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-radius: 12px;
+  min-width: 80px;
+}
+
+.pom-goal-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent2);
+}
+
+.pom-goal-sub {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+}
+
+.pom-goal-progress {
+  margin-bottom: 6px;
+}
+
+.pom-goal-text {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* Streak Stats */
+.pom-streak-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  text-align: center;
+}
+
+.pom-stat-box {
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 8px;
+}
+
+.pom-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.pom-stat-value-orange {
+  color: var(--orange);
+}
+
+.pom-stat-value-accent {
+  color: var(--accent2);
+}
+
+.pom-stat-value-green {
+  color: var(--green);
+}
+
+.pom-stat-label {
+  font-size: 9px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  margin-top: 4px;
+}
+
+.pom-activity-section {
+  margin-top: 12px;
+}
+
+.pom-activity-title {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 6px;
+}
+
+.pom-activity-bars {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  height: 40px;
+}
+
+/* Quick Stats */
+.pom-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.pom-quick-stat {
+  text-align: center;
+}
+
+.pom-quick-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--accent2);
+}
+
+.pom-quick-stat-value-green {
+  color: var(--green);
+}
+
+.pom-quick-stat-label {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'Space Mono', monospace;
+  margin-top: 2px;
+}
+
+/* ── History Section ───────────────────────────────────────────── */
+.pom-history-card {
+  height: 100%;
+}
+
+.pom-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pom-history-clear-btn {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.pom-history-body {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* ── Hidden Elements ────────────────────────────────────────────── */
+.pom-hidden {
+  display: none;
+}
