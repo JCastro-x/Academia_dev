@@ -57,7 +57,34 @@
 
           </div>
         </div>
-        <!-- ─── FIN PERSONALIZACIÓN ────────────────────────────────── -->
+
+        <!-- ─── PREFERENCIAS DE UI ──────────────────────────────────── -->
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card-header"><span class="card-title">⚙️ Preferencias de Interfaz</span></div>
+          <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+
+            <!-- Mostrar barra semanal -->
+            <div>
+              <div class="form-label" style="margin-bottom:8px;">📊 Barra de Semana</div>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+                <input type="checkbox" id="cfg-show-weekly" onchange="setShowWeeklyBar(this.checked)" style="width:18px;height:18px;accent-color:var(--accent);">
+                <span>Mostrar resumen semanal en inicio</span>
+              </label>
+            </div>
+
+            <!-- Página inicial -->
+            <div>
+              <div class="form-label" style="margin-bottom:8px;">🏠 Página de Inicio</div>
+              <select class="form-select" id="cfg-default-home" onchange="setDefaultHomePage(this.value)" style="width:100%;">
+                <option value="overview">📊 Resumen (Overview)</option>
+                <option value="materias">📚 Materias</option>
+                <option value="calendario">📅 Calendario</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+        <!-- ─── FIN PREFERENCIAS ───────────────────────────────────── -->
         <div class="card" style="margin-bottom:18px;">
           <div class="card-header"><span class="card-title">📋 Datos Personales</span></div>
           <div class="card-body">

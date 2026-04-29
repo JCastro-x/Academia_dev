@@ -137,6 +137,7 @@ function _showOnboardingStep(step) {
         <button onclick="_skipOnboarding()" style="
           background:none;border:none;color:var(--text3,#5a5a72);
           cursor:pointer;font-size:11px;padding:2px 6px;border-radius:4px;
+          z-index:10003;position:relative;
         ">Saltar ✕</button>
       </div>
 
@@ -411,10 +412,144 @@ const onboardingStyles = `
 </style>
 `;
 
-// Inject styles
+// ═════════════════════════════════════════════════════════════════
+// SMART TOUR — Resaltado de elementos individuales
+// ═════════════════════════════════════════════════════════════════
+
+function showTutorialStep(elementId, message) {
+  // Limpiar tour anterior si existe
+  _clearSmartTour();
+
+  const target = document.getElementById(elementId) || document.querySelector(elementId);
+  if (!target) {
+    console.warn('SmartTour: Elemento no encontrado:', elementId);
+    return;
+  }
+
+  // Crear overlay oscuro
+  const overlay = document.createElement('div');
+  overlay.id = 'smart-tour-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 10000;
+    backdrop-filter: blur(2px);
+  `;
+
+  // Crear highlight con box-shadow expansivo
+  const rect = target.getBoundingClientRect();
+  const highlight = document.createElement('div');
+  highlight.id = 'smart-tour-highlight';
+  highlight.style.cssText = `
+    position: fixed;
+    top: ${rect.top}px;
+    left: ${rect.left}px;
+    width: ${rect.width}px;
+    height: ${rect.height}px;
+    border-radius: 12px;
+    box-shadow: 0 0 0 4px var(--accent,#7c6aff),
+                0 0 0 9999px rgba(0,0,0,0.75);
+    z-index: 10001;
+    pointer-events: none;
+    animation: smartTourPulse 2s infinite;
+  `;
+
+  // Crear popup del mensaje
+  const popup = document.createElement('div');
+  popup.id = 'smart-tour-popup';
+  popup.style.cssText = `
+    position: fixed;
+    z-index: 10002;
+    background: var(--surface,#111118);
+    border: 1px solid var(--border,#2a2a38);
+    border-radius: 12px;
+    padding: 16px 20px;
+    max-width: 280px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    font-size: 14px;
+    color: var(--text,#e8e8f0);
+    animation: smartTourSlide 0.3s ease-out;
+  `;
+  popup.innerHTML = `
+    <div style="margin-bottom:12px;line-height:1.5;">${message}</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="_clearSmartTour()" style="
+        background:var(--surface2,#18181f);
+        border:1px solid var(--border,#2a2a38);
+        border-radius:6px;
+        padding:6px 12px;
+        color:var(--text2,#9090a8);
+        font-size:12px;
+        cursor:pointer;
+      ">Omitir</button>
+      <button onclick="_clearSmartTour()" style="
+        background:var(--accent,#7c6aff);
+        border:none;
+        border-radius:6px;
+        padding:6px 12px;
+        color:white;
+        font-size:12px;
+        font-weight:600;
+        cursor:pointer;
+      ">Entendido</button>
+    </div>
+  `;
+
+  // Posicionar popup cerca del elemento
+  document.body.appendChild(overlay);
+  document.body.appendChild(highlight);
+  document.body.appendChild(popup);
+
+  const popupRect = popup.getBoundingClientRect();
+  let top = rect.bottom + 16;
+  let left = rect.left + (rect.width / 2) - (popupRect.width / 2);
+
+  // Ajustar si se sale de la pantalla
+  if (left < 16) left = 16;
+  if (left + popupRect.width > window.innerWidth - 16) {
+    left = window.innerWidth - popupRect.width - 16;
+  }
+  if (top + popupRect.height > window.innerHeight - 16) {
+    top = rect.top - popupRect.height - 16;
+  }
+
+  popup.style.top = `${top}px`;
+  popup.style.left = `${left}px`;
+
+  // Cerrar al hacer clic en el overlay
+  overlay.onclick = () => _clearSmartTour();
+}
+
+function _clearSmartTour() {
+  ['smart-tour-overlay', 'smart-tour-highlight', 'smart-tour-popup'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  });
+}
+
+// CSS para animaciones del Smart Tour
+const smartTourStyles = `
+<style>
+@keyframes smartTourPulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--accent,#7c6aff), 0 0 0 9999px rgba(0,0,0,0.75); }
+  50% { box-shadow: 0 0 0 6px var(--accent,#7c6aff), 0 0 0 9999px rgba(0,0,0,0.75); }
+}
+@keyframes smartTourSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+`;
+
+// Inject all styles
 if (!document.getElementById('onboarding-styles')) {
   const styleEl = document.createElement('div');
   styleEl.id = 'onboarding-styles';
-  styleEl.innerHTML = onboardingStyles;
+  styleEl.innerHTML = onboardingStyles + smartTourStyles;
   document.head.appendChild(styleEl);
 }
+
+// Exposición global
+window.showTutorialStep = showTutorialStep;
+window._clearSmartTour = _clearSmartTour;

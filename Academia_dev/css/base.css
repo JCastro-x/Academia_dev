@@ -75,7 +75,16 @@ body::before {
 .nav-item {
   display:flex; align-items:center; gap:8px; padding:7px 9px;
   border-radius:7px; cursor:pointer; color:var(--text2); font-size:12px; font-weight:600;
-  transition:background .15s, color .15s, border-color .15s; border:1px solid transparent; margin-bottom:1px; user-select:none;
+  transition:background .15s, color .15s, border-color .15s; border:1px solid transparent; margin-bottom:1px;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.nav-item .icon {
+  user-select:none;
+  -webkit-user-select:none;
+  pointer-events:none;
 }
 .nav-item:hover { background:var(--surface2); color:var(--text); }
 .nav-item.active { background:var(--accent-glow); color:var(--accent2); border-color:rgba(124,106,255,.2); }

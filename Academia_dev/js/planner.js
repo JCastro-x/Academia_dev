@@ -1240,4 +1240,26 @@ document.addEventListener('click', (e) => {
   if (actionType === 'save-topic') {
     if (typeof saveTopic === 'function') saveTopic();
   }
+
+  // Navigation handlers for data-action
+  if (actionType === 'go-page') {
+    const targetPage = action.dataset.page;
+    if (targetPage && typeof window.goPage === 'function') {
+      window.goPage(targetPage, action);
+    }
+  }
+
+  // Go to general hub
+  if (actionType === 'go-general') {
+    if (typeof window.goPage === 'function') {
+      window.goPage('general', action);
+    }
+  }
+
+  // Go to semestres
+  if (actionType === 'go-semestres') {
+    if (typeof window.goPage === 'function') {
+      window.goPage('semestres', action);
+    }
+  }
 });

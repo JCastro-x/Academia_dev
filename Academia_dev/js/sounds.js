@@ -645,6 +645,20 @@ function setSoundVariant(variant) {
   saveState(['settings']);
 }
 
+function setShowWeeklyBar(show) {
+  State.settings.showWeeklyBar = show;
+  saveState(['settings']);
+  // Disparar evento para actualizar el overview inmediatamente
+  window.dispatchEvent(new CustomEvent('render:overview'));
+  window.dispatchEvent(new CustomEvent('settings:changed', { detail: { setting: 'showWeeklyBar', value: show } }));
+}
+
+function setDefaultHomePage(page) {
+  State.settings.defaultHomePage = page;
+  saveState(['settings']);
+  window.dispatchEvent(new CustomEvent('settings:changed', { detail: { setting: 'defaultHomePage', value: page } }));
+}
+
 function openQuickAdd() { _uiClick('modal-open'); document.getElementById('modal-quickadd').classList.add('open'); }
 function openModal(id) {
   _uiClick('modal-open');
@@ -676,6 +690,8 @@ function closeAllModals() {
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.closeAllModals = closeAllModals;
+window.setShowWeeklyBar = setShowWeeklyBar;
+window.setDefaultHomePage = setDefaultHomePage;
 
 function _getGreeting() {
   const h = new Date().getHours();

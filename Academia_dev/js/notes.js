@@ -2387,6 +2387,11 @@ function ovClearDayFilter() {
   renderOverview();
 }
 
+// Listener para actualizar overview cuando cambian preferencias
+window.addEventListener('render:overview', () => {
+  if (typeof renderOverview === 'function') renderOverview();
+});
+
 // Patch renderOverview con la nueva implementación
 const _origRenderOverview = _renderOverview;
 function _renderOverview() {
@@ -2417,8 +2422,15 @@ function _renderOverview() {
   if (badge) badge.textContent = pending.length > 0 ? `${pending.length} sin entregar` : '';
 
   // ── Agenda Semanal Rodante (7 días desde hoy) ─────────────
+  // Respetar preferencia showWeeklyBar
+  const agendaCard = document.getElementById('agenda-card');
+  const showWeeklyBar = State.settings.showWeeklyBar !== false; // Default true
+  if (agendaCard) {
+    agendaCard.style.display = showWeeklyBar ? '' : 'none';
+  }
+
   const stripEl = document.getElementById('ov-day-strip');
-  if (stripEl) {
+  if (stripEl && showWeeklyBar) {
     const today = new Date(); today.setHours(0,0,0,0);
     const daysFull = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
     const monthNames = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -2835,6 +2847,11 @@ function renderProfilePage() {
   }
   if (fontSel)  fontSel.value  = State.settings.font || 'Sistema';
   if (soundSel) soundSel.value = State.settings.soundVariant || 'classic';
+  // Sync new UI preferences
+  const weeklyCheck = document.getElementById('cfg-show-weekly');
+  const homeSel = document.getElementById('cfg-default-home');
+  if (weeklyCheck) weeklyCheck.checked = State.settings.showWeeklyBar !== false; // Default true
+  if (homeSel) homeSel.value = State.settings.defaultHomePage || 'overview';
   // Sync accent color picker
   const accent = State.settings.accentColor || '#7c6aff';
   document.querySelectorAll('.accent-color-opt').forEach(el => {

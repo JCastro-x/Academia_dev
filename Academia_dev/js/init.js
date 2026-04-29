@@ -334,6 +334,15 @@ function continueInit(auth) {
     fillMatSels(); fillPomSel(); fillTopicMatSel(); fillNotesSel(); fillExamSel();
     renderOverview(); renderMaterias(); updateBadge(); initCal();
     renderSemesterBadge();
+
+    // Navegar a la página inicial configurada (después de un pequeño delay)
+    const defaultPage = State.settings.defaultHomePage || 'overview';
+    if (defaultPage !== 'overview' && document.getElementById('page-' + defaultPage)) {
+      setTimeout(() => {
+        const navEl = document.querySelector(`.nav-item[onclick*="${defaultPage}"]`);
+        if (typeof goPage === 'function') goPage(defaultPage, navEl);
+      }, 100);
+    }
     // Pomodoro functions now have guards - safe to call even if partial not loaded
     updatePomDots(); pomReset(); restorePomRunningState();
 
