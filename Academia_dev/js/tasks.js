@@ -315,16 +315,93 @@ function toggleTask(id) {
   if (!t) return;
   const wasDone = t.done;
   t.done = !t.done;
+
+  // Animación visual al completar (0.8s para coincidir con CSS)
+  if (!wasDone && t.done) {
+    // Encontrar el elemento DOM y aplicar clase de animación
+    const taskEl = document.querySelector(`.task-item[data-id="${id}"]`);
+    if (taskEl) {
+      taskEl.style.animation = 'taskComplete 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards';
+      taskEl.classList.add('done');
+      // Efecto de celebración sutil
+      _showTaskCompleteEffect(taskEl);
+    }
+  }
+
   _uiClick(wasDone ? 'task-undone' : 'task-done');
   if (!wasDone) { _updateStreak(); }
   saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
+}
+
+// Efecto visual de celebración al completar tarea
+function _showTaskCompleteEffect(element) {
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  // Crear partículas de celebración
+  for (let i = 0; i < 6; i++) {
+    const particle = document.createElement('div');
+    particle.style.cssText = `
+      position:fixed;
+      left:${centerX}px;
+      top:${centerY}px;
+      width:8px;
+      height:8px;
+      background:linear-gradient(135deg, #a78bfa, #7c6aff);
+      border-radius:50%;
+      pointer-events:none;
+      z-index:10000;
+      box-shadow:0 0 10px rgba(124,106,255,0.6);
+    `;
+    document.body.appendChild(particle);
+
+    // Animación de explosión
+    const angle = (i / 6) * Math.PI * 2;
+    const velocity = 60 + Math.random() * 40;
+    const vx = Math.cos(angle) * velocity;
+    const vy = Math.sin(angle) * velocity;
+
+    particle.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${vx}px, ${vy}px) scale(0)`, opacity: 0 }
+    ], {
+      duration: 600,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    }).onfinish = () => particle.remove();
+  }
 }
 function toggleSubtask(taskId, idx) {
   const t = State.tasks.find(x => x.id === taskId);
   if (!t?.subtasks?.[idx]) return;
   const wasDone = !!t.done;
+  const wasSubtaskDone = t.subtasks[idx].done;
   t.subtasks[idx].done = !t.subtasks[idx].done;
   t.done = t.subtasks.length > 0 && t.subtasks.every(s => s.done);
+
+    // Animación visual al completar subtarea
+  if (!wasSubtaskDone && t.subtasks[idx].done) {
+    // Buscar el elemento de la subtarea y animarlo
+    const subtaskRow = document.querySelector(`[data-action="toggle-subtask"][data-id="${taskId}"][data-index="${idx}"]`);
+    if (subtaskRow) {
+      subtaskRow.classList.add('done');
+      subtaskRow.style.animation = 'subtaskComplete 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      const checkBox = subtaskRow.querySelector('.subtask-check, [data-subtask-box]');
+      if (checkBox) {
+        checkBox.classList.add('done');
+        checkBox.style.background = 'linear-gradient(135deg, #a78bfa 0%, #7c6aff 100%)';
+        checkBox.style.borderColor = 'var(--accent)';
+        checkBox.style.boxShadow = '0 2px 6px rgba(124,106,255,0.4)';
+      }
+      const checkSpan = subtaskRow.querySelector('[data-subtask-check] span, .subtask-check span');
+      if (checkSpan) {
+        checkSpan.style.transform = 'scale(1)';
+        checkSpan.style.opacity = '1';
+      }
+      // Efecto de celebración sutil
+      _showSubtaskCompleteEffect(subtaskRow);
+    }
+  }
 
   const needsFullRender = _needsFullTaskRenderOnSubtaskToggle(wasDone, t.done);
   saveState(['tasks']);
@@ -336,6 +413,44 @@ function toggleSubtask(taskId, idx) {
   updateBadge();
   renderOverview();
   renderCalendar();
+}
+
+// Efecto visual de celebración al completar subtarea
+function _showSubtaskCompleteEffect(element) {
+  const rect = element.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  // Crear partículas de celebración (más pequeñas que las de tarea principal)
+  for (let i = 0; i < 4; i++) {
+    const particle = document.createElement('div');
+    particle.style.cssText = `
+      position:fixed;
+      left:${centerX}px;
+      top:${centerY}px;
+      width:6px;
+      height:6px;
+      background:linear-gradient(135deg, #4ade80, #7c6aff);
+      border-radius:50%;
+      pointer-events:none;
+      z-index:10000;
+      box-shadow:0 0 8px rgba(124,106,255,0.5);
+    `;
+    document.body.appendChild(particle);
+
+    const angle = (i / 4) * Math.PI * 2;
+    const velocity = 30 + Math.random() * 20;
+    const vx = Math.cos(angle) * velocity;
+    const vy = Math.sin(angle) * velocity;
+
+    particle.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${vx}px, ${vy}px) scale(0)`, opacity: 0 }
+    ], {
+      duration: 500,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    }).onfinish = () => particle.remove();
+  }
 }
 function _needsFullTaskRenderOnSubtaskToggle(wasDone, isDoneNow) {
   const sf = document.getElementById('tf-status')?.value || '';
@@ -555,16 +670,18 @@ function _renderTasks() {
           <span data-subtask-progress-text style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;white-space:nowrap;">${prog.done}/${prog.total}</span>
         </div>
         ${t.subtasks.map((s, i) => `
-          <div data-action="toggle-subtask" data-id="${t.id}" data-index="${i}"
+          <div class="subtask-row${s.done ? ' done' : ''}" data-action="toggle-subtask" data-id="${t.id}" data-index="${i}"
             data-subtask-row="${i}"
-            style="display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;${s.done?'opacity:.5;':''}">
-            <div data-subtask-box="${i}" style="width:14px;height:14px;border-radius:3px;flex-shrink:0;
+            style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;margin:2px 0;">
+            <div class="subtask-check${s.done ? ' done' : ''}" data-subtask-box="${i}"
+              style="width:18px;height:18px;border-radius:5px;flex-shrink:0;
               border:2px solid ${s.done?'var(--accent)':'var(--border2)'};
-              background:${s.done?'var(--accent)':'transparent'};
-              display:flex;align-items:center;justify-content:center;">
-              <span data-subtask-check="${i}">${s.done ? '<span style="font-size:9px;color:#fff;">✓</span>' : ''}</span>
+              background:${s.done?'linear-gradient(135deg, #a78bfa 0%, #7c6aff 100%)':'transparent'};
+              display:flex;align-items:center;justify-content:center;
+              box-shadow:${s.done?'0 2px 6px rgba(124,106,255,0.4)':'none'};">
+              <span data-subtask-check="${i}" style="transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);${s.done ? 'transform:scale(1);opacity:1;' : 'transform:scale(0);opacity:0;'}">${s.done ? '<span style="font-size:10px;color:#fff;font-weight:700;">✓</span>' : ''}</span>
             </div>
-            <span data-subtask-text="${i}" style="font-size:12px;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${sanitizeHtml(s.text)}</span>
+            <span data-subtask-text="${i}" style="font-size:12px;transition:all 0.3s ease;${s.done?'text-decoration:line-through;color:var(--text3);':'color:var(--text);'}">${sanitizeHtml(s.text)}</span>
           </div>`).join('')}
       </div>` : '';
 
@@ -690,10 +807,10 @@ function openTaskDetail(id) {
     '<span style="font-size:11px;color:var(--text3);font-family:Space Mono,monospace;">' + (prog?prog.done:0) + '/' + (prog?prog.total:0) + '</span>' +
     '</div>' +
     t.subtasks.map(function(s,i) {
-      return '<div data-action="toggle-subtask" data-id="' + t.id + '" data-index="' + i + '" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;' + (s.done?'opacity:.5':'') + '">' +
-        '<div style="width:16px;height:16px;border-radius:4px;flex-shrink:0;border:2px solid ' + (s.done?'var(--accent)':'var(--border2)') + ';background:' + (s.done?'var(--accent)':'transparent') + ';display:flex;align-items:center;justify-content:center;">' +
-        (s.done?'<span style="font-size:10px;color:#fff;">✓</span>':'') +
-        '</div><span style="font-size:13px;' + (s.done?'text-decoration:line-through;color:var(--text3);':'') + '">' + s.text + '</span></div>';
+      return '<div class="subtask-row' + (s.done?' done':'') + '" data-action="toggle-subtask" data-id="' + t.id + '" data-index="' + i + '" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;margin:2px 0;border-radius:6px;transition:all 0.3s ease;">' +
+        '<div class="subtask-check' + (s.done?' done':'') + '" style="width:20px;height:20px;border-radius:5px;flex-shrink:0;border:2px solid ' + (s.done?'var(--accent)':'var(--border2)') + ';background:' + (s.done?'linear-gradient(135deg, #a78bfa 0%, #7c6aff 100%)':'transparent') + ';display:flex;align-items:center;justify-content:center;box-shadow:' + (s.done?'0 2px 6px rgba(124,106,255,0.4)':'none') + ';transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);">' +
+        '<span style="font-size:11px;color:#fff;font-weight:700;transition:all 0.3s ease;' + (s.done?'transform:scale(1);opacity:1;':'transform:scale(0);opacity:0;') + '">✓</span>' +
+        '</div><span style="font-size:13px;transition:all 0.3s ease;' + (s.done?'text-decoration:line-through;color:var(--text3);':'color:var(--text);') + '">' + s.text + '</span></div>';
     }).join('') +
     '</div>'
   ) : '';
@@ -935,3 +1052,81 @@ document.addEventListener('change', (e) => {
     if (typeof _toggleRepeatFields === 'function') _toggleRepeatFields();
   }
 });
+
+// ═══════════════════════════════════════════════════════════════
+// LISTENER ESPECÍFICO PARA CHECKBOXES DE TAREAS (Android/draggable fix)
+// ═══════════════════════════════════════════════════════════════
+function _handleTaskCheckClick(e) {
+  // Buscar específicamente el .task-check que fue clickeado
+  const checkEl = e.target.closest('.task-check');
+  if (!checkEl) return;
+
+  // Extraer el data-id de la tarea padre
+  const taskItem = checkEl.closest('.task-item');
+  const taskId = taskItem?.dataset?.id || checkEl.dataset?.id;
+
+  if (taskId && typeof toggleTask === 'function') {
+    e.stopPropagation(); // Prevenir que el draggable interfiera
+    e.preventDefault();  // Prevenir comportamiento por defecto
+    toggleTask(taskId);
+  }
+}
+
+// Listener en fase de captura para clics normales
+document.addEventListener('click', _handleTaskCheckClick, true);
+
+// Listener para eventos táctiles en Android (touchstart es más rápido que click)
+document.addEventListener('touchstart', (e) => {
+  const checkEl = e.target.closest('.task-check');
+  if (!checkEl) return;
+
+  const taskItem = checkEl.closest('.task-item');
+  const taskId = taskItem?.dataset?.id || checkEl.dataset?.id;
+
+  if (taskId && typeof toggleTask === 'function') {
+    e.stopPropagation();
+    // No prevenimos default en touchstart para no bloquear el scroll
+    toggleTask(taskId);
+  }
+}, { capture: true, passive: false });
+
+// ═══════════════════════════════════════════════════════════════
+// LISTENER ESPECÍFICO PARA SUBTAREAS (Android fix)
+// ═══════════════════════════════════════════════════════════════
+function _handleSubtaskClick(e) {
+  // Buscar específicamente el .subtask-check o el contenedor de subtarea
+  const subtaskRow = e.target.closest('[data-action="toggle-subtask"]');
+  if (!subtaskRow) return;
+
+  const taskId = subtaskRow.dataset?.id;
+  const index = subtaskRow.dataset?.index;
+
+  if (taskId && index !== undefined && typeof toggleSubtask === 'function') {
+    e.stopPropagation();
+    e.preventDefault();
+    toggleSubtask(taskId, parseInt(index));
+  }
+}
+
+// Listener en fase de captura para subtareas
+document.addEventListener('click', _handleSubtaskClick, true);
+
+// Listener táctil para subtareas
+document.addEventListener('touchstart', (e) => {
+  const subtaskRow = e.target.closest('[data-action="toggle-subtask"]');
+  if (!subtaskRow) return;
+
+  const taskId = subtaskRow.dataset?.id;
+  const index = subtaskRow.dataset?.index;
+
+  if (taskId && index !== undefined && typeof toggleSubtask === 'function') {
+    e.stopPropagation();
+    toggleSubtask(taskId, parseInt(index));
+  }
+}, { capture: true, passive: false });
+
+// ═══════════════════════════════════════════════════════════════
+// EXPOSICIÓN GLOBAL DE FUNCIONES CRÍTICAS
+// ═══════════════════════════════════════════════════════════════
+window.toggleTask = toggleTask;
+window.toggleSubtask = toggleSubtask;

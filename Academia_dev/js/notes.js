@@ -2590,6 +2590,37 @@ function _renderOverview() {
         animation: dueTodayFlameAura 1.15s ease-in-out 3 !important;
       }
       .ov-task-row .mc-task-info { flex: 1; min-width: 0; }
+      /* Checkbox de tarea */
+      .ov-task-checkbox {
+        position: relative;
+        flex-shrink: 0;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+      .ov-task-checkbox:hover {
+        transform: scale(1.15);
+        box-shadow: 0 0 12px rgba(124,106,255,0.3);
+      }
+      .ov-task-checkbox:active {
+        transform: scale(0.9);
+      }
+      .ov-task-checkbox.checked {
+        animation: ovCheckBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .ov-task-checkbox span {
+        pointer-events: none;
+        user-select: none;
+      }
+      /* Animación de check */
+      @keyframes ovCheckBounce {
+        0% { transform: scale(0.8); }
+        40% { transform: scale(1.2); }
+        70% { transform: scale(0.95); }
+        100% { transform: scale(1); }
+      }
       .ov-badge {
         display: inline-flex; align-items: center; gap: 5px;
         border-radius: 8px; font-size: 12px; font-weight: 700;
@@ -2703,8 +2734,19 @@ function _renderOverview() {
     const dueDateBig = t.due
       ? `<div style="font-size:12px;font-weight:700;color:var(--text2);text-align:right;margin-bottom:4px;white-space:nowrap;line-height:1.2;">📅 ${_fmtReadable(t.due)}${dueTimeStr}</div>`
       : '';
-    return `<div class="mc-task-item ov-task-row ${prioClass}${dueTodayBlinkClass}" onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${bgStyle}${dueTodayBlinkStyle}">
-      <div class="mc-task-info">
+    return `<div class="mc-task-item ov-task-row ${prioClass}${dueTodayBlinkClass}" style="cursor:pointer;${bgStyle}${dueTodayBlinkStyle}">
+      <!-- Checkbox para completar tarea (stopPropagation para no abrir detalle) -->
+      <div class="ov-task-checkbox ${t.done ? 'checked' : ''}" onclick="event.stopPropagation(); toggleTask('${t.id}');" style="
+        width:24px;height:24px;border-radius:8px;border:2px solid ${borderColor};
+        display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        cursor:pointer;transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        background:${t.done ? 'linear-gradient(135deg, #a78bfa 0%, #7c6aff 100%)' : 'transparent'};
+        border-color:${t.done ? 'var(--accent)' : borderColor};
+        box-shadow:${t.done ? '0 2px 8px rgba(124,106,255,0.4)' : 'none'};
+      ">
+        <span style="font-size:14px;color:#fff;font-weight:800;opacity:${t.done ? 1 : 0};transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);transform:${t.done ? 'scale(1)' : 'scale(0)'};">✓</span>
+      </div>
+      <div class="mc-task-info" onclick="openTaskDetail('${t.id}')" style="flex:1;min-width:0;">
         <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">${t.title}</div>
         <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
           <span class="ov-mat-chip" style="color:${tc.text};border:1px solid ${tc.border};padding:2px 8px;font-size:11px;font-weight:700;border-radius:5px;">${type}</span>
@@ -2712,7 +2754,7 @@ function _renderOverview() {
         </div>
         ${progBar}
       </div>
-      <div class="ov-badge-wrap" style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <div class="ov-badge-wrap" onclick="openTaskDetail('${t.id}')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
         ${dueDateBig}
         <span class="ov-badge" style="background:${pal.badgeBg};color:${pal.badgeColor};">${pal.icon} ${_badgeText(daysLeft)}</span>
       </div>
