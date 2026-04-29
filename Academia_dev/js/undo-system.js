@@ -15,9 +15,11 @@ function showUndoToast(message, undoCallback, duration = 5000) {
   const toast = document.createElement('div');
   toast.id = 'undo-toast';
   toast.className = 'undo-toast';
+  // Solo mostrar botón Deshacer si hay callback
+  const undoBtnHtml = undoCallback ? `<button class="undo-btn" id="undo-action-btn">Deshacer</button>` : '';
   toast.innerHTML = `
     <span class="undo-message">${message}</span>
-    <button class="undo-btn" id="undo-action-btn">Deshacer</button>
+    ${undoBtnHtml}
   `;
 
   document.body.appendChild(toast);
@@ -28,13 +30,16 @@ function showUndoToast(message, undoCallback, duration = 5000) {
     setTimeout(() => toast.remove(), 300);
   }, duration);
 
-  // Undo button click
-  document.getElementById('undo-action-btn').onclick = () => {
-    clearTimeout(timeoutId);
-    undoCallback();
-    toast.classList.add('hiding');
-    setTimeout(() => toast.remove(), 300);
-  };
+  // Undo button click (solo si existe callback)
+  const undoBtn = document.getElementById('undo-action-btn');
+  if (undoBtn && undoCallback) {
+    undoBtn.onclick = () => {
+      clearTimeout(timeoutId);
+      undoCallback();
+      toast.classList.add('hiding');
+      setTimeout(() => toast.remove(), 300);
+    };
+  }
 }
 
 // ── Undo Actions ───────────────────────────────────────────────────

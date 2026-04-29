@@ -578,4 +578,65 @@ function continueInit(auth) {
   } else {
     watchGreeting();
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // BACK BUTTON HANDLER (Android/History API)
+  // ═══════════════════════════════════════════════════════════════
+  let _backButtonExitTs = 0;
+  const _EXIT_DOUBLE_TAP_MS = 2000;
+
+  window.addEventListener('popstate', (event) => {
+    // 1. Si hay un modal abierto, ciérralo
+    const openModals = document.querySelectorAll('.modal-overlay.open, [id^="modal-"].open');
+    if (openModals.length > 0) {
+      openModals.forEach(m => m.classList.remove('open'));
+      // Prevent default back navigation
+      event.preventDefault?.();
+      return;
+    }
+
+    // 2. Si el usuario está en una sub-página, regresa al Overview
+    const currentPage = window._currentPageId || 'overview';
+    if (currentPage !== 'overview') {
+      if (typeof goPage === 'function') {
+        goPage('overview', document.querySelector('.nav-item[onclick*="overview"]'));
+      }
+      // Prevent default back navigation
+      event.preventDefault?.();
+      return;
+    }
+
+    // 3. Si ya está en Overview, implementar "doble clic para salir"
+    const now = Date.now();
+    if (now - _backButtonExitTs < _EXIT_DOUBLE_TAP_MS) {
+      // Segundo tap dentro del tiempo permitido - dejar que la app se cierre
+      return;
+    }
+    // Primer tap - mostrar toast y prevenir cierre
+    _backButtonExitTs = now;
+    if (typeof showUndoToast === 'function') {
+      showUndoToast('Presiona de nuevo para salir', null, 2000);
+    } else {
+      // Fallback si no existe showUndoToast
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 20px;border-radius:8px;z-index:99999;font-size:14px;';
+      toast.textContent = 'Presiona de nuevo para salir';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
+    }
+    // Prevent default back navigation
+    event.preventDefault?.();
+  });
+
+  // Prevent default back behavior on mobile
+  window.addEventListener('beforeunload', (e) => {
+    const now = Date.now();
+    if (now - _backButtonExitTs < _EXIT_DOUBLE_TAP_MS) {
+      // Allow exit if double-tapped
+      return;
+    }
+    // Prevent accidental exits
+    e.preventDefault();
+    e.returnValue = '';
+  });
 })();

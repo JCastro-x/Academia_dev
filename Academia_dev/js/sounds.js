@@ -646,10 +646,36 @@ function setSoundVariant(variant) {
 }
 
 function openQuickAdd() { _uiClick('modal-open'); document.getElementById('modal-quickadd').classList.add('open'); }
-function openModal(id) { _uiClick('modal-open'); document.getElementById(id)?.classList.add('open'); }
-function closeModal(id) { _uiClick('modal-close'); document.getElementById(id)?.classList.remove('open'); }
+function openModal(id) {
+  _uiClick('modal-open');
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.add('open');
+    // Push state for back button handling
+    history.pushState({ modal: id, type: 'modal' }, '', `#modal-${id}`);
+  }
+}
+function closeModal(id) {
+  _uiClick('modal-close');
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.classList.remove('open');
+  }
+}
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay.open, .modal.open, [id^="modal-"].open').forEach(m => {
+    m.classList.remove('open');
+  });
+  // Also close any modal with class 'open'
+  document.querySelectorAll('.open').forEach(el => {
+    if (el.id && el.id.startsWith('modal-')) {
+      el.classList.remove('open');
+    }
+  });
+}
 window.openModal = openModal;
 window.closeModal = closeModal;
+window.closeAllModals = closeAllModals;
 
 function _getGreeting() {
   const h = new Date().getHours();

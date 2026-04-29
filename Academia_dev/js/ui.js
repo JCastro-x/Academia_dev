@@ -10,10 +10,18 @@ function onGoPage(fn) {
   };
 }
 
+window._currentPageId = 'overview';
+
 async function goPage(id, el) {
   _uiClick('nav');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  // Push state to history for back button handling
+  if (window._currentPageId !== id) {
+    history.pushState({ page: id, type: 'page' }, '', `#${id}`);
+    window._currentPageId = id;
+  }
   
   // Ocultar sub-partials de Reloj (pomodoro, cronometro, temporizador) al navegar
   ['pomodoro', 'cronometro', 'temporizador'].forEach(mode => {
