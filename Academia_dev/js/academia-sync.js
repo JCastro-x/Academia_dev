@@ -66,7 +66,7 @@
 
   // load(localUpdatedAt?, options?) -> { semestres, settings, updatedAt } | null
   // Si se proporciona localUpdatedAt, hace preflight check antes de descargar
-  // options: { exclude: ['pomData', 'snapshots'] } para cargar solo datos esenciales
+  // options: { exclude: ['pomData', 'snapshots'], semesterId: 'id' } para cargar solo datos esenciales o un semestre específico
   async function load(localUpdatedAt, options = {}) {
     if (!_ready) return null;
 
@@ -153,14 +153,14 @@
     }
   }
 
-  // getRemoteUpdatedAt() -> number (ms since epoch) | 0
+  // getRemoteUpdatedAt(semesterId?) -> number (ms since epoch) | 0
   // Cheap preflight to avoid downloading large JSONB when unchanged.
-  async function getRemoteUpdatedAt() {
+  async function getRemoteUpdatedAt(semesterId = null) {
     if (!_ready) return 0;
 
     // Delegar a Turso si está configurado
     if (_useTurso && window.TursoDB) {
-      return await window.TursoDB.getRemoteUpdatedAt();
+      return await window.TursoDB.getRemoteUpdatedAt(semesterId);
     }
 
     // Fallback a Supabase
@@ -179,13 +179,13 @@
     }
   }
 
-  // ── _doSave(semestres, settings, changedFields) ─────────────────
-  async function _doSave(semestres, settings, changedFields = ['semestres', 'settings']) {
+  // ── _doSave(semestres, settings, changedFields, semesterId?) ─────────────────
+  async function _doSave(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     if (!_ready) return;
 
     // Delegar a Turso si está configurado
     if (_useTurso && window.TursoDB) {
-      return await window.TursoDB._doSave(semestres, settings, changedFields);
+      return await window.TursoDB._doSave(semestres, settings, changedFields, semesterId);
     }
 
     // Fallback a Supabase
@@ -278,16 +278,16 @@
     return { semestres: optimizedSemestres, settings: optimizedSettings };
   }
 
-  // ── save(semestres, settings, changedFields) — debounced 10000ms ────────────
-  function save(semestres, settings, changedFields = ['semestres', 'settings']) {
+  // ── save(semestres, settings, changedFields, semesterId?) — debounced 10000ms ────────────
+  function save(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields), 10000);
+    _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields, semesterId), 10000);
   }
 
-  // ── saveNow(semestres, settings, changedFields) — inmediato ────────────────
-  async function saveNow(semestres, settings, changedFields = ['semestres', 'settings']) {
+  // ── saveNow(semestres, settings, changedFields, semesterId?) — inmediato ────────────────
+  async function saveNow(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     clearTimeout(_saveTimer);
-    await _doSave(semestres, settings, changedFields);
+    await _doSave(semestres, settings, changedFields, semesterId);
   }
 
   const API = {

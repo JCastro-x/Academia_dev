@@ -604,3 +604,35 @@ window.openAIGenerateModal = function() {
     _openAIModalAfterLoad();
   }
 };
+
+// ══════════════════════════════════════════════════════════════
+// Flashcards Modals Event Delegation (replaces inline handlers)
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Close modal
+  if (actionType === 'close-modal') {
+    const target = action.dataset.target;
+    if (target && typeof closeModal === 'function') closeModal(target);
+  }
+
+  // Flashcard modal - save
+  if (actionType === 'save-flashcard') {
+    if (typeof saveFlashcard === 'function') saveFlashcard();
+  }
+
+  // Flashcard study - flip card
+  if (actionType === 'flip-study-card') {
+    if (typeof flipStudyCard === 'function') flipStudyCard();
+  }
+
+  // Flashcard study - rate card
+  if (actionType === 'fc-rate') {
+    const rating = parseInt(action.dataset.rating);
+    if (!isNaN(rating) && typeof fcRate === 'function') fcRate(rating);
+  }
+});

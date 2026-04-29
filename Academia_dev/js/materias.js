@@ -1246,3 +1246,104 @@ function saveEditClassFromCreate() {
 
   renderMaterias(); renderGrades(); renderOverview(); fillMatSels();
 }
+
+// ══════════════════════════════════════════════════════════════
+// Materias Modals Event Delegation (replaces inline handlers)
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Close modal
+  if (actionType === 'close-modal') {
+    const target = action.dataset.target;
+    if (target && typeof closeModal === 'function') closeModal(target);
+  }
+
+  // Topic modal
+  if (actionType === 'save-topic') {
+    if (typeof saveTopic === 'function') saveTopic();
+  }
+
+  // Add class modal - icon selection
+  if (actionType === 'select-icon') {
+    if (typeof selectIcon === 'function') selectIcon(action);
+  }
+
+  // Add class modal - color selection
+  if (actionType === 'select-color') {
+    if (typeof selectColor === 'function') selectColor(action);
+  }
+
+  // Add class modal - save
+  if (actionType === 'save-new-class') {
+    if (typeof saveNewClass === 'function') saveNewClass();
+  }
+
+  // Add class modal - apply USAC zones
+  if (actionType === 'apply-usac-zones') {
+    if (typeof applyUsacZones === 'function') applyUsacZones();
+  }
+
+  // Add class modal - add zone row
+  if (actionType === 'add-zone-row') {
+    if (typeof addZoneRow === 'function') addZoneRow();
+  }
+
+  // Edit class modal - icon selection
+  if (actionType === 'ec-select-icon') {
+    if (typeof ecSelectIcon === 'function') ecSelectIcon(action);
+  }
+
+  // Edit class modal - color selection
+  if (actionType === 'ec-select-color') {
+    if (typeof ecSelectColor === 'function') ecSelectColor(action);
+  }
+
+  // Edit class modal - save
+  if (actionType === 'save-edit-class') {
+    if (typeof saveEditClass === 'function') saveEditClass();
+  }
+
+  // Edit class modal - add zone row
+  if (actionType === 'ec-add-zone-row') {
+    if (typeof ecAddZoneRow === 'function') ecAddZoneRow('', null, []);
+  }
+});
+
+document.addEventListener('change', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Topic modal - update exam date selector
+  if (actionType === 'update-exam-date-selector') {
+    if (typeof _updateExamDateSelector === 'function') _updateExamDateSelector();
+  }
+
+  // Add class modal - toggle lab section
+  if (actionType === 'toggle-lab-section') {
+    if (typeof toggleLabSection === 'function') toggleLabSection();
+  }
+
+  // Add class modal - toggle USAC zone
+  if (actionType === 'toggle-usac-zone') {
+    const zone = action.dataset.zone;
+    if (zone && typeof toggleUsacZone === 'function') toggleUsacZone(zone);
+  }
+});
+
+document.addEventListener('input', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Add class modal - update USAC suma
+  if (actionType === 'update-usac-suma') {
+    if (typeof updateUsacSuma === 'function') updateUsacSuma();
+  }
+});

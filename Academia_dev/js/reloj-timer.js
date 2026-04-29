@@ -107,14 +107,15 @@
     timerInterval = setInterval(() => {
       timerRemainingMs = timerEndTime - Date.now();
       
-      if (timerRemainingMs <= 0) {
-        timerRemainingMs = 0;
-        timerFinished();
-      }
-      
       updateTimerDisplay();
       updateTimerProgress();
-    }, 100);
+      
+      if (timerRemainingMs <= 0) {
+        timerRemainingMs = 0;
+        updateTimerProgress(); // Asegurar que la barra llegue al 100%
+        timerFinished();
+      }
+    }, 50); // Actualizar más frecuentemente para mejor sincronización
   };
 
   // Temporizador terminado
@@ -164,29 +165,28 @@
       playAlarm();
     }
     
-    // Intentar reproducir sonido con Web Audio API como fallback
+    // Intentar reproducir sonido con Web Audio
     try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
       
       oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
+      gainNode.connect(audioCtx.destination);
       
-      oscillator.frequency.value = 800;
       oscillator.type = 'sine';
+      oscillator.frequency.value = 800;
       gainNode.gain.value = 0.3;
       
       oscillator.start();
       
-      // Sonar 3 veces
+      // Alternar frecuencia para efecto de alarma - 10 ciclos (5 segundos)
       let count = 0;
-      const beepInterval = setInterval(() => {
+      const soundInterval = setInterval(() => {
         count++;
-        if (count >= 3) {
-          clearInterval(beepInterval);
+        if (count > 10) {
+          clearInterval(soundInterval);
           oscillator.stop();
-          audioContext.close();
         } else {
           oscillator.frequency.value = count % 2 === 0 ? 800 : 600;
         }
@@ -239,14 +239,15 @@
       timerInterval = setInterval(() => {
         timerRemainingMs = timerEndTime - Date.now();
         
-        if (timerRemainingMs <= 0) {
-          timerRemainingMs = 0;
-          timerFinished();
-        }
-        
         updateTimerDisplay();
         updateTimerProgress();
-      }, 100);
+        
+        if (timerRemainingMs <= 0) {
+          timerRemainingMs = 0;
+          updateTimerProgress(); // Asegurar que la barra llegue al 100%
+          timerFinished();
+        }
+      }, 50); // Actualizar más frecuentemente para mejor sincronización
       
       updateTimerButtons();
       const status = document.getElementById('timer-status');

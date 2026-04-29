@@ -1,3 +1,30 @@
+// ══════════════════════════════════════════════════════════════
+// XSS Protection - DOMPurify Helper
+// ══════════════════════════════════════════════════════════════
+function sanitizeHtml(dirty, isRteContent = false) {
+  if (typeof DOMPurify === 'undefined') {
+    console.warn('DOMPurify not loaded, returning unsanitized content');
+    return dirty;
+  }
+  const config = isRteContent ? {
+    ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'span', 'div', 'img', 'blockquote', 'pre', 'code'],
+    ALLOWED_ATTR: ['src', 'alt', 'href', 'title', 'style', 'class', 'id'],
+    ALLOW_DATA_ATTR: true,
+    FORBID_TAGS: ['script', 'style', 'object', 'iframe', 'embed', 'form', 'input'],
+    FORBID_ATTR: ['on*', 'javascript:', 'data:', 'vbscript:'],
+    SANITIZE_DOM: true,
+    KEEP_CONTENT: true
+  } : {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    ALLOW_DATA_ATTR: true,
+    FORBID_TAGS: ['script', 'style', 'object', 'iframe', 'embed', 'form', 'input', 'button'],
+    FORBID_ATTR: ['on*', 'javascript:', 'data:', 'vbscript:'],
+    SANITIZE_DOM: true,
+    KEEP_CONTENT: true
+  };
+  return DOMPurify.sanitize(dirty, config);
+}
 
 // ── Stepper para campos numéricos ────────────────────────────
 function _stepperChange(id, delta, min, max, step) {
@@ -86,12 +113,12 @@ function renderSubtasksEditor(list) {
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
       <input type="checkbox" ${s.done ? 'checked' : ''} onchange="subtaskEditorToggle(${i})"
         style="accent-color:var(--accent);cursor:pointer;width:15px;height:15px;">
-      <input type="text" class="form-input" value="${(s.text||'').replace(/"/g,'&quot;')}"
+      <input type="text" class="form-input" value="${sanitizeHtml((s.text||'')).replace(/"/g,'&quot;')}"
         oninput="subtaskEditorText(${i},this.value)"
         style="flex:1;padding:5px 8px;font-size:12px;" placeholder="Subtarea...">
-      <button class="btn btn-danger btn-sm" onclick="subtaskEditorRemove(${i})" style="padding:3px 8px;">✕</button>
+      <button class="btn btn-danger btn-sm" data-action="subtask-editor-remove" data-index="${i}" style="padding:3px 8px;">✕</button>
     </div>`).join('')
-    + `<button class="btn btn-ghost btn-sm" onclick="subtaskEditorAdd()" style="margin-top:4px;font-size:11px;">+ Agregar subtarea</button>`;
+    + `<button class="btn btn-ghost btn-sm" data-action="subtask-editor-add" style="margin-top:4px;font-size:11px;">+ Agregar subtarea</button>`;
 }
 function subtaskEditorAdd()      { _editSubtasks.push({ text:'', done:false }); renderSubtasksEditor(_editSubtasks); }
 function subtaskEditorText(i, v) { if (_editSubtasks[i]) _editSubtasks[i].text = v; }
@@ -119,9 +146,9 @@ function renderAttachmentsEditor(list) {
   c.innerHTML = _editAttachments.map((a, i) => `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:7px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border);">
       <span style="font-size:18px;">${a.type === 'pdf' ? '📄' : '🖼️'}</span>
-      <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.name}</span>
-      <button class="btn btn-ghost btn-sm" onclick="previewAttachment(${i})" style="font-size:11px;">👁 Ver</button>
-      <button class="btn btn-danger btn-sm" onclick="removeAttachment(${i})" style="padding:3px 7px;">✕</button>
+      <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitizeHtml(a.name)}</span>
+      <button class="btn btn-ghost btn-sm" data-action="preview-attachment" data-index="${i}" style="font-size:11px;">👁 Ver</button>
+      <button class="btn btn-danger btn-sm" data-action="remove-attachment" data-index="${i}" style="padding:3px 7px;">✕</button>
     </div>`).join('')
     + `<label class="btn btn-ghost btn-sm" style="cursor:pointer;margin-top:4px;font-size:11px;display:inline-flex;align-items:center;gap:5px;">
         📎 Adjuntar archivo
@@ -134,13 +161,13 @@ function renderCommentsEditor(list) {
   c.innerHTML = _editComments.map((x, i) => `
     <div style="background:var(--surface2);border-radius:7px;padding:9px 11px;margin-bottom:6px;border-left:2px solid var(--border2);">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${x.date || ''}</span>
-        <button class="btn btn-danger btn-sm" onclick="removeComment(${i})" style="padding:2px 6px;font-size:10px;">✕</button>
+        <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${sanitizeHtml(x.date || '')}</span>
+        <button class="btn btn-danger btn-sm" data-action="remove-comment" data-index="${i}" style="padding:2px 6px;font-size:10px;">✕</button>
       </div>
       <textarea class="form-textarea" rows="2" style="font-size:12px;"
-        oninput="commentText(${i},this.value)">${(x.text || '').replace(/</g,'&lt;')}</textarea>
+        oninput="commentText(${i},this.value)">${sanitizeHtml(x.text || '').replace(/</g,'&lt;')}</textarea>
     </div>`).join('')
-    + `<button class="btn btn-ghost btn-sm" onclick="addComment()" style="margin-top:4px;font-size:11px;">💬 Agregar comentario</button>`;
+    + `<button class="btn btn-ghost btn-sm" data-action="add-comment" style="margin-top:4px;font-size:11px;">💬 Agregar comentario</button>`;
 }
 function addComment() {
   const now = new Date().toLocaleString('es-ES', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
@@ -528,7 +555,7 @@ function _renderTasks() {
           <span data-subtask-progress-text style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;white-space:nowrap;">${prog.done}/${prog.total}</span>
         </div>
         ${t.subtasks.map((s, i) => `
-          <div onclick="toggleSubtask('${t.id}',${i})"
+          <div data-action="toggle-subtask" data-id="${t.id}" data-index="${i}"
             data-subtask-row="${i}"
             style="display:flex;align-items:center;gap:7px;padding:3px 0;cursor:pointer;${s.done?'opacity:.5;':''}">
             <div data-subtask-box="${i}" style="width:14px;height:14px;border-radius:3px;flex-shrink:0;
@@ -537,22 +564,22 @@ function _renderTasks() {
               display:flex;align-items:center;justify-content:center;">
               <span data-subtask-check="${i}">${s.done ? '<span style="font-size:9px;color:#fff;">✓</span>' : ''}</span>
             </div>
-            <span data-subtask-text="${i}" style="font-size:12px;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${s.text}</span>
+            <span data-subtask-text="${i}" style="font-size:12px;${s.done?'text-decoration:line-through;color:var(--text3);':''}">${sanitizeHtml(s.text)}</span>
           </div>`).join('')}
       </div>` : '';
 
     const attachHtml = t.attachments?.length ? `
       <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;">
         ${t.attachments.map((a, i) => `
-          <button onclick="previewTaskAttachment('${t.id}',${i})"
+          <button data-action="preview-task-attachment" data-id="${t.id}" data-index="${i}"
             class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px;">
-            ${a.type === 'pdf' ? '📄' : '🖼️'} ${a.name.length > 18 ? a.name.slice(0,16)+'…' : a.name}
+            ${a.type === 'pdf' ? '📄' : '🖼️'} ${sanitizeHtml(a.name.length > 18 ? a.name.slice(0,16)+'…' : a.name)}
           </button>`).join('')}
       </div>` : '';
 
     const descHtml = t.notes ? `
       <div id="desc-${t.id}" style="display:none;font-size:12px;color:var(--text2);margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;white-space:pre-wrap;">${t.notes.replace(/</g,'&lt;')}</div>
-      <button id="descbtn-${t.id}" onclick="toggleDesc('${t.id}')"
+      <button id="descbtn-${t.id}" data-action="toggle-desc" data-id="${t.id}"
         style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;margin-top:4px;padding:0;">▸ Ver descripción</button>` : '';
 
     const commBadge = t.comments?.length
@@ -567,16 +594,16 @@ function _renderTasks() {
       ondragleave="taskDragLeave(event)">
       <div class="task-drag-handle" title="Arrastrar">⠿</div>
       <div class="priority-stripe ${pStripe}"></div>
-      <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask('${t.id}')"></div>
+      <div class="task-check ${t.done ? 'checked' : ''}" data-action="toggle-task" data-id="${t.id}"></div>
       <div style="flex:1;min-width:0;">
-        <div class="task-title">${t.title}</div>
+        <div class="task-title">${sanitizeHtml(t.title)}</div>
         <div class="task-meta">
-          <span class="task-subject" style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;">${m.icon||'📚'} ${m.code||'?'}</span>
-          <span class="type-badge ${tBadge}">${t.type || 'Tarea'}</span>
+          <span class="task-subject" style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;">${m.icon||'📚'} ${sanitizeHtml(m.code||'?')}</span>
+          <span class="type-badge ${tBadge}">${sanitizeHtml(t.type || 'Tarea')}</span>
           ${prioBadge(t.priority)}
           ${t.due ? `<span class="task-due ${dc}">📅 ${fmtD(t.due)}</span>` : ''}
           ${t.timeEst ? `<span style="font-size:10px;color:var(--text3);">⏱ ${t.timeEst>=60?(t.timeEst/60)+'h':t.timeEst+'min'}</span>` : ''}
-          ${(t.tags||[]).map(tg=>`<span class="tag-chip">#${tg}</span>`).join('')}
+          ${(t.tags||[]).map(tg=>`<span class="tag-chip">#${sanitizeHtml(tg)}</span>`).join('')}
           ${commBadge}
         </div>
         ${subtasksHtml}
@@ -584,9 +611,9 @@ function _renderTasks() {
         ${descHtml}
       </div>
       <div style="display:flex;gap:5px;flex-shrink:0;">
-        <button class="btn btn-ghost btn-sm" onclick="openTaskDetail('${t.id}')" title="Ver detalles">👁</button>
-        <button class="btn btn-ghost btn-sm" onclick="openTaskModal('${t.id}')" title="Editar">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
+        <button class="btn btn-ghost btn-sm" data-action="view-task" data-id="${t.id}" title="Ver detalles">👁</button>
+        <button class="btn btn-ghost btn-sm" data-action="edit-task" data-id="${t.id}" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-sm" data-action="delete-task" data-id="${t.id}">🗑️</button>
       </div>
     </div>`;
   }).join('');
@@ -663,7 +690,7 @@ function openTaskDetail(id) {
     '<span style="font-size:11px;color:var(--text3);font-family:Space Mono,monospace;">' + (prog?prog.done:0) + '/' + (prog?prog.total:0) + '</span>' +
     '</div>' +
     t.subtasks.map(function(s,i) {
-      return '<div onclick="toggleSubtask(\'' + t.id + '\',' + i + ');openTaskDetail(\'' + t.id + '\')" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;' + (s.done?'opacity:.5':'') + '">' +
+      return '<div data-action="toggle-subtask" data-id="' + t.id + '" data-index="' + i + '" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;' + (s.done?'opacity:.5':'') + '">' +
         '<div style="width:16px;height:16px;border-radius:4px;flex-shrink:0;border:2px solid ' + (s.done?'var(--accent)':'var(--border2)') + ';background:' + (s.done?'var(--accent)':'transparent') + ';display:flex;align-items:center;justify-content:center;">' +
         (s.done?'<span style="font-size:10px;color:#fff;">✓</span>':'') +
         '</div><span style="font-size:13px;' + (s.done?'text-decoration:line-through;color:var(--text3);':'') + '">' + s.text + '</span></div>';
@@ -679,7 +706,7 @@ function openTaskDetail(id) {
         '<span style="font-size:20px;">' + (a.type==='pdf'?'📄':a.type==='image'?'🖼️':'📎') + '</span>' +
         '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + a.name + '</div>' +
         '<div style="font-size:10px;color:var(--text3);">' + (a.date||'') + ' · ' + (a.size?Math.round(a.size/1024)+'KB':'') + '</div></div>' +
-        '<button class="btn btn-ghost btn-sm" onclick="previewTaskAttachment(\'' + t.id + '\',' + i + ')" style="font-size:11px;">👁 Ver</button>' +
+        '<button class="btn btn-ghost btn-sm" data-action="preview-task-attachment" data-id="' + t.id + '" data-index="' + i + '" style="font-size:11px;">👁 Ver</button>' +
         '</div>';
     }).join('') +
     '</div>'
@@ -705,7 +732,7 @@ function openTaskDetail(id) {
 
   const emptyHtml = (!subtasksHtml && !notesHtml && !attachHtml && !commentsHtml) ?
     '<div style="text-align:center;padding:32px;color:var(--text3);"><div style="font-size:32px;margin-bottom:8px;">📋</div><div>Sin detalles adicionales</div>' +
-    '<button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="closeTaskDetail();openTaskModal(\'' + t.id + '\')">✏️ Agregar detalles</button></div>' : '';
+    '<button class="btn btn-primary btn-sm" style="margin-top:12px;" data-action="edit-task" data-id="' + t.id + '" data-close-detail="true">✏️ Agregar detalles</button></div>' : '';
 
   let modal = document.getElementById('modal-task-detail');
   if (!modal) {
@@ -735,13 +762,13 @@ function openTaskDetail(id) {
     prio + dueStr + timeStr +
     '</div></div>' +
     '<div style="display:flex;gap:6px;flex-shrink:0;">' +
-    '<button class="btn btn-ghost btn-sm" onclick="closeTaskDetail();openTaskModal(\'' + t.id + '\')" title="Editar">✏️</button>' +
-    '<button class="btn btn-ghost btn-sm" onclick="closeTaskDetail()" style="font-size:16px;padding:4px 8px;">✕</button>' +
+    '<button class="btn btn-ghost btn-sm" data-action="edit-task" data-id="' + t.id + '" data-close-detail="true" title="Editar">✏️</button>' +
+    '<button class="btn btn-ghost btn-sm" data-action="close-task-detail" style="font-size:16px;padding:4px 8px;">✕</button>' +
     '</div></div>' +
     '<div style="overflow-y:auto;padding:16px 20px;flex:1;">' + subtasksHtml + notesHtml + attachHtml + commentsHtml + emptyHtml + '</div>' +
     '<div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);">' +
     '<span style="font-size:11px;color:var(--text3);">' + attachCount + commCount + '</span>' +
-    '<button class="btn btn-primary btn-sm" onclick="toggleTask(\'' + t.id + '\');closeTaskDetail()">' + (t.done?'↩ Marcar pendiente':'✅ Marcar completada') + '</button>' +
+    '<button class="btn btn-primary btn-sm" data-action="toggle-task" data-id="' + t.id + '" data-close-detail="true">' + (t.done?'↩ Marcar pendiente':'✅ Marcar completada') + '</button>' +
     '</div></div>';
 
   if (!document.getElementById('task-detail-styles')) {
@@ -767,3 +794,144 @@ function closeTaskDetail() {
   const m = document.getElementById('modal-task-detail');
   if (m) m.style.display = 'none';
 }
+
+// ══════════════════════════════════════════════════════════════
+// Task Modal Event Delegation (replaces inline handlers)
+// ══════════════════════════════════════════════════════════════
+// Note: Placed in module scope (not DOMContentLoaded) because partials
+// are loaded dynamically via fetch(). Event delegation on document
+// will catch clicks on dynamically injected elements via bubbling.
+
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Close modal
+  if (actionType === 'close-modal') {
+    const target = action.dataset.target;
+    if (target && typeof closeModal === 'function') closeModal(target);
+  }
+
+  // Switch task tab
+  if (actionType === 'switch-task-tab') {
+    const tab = action.dataset.tab;
+    if (tab && typeof switchTaskTab === 'function') switchTaskTab(tab, action);
+  }
+
+  // Stepper change
+  if (actionType === 'stepper-change') {
+    const id = action.dataset.id;
+    const delta = parseFloat(action.dataset.delta);
+    const min = parseFloat(action.dataset.min);
+    const max = parseFloat(action.dataset.max);
+    const step = parseFloat(action.dataset.step);
+    if (id && typeof _stepperChange === 'function') _stepperChange(id, delta, min, max, step);
+  }
+
+  // Save task
+  if (actionType === 'save-task') {
+    if (typeof saveTask === 'function') saveTask();
+  }
+
+  // Edit task
+  if (actionType === 'edit-task') {
+    const id = action.dataset.id;
+    const closeDetail = action.dataset.closeDetail;
+    if (closeDetail && typeof closeTaskDetail === 'function') closeTaskDetail();
+    if (id && typeof openTaskModal === 'function') openTaskModal(id);
+  }
+
+  // Delete task
+  if (actionType === 'delete-task') {
+    const id = action.dataset.id;
+    if (id && typeof deleteTask === 'function') deleteTask(id);
+  }
+
+  // View task (open detail)
+  if (actionType === 'view-task') {
+    const id = action.dataset.id;
+    if (id && typeof openTaskDetail === 'function') openTaskDetail(id);
+  }
+
+  // Toggle task
+  if (actionType === 'toggle-task') {
+    const id = action.dataset.id;
+    const closeDetail = action.dataset.closeDetail;
+    if (id && typeof toggleTask === 'function') toggleTask(id);
+    if (closeDetail && typeof closeTaskDetail === 'function') closeTaskDetail();
+  }
+
+  // Toggle subtask
+  if (actionType === 'toggle-subtask') {
+    const id = action.dataset.id;
+    const index = action.dataset.index;
+    if (id && typeof toggleSubtask === 'function') toggleSubtask(id, parseInt(index));
+  }
+
+  // Preview task attachment
+  if (actionType === 'preview-task-attachment') {
+    const id = action.dataset.id;
+    const index = action.dataset.index;
+    if (id && typeof previewTaskAttachment === 'function') previewTaskAttachment(id, parseInt(index));
+  }
+
+  // Close task detail
+  if (actionType === 'close-task-detail') {
+    if (typeof closeTaskDetail === 'function') closeTaskDetail();
+  }
+
+  // Toggle description
+  if (actionType === 'toggle-desc') {
+    const id = action.dataset.id;
+    if (id && typeof toggleDesc === 'function') toggleDesc(id);
+  }
+
+  // Subtask editor add
+  if (actionType === 'subtask-editor-add') {
+    if (typeof subtaskEditorAdd === 'function') subtaskEditorAdd();
+  }
+
+  // Subtask editor remove
+  if (actionType === 'subtask-editor-remove') {
+    const index = action.dataset.index;
+    if (typeof subtaskEditorRemove === 'function') subtaskEditorRemove(parseInt(index));
+  }
+
+  // Preview attachment
+  if (actionType === 'preview-attachment') {
+    const index = action.dataset.index;
+    if (typeof previewAttachment === 'function') previewAttachment(parseInt(index));
+  }
+
+  // Remove attachment
+  if (actionType === 'remove-attachment') {
+    const index = action.dataset.index;
+    if (typeof removeAttachment === 'function') removeAttachment(parseInt(index));
+  }
+
+  // Add comment
+  if (actionType === 'add-comment') {
+    if (typeof addComment === 'function') addComment();
+  }
+
+  // Remove comment
+  if (actionType === 'remove-comment') {
+    const index = action.dataset.index;
+    if (typeof removeComment === 'function') removeComment(parseInt(index));
+  }
+});
+
+// Handle change events via delegation (for select elements)
+document.addEventListener('change', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Toggle repeat fields
+  if (actionType === 'toggle-repeat-fields') {
+    if (typeof _toggleRepeatFields === 'function') _toggleRepeatFields();
+  }
+});

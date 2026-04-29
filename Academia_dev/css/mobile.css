@@ -8,9 +8,8 @@
   .notes-folders-panel { max-height:100%; width:120px; border-bottom:none; border-right:1px solid var(--border); }
   .notes-list-panel { border-bottom:none; }
   
-  /* Ocultar botones de agregar del header en móvil (ya están en navbar) */
-  .topbar-actions button[onclick="openAddClassModal()"],
-  .topbar-actions button[onclick="openQuickAdd()"] {
+  /* Ocultar elementos solo de desktop en móvil */
+  .desktop-only {
     display: none !important;
   }
 }

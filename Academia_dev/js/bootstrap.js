@@ -179,3 +179,39 @@ async function handleLogout() {
     if (typeof _appNotify === 'function') _appNotify('Error al cerrar sesión: ' + result.error, 'error');
   }
 }
+
+// ══════════════════════════════════════════════════════════════
+// Config Modal Event Delegation (replaces inline handlers)
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Close modal
+  if (actionType === 'close-modal') {
+    const target = action.dataset.target;
+    if (target && typeof closeModal === 'function') closeModal(target);
+  }
+
+  // Config modal - export data
+  if (actionType === 'export-data') {
+    if (typeof exportData === 'function') exportData();
+  }
+
+  // Config modal - export PDF
+  if (actionType === 'export-pdf') {
+    if (typeof exportPDF === 'function') exportPDF();
+  }
+
+  // Config modal - save config
+  if (actionType === 'save-config-modal') {
+    if (typeof saveConfigModal === 'function') saveConfigModal();
+  }
+
+  // Config modal - handle logout
+  if (actionType === 'handle-logout') {
+    if (typeof handleLogout === 'function') handleLogout();
+  }
+});

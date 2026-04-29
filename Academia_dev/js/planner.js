@@ -1196,3 +1196,43 @@ function _togglePrqGroup(id, headerEl) {
   const chev = headerEl?.querySelector('span:last-child');
   if (chev) chev.textContent = isOpen ? '▸' : '▾';
 }
+
+// ══════════════════════════════════════════════════════════════
+// Quick Add Modal Event Delegation (replaces inline handlers)
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Close modal
+  if (actionType === 'close-modal') {
+    const target = action.dataset.target;
+    if (target && typeof closeModal === 'function') closeModal(target);
+  }
+
+  // Quick add - open task modal
+  if (actionType === 'quickadd-task') {
+    if (typeof closeModal === 'function') closeModal('modal-quickadd');
+    if (typeof openTaskModal === 'function') openTaskModal();
+  }
+
+  // Quick add - open event modal
+  if (actionType === 'quickadd-event') {
+    if (typeof closeModal === 'function') closeModal('modal-quickadd');
+    if (typeof openEventModal === 'function') openEventModal();
+  }
+
+  // Quick add - open topic modal
+  if (actionType === 'quickadd-topic') {
+    if (typeof closeModal === 'function') closeModal('modal-quickadd');
+    if (typeof openTopicModal === 'function') openTopicModal();
+  }
+
+  // Quick add - open add class modal
+  if (actionType === 'quickadd-class') {
+    if (typeof closeModal === 'function') closeModal('modal-quickadd');
+    if (typeof openAddClassModal === 'function') openAddClassModal();
+  }
+});

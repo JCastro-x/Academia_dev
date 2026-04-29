@@ -6,6 +6,11 @@ const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto
 
 function renderCalendar() { _schedRender(_renderCalendar); }
 function _renderCalendar() {
+  // Validación de contenedor para evitar TypeError en lazy loading
+  const calGrid = _el('cal-grid');
+  const calEventsList = _el('cal-events-list');
+  if (!calGrid && !calEventsList) return;
+
   const monthStr = `${calY}-${String(calM+1).padStart(2,'0')}`;
   const calMonthTitleEl = document.getElementById('cal-month-title');
   if (calMonthTitleEl) calMonthTitleEl.textContent = `${MONTHS[calM]} ${calY}`;
@@ -55,7 +60,7 @@ function _renderCalendar() {
     if (d === 1) cellClass += ' first-day';
     if (d === daysInMonth) cellClass += ' last-day';
 
-    html += `<div class="${cellClass}" onclick="calDayClick('${ds}')">
+    html += `<div class="${cellClass}" data-action="cal-day-click" data-date="${ds}">
       <div class="cal-num">${d}</div>
       ${eventsHtml}${tasksHtml}${overflow}
     </div>`;
@@ -89,8 +94,8 @@ function _renderCalendar() {
           <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.name||''} · ${fmtD(e.date)}${e.hora?' · '+e.hora:''}${e.horaEnd?' - '+e.horaEnd:''}${e.desc?' · '+e.desc:''}</div>
         </div>
         <span class="type-badge ${getTypeBadgeClass(e.type)}">${e.type||''}</span>
-        <button class="btn btn-ghost btn-sm" onclick="editEvent('${e.id}')">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.id}')">🗑️</button>
+        <button class="btn btn-ghost btn-sm" data-action="edit-event" data-id="${e.id}">✏️</button>
+        <button class="btn btn-danger btn-sm" data-action="delete-event" data-id="${e.id}">🗑️</button>
       </div>`;
     }).join('');
   }
@@ -100,7 +105,7 @@ function _renderCalendar() {
       const m = getMat(t.matId);
       const prog = subtaskProgress(t);
       return `<div class="task-item${t.done?' done':''}">
-        <div class="task-check ${t.done?'checked':''}" onclick="toggleTask('${t.id}')"></div>
+        <div class="task-check ${t.done?'checked':''}" data-action="toggle-task" data-id="${t.id}"></div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:600;">${t.title}</div>
           <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.code||''} · ${fmtD(t.due)} · ${t.type||'Tarea'}</div>
@@ -140,12 +145,12 @@ function openDayEventsModal(date, events, tasks) {
     const modalHtml = `
       <div class="modal-overlay" id="modal-day-events">
         <div class="modal" style="max-width:800px;">
-          <div class="modal-close" onclick="closeModal('modal-day-events')">✕</div>
+          <div class="modal-close" data-action="close-modal" data-target="modal-day-events">✕</div>
           <div class="modal-title">📅 Eventos del ${date}</div>
           <div id="day-events-list" style="max-height:600px;overflow-y:auto;margin-bottom:16px;"></div>
           <div class="form-actions">
-            <button class="btn btn-primary" onclick="openEventModal();document.getElementById('ev-date').value='${date}';closeModal('modal-day-events');">+ Nuevo Evento</button>
-            <button class="btn btn-ghost" onclick="closeModal('modal-day-events')">Cerrar</button>
+            <button class="btn btn-primary" data-action="open-event-modal" data-date="${date}">+ Nuevo Evento</button>
+            <button class="btn btn-ghost" data-action="close-modal" data-target="modal-day-events">Cerrar</button>
           </div>
         </div>
       </div>
@@ -215,7 +220,7 @@ function openDayEventsModal(date, events, tasks) {
         const height = duration;
         
         html += `
-          <div style="position:absolute;top:${top}px;left:8px;right:8px;height:${height}px;background:${m.color||'#7c6aff'}22;border-left:4px solid ${m.color||'#7c6aff'};border-radius:6px;padding:8px 10px;cursor:pointer;overflow:hidden;" onclick="editEvent('${e.id}')">
+          <div style="position:absolute;top:${top}px;left:8px;right:8px;height:${height}px;background:${m.color||'#7c6aff'}22;border-left:4px solid ${m.color||'#7c6aff'};border-radius:6px;padding:8px 10px;cursor:pointer;overflow:hidden;" data-action="edit-event" data-id="${e.id}">
             <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div>
             <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${e.hora}${e.horaEnd ? ' - '+e.horaEnd : ''}</div>
             <div style="font-size:10px;color:var(--text3);">${m.icon||''} ${m.code||m.name||''}</div>
@@ -243,8 +248,8 @@ function openDayEventsModal(date, events, tasks) {
               <div style="font-size:13.5px;font-weight:600;">${e.title}</div>
               <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.name||''} · ${e.type||''}${e.desc?' · '+e.desc:''}</div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="editEvent('${e.id}')">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteEvent('${e.id}');closeModal('modal-day-events');">🗑️</button>
+            <button class="btn btn-ghost btn-sm" data-action="edit-event" data-id="${e.id}">✏️</button>
+            <button class="btn btn-danger btn-sm" data-action="delete-event" data-id="${e.id}" data-close-modal="modal-day-events">🗑️</button>
           </div>
         `;
       });
@@ -257,7 +262,7 @@ function openDayEventsModal(date, events, tasks) {
         const m = getMat(t.matId);
         html += `
           <div class="task-item" style="align-items:center;">
-            <div class="task-check" onclick="toggleTask('${t.id}');closeModal('modal-day-events');"></div>
+            <div class="task-check" data-action="toggle-task" data-id="${t.id}" data-close-modal="modal-day-events"></div>
             <div style="flex:1;">
               <div style="font-size:13px;font-weight:600;">${t.title}</div>
               <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.code||''} · ${t.type||'Tarea'}</div>
@@ -374,3 +379,69 @@ async function deleteEvent(id) {
     });
   }
 }
+
+// ══════════════════════════════════════════════════════════════
+// Event Modal Event Delegation (replaces inline handlers)
+// ══════════════════════════════════════════════════════════════
+// Note: Placed in module scope (not DOMContentLoaded) because partials
+// are loaded dynamically via fetch(). Event delegation on document
+// will catch clicks on dynamically injected elements via bubbling.
+
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Close modal
+  if (actionType === 'close-modal') {
+    const target = action.dataset.target;
+    if (target && typeof closeModal === 'function') closeModal(target);
+  }
+
+  // Save event
+  if (actionType === 'save-event') {
+    if (typeof saveEvent === 'function') saveEvent();
+  }
+
+  // Calendar day click
+  if (actionType === 'cal-day-click') {
+    const date = action.dataset.date;
+    if (date && typeof calDayClick === 'function') calDayClick(date);
+  }
+
+  // Edit event
+  if (actionType === 'edit-event') {
+    const id = action.dataset.id;
+    if (id && typeof editEvent === 'function') editEvent(id);
+  }
+
+  // Delete event
+  if (actionType === 'delete-event') {
+    const id = action.dataset.id;
+    const closeModalTarget = action.dataset.closeModal;
+    if (id && typeof deleteEvent === 'function') {
+      deleteEvent(id);
+      if (closeModalTarget && typeof closeModal === 'function') closeModal(closeModalTarget);
+    }
+  }
+
+  // Toggle task
+  if (actionType === 'toggle-task') {
+    const id = action.dataset.id;
+    const closeModalTarget = action.dataset.closeModal;
+    if (id && typeof toggleTask === 'function') {
+      toggleTask(id);
+      if (closeModalTarget && typeof closeModal === 'function') closeModal(closeModalTarget);
+    }
+  }
+
+  // Open event modal with date
+  if (actionType === 'open-event-modal') {
+    const date = action.dataset.date;
+    const closeModalTarget = action.dataset.closeModal;
+    if (closeModalTarget && typeof closeModal === 'function') closeModal(closeModalTarget);
+    if (typeof openEventModal === 'function') openEventModal();
+    if (date) document.getElementById('ev-date').value = date;
+  }
+});

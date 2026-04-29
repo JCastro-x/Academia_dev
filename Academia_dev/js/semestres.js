@@ -254,3 +254,24 @@ const PAGE_TITLES = {
   perfil:'Mi Perfil Académico', general:'General',
   flashcards:'Flashcards'
 };
+
+// ══════════════════════════════════════════════════════════════
+// Semestre Modal Event Delegation (replaces inline handlers)
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Close modal
+  if (actionType === 'close-modal') {
+    const target = action.dataset.target;
+    if (target && typeof closeModal === 'function') closeModal(target);
+  }
+
+  // Semestre modal - save
+  if (actionType === 'save-semestre-modal') {
+    if (typeof saveSemestreModal === 'function') saveSemestreModal();
+  }
+});

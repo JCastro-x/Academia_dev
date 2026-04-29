@@ -8,161 +8,264 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
     body {
-      background: #0a0a0f;
-      color: #e8e8f0;
-      font-family: 'Syne', sans-serif;
-      line-height: 1.8;
-      padding: 20px;
+      background: #0a0a0f; color: #e8e8f0;
+      font-family: 'Syne', sans-serif; line-height: 1.8; padding: 20px;
     }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
+    .container { max-width: 800px; margin: 0 auto; padding-bottom: 60px; }
     h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
+      font-size: 32px; margin-bottom: 10px;
       background: linear-gradient(135deg, #a78bfa, #7c6aff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-    .subtitle {
-      color: #9090a8;
-      margin-bottom: 30px;
-      font-size: 14px;
-    }
-
-    h2 {
-      font-size: 20px;
-      margin-top: 30px;
-      margin-bottom: 12px;
-      color: #a78bfa;
-    }
-
-    p {
-      margin-bottom: 12px;
-      color: #e8e8f0;
-    }
-
-    ul {
-      margin-left: 20px;
-      margin-bottom: 12px;
-    }
-
-    li {
-      margin-bottom: 8px;
-    }
-
+    .subtitle { color: #9090a8; margin-bottom: 30px; font-size: 14px; }
+    h2 { font-size: 20px; margin-top: 36px; margin-bottom: 12px; color: #a78bfa; }
+    h3 { font-size: 15px; margin-top: 20px; margin-bottom: 8px; color: #c4b5fd; }
+    p { margin-bottom: 12px; color: #e8e8f0; }
+    ul { margin-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 8px; }
+    a { color: #7c6aff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
     .back-link {
-      display: inline-block;
-      margin-top: 30px;
-      padding: 10px 16px;
-      background: #7c6aff;
-      color: white;
-      text-decoration: none;
-      border-radius: 6px;
-      transition: opacity 0.2s;
+      display: inline-block; margin-top: 30px; padding: 10px 16px;
+      background: #7c6aff; color: white; border-radius: 6px; transition: opacity 0.2s;
     }
-
-    .back-link:hover {
-      opacity: 0.8;
-    }
-
+    .back-link:hover { opacity: 0.8; text-decoration: none; }
     .updated {
-      color: #9090a8;
-      font-size: 12px;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #2a2a38;
+      color: #9090a8; font-size: 12px; margin-top: 30px;
+      padding-top: 20px; border-top: 1px solid #2a2a38;
     }
+    .highlight-box {
+      background: rgba(124,106,255,.07); border: 1px solid rgba(124,106,255,.2);
+      border-radius: 10px; padding: 14px 18px; margin: 14px 0;
+    }
+    .warning-box {
+      background: rgba(248,113,113,.07); border: 1px solid rgba(248,113,113,.25);
+      border-radius: 10px; padding: 14px 18px; margin: 14px 0; color: #f87171;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+    th { background: rgba(124,106,255,.1); color: #a78bfa; padding: 8px 12px; text-align: left; border: 1px solid #2a2a38; }
+    td { padding: 8px 12px; border: 1px solid #2a2a38; color: #e8e8f0; vertical-align: top; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Términos y Condiciones</h1>
-    <p class="subtitle">Última actualización: 25 de abril de 2026</p>
+    <p class="subtitle">Última actualización: 28 de abril de 2026</p>
 
+    <!-- ── 1 ── -->
     <h2>1. Aceptación de los Términos</h2>
-    <p>Al acceder y utilizar Academia Dev ("Plataforma"), aceptas estos Términos y Condiciones en su totalidad. Si no estás de acuerdo con alguna parte, no debes usar la Plataforma.</p>
+    <p>
+      Al acceder o usar <strong>Academia Dev</strong> ("Plataforma", "App"), aceptas estos
+      Términos y Condiciones en su totalidad. Si no estás de acuerdo con alguna parte,
+      no debes usar la Plataforma.
+    </p>
+    <p>
+      Estos términos aplican a todos los modos de acceso: cuenta Google, modo invitado
+      y modo offline.
+    </p>
 
+    <!-- ── 2 ── -->
     <h2>2. Descripción del Servicio</h2>
-    <p>Academia Dev es un dashboard académico diseñado para ayudarte a organizar tu semestre universitario. La Plataforma permite:</p>
+    <p>
+      Academia Dev es un dashboard académico personal gratuito diseñado para estudiantes
+      universitarios. Permite:
+    </p>
     <ul>
-      <li>Gestionar calificaciones y materias</li>
-      <li>Organizar tareas y eventos académicos</li>
-      <li>Crear notas y apuntes</li>
-      <li>Usar un temporizador Pomodoro</li>
-      <li>Sincronizar datos entre dispositivos</li>
-      <li><strong>Generar flashcards con Inteligencia Artificial</strong> usando Google Gemini API</li>
-      <li><strong>Asistente académico con IA</strong> para chat contextual y creación de tareas</li>
+      <li>Gestionar semestres, materias, calificaciones por zona y promedio ponderado</li>
+      <li>Organizar tareas con subtareas, prioridades y fechas límite</li>
+      <li>Tomar notas con soporte de imágenes, PDFs y OCR</li>
+      <li>Usar un temporizador Pomodoro con Web Worker y modo Picture-in-Picture</li>
+      <li>Crear y estudiar flashcards con spaced repetition</li>
+      <li>Generar flashcards automáticamente con IA (Google Gemini)</li>
+      <li>Usar un asistente académico con IA para chat contextual y creación de tareas</li>
+      <li>Ver calendario, horario semanal y estadísticas académicas</li>
+      <li>Sincronizar datos entre dispositivos vía Supabase (con cuenta Google)</li>
     </ul>
 
-    <h2>3. Cuenta de Usuario</h2>
-    <p>Para usar Academia Dev, debes crear una cuenta. Eres responsable de:</p>
+    <div class="highlight-box">
+      La Plataforma se ofrece <strong>sin costo</strong> como herramienta de productividad
+      académica personal. No es una herramienta oficial de ninguna institución educativa.
+    </div>
+
+    <!-- ── 3 ── -->
+    <h2>3. Modos de Acceso</h2>
+
+    <h3>3.1 Cuenta Google (sincronizada)</h3>
+    <p>
+      Al iniciar sesión con Google autorizas a Academia Dev a acceder a tu nombre, email
+      y foto de perfil según lo permita Google OAuth. Tus datos académicos se sincronizan
+      en la nube a través de Supabase bajo tu propia cuenta, protegidos con Row Level
+      Security.
+    </p>
+
+    <h3>3.2 Modo Invitado</h3>
+    <p>
+      Puedes usar la Plataforma sin cuenta. Los datos se guardan exclusivamente en tu
+      dispositivo (localStorage / IndexedDB). No hay sincronización ni respaldo.
+      Academia Dev no será responsable por pérdida de datos en modo invitado.
+    </p>
+
+    <h3>3.3 Modo Offline</h3>
+    <p>
+      La Plataforma incluye un Service Worker que permite uso offline con datos cacheados.
+      Los cambios realizados offline se sincronizan automáticamente al recuperar la
+      conexión.
+    </p>
+
+    <!-- ── 4 ── -->
+    <h2>4. Cuenta de Usuario</h2>
+    <p>Al usar una cuenta eres responsable de:</p>
     <ul>
-      <li>Mantener la confidencialidad de tu contraseña</li>
-      <li>Proporcionar información precisa en tu registro</li>
-      <li>Aceptar toda actividad que ocurra bajo tu cuenta</li>
+      <li>Mantener la seguridad de tu cuenta Google</li>
+      <li>No compartir tu acceso con terceros</li>
+      <li>Toda la actividad que ocurra bajo tu cuenta</li>
+      <li>Notificarnos de inmediato si sospechas de uso no autorizado</li>
     </ul>
 
-    <h2>4. Propiedad Intelectual</h2>
-    <p>Todo el contenido, código y diseño de Academia Dev es propiedad intelectual del desarrollador y está protegido por las leyes de derechos de autor. No puedes copiar, modificar o distribuir el código sin permiso explícito.</p>
-
-    <h2>5. Licencia de Uso</h2>
-    <p>Se te otorga una licencia limitada, no exclusiva y no transferible para usar la Plataforma únicamente con fines académicos personales.</p>
-
-    <h2>6. Limitación de Responsabilidad</h2>
-    <p>Academia Dev se proporciona "tal cual". No somos responsables por:</p>
+    <!-- ── 5 ── -->
+    <h2>5. Uso Aceptable</h2>
+    <p>Puedes usar Academia Dev para fines académicos y de productividad personal. Queda <strong>prohibido</strong>:</p>
     <ul>
-      <li>Pérdida de datos o información</li>
-      <li>Interrupciones del servicio</li>
-      <li>Daños directos, indirectos o incidentales</li>
-      <li>Errores en el software</li>
+      <li>Usar la Plataforma para actividades ilegales o que infrinjan derechos de terceros</li>
+      <li>Intentar acceder a datos de otros usuarios o vulnerar la seguridad</li>
+      <li>Hacer ingeniería inversa, descompilar o extraer el código fuente con fines comerciales</li>
+      <li>Realizar ataques de denegación de servicio o abusar de las APIs</li>
+      <li>Usar las funciones de IA para generar contenido ilegal, dañino o que viole las políticas de Google Gemini</li>
+      <li>Automatizar el uso de la Plataforma (bots, scrapers) sin autorización escrita</li>
+      <li>Revender o redistribuir el servicio sin permiso del autor</li>
     </ul>
 
-    <h2>7. Prohibiciones</h2>
-    <p>No puedes:</p>
+    <!-- ── 6 ── -->
+    <h2>6. Inteligencia Artificial — Uso y Límites</h2>
+
+    <p>Las funciones de IA (generación de flashcards y asistente académico) están impulsadas por <strong>Google Gemini 2.5 Flash API</strong>. Al usarlas:</p>
     <ul>
-      <li>Usar la Plataforma para actividades ilegales</li>
-      <li>Intentar acceder a cuentas ajenas</li>
-      <li>Reproducir, modificar o distribuir el código</li>
-      <li>Realizar ataques de seguridad o hacking</li>
-      <li>Enviar spam o contenido malicioso</li>
+      <li>Aceptas los <a href="https://ai.google.dev/gemini-api/docs/terms" target="_blank">Términos de Google Gemini API</a></li>
+      <li>Entiendes que el contenido que envíes se procesa en servidores de Google LLC</li>
+      <li>No debes enviar información sensible, confidencial o de terceros sin su consentimiento</li>
+      <li>El contenido generado por IA es orientativo — no sustituye criterio académico ni profesional</li>
+      <li>El plan gratuito tiene un límite de 15 solicitudes por minuto; puede haber interrupciones</li>
     </ul>
 
-    <h2>8. Datos y Privacidad</h2>
-    <p>Tus datos se almacenan de forma segura en Supabase. Consulta nuestra <a href="privacidad.html" style="color: #7c6aff;">Política de Privacidad</a> para más información.</p>
+    <div class="warning-box">
+      Academia Dev no se responsabiliza por la precisión del contenido generado por IA.
+      Verifica siempre el material antes de usarlo en evaluaciones académicas.
+    </div>
 
-    <h2>9. Exención de Responsabilidad</h2>
-    <p>Academia Dev se proporciona "tal cual" y "según disponibilidad", sin garantías de ningún tipo, ya sean expresas o implícitas. En la máxima medida permitida por la ley aplicable:</p>
+    <!-- ── 7 ── -->
+    <h2>7. Propiedad Intelectual</h2>
+
+    <h3>7.1 Código de la Plataforma</h3>
+    <p>
+      El código fuente de Academia Dev está bajo la <strong>GNU AGPL v3</strong>. Puedes
+      usarlo, modificarlo y distribuirlo bajo los términos de dicha licencia, siempre que:
+    </p>
     <ul>
-      <li>Josue Castro y Void Studio <strong>no serán responsables</strong> por ningún daño directo, indirecto, incidental, especial, consecuente o punitivo que surja del uso o la imposibilidad de uso de la Plataforma.</li>
-      <li>No garantizamos que el servicio sea ininterrumpido, seguro o libre de errores.</li>
-      <li>No somos responsables por pérdida de datos, pérdida de ganancias, ni cualquier otro daño derivado del uso de Academia Dev.</li>
-      <li>El usuario asume toda responsabilidad por el uso que haga de la Plataforma y por los datos académicos que ingrese en ella.</li>
-      <li>Academia Dev no es una herramienta oficial de ninguna institución educativa y no garantiza resultados académicos de ningún tipo.</li>
-      <li>El uso de la Plataforma es bajo tu propio riesgo.</li>
+      <li>Incluyas atribución visible: <em>"Based on Academia Dev by JCastro014"</em></li>
+      <li>Enlaces al repositorio: <a href="https://github.com/JCastro-x/Academia_dev" target="_blank">github.com/JCastro-x/Academia_dev</a></li>
+      <li>Distribuyas cualquier obra derivada bajo la misma licencia AGPL v3</li>
     </ul>
 
-    <h2>10. Modificaciones</h2>
-    <p>Podemos modificar estos Términos en cualquier momento. Los cambios entrarán en vigor al publicarlos. Tu uso continuado de la Plataforma significa que aceptas los cambios.</p>
+    <h3>7.2 Uso Comercial</h3>
+    <p>
+      Para cualquier uso comercial o propietario (incluyendo proyectos que no quieran
+      cumplir con los términos de la AGPL v3), es obligatorio obtener una licencia comercial
+      separada contactando al autor: <a href="mailto:josueliucastrososa@gmail.com">josueliucastrososa@gmail.com</a>
+    </p>
 
-    <h2>11. Rescisión</h2>
-    <p>Podemos suspender o terminar tu acceso a la Plataforma en cualquier momento, por cualquier razón, sin aviso previo.</p>
+    <h3>7.3 Tus Datos</h3>
+    <p>
+      El contenido que ingresas en la Plataforma (notas, calificaciones, tareas, etc.)
+      es tuyo. Academia Dev solo lo procesa para brindarte el servicio.
+    </p>
 
-    <h2>12. Ley Aplicable</h2>
-    <p>Estos Términos se rigen por las leyes de Guatemala. Cualquier disputa será resuelta en los tribunales competentes de Guatemala. Si alguna disposición de estos Términos se considera inválida o inaplicable, las demás disposiciones seguirán en plena vigencia.</p>
-
-    <h2>13. Contacto</h2>
-    <p>Si tienes preguntas sobre estos Términos, contáctanos:</p>
+    <!-- ── 8 ── -->
+    <h2>8. Disponibilidad del Servicio</h2>
+    <p>Academia Dev se proporciona "según disponibilidad". No garantizamos:</p>
     <ul>
-      <li><strong>Email:</strong> academia.dev@example.com</li>
-      <li><strong>GitHub:</strong> <a href="https://github.com/JCastro-x/Academia_dev" style="color: #7c6aff;" target="_blank">github.com/JCastro-x/Academia_dev</a></li>
+      <li>Disponibilidad ininterrumpida o sin errores</li>
+      <li>Que el servicio estará disponible en todo momento o desde cualquier ubicación</li>
+      <li>Que los datos en la nube estarán siempre accesibles (depende de Supabase y Vercel)</li>
+    </ul>
+    <p>
+      Podemos suspender, modificar o descontinuar la Plataforma en cualquier momento,
+      con o sin previo aviso. En caso de discontinuación, notificaremos con anticipación
+      razonable para que puedas exportar tus datos.
+    </p>
+
+    <!-- ── 9 ── -->
+    <h2>9. Limitación de Responsabilidad y Exención</h2>
+
+    <p>
+      Academia Dev se proporciona <strong>"tal cual"</strong> y <strong>"según disponibilidad"</strong>,
+      sin garantías de ningún tipo, expresas o implícitas.
+    </p>
+
+    <p>En la máxima medida permitida por la ley aplicable, <strong>Josue Castro y Void Studio</strong> no serán responsables por:</p>
+    <ul>
+      <li>Pérdida o corrupción de datos académicos (calificaciones, tareas, notas, etc.)</li>
+      <li>Interrupciones del servicio o errores de sincronización</li>
+      <li>Daños derivados del uso de funciones de IA (contenido incorrecto o impreciso)</li>
+      <li>Pérdida de datos en modo invitado al limpiar el navegador</li>
+      <li>Resultados académicos — la Plataforma es una herramienta, no garantiza aprobación</li>
+      <li>Daños directos, indirectos, incidentales, especiales, consecuentes o punitivos</li>
+      <li>Acciones de terceros (Google, Supabase, Vercel) que afecten el servicio</li>
+    </ul>
+
+    <div class="warning-box">
+      ⚠️ El uso de Academia Dev es bajo tu propio riesgo y responsabilidad. Te recomendamos
+      mantener respaldos locales de información académica importante.
+    </div>
+
+    <!-- ── 10 ── -->
+    <h2>10. Privacidad</h2>
+    <p>
+      El tratamiento de tus datos personales está regulado por nuestra
+      <a href="privacidad.html">Política de Privacidad</a>, la cual forma parte integral
+      de estos Términos.
+    </p>
+
+    <!-- ── 11 ── -->
+    <h2>11. Terminación</h2>
+    <p>Podemos suspender o terminar tu acceso a la Plataforma si:</p>
+    <ul>
+      <li>Incumples estos Términos</li>
+      <li>Realizas actividades que puedan dañar la Plataforma o a otros usuarios</li>
+      <li>Lo exige una autoridad legal competente</li>
+    </ul>
+    <p>
+      Tú puedes cesar el uso de la Plataforma en cualquier momento. Para eliminar tu
+      cuenta y datos, contáctanos (sección 13).
+    </p>
+
+    <!-- ── 12 ── -->
+    <h2>12. Ley Aplicable y Disputas</h2>
+    <p>
+      Estos Términos se rigen por las leyes de la <strong>República de Guatemala</strong>.
+      Cualquier disputa se resolverá primero de manera amigable. De no llegarse a un
+      acuerdo, se someterá a los tribunales competentes de Guatemala.
+    </p>
+    <p>
+      Si alguna disposición de estos Términos se considera inválida o inaplicable, las
+      demás disposiciones continuarán en plena vigencia.
+    </p>
+
+    <!-- ── 13 ── -->
+    <h2>13. Modificaciones</h2>
+    <p>
+      Podemos modificar estos Términos en cualquier momento. Los cambios entran en vigor
+      al publicarse en la Plataforma. La fecha de "Última actualización" siempre refleja
+      la versión vigente. El uso continuado de la Plataforma tras un cambio implica
+      aceptación de los nuevos términos.
+    </p>
+
+    <!-- ── 14 ── -->
+    <h2>14. Contacto</h2>
+    <p>Para preguntas sobre estos Términos:</p>
+    <ul>
+      <li><strong>Email:</strong> josueliucastrososa@gmail.com</li>
+      <li><strong>GitHub:</strong> <a href="https://github.com/JCastro-x/Academia_dev" target="_blank">github.com/JCastro-x/Academia_dev</a></li>
     </ul>
 
     <a href="auth-page.html" class="back-link">← Volver al Login</a>
@@ -170,5 +273,6 @@
     <div class="updated">
       <strong>Academia Dev</strong> · Desarrollado por Josue Castro · <strong>Void Studio</strong> · Guatemala · 2026
     </div>
-
- 
+  </div>
+</body>
+</html>

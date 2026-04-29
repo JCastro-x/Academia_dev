@@ -1,3 +1,30 @@
+// ══════════════════════════════════════════════════════════════
+// XSS Protection - DOMPurify Helper
+// ══════════════════════════════════════════════════════════════
+function sanitizeHtml(dirty, isRteContent = false) {
+  if (typeof DOMPurify === 'undefined') {
+    console.warn('DOMPurify not loaded, returning unsanitized content');
+    return dirty;
+  }
+  const config = isRteContent ? {
+    ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'ul', 'ol', 'li', 'span', 'div', 'img', 'blockquote', 'pre', 'code'],
+    ALLOWED_ATTR: ['src', 'alt', 'href', 'title', 'style', 'class', 'id'],
+    ALLOW_DATA_ATTR: false,
+    FORBID_TAGS: ['script', 'style', 'object', 'iframe', 'embed', 'form', 'input', 'button'],
+    FORBID_ATTR: ['on*', 'javascript:', 'data:', 'vbscript:'],
+    SANITIZE_DOM: true,
+    KEEP_CONTENT: true
+  } : {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    FORBID_TAGS: ['script', 'style', 'object', 'iframe', 'embed', 'form', 'input', 'button'],
+    FORBID_ATTR: ['on*', 'javascript:', 'data:', 'vbscript:'],
+    SANITIZE_DOM: true,
+    KEEP_CONTENT: true
+  };
+  return DOMPurify.sanitize(dirty, config);
+}
+
 function handleImportFile(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
@@ -399,13 +426,13 @@ let html = '<div class="smart-grid">';
   // Carpetas manuales
   folders.filter(f => !f.parentId).forEach(f => {
     const n = allNotes.filter(x => x.folderId === f.id).length;
-    html += _notesHubCard(`'${f.id}'`, f.icon||'📁', f.name, n, f.color||'var(--accent)', null, true, f.id);
+    html += _notesHubCard(`'${f.id}'`, f.icon||'📁', sanitizeHtml(f.name), n, f.color||'var(--accent)', null, true, f.id);
   });
 
   // Materias
   State.materias.filter(m => !m.parentId).forEach(m => {
     const n = allNotes.filter(x => x.matId === m.id || x.folderId === 'mat_' + m.id).length;
-    html += _notesHubCard(`'mat_${m.id}'`, m.icon||'📚', m.name, n, m.color||'var(--accent)', m.code||null, false, null);
+    html += _notesHubCard(`'mat_${m.id}'`, m.icon||'📚', sanitizeHtml(m.name), n, m.color||'var(--accent)', m.code||null, false, null);
   });
 
   html += `</div>`;
@@ -433,8 +460,8 @@ function _notesHubCard(folderIdStr, icon, name, count, color, subtitle, isManual
     <div style="display:flex;align-items:flex-start;gap:10px;">
       <span style="font-size:28px;line-height:1;flex-shrink:0;">${icon}</span>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:800;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${name}</div>
-        ${subtitle ? `<div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:1px;">${subtitle}</div>` : ''}
+        <div style="font-size:13px;font-weight:800;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${sanitizeHtml(name)}</div>
+        ${subtitle ? `<div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:1px;">${sanitizeHtml(subtitle)}</div>` : ''}
       </div>
     </div>
     <div style="margin-top:auto;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">
@@ -490,17 +517,17 @@ function _renderNotesFolderGrid(folderId) {
       onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.3)';this.style.borderColor='${color}';"
       onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)';">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
-        <div style="font-size:13px;font-weight:800;line-height:1.3;flex:1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${isDraw?'🎨 ':''}${note.title||'Sin título'}</div>
+        <div style="font-size:13px;font-weight:800;line-height:1.3;flex:1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${isDraw?'🎨 ':''}${sanitizeHtml(note.title)||'Sin título'}</div>
         ${mat?`<div style="width:8px;height:8px;border-radius:50%;background:${mat.color};flex-shrink:0;margin-top:4px;"></div>`:''}
       </div>
       ${isDraw && note.canvasData
         ? `<img src="" data-canvas-key="${note.canvasData.startsWith('IDB:') ? note.canvasData.replace('IDB:', '') : ''}" data-canvas-legacy="${!note.canvasData.startsWith('IDB:') ? note.canvasData : ''}" style="width:100%;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border);" class="lazy-canvas">`
         : preview
-          ? `<div style="font-size:11px;color:var(--text3);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${preview}</div>`
+          ? `<div style="font-size:11px;color:var(--text3);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">${sanitizeHtml(preview)}</div>`
           : `<div style="font-size:11px;color:var(--text3);">Sin contenido</div>`
       }
       <div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:5px;">
-        ${mat?`<span style="font-size:9px;font-weight:700;color:${mat.color};font-family:'Space Mono',monospace;">${mat.icon||''} ${mat.name}</span>`:'<span></span>'}
+        ${mat?`<span style="font-size:9px;font-weight:700;color:${mat.color};font-family:'Space Mono',monospace;">${mat.icon||''} ${sanitizeHtml(mat.name)}</span>`:'<span></span>'}
         <span style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;">${dateStr}</span>
       </div>
     </div>`;
@@ -828,11 +855,11 @@ function renderNotesList() {
   if (lbl && _currentFolderId === null) lbl.textContent = `TODAS (${notes.length})`;
 
   if (!notes.length) {
-    container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text3);">
+    container.innerHTML = sanitizeHtml(`<div style="padding:24px;text-align:center;color:var(--text3);">
       <div style="font-size:28px;margin-bottom:8px;">📝</div>
       <div style="font-size:12px;">Sin notas en esta carpeta</div>
       <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="openNewNoteMenu()">+ Nueva nota</button>
-    </div>`;
+    </div>`, true);
     return;
   }
 
@@ -927,9 +954,9 @@ function _loadNoteInProEditor(noteId) {
       rte.style.display = 'block';
       const stored = note.content || '';
       if (stored && (stored.startsWith('<') || /<[bhi][1-3rp][\s>]/i.test(stored))) {
-        rte.innerHTML = stored;
+        rte.innerHTML = sanitizeHtml(stored, true);
       } else {
-        rte.innerHTML = _plaintextToRteHtml(stored);
+        rte.innerHTML = sanitizeHtml(_plaintextToRteHtml(stored), true);
       }
       if (!rte._pasteHandlerAttached) {
         rte.addEventListener('paste', _handleRtePaste);
@@ -966,7 +993,7 @@ function _loadNoteInProEditor(noteId) {
   const tagsInp = document.getElementById('notes-tags-inp');
   if (tagsInp) tagsInp.value = (note.tags||[]).join(', ');
   const tagsDsp = document.getElementById('notes-tags-display');
-  if (tagsDsp) tagsDsp.innerHTML = (note.tags||[]).map(t=>`<span class="tag-chip active">#${t}</span>`).join('');
+  if (tagsDsp) tagsDsp.innerHTML = (note.tags||[]).map(t=>`<span class="tag-chip active">#${sanitizeHtml(t)}</span>`).join('');
 
   // Render PDF attachments strip
   _renderPDFStrip(note);
@@ -1344,7 +1371,7 @@ async function scanDocumentFiles(files) {
   const rte = document.getElementById('notes-rte');
   const scannedHtml = '<hr style="border-color:var(--accent);opacity:.4;"><p><strong>📄 Texto escaneado</strong></p><p>' + allText.trim().replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>') + '</p>';
   if (rte && rte.style.display !== 'none') {
-    rte.innerHTML = (rte.innerHTML || '') + scannedHtml;
+    rte.innerHTML = sanitizeHtml((rte.innerHTML || '') + scannedHtml, true);
     note.content = rte.innerHTML;
   } else {
     note.content = (note.content || '') + '\n\n--- 📄 Texto escaneado ---\n\n' + allText.trim();
@@ -2851,6 +2878,46 @@ async function deleteApprovedCourse(idx) {
   recalcProfile();
   renderApprovedCourses();
 }
+
+// ══════════════════════════════════════════════════════════════
+// Notes Search Modal Event Delegation (replaces inline handlers)
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Close modal
+  if (actionType === 'close-modal') {
+    const target = action.dataset.target;
+    if (target && typeof closeModal === 'function') closeModal(target);
+  }
+});
+
+document.addEventListener('input', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Notes search - render results
+  if (actionType === 'render-notes-search-results') {
+    if (typeof renderNotesSearchResults === 'function') renderNotesSearchResults();
+  }
+});
+
+document.addEventListener('change', (e) => {
+  const action = e.target.closest('[data-action]');
+  if (!action) return;
+
+  const actionType = action.dataset.action;
+
+  // Handle import file
+  if (actionType === 'handle-import-file') {
+    if (typeof handleImportFile === 'function') handleImportFile(action);
+  }
+});
 
 // ── Notes grid refresh hook — moved inline into renderNotesList to avoid hoisting loop ──
 

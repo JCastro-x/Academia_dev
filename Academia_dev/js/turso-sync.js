@@ -65,8 +65,14 @@
   async function _ensureTable() {
     const createTableSQL = `
       CREATE TABLE IF NOT EXISTS user_data (
+        user_id TEXT,
+        semester_id TEXT,
+        data TEXT,
+        updated_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, semester_id)
+      );
+      CREATE TABLE IF NOT EXISTS user_settings (
         user_id TEXT PRIMARY KEY,
-        semestres TEXT,
         settings TEXT,
         updated_at TEXT DEFAULT (datetime('now'))
       );
@@ -92,9 +98,11 @@
   async function load(localUpdatedAt, options = {}) {
     if (!_ready) return null;
 
+    const semesterId = options.semesterId || null;
+
     // Preflight: verificar si remoto es más reciente
     if (localUpdatedAt && typeof localUpdatedAt === 'number') {
-      const remoteUpdatedAt = await getRemoteUpdatedAt();
+      const remoteUpdatedAt = await getRemoteUpdatedAt(semesterId);
       if (remoteUpdatedAt && remoteUpdatedAt <= localUpdatedAt) {
         console.log('⏭️ Turso.load: remoto no más nuevo que local (preflight), omitiendo descarga');
         return null;
@@ -102,9 +110,72 @@
     }
 
     try {
-      const { data, error } = await _tursoRequest(
-        'SELECT semestres, settings, updated_at FROM user_data WHERE user_id = ?',
+      // Cargar settings globales
+      const { data: settingsData, error: settingsError } = await _tursoRequest(
+        'SELECT settings, updated_at FROM user_settings WHERE user_id = ?',
         [_userId]
+      );
+
+      let settings = {};
+      let settingsUpdatedAt = null;
+
+      if (!settingsError && settingsData && settingsData.length > 0) {
+        settings = settingsData[0].settings ? JSON.parse(settingsData[0].settings) : {};
+        settingsUpdatedAt = settingsData[0].updated_at ? new Date(settingsData[0].updated_at).getTime() : null;
+      }
+
+      // Si no se especifica semesterId, cargar todos los semestres
+      if (!semesterId) {
+        const { data, error } = await _tursoRequest(
+          'SELECT semester_id, data, updated_at FROM user_data WHERE user_id = ?',
+          [_userId]
+        );
+
+        if (error) {
+          console.warn('⚠️ Turso.load error:', error);
+          return null;
+        }
+
+        if (!data || data.length === 0) {
+          console.log('📭 Turso.load: sin datos previos (usuario nuevo)');
+          return { settings, semestres: [], updatedAt: settingsUpdatedAt };
+        }
+
+        // Reconstruir array de semestres desde filas individuales
+        let semestres = data.map(row => {
+          const semesterData = row.data ? JSON.parse(row.data) : {};
+          return {
+            ...semesterData,
+            _syncUpdatedAt: row.updated_at ? new Date(row.updated_at).getTime() : null
+          };
+        });
+
+        // Optimizar semestres
+        let optimizedSemestres = semestres.map(sem => {
+          const optimizedNotes = (sem.notesArray || []).map(note => ({
+            ...note,
+            content: note.content && note.content.length > 10000 
+              ? note.content.substring(0, 10000) + '...[TRUNCADO]' 
+              : (note.content || ''),
+            canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
+          }));
+          return { ...sem, notesArray: optimizedNotes };
+        });
+
+        const dataSize = JSON.stringify({ semestres: optimizedSemestres, settings }).length;
+        console.log(`📥 Turso.load: todos los semestres cargados (${Math.round(dataSize/1024)} KB egress)`);
+
+        return {
+          semestres: optimizedSemestres,
+          settings,
+          updatedAt: settingsUpdatedAt,
+        };
+      }
+
+      // Cargar solo un semestre específico
+      const { data, error } = await _tursoRequest(
+        'SELECT data, updated_at FROM user_data WHERE user_id = ? AND semester_id = ?',
+        [_userId, semesterId]
       );
 
       if (error) {
@@ -113,52 +184,29 @@
       }
 
       if (!data || data.length === 0) {
-        console.log('📭 Turso.load: sin datos previos (usuario nuevo)');
-        return null;
+        console.log(`📭 Turso.load: sin datos para semestre ${semesterId}`);
+        return { settings, semester: null, updatedAt: settingsUpdatedAt };
       }
 
       const row = data[0];
-      
-      // Parsear JSON desde TEXT
-      let semestres = row.semestres ? JSON.parse(row.semestres) : [];
-      let settings = row.settings ? JSON.parse(row.settings) : {};
+      let semester = row.data ? JSON.parse(row.data) : {};
 
-      // Aplicar las mismas optimizaciones que academia-sync.js
-      if (settings.pomData) {
-        console.log('📉 Excluyendo pomData (snapshots, history) del sync para reducir egress');
-        settings = {
-          ...settings,
-          pomData: {
-            today: settings.pomData.today || [],
-            date: settings.pomData.date,
-            goal: settings.pomData.goal || 4,
-            history: {},
-            updatedAt: settings.pomData.updatedAt
-          }
-        };
-      }
-
-      if (options.exclude && options.exclude.includes('pomData') && settings.pomData) {
-        settings = { ...settings, pomData: null };
-      }
-
-      // Optimizar semestres
-      let optimizedSemestres = semestres.map(sem => {
-        const optimizedNotes = (sem.notesArray || []).map(note => ({
+      // Optimizar notas del semestre
+      if (semester.notesArray) {
+        semester.notesArray = semester.notesArray.map(note => ({
           ...note,
           content: note.content && note.content.length > 10000 
             ? note.content.substring(0, 10000) + '...[TRUNCADO]' 
             : (note.content || ''),
           canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
         }));
-        return { ...sem, notesArray: optimizedNotes };
-      });
+      }
 
-      const dataSize = JSON.stringify({ semestres: optimizedSemestres, settings }).length;
-      console.log(`📥 Turso.load: datos cargados (${Math.round(dataSize/1024)} KB egress)`);
+      const dataSize = JSON.stringify({ semester, settings }).length;
+      console.log(`📥 Turso.load: semestre ${semesterId} cargado (${Math.round(dataSize/1024)} KB egress)`);
 
       return {
-        semestres: optimizedSemestres,
+        semester,
         settings,
         updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : null,
       };
@@ -168,82 +216,121 @@
     }
   }
 
-  // ── getRemoteUpdatedAt() ────────────────────────────────────────
-  async function getRemoteUpdatedAt() {
+  // ── getRemoteUpdatedAt(semesterId?) ────────────────────────────────
+  async function getRemoteUpdatedAt(semesterId = null) {
     if (!_ready) return 0;
     try {
-      const { data, error } = await _tursoRequest(
-        'SELECT updated_at FROM user_data WHERE user_id = ?',
-        [_userId]
-      );
-
-      if (error || !data || data.length === 0) return 0;
-      const ts = new Date(data[0].updated_at).getTime();
-      return Number.isFinite(ts) ? ts : 0;
+      if (semesterId) {
+        const { data, error } = await _tursoRequest(
+          'SELECT updated_at FROM user_data WHERE user_id = ? AND semester_id = ?',
+          [_userId, semesterId]
+        );
+        if (error || !data || data.length === 0) return 0;
+        const ts = new Date(data[0].updated_at).getTime();
+        return Number.isFinite(ts) ? ts : 0;
+      } else {
+        // Para settings globales
+        const { data, error } = await _tursoRequest(
+          'SELECT updated_at FROM user_settings WHERE user_id = ?',
+          [_userId]
+        );
+        if (error || !data || data.length === 0) return 0;
+        const ts = new Date(data[0].updated_at).getTime();
+        return Number.isFinite(ts) ? ts : 0;
+      }
     } catch {
       return 0;
     }
   }
 
-  // ── _doSave(semestres, settings, changedFields) ────────────────
-  async function _doSave(semestres, settings, changedFields = ['semestres', 'settings']) {
+  // ── _doSave(semestres, settings, changedFields, semesterId?) ────────────────
+  async function _doSave(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     if (!_ready) return;
     try {
-      // Delta sync: construir payload solo con campos cambiados
-      let payload = {};
-      let dataToSend = _optimizeData(semestres, settings);
-
-      if (changedFields.includes('semestres')) {
-        payload.semestres = dataToSend.semestres || [];
-      }
+      // Guardar settings globales si cambiaron
       if (changedFields.includes('settings')) {
-        payload.settings = dataToSend.settings || {};
+        const optimizedSettings = _optimizeSettings(settings);
+        const settingsSize = JSON.stringify(optimizedSettings).length;
+        console.log(`☁️ Turso.save: guardando settings (${Math.round(settingsSize/1024)} KB)`);
+        
+        const { error: settingsError } = await _tursoRequest(
+          `INSERT INTO user_settings (user_id, settings, updated_at) 
+           VALUES (?, ?, datetime('now'))
+           ON CONFLICT(user_id) DO UPDATE SET 
+             settings = excluded.settings,
+             updated_at = datetime('now')`,
+          [_userId, JSON.stringify(optimizedSettings)]
+        );
+
+        if (settingsError) {
+          console.warn('⚠️ Turso.save settings error:', settingsError);
+        }
       }
 
-      if (Object.keys(payload).length === 0) {
-        console.log('⏭️ Turso.save: sin cambios para sincronizar');
-        return;
+      // Guardar semestres individualmente si cambiaron
+      if (changedFields.includes('semestres')) {
+        if (semesterId) {
+          // Guardar solo un semestre específico
+          const semester = (semestres || []).find(s => s.id === semesterId);
+          if (semester) {
+            const optimizedSemester = _optimizeSemester(semester);
+            const dataSize = JSON.stringify(optimizedSemester).length;
+            console.log(`☁️ Turso.save: guardando semestre ${semesterId} (${Math.round(dataSize/1024)} KB)`);
+            
+            const { error } = await _tursoRequest(
+              `INSERT INTO user_data (user_id, semester_id, data, updated_at) 
+               VALUES (?, ?, ?, datetime('now'))
+               ON CONFLICT(user_id, semester_id) DO UPDATE SET 
+                 data = excluded.data,
+                 updated_at = datetime('now')`,
+              [_userId, semesterId, JSON.stringify(optimizedSemester)]
+            );
+
+            if (error) {
+              console.warn('⚠️ Turso.save semester error:', error);
+            }
+          }
+        } else {
+          // Guardar todos los semestres
+          const totalSize = JSON.stringify(semestres).length;
+          console.log(`☁️ Turso.save: guardando todos los semestres (${Math.round(totalSize/1024)} KB)`);
+          
+          for (const semester of (semestres || [])) {
+            const optimizedSemester = _optimizeSemester(semester);
+            const { error } = await _tursoRequest(
+              `INSERT INTO user_data (user_id, semester_id, data, updated_at) 
+               VALUES (?, ?, ?, datetime('now'))
+               ON CONFLICT(user_id, semester_id) DO UPDATE SET 
+                 data = excluded.data,
+                 updated_at = datetime('now')`,
+              [_userId, semester.id, JSON.stringify(optimizedSemester)]
+            );
+
+            if (error) {
+              console.warn(`⚠️ Turso.save semester ${semester.id} error:`, error);
+            }
+          }
+        }
       }
 
-      const dataSize = JSON.stringify(payload).length;
-      console.log(`☁️ Turso.save: subiendo ${Math.round(dataSize/1024)} KB (delta sync: ${changedFields.join(', ')})`);
-
-      // UPSERT en SQLite
-      const { error } = await _tursoRequest(
-        `INSERT INTO user_data (user_id, semestres, settings, updated_at) 
-         VALUES (?, ?, ?, datetime('now'))
-         ON CONFLICT(user_id) DO UPDATE SET 
-           semestres = excluded.semestres,
-           settings = excluded.settings,
-           updated_at = datetime('now')`,
-        [
-          _userId,
-          JSON.stringify(payload.semestres || []),
-          JSON.stringify(payload.settings || {})
-        ]
-      );
-
-      if (error) {
-        console.warn('⚠️ Turso.save error:', error);
-      } else {
-        console.log(`✅ Turso.save: datos guardados (${Math.round(dataSize/1024)} KB egress)`);
-      }
+      console.log('✅ Turso.save: sincronización completada');
     } catch (err) {
       console.warn('⚠️ Turso.save excepción:', err.message);
     }
   }
 
-  // ── _optimizeData(semestres, settings) ────────────────────────
-  function _optimizeData(semestres, settings) {
-    const optimizedSemestres = (semestres || []).map(sem => ({
-      ...sem,
-      notesArray: (sem.notesArray || []).map(note => ({
-        ...note,
-        content: note.content || '',
-        canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
-      }))
+  // ── _optimizeSemester(semester) ────────────────────────
+  function _optimizeSemester(semester) {
+    const optimizedNotes = (semester.notesArray || []).map(note => ({
+      ...note,
+      content: note.content || '',
+      canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
     }));
+    return { ...semester, notesArray: optimizedNotes };
+  }
 
+  // ── _optimizeSettings(settings) ────────────────────────
+  function _optimizeSettings(settings) {
     const optimizedSettings = { ...settings };
     if (optimizedSettings.pomData) {
       const pomSize = JSON.stringify(optimizedSettings.pomData).length;
@@ -268,20 +355,26 @@
       };
       console.log(`📉 Pomodoro optimizado: ${Math.round(pomSize/1024)} KB → ${Math.round(JSON.stringify(optimizedSettings.pomData).length/1024)} KB`);
     }
+    return optimizedSettings;
+  }
 
+  // ── _optimizeData(semestres, settings) ────────────────────────
+  function _optimizeData(semestres, settings) {
+    const optimizedSemestres = (semestres || []).map(sem => _optimizeSemester(sem));
+    const optimizedSettings = _optimizeSettings(settings);
     return { semestres: optimizedSemestres, settings: optimizedSettings };
   }
 
-  // ── save(semestres, settings, changedFields) — debounced 10000ms ──
-  function save(semestres, settings, changedFields = ['semestres', 'settings']) {
+  // ── save(semestres, settings, changedFields, semesterId?) — debounced 10000ms ──
+  function save(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields), 10000);
+    _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields, semesterId), 10000);
   }
 
-  // ── saveNow(semestres, settings, changedFields) — inmediato ────────
-  async function saveNow(semestres, settings, changedFields = ['semestres', 'settings']) {
+  // ── saveNow(semestres, settings, changedFields, semesterId?) — inmediato ────────
+  async function saveNow(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     clearTimeout(_saveTimer);
-    await _doSave(semestres, settings, changedFields);
+    await _doSave(semestres, settings, changedFields, semesterId);
   }
 
   // ── Configurar Turso (para llamar desde UI o setup) ───────────────

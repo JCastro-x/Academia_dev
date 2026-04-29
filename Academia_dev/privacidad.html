@@ -8,204 +8,279 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
     body {
-      background: #0a0a0f;
-      color: #e8e8f0;
-      font-family: 'Syne', sans-serif;
-      line-height: 1.8;
-      padding: 20px;
+      background: #0a0a0f; color: #e8e8f0;
+      font-family: 'Syne', sans-serif; line-height: 1.8; padding: 20px;
     }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
+    .container { max-width: 800px; margin: 0 auto; padding-bottom: 60px; }
     h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
+      font-size: 32px; margin-bottom: 10px;
       background: linear-gradient(135deg, #a78bfa, #7c6aff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-    .subtitle {
-      color: #9090a8;
-      margin-bottom: 30px;
-      font-size: 14px;
-    }
-
-    h2 {
-      font-size: 20px;
-      margin-top: 30px;
-      margin-bottom: 12px;
-      color: #a78bfa;
-    }
-
-    p {
-      margin-bottom: 12px;
-      color: #e8e8f0;
-    }
-
-    ul {
-      margin-left: 20px;
-      margin-bottom: 12px;
-    }
-
-    li {
-      margin-bottom: 8px;
-    }
-
+    .subtitle { color: #9090a8; margin-bottom: 30px; font-size: 14px; }
+    h2 { font-size: 20px; margin-top: 36px; margin-bottom: 12px; color: #a78bfa; }
+    h3 { font-size: 15px; margin-top: 20px; margin-bottom: 8px; color: #c4b5fd; }
+    p { margin-bottom: 12px; color: #e8e8f0; }
+    ul { margin-left: 20px; margin-bottom: 12px; }
+    li { margin-bottom: 8px; }
+    a { color: #7c6aff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
     .back-link {
-      display: inline-block;
-      margin-top: 30px;
-      padding: 10px 16px;
-      background: #7c6aff;
-      color: white;
-      text-decoration: none;
-      border-radius: 6px;
-      transition: opacity 0.2s;
+      display: inline-block; margin-top: 30px; padding: 10px 16px;
+      background: #7c6aff; color: white; border-radius: 6px; transition: opacity 0.2s;
     }
-
-    .back-link:hover {
-      opacity: 0.8;
-    }
-
+    .back-link:hover { opacity: 0.8; text-decoration: none; }
     .updated {
-      color: #9090a8;
-      font-size: 12px;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #2a2a38;
+      color: #9090a8; font-size: 12px; margin-top: 30px;
+      padding-top: 20px; border-top: 1px solid #2a2a38;
     }
-
-    code {
-      background: #111118;
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: #4ade80;
+    .badge {
+      display: inline-block; background: rgba(124,106,255,.15);
+      border: 1px solid rgba(124,106,255,.3); border-radius: 5px;
+      padding: 2px 9px; font-size: 11px; color: #a78bfa;
+      font-family: 'Syne', monospace; margin-right: 6px; margin-bottom: 6px;
     }
+    .highlight-box {
+      background: rgba(124,106,255,.07); border: 1px solid rgba(124,106,255,.2);
+      border-radius: 10px; padding: 14px 18px; margin: 14px 0;
+    }
+    .warning-box {
+      background: rgba(251,191,36,.07); border: 1px solid rgba(251,191,36,.25);
+      border-radius: 10px; padding: 14px 18px; margin: 14px 0; color: #fbbf24;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+    th { background: rgba(124,106,255,.1); color: #a78bfa; padding: 8px 12px; text-align: left; border: 1px solid #2a2a38; }
+    td { padding: 8px 12px; border: 1px solid #2a2a38; color: #e8e8f0; vertical-align: top; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Política de Privacidad</h1>
-    <p class="subtitle">Última actualización: 25 de abril de 2026</p>
+    <p class="subtitle">Última actualización: 28 de abril de 2026</p>
 
-    <h2>1. Introducción</h2>
-    <p>Academia Dev ("nosotros", "nuestro" o "Plataforma") está comprometida con la protección de tu privacidad. Esta Política de Privacidad explica cómo recopilamos, usamos, divulgamos y protegemos tu información.</p>
+    <!-- ── 1 ── -->
+    <h2>1. Información General</h2>
+    <p>
+      <strong>Academia Dev</strong> es un dashboard académico personal desarrollado por
+      <strong>Josue Castro / Void Studio</strong>, Guatemala. Esta Política de Privacidad
+      explica qué datos recopilamos, cómo los usamos, dónde los almacenamos y cuáles son
+      tus derechos sobre ellos.
+    </p>
+    <p>Al usar Academia Dev aceptas esta política. Si no estás de acuerdo, no uses la plataforma.</p>
 
-    <h2>2. Información que Recopilamos</h2>
-    <p>Recopilamos información que proporcionas directamente:</p>
+    <!-- ── 2 ── -->
+    <h2>2. Modos de Uso y Datos que Recopilamos</h2>
+
+    <h3>2.1 Modo Google OAuth (cuenta sincronizada)</h3>
+    <p>Si inicias sesión con Google recopilamos:</p>
     <ul>
-      <li><strong>Información de Cuenta:</strong> nombre, email, fotografía de perfil (si usas Google)</li>
-      <li><strong>Datos Académicos:</strong> calificaciones, tareas, notas, eventos</li>
-      <li><strong>Datos de Uso:</strong> cómo usas la Plataforma, dispositivo, ubicación aproximada</li>
-      <li><strong>Cookies:</strong> para mejorar tu experiencia</li>
+      <li><strong>Datos de cuenta:</strong> nombre, dirección de email, foto de perfil (provistos por Google)</li>
+      <li><strong>ID de usuario:</strong> UUID generado por Supabase Auth, vinculado a tu cuenta Google</li>
+      <li><strong>Datos académicos:</strong> semestres, materias, calificaciones, tareas, eventos, notas de texto, flashcards, configuración de la app (tipografía, color, preferencias del Pomodoro)</li>
+      <li><strong>Metadatos de sesión:</strong> tokens de autenticación almacenados en <code>localStorage</code> bajo la clave <code>academia_auth_session</code></li>
     </ul>
 
+    <h3>2.2 Modo Invitado (sin cuenta)</h3>
+    <p>
+      No recopilamos ni enviamos ningún dato personal. Todos los datos se guardan
+      <strong>exclusivamente en tu dispositivo</strong> (localStorage / IndexedDB). No hay
+      sincronización ni respaldo en la nube. Los datos se perderán si limpias el
+      almacenamiento del navegador.
+    </p>
+
+    <h3>2.3 Modo Offline</h3>
+    <p>
+      Si pierdes conexión, la app sigue funcionando con los datos cacheados localmente
+      por el Service Worker. Los cambios se sincronizan automáticamente cuando recuperas
+      la conexión.
+    </p>
+
+    <h3>2.4 Datos que NUNCA sincronizamos</h3>
+    <ul>
+      <li>Imágenes y archivos adjuntos en notas (se almacenan en IndexedDB, solo en tu dispositivo)</li>
+      <li>Datos canvas de notas</li>
+      <li>Snapshots del historial de Pomodoro (más de 3 días de antigüedad)</li>
+    </ul>
+
+    <!-- ── 3 ── -->
     <h2>3. Cómo Usamos tu Información</h2>
-    <p>Usamos tu información para:</p>
     <ul>
-      <li>Proporcionar y mejorar el servicio</li>
+      <li>Proporcionar y operar la plataforma (sincronización multi-dispositivo)</li>
       <li>Autenticarte y proteger tu cuenta</li>
-      <li>Sincronizar datos entre tus dispositivos</li>
-      <li>Enviar notificaciones importantes</li>
-      <li>Analizar tendencias y mejorar la Plataforma</li>
+      <li>Calcular estadísticas académicas (promedios, proyecciones de aprobación)</li>
+      <li>Procesar funciones de IA cuando las activas explícitamente (ver sección 7)</li>
+      <li>Analizar uso anónimo de páginas para mejorar la plataforma (ver sección 8)</li>
       <li>Cumplir con obligaciones legales</li>
-      <li><strong>Generar contenido con IA:</strong> cuando usas las funciones de IA (generación de flashcards, asistente académico), el contenido que envíes (notas, archivos, texto) se procesa temporalmente por Google Gemini API</li>
     </ul>
 
-    <h2>4. Almacenamiento de Datos</h2>
-    <p>Tus datos se almacenan en <strong>Supabase</strong>, una plataforma de base de datos segura basada en PostgreSQL. Supabase cumple con:</p>
+    <!-- ── 4 ── -->
+    <h2>4. Dónde Almacenamos tus Datos</h2>
+
+    <table>
+      <tr>
+        <th>Datos</th>
+        <th>Dónde</th>
+        <th>Quién los ve</th>
+      </tr>
+      <tr>
+        <td>Semestres, materias, calificaciones, tareas, flashcards, configuración</td>
+        <td>Supabase (PostgreSQL) — tabla <code>user_data</code> con Row Level Security</td>
+        <td>Solo tú (RLS activo)</td>
+      </tr>
+      <tr>
+        <td>Sesión de autenticación</td>
+        <td>localStorage del navegador</td>
+        <td>Solo tú</td>
+      </tr>
+      <tr>
+        <td>Imágenes y archivos adjuntos</td>
+        <td>IndexedDB del navegador (local)</td>
+        <td>Solo tú, nunca sube a la nube</td>
+      </tr>
+      <tr>
+        <td>Caché offline</td>
+        <td>Cache Storage del Service Worker</td>
+        <td>Solo tú</td>
+      </tr>
+    </table>
+
+    <div class="highlight-box">
+      <strong>Supabase</strong> cumple con encriptación en tránsito (TLS), encriptación en reposo,
+      backups automáticos y GDPR. Row Level Security garantiza que solo tú puedas leer
+      y modificar tus datos.
+    </div>
+
+    <!-- ── 5 ── -->
+    <h2>5. Compartir Información con Terceros</h2>
+    <p><strong>No vendemos tu información.</strong> Solo la compartimos en estos casos:</p>
+
+    <table>
+      <tr><th>Tercero</th><th>Propósito</th><th>Datos compartidos</th></tr>
+      <tr>
+        <td><a href="https://supabase.com/privacy" target="_blank">Supabase</a></td>
+        <td>Base de datos y autenticación</td>
+        <td>Datos académicos estructurados (JSONB), email, ID de usuario</td>
+      </tr>
+      <tr>
+        <td><a href="https://policies.google.com/privacy" target="_blank">Google</a></td>
+        <td>OAuth login + Gemini API (IA)</td>
+        <td>Login: email y perfil. Gemini: contenido que envíes a funciones de IA</td>
+      </tr>
+      <tr>
+        <td><a href="https://vercel.com/legal/privacy-policy" target="_blank">Vercel</a></td>
+        <td>Hosting de la plataforma</td>
+        <td>Logs de acceso estándar (IP, user-agent)</td>
+      </tr>
+    </table>
+
+    <!-- ── 6 ── -->
+    <h2>6. Sincronización y Ancho de Banda</h2>
+    <p>Para optimizar el uso de recursos aplicamos las siguientes políticas de sync:</p>
     <ul>
-      <li>Encriptación de datos en tránsito (SSL/TLS)</li>
-      <li>Encriptación de datos en reposo</li>
-      <li>Backups automáticos diarios</li>
-      <li>Row Level Security (RLS) para privacidad</li>
-      <li>Cumplimiento con GDPR</li>
+      <li>Sync automático cada <strong>6 horas</strong> (no en cada cambio de pestaña)</li>
+      <li>Preflight check: solo descargamos datos si el servidor tiene una versión más nueva</li>
+      <li>Debounce de guardado: <strong>10 segundos</strong> tras el último cambio</li>
+      <li>Datos pesados (imágenes, historial de Pomodoro extenso) nunca se suben a Supabase</li>
     </ul>
 
-    <h2>5. Compartir Información</h2>
-    <p><strong>No vendemos tu información.</strong> Solo compartimos datos cuando es necesario para:</p>
+    <!-- ── 7 ── -->
+    <h2>7. Inteligencia Artificial — Google Gemini</h2>
+
+    <div class="warning-box">
+      ⚠️ Las funciones de IA son <strong>opcionales</strong>. Solo se activan cuando tú
+      presionas un botón de IA explícitamente. La app funciona completamente sin usarlas.
+    </div>
+
+    <p>Academia Dev integra <strong>Google Gemini 2.5 Flash API</strong> para:</p>
     <ul>
-      <li>Proporcionar el servicio (Supabase, Google OAuth)</li>
-      <li>Cumplir con requisitos legales</li>
-      <li>Proteger derechos y seguridad</li>
+      <li><strong>Generación de flashcards:</strong> el texto, archivo o nota que envíes se procesa en servidores de Google para generar tarjetas de estudio.</li>
+      <li><strong>Asistente académico:</strong> tus mensajes y el contexto que adjuntes (notas, flashcards) se envían a Google Gemini para generar respuestas.</li>
+      <li><strong>Creación de tareas por lenguaje natural:</strong> tu instrucción en texto se procesa por la API de Google.</li>
     </ul>
 
-    <h2>6. Seguridad</h2>
-    <p>Implementamos medidas de seguridad para proteger tu información:</p>
+    <h3>Lo que debes saber</h3>
     <ul>
-      <li>Autenticación con Google OAuth (segura)</li>
-      <li>Contraseñas hasheadas (nunca almacenamos en texto plano)</li>
-      <li>Rate limiting para prevenir ataques</li>
-      <li>CORS configurado correctamente</li>
-      <li>Validación y sanitización de inputs</li>
+      <li>El contenido enviado a IA se procesa en servidores de Google LLC (EE.UU.)</li>
+      <li>Google puede usar los datos según su <a href="https://policies.google.com/privacy" target="_blank">Política de Privacidad</a> y los <a href="https://ai.google.dev/gemini-api/docs/terms" target="_blank">Términos de Gemini API</a></li>
+      <li>No almacenamos el historial de conversaciones del chat de IA en Supabase</li>
+      <li>Las flashcards generadas por IA sí se guardan en tu cuenta como cualquier otra flashcard</li>
+      <li>La API key de Gemini está preconfigurada (gratuita, 15 req/min)</li>
     </ul>
 
-    <h2>7. Retención de Datos</h2>
-    <p>Retenemos tu información mientras tengas una cuenta activa. Puedes solicitar la eliminación de tu cuenta en cualquier momento, lo que eliminará todos tus datos en 30 días.</p>
-
-    <h2>8. Cookies</h2>
-    <p>Usamos cookies para:</p>
+    <!-- ── 8 ── -->
+    <h2>8. Analytics Anónimos</h2>
+    <p>
+      Recopilamos métricas de página vista (qué página se cargó, tipo de dispositivo,
+      dominio referente) para entender el uso general de la plataforma. Estos datos son
+      <strong>completamente anónimos</strong> — no contienen información personal ni se
+      vinculan a ningún usuario.
+    </p>
     <ul>
-      <li>Mantener sesión activa</li>
-      <li>Recordar preferencias</li>
-      <li>Analytics anónimos</li>
+      <li>Solo se registra una vista por pestaña (usando <code>sessionStorage</code>)</li>
+      <li>No se registra en localhost ni en entornos de desarrollo</li>
+      <li>Datos guardados en Supabase (tabla <code>page_views</code>): página, dispositivo, referente</li>
     </ul>
-    <p>Puedes controlar cookies en la configuración de tu navegador.</p>
 
-    <h2>9. Derechos del Usuario (GDPR)</h2>
-    <p>Si vives en la UE o un país con leyes similares, tienes derecho a:</p>
+    <!-- ── 9 ── -->
+    <h2>9. Cookies y Almacenamiento Local</h2>
+    <p>No usamos cookies de terceros ni rastreadores. Solo usamos:</p>
     <ul>
-      <li><strong>Acceso:</strong> solicitar copia de tus datos</li>
+      <li><strong>localStorage:</strong> datos académicos (modo invitado), sesión de autenticación, preferencias</li>
+      <li><strong>sessionStorage:</strong> estado temporal de la sesión (evitar redirecciones duplicadas, analytics)</li>
+      <li><strong>IndexedDB:</strong> imágenes y archivos adjuntos en notas</li>
+      <li><strong>Cache Storage:</strong> caché del Service Worker para uso offline</li>
+    </ul>
+
+    <!-- ── 10 ── -->
+    <h2>10. Seguridad</h2>
+    <ul>
+      <li>Autenticación con Google OAuth 2.0 (no manejamos contraseñas)</li>
+      <li>Tokens nunca expuestos en URLs ni logs del cliente</li>
+      <li>Row Level Security (RLS) en Supabase: cada usuario solo accede a sus propios datos</li>
+      <li>Comunicaciones cifradas con TLS en todo momento</li>
+      <li>CORS configurado para aceptar solo el dominio oficial</li>
+    </ul>
+
+    <!-- ── 11 ── -->
+    <h2>11. Retención y Eliminación de Datos</h2>
+    <p>
+      Retenemos tus datos mientras tu cuenta esté activa. Para eliminar tu cuenta y todos
+      tus datos, contáctanos por email (ver sección 14). Los datos serán eliminados en un
+      plazo máximo de <strong>30 días</strong>.
+    </p>
+    <p>
+      En modo invitado, puedes eliminar todos los datos en cualquier momento limpiando
+      el almacenamiento del sitio en la configuración de tu navegador.
+    </p>
+
+    <!-- ── 12 ── -->
+    <h2>12. Tus Derechos (GDPR y leyes similares)</h2>
+    <p>Si te encuentras en la UE o en una jurisdicción con leyes de privacidad similares, tienes derecho a:</p>
+    <ul>
+      <li><strong>Acceso:</strong> solicitar una copia de tus datos</li>
       <li><strong>Rectificación:</strong> corregir datos incorrectos</li>
-      <li><strong>Eliminación:</strong> solicitar borrado de datos ("derecho al olvido")</li>
-      <li><strong>Portabilidad:</strong> obtener datos en formato transferible</li>
-      <li><strong>Restricción:</strong> limitar cómo se usan tus datos</li>
+      <li><strong>Eliminación:</strong> solicitar el borrado ("derecho al olvido")</li>
+      <li><strong>Portabilidad:</strong> obtener tus datos en formato exportable</li>
+      <li><strong>Restricción:</strong> limitar cómo procesamos tus datos</li>
+      <li><strong>Oposición:</strong> oponerte al procesamiento en ciertas circunstancias</li>
     </ul>
+    <p>Para ejercer cualquiera de estos derechos, contáctanos (sección 14).</p>
 
-    <h2>10. Uso de Inteligencia Artificial (Google Gemini)</h2>
-    <p>Academia Dev integra <strong>Google Gemini 2.5 Flash API</strong> para proporcionar funciones de inteligencia artificial:</p>
-    <ul>
-      <li><strong>Generación de flashcards:</strong> cuando usas el botón "✨ Generar con IA", el contenido que envíes (texto, archivos, notas) se envía a los servidores de Google para procesamiento</li>
-      <li><strong>Asistente académico:</strong> el chat con IA envía tus mensajes y el contexto seleccionado (notas, flashcards) a Google Gemini para generar respuestas</li>
-      <li><strong>Creación de tareas:</strong> cuando solicitas crear tareas desde el chat, tu instrucción se procesa por la API de Google</li>
-    </ul>
-    <p><strong>Información importante sobre el uso de IA:</strong></p>
-    <ul>
-      <li>La API key de Google Gemini está preconfigurada en la aplicación (no necesitas proporcionar la tuya)</li>
-      <li>El contenido que envíes a las funciones de IA se procesa en los servidores de Google LLC</li>
-      <li>Google puede usar los datos enviados para mejorar sus servicios según su política de privacidad</li>
-      <li>No almacenamos el historial de conversaciones con la IA en Supabase</li>
-      <li>Las flashcards generadas por IA se guardan en tu cuenta de Supabase como cualquier otra flashcard</li>
-      <li>El uso de la API de Gemini está sujeto a los límites del plan gratuito (15 req/min)</li>
-    </ul>
-    <p>Para más información sobre cómo Google procesa tus datos, consulta la <a href="https://policies.google.com/privacy" style="color: #7c6aff;" target="_blank">Política de Privacidad de Google</a> y los <a href="https://ai.google.dev/gemini-api/docs/terms" style="color: #7c6aff;" target="_blank">Términos de Gemini API</a>.</p>
-
-    <h2>11. Terceros</h2>
-    <p>Usamos servicios de terceros:</p>
-    <ul>
-      <li><strong>Supabase:</strong> base de datos y autenticación</li>
-      <li><strong>Google:</strong> para OAuth login y Gemini API (IA)</li>
-      <li><strong>Vercel:</strong> hosting de la Plataforma</li>
-    </ul>
-    <p>Consulta sus políticas de privacidad en sus sitios web respectivos. Void Studio no se hace responsable por las prácticas de privacidad de estos terceros.</p>
-
-    <h2>12. Exención de Responsabilidad</h2>
-    <p>Esta Plataforma se proporciona "tal cual". Josue Castro y Void Studio no serán responsables por ningún daño, pérdida de datos, interrupción del servicio, o perjuicio de cualquier tipo que resulte del uso o la imposibilidad de uso de Academia Dev. El uso de la Plataforma es bajo tu propio riesgo y responsabilidad.</p>
-
+    <!-- ── 13 ── -->
     <h2>13. Cambios en esta Política</h2>
-    <p>Podemos actualizar esta política en cualquier momento. Te notificaremos de cambios significativos por email o en la Plataforma.</p>
+    <p>
+      Podemos actualizar esta política en cualquier momento. Notificaremos cambios
+      significativos mediante un aviso en la plataforma. La fecha de "Última actualización"
+      al inicio del documento siempre refleja la versión vigente.
+    </p>
 
+    <!-- ── 14 ── -->
     <h2>14. Contacto</h2>
-    <p>Si tienes preguntas sobre tu privacidad o deseas ejercer tus derechos, contáctanos:</p>
+    <p>Para preguntas, ejercer derechos o reportar problemas de privacidad:</p>
     <ul>
-      <li><strong>Email:</strong> privacy@academia-dev.com</li>
-      <li><strong>GitHub:</strong> <a href="https://github.com/JCastro-x/Academia_dev" style="color: #7c6aff;" target="_blank">github.com/JCastro-x/Academia_dev</a></li>
+      <li><strong>Email:</strong> josueliucastrososa@gmail.com</li>
+      <li><strong>GitHub:</strong> <a href="https://github.com/JCastro-x/Academia_dev" target="_blank">github.com/JCastro-x/Academia_dev</a></li>
     </ul>
 
     <a href="auth-page.html" class="back-link">← Volver al Login</a>
@@ -213,5 +288,6 @@
     <div class="updated">
       <strong>Academia Dev</strong> · Desarrollado por Josue Castro · <strong>Void Studio</strong> · Guatemala · 2026
     </div>
-
- 
+  </div>
+</body>
+</html>
