@@ -256,7 +256,7 @@
         );
 
         if (settingsError) {
-          console.warn('⚠️ Turso.save settings error:', settingsError);
+          console.error('❌ Turso save settings FAILED:', settingsError);
         }
       }
 
@@ -279,7 +279,7 @@
             );
 
             if (error) {
-              console.warn('⚠️ Turso.save semester error:', error);
+              console.error('❌ Turso save semester FAILED:', error, 'Semester ID:', semesterId);
             }
           }
         } else {

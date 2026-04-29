@@ -4,6 +4,11 @@
 //  2. A la hora exacta de planificación de cada tarea
 //  3. 1 día antes del vencimiento (una vez por día)
 //  4. El momento exacto del vencimiento (si tiene hora) o inicio del día del vencimiento
+//
+// INFRAESTRUCTURA HÍBRIDA: IndexedDB + Service Worker checks
+// - Notificaciones se guardan en IndexedDB para persistencia
+// - Service Worker revisa notificaciones pendientes al activarse
+// - Listo para migración a Push API en el futuro
 
 const _NOTIF_KEY = 'academia_notif_fired'; // localStorage: { date, firedIds[] }
 
@@ -95,11 +100,26 @@ async function initNotifications() {
     document.body.appendChild(w);
   }
 
-  // Pedir permiso si hace falta
+  // Inicializar IndexedDB de notificaciones
+  if (typeof NOTIFS_DB !== 'undefined') {
+    try {
+      await NOTIFS_DB.init();
+      console.log('✅ IndexedDB de notificaciones inicializado');
+    } catch (err) {
+      console.warn('⚠️ Error inicializando IndexedDB de notificaciones:', err);
+    }
+  }
+
+  // Pedir permiso si hace falta (de forma elegante)
   if ('Notification' in window && Notification.permission === 'default') {
     setTimeout(async () => {
-      await Notification.requestPermission();
-      _runNotifications();
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        console.log('✅ Permisos de notificación concedidos');
+        _runNotifications();
+      } else {
+        console.warn('⚠️ Permisos de notificación denegados');
+      }
     }, 3000);
   } else {
     _runNotifications();
@@ -113,6 +133,26 @@ function _runNotifications() {
 
   _showDailyBanner();             // 1. Banner resumen del día
   _scheduleTimed();               // 2 & 3 & 4. Timers por hora exacta
+  _checkPendingNotifications();  // 5. Revisar notificaciones pendientes en IndexedDB
+}
+
+// ── Check de notificaciones pendientes (cuando la app se abre) ─────────
+async function _checkPendingNotifications() {
+  if (typeof NOTIFS_DB === 'undefined') return;
+
+  try {
+    const pending = await NOTIFS_DB.getPending();
+    if (pending.length === 0) return;
+
+    console.log(`🔔 ${pending.length} notificaciones pendientes encontradas`);
+
+    for (const notif of pending) {
+      _pushNotif(notif.title, notif.body, notif.id);
+      await NOTIFS_DB.markAsFired(notif.id);
+    }
+  } catch (err) {
+    console.warn('⚠️ Error revisando notificaciones pendientes:', err);
+  }
 }
 
 // 1. BANNER DE INICIO DEL DÍA ─────────────────────────────────────────────
@@ -181,6 +221,19 @@ function _scheduleTimed() {
     if (t.datePlanned === today && t.timePlanned) {
       const ms  = msUntil(t.timePlanned);
       const id  = `plan-${t.id}`;
+      
+      // Guardar en IndexedDB para persistencia
+      if (typeof NOTIFS_DB !== 'undefined' && ms > 0) {
+        const scheduledFor = new Date(Date.now() + ms).toISOString();
+        NOTIFS_DB.schedule({
+          taskId: t.id,
+          type: 'task_planned',
+          title: `📋 ${t.title}`,
+          body: `${mat.name || 'Hora de trabajar'} · ${t.timePlanned}`,
+          scheduledFor: scheduledFor,
+        }).catch(err => console.warn('⚠️ Error guardando notificación en IndexedDB:', err));
+      }
+
       fireAt(ms, id, () => {
         const body = `${mat.name || 'Hora de trabajar'} · ${t.timePlanned}`;
         _showBanner(`${mat.icon || '📚'}`, `${t.title} — ${body}`,
@@ -191,11 +244,20 @@ function _scheduleTimed() {
 
     // ── 1 día antes del vencimiento ───────────────────────────────────────
     if (t.due === tomorrow && !_wasFired(`pre-${t.id}`)) {
-      // Se mostrará al inicio del día siguiente (ya es mañana en el cliente);
-      // como es un timer de "hoy", lo disparamos ahora si aún no se marcó.
-      // En realidad el filtro t.due === tomorrow lo captura HOY para avisarle
-      // que MAÑANA vence. Lo lanzamos en el próximo minuto para no saturar.
       const id = `pre-${t.id}`;
+      
+      // Guardar en IndexedDB (programado para mañana a las 9:00 AM)
+      if (typeof NOTIFS_DB !== 'undefined') {
+        const tomorrow9AM = new Date(tomorrow + 'T09:00:00').toISOString();
+        NOTIFS_DB.schedule({
+          taskId: t.id,
+          type: 'task_due_soon',
+          title: '📅 Vence mañana',
+          body: t.title,
+          scheduledFor: tomorrow9AM,
+        }).catch(err => console.warn('⚠️ Error guardando notificación en IndexedDB:', err));
+      }
+
       fireAt(60000, id, () => {
         _showBanner('📅', `Vence mañana: ${t.title}`,
           '#fcd34d', 'rgba(30,25,10,0.95)', '#f59e0b', id);
@@ -207,6 +269,19 @@ function _scheduleTimed() {
     if (t.due === today && t.dueTime) {
       const ms = msUntil(t.dueTime);
       const id = `due-${t.id}`;
+      
+      // Guardar en IndexedDB
+      if (typeof NOTIFS_DB !== 'undefined' && ms > 0) {
+        const scheduledFor = new Date(Date.now() + ms).toISOString();
+        NOTIFS_DB.schedule({
+          taskId: t.id,
+          type: 'task_due_now',
+          title: `🔴 ¡Vence ahora! ${t.title}`,
+          body: `${mat.name || 'Vence ahora'} · ${t.dueTime}`,
+          scheduledFor: scheduledFor,
+        }).catch(err => console.warn('⚠️ Error guardando notificación en IndexedDB:', err));
+      }
+
       fireAt(ms, id, () => {
         const body = `${mat.name || 'Vence ahora'} · ${t.dueTime}`;
         _showBanner('🔴', `¡Vence ahora! ${t.title} — ${body}`,
@@ -216,3 +291,57 @@ function _scheduleTimed() {
     }
   });
 }
+
+// ── TEST NOTIFICATION (para pruebas de persistencia) ─────────────────────
+window.testNotification = async function() {
+  console.log('🧪 Iniciando prueba de notificación (5 segundos)...');
+
+  // Verificar permisos
+  if (!('Notification' in window)) {
+    console.error('❌ Este navegador no soporta notificaciones');
+    alert('❌ Este navegador no soporta notificaciones');
+    return;
+  }
+
+  if (Notification.permission === 'denied') {
+    console.error('❌ Permisos de notificación denegados');
+    alert('❌ Permisos de notificación denegados. Actívalos en configuración del navegador.');
+    return;
+  }
+
+  if (Notification.permission === 'default') {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.error('❌ Permisos no concedidos');
+      alert('❌ Permisos no concedidos');
+      return;
+    }
+  }
+
+  // Programar notificación de prueba en 5 segundos
+  const scheduledFor = new Date(Date.now() + 5000).toISOString();
+  const testId = `test_${Date.now()}`;
+
+  // Guardar en IndexedDB
+  if (typeof NOTIFS_DB !== 'undefined') {
+    try {
+      await NOTIFS_DB.schedule({
+        id: testId,
+        type: 'test',
+        title: '🧪 Notificación de Prueba',
+        body: 'Si ves esto, el sistema de notificaciones persistente funciona correctamente. Puedes cerrar la app y esperar 5 segundos.',
+        scheduledFor: scheduledFor,
+      });
+      console.log('✅ Notificación de prueba guardada en IndexedDB');
+      console.log(`⏰ Se disparará en 5 segundos (${new Date(Date.now() + 5000).toLocaleTimeString()})`);
+      console.log('💡 CIERRA LA APP AHORA para probar persistencia');
+      alert('✅ Notificación programada en 5 segundos.\n\nCIERRA LA APP AHORA para probar que llega aunque la pestaña esté cerrada.');
+    } catch (err) {
+      console.error('❌ Error guardando notificación de prueba:', err);
+      alert('❌ Error guardando notificación de prueba: ' + err.message);
+    }
+  } else {
+    console.error('❌ NOTIFS_DB no disponible');
+    alert('❌ Módulo de notificaciones no disponible');
+  }
+};

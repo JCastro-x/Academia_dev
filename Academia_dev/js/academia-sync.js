@@ -214,7 +214,7 @@
           { onConflict: 'user_id' }
         );
       if (error) {
-        console.warn('⚠️ DB.save error:', error.message);
+        console.error('❌ Supabase save FAILED:', error.message, 'Payload:', payload);
       } else {
       }
     } catch (err) {

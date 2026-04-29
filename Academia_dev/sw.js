@@ -3,6 +3,7 @@
 // Estrategia: Network First para app, Cache First para assets
 // Compatible con PWABuilder, TWA (Play Store) y Widgets futuros
 // ═══════════════════════════════════════════════════════════════
+// NOTIFICACIONES: Revisa IndexedDB al activarse para disparar pendientes
 
 const CACHE_VERSION  = 'academia-v11';
 const CACHE_STATIC   = `${CACHE_VERSION}-static`;
@@ -71,20 +72,25 @@ self.addEventListener('install', e => {
   );
 });
 
-// ── ACTIVATE — limpiar caches viejas ────────────────────────
+// ── ACTIVATE — limpiar caches viejas y revisar notificaciones ─────────
 self.addEventListener('activate', e => {
   const VALID_CACHES = [CACHE_STATIC, CACHE_PAGES, CACHE_ASSETS];
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(k => !VALID_CACHES.includes(k))
-          .map(k => {
-            console.log('[SW] Eliminando cache vieja:', k);
-            return caches.delete(k);
-          })
-      )
-    ).then(() => {
+    Promise.all([
+      // Limpiar caches viejas
+      caches.keys().then(keys =>
+        Promise.all(
+          keys
+            .filter(k => !VALID_CACHES.includes(k))
+            .map(k => {
+              console.log('[SW] Eliminando cache vieja:', k);
+              return caches.delete(k);
+            })
+        )
+      ),
+      // Revisar notificaciones pendientes en IndexedDB
+      _checkPendingNotifications()
+    ]).then(() => {
       console.log('[SW] Activate completo — tomando control');
       self.clients.claim();
     })
@@ -214,6 +220,92 @@ self.addEventListener('sync', e => {
   if (e.tag === 'sync-academia-data') {
     console.log('[SW] Background sync: academia-data');
   }
+  if (e.tag === 'check-notifications') {
+    console.log('[SW] Background sync: check-notifications');
+    e.waitUntil(_checkPendingNotifications());
+  }
 });
 
-console.log('[SW] academia-v10 cargado');
+// ── CHECK DE NOTIFICACIONES PENDIENTES (IndexedDB) ─────────────
+async function _checkPendingNotifications() {
+  try {
+    // Abrir IndexedDB de notificaciones
+    const dbName = 'AcademiaNotifications';
+    const dbVersion = 1;
+    const storeName = 'scheduled_notifications';
+
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open(dbName, dbVersion);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(storeName)) {
+          db.createObjectStore(storeName, { keyPath: 'id' });
+        }
+      };
+    });
+
+    if (!db) {
+      console.log('[SW] No se pudo abrir IndexedDB de notificaciones');
+      return;
+    }
+
+    // Obtener notificaciones pendientes
+    const pending = await new Promise((resolve, reject) => {
+      const tx = db.transaction([storeName], 'readonly');
+      const store = tx.objectStore(storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    if (!pending || pending.length === 0) {
+      console.log('[SW] No hay notificaciones pendientes');
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const toFire = pending.filter(n => !n.fired && n.scheduledFor <= now);
+
+    console.log(`[SW] ${toFire.length} notificaciones pendientes para disparar`);
+
+    // Disparar notificaciones y marcar como fired
+    for (const notif of toFire) {
+      try {
+        await self.registration.showNotification(notif.title, {
+          body: notif.body,
+          icon: '/assets/icons/icon-192.png',
+          badge: '/assets/icons/icon-32.png',
+          tag: notif.id,
+          data: { url: '/index.html' },
+          requireInteraction: false,
+        });
+
+        // Marcar como disparado
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction([storeName], 'readwrite');
+          const store = tx.objectStore(storeName);
+          notif.fired = true;
+          notif.firedAt = now;
+          const request = store.put(notif);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
+
+        console.log(`[SW] Notificación disparada: ${notif.title}`);
+      } catch (err) {
+        console.error('[SW] Error disparando notificación:', err);
+      }
+    }
+
+    // Cerrar DB
+    db.close();
+
+  } catch (err) {
+    console.error('[SW] Error en check de notificaciones:', err);
+  }
+}
+
+console.log('[SW] academia-v11 cargado con soporte de notificaciones');

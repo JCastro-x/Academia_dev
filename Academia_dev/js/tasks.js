@@ -330,7 +330,7 @@ function toggleTask(id) {
 
   _uiClick(wasDone ? 'task-undone' : 'task-done');
   if (!wasDone) { _updateStreak(); }
-  saveState(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
+  saveStateNow(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
 }
 
 // Efecto visual de celebración al completar tarea
@@ -404,7 +404,7 @@ function toggleSubtask(taskId, idx) {
   }
 
   const needsFullRender = _needsFullTaskRenderOnSubtaskToggle(wasDone, t.done);
-  saveState(['tasks']);
+  saveStateNow(['tasks']);
   if (needsFullRender) {
     renderTasks();
   } else {
@@ -1061,6 +1061,10 @@ function _handleTaskCheckClick(e) {
   const checkEl = e.target.closest('.task-check');
   if (!checkEl) return;
 
+  // Ignorar si está dentro del modal de detalle de tarea
+  const detailModal = checkEl.closest('#modal-task-detail');
+  if (detailModal) return;
+
   // Extraer el data-id de la tarea padre
   const taskItem = checkEl.closest('.task-item');
   const taskId = taskItem?.dataset?.id || checkEl.dataset?.id;
@@ -1115,6 +1119,10 @@ document.addEventListener('click', _handleSubtaskClick, true);
 document.addEventListener('touchstart', (e) => {
   const subtaskRow = e.target.closest('[data-action="toggle-subtask"]');
   if (!subtaskRow) return;
+
+  // Ignorar si está dentro del modal de detalle de tarea
+  const detailModal = subtaskRow.closest('#modal-task-detail');
+  if (detailModal) return;
 
   const taskId = subtaskRow.dataset?.id;
   const index = subtaskRow.dataset?.index;
