@@ -555,3 +555,217 @@
 .pom-hidden {
   display: none;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE FIXES — Text overflow and mobile adjustments
+   ════════════════════════════════════════════════════════════════ */
+
+/* Prevent text overflow */
+.pom-time,
+.pom-mode,
+.chrono-work-time,
+.chrono-break-time,
+.chrono-total-time,
+.pom-goal-value,
+.pom-stat-value,
+.pom-quick-stat-value,
+.pom-task-label,
+.pom-setting-label,
+.chrono-status,
+.chrono-pct,
+.sound-section-title,
+.sound-music-status,
+.pom-activity-title,
+.pom-stat-label,
+.pom-goal-text,
+.pom-goal-suffix,
+.pom-history-clear-btn,
+.chrono-summary-text,
+.chrono-efficiency-sub,
+.chrono-work-sub,
+.chrono-break-label,
+.chrono-total-label,
+.chrono-work-label {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .pomodoro-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .pomodoro-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .pom-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .pom-header-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  
+  .pom-timer-container {
+    gap: 10px;
+  }
+  
+  .pom-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .pom-settings-grid {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .pom-setting-item {
+    width: 100%;
+  }
+  
+  .pom-setting-input {
+    width: 100%;
+    max-width: 100px;
+  }
+  
+  .chrono-body {
+    gap: 12px;
+    padding: 14px;
+  }
+  
+  .chrono-secondary-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .chrono-work-block,
+  .chrono-break-block,
+  .chrono-total-block {
+    padding: 14px 12px;
+  }
+  
+  .chrono-work-time {
+    font-size: 36px;
+  }
+  
+  .chrono-break-time,
+  .chrono-total-time {
+    font-size: 24px;
+  }
+  
+  .chrono-controls {
+    flex-wrap: wrap;
+  }
+  
+  .sound-section {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .sound-btn-row {
+    flex-wrap: wrap;
+  }
+  
+  .sound-volume {
+    width: 100%;
+  }
+  
+  .pom-stats-column {
+    gap: 12px;
+  }
+  
+  .pom-goal-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .pom-goal-input {
+    width: 100%;
+  }
+  
+  .pom-goal-display {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .pom-streak-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .pom-stat-box {
+    padding: 10px 8px;
+  }
+  
+  .pom-stat-value {
+    font-size: 22px;
+  }
+  
+  .pom-quick-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .pom-quick-stat-value {
+    font-size: 20px;
+  }
+  
+  .pom-activity-bars {
+    height: 32px;
+  }
+  
+  .pom-history-card {
+    height: auto;
+  }
+  
+  .pom-history-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .pom-history-body {
+    max-height: 300px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .pom-ring {
+    transform: scale(0.85);
+  }
+  
+  .pom-time {
+    font-size: 28px;
+  }
+  
+  .pom-mode {
+    font-size: 10px;
+  }
+  
+  .pom-dots {
+    gap: 3px;
+  }
+  
+  .pom-music-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .chrono-work-time {
+    font-size: 28px;
+  }
+  
+  .chrono-efficiency-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

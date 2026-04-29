@@ -192,8 +192,8 @@
 .hub-card:hover { transform:translateY(-4px); box-shadow:0 12px 32px rgba(0,0,0,.4); border-color:var(--accent); }
 .hub-card-body { display:flex; flex-direction:column; gap:10px; padding:24px 22px; }
 .hub-icon { font-size:36px; line-height:1; margin-bottom:4px; }
-.hub-label { font-size:17px; font-weight:800; }
-.hub-desc { font-size:12px; color:var(--text3); line-height:1.5; }
+.hub-label { font-size:17px; font-weight:800; overflow-wrap:break-word; word-break:break-word; hyphens:auto; }
+.hub-desc { font-size:12px; color:var(--text3); line-height:1.5; overflow-wrap:break-word; word-break:break-word; }
 .hub-stat { font-size:11px; color:var(--accent2); font-family:'Space Mono',monospace; min-height:14px; margin-top:2px; }
 
 /* ── SEMESTRES AS CARDS ── */
@@ -593,8 +593,8 @@
    TASK MODAL — Inline styles replacement
    ════════════════════════════════════════════════════════════ */
 
-.modal-task { width: 560px; }
-.modal-event { width: 500px; }
+.modal-task { width: 100%; max-width: 560px; }
+.modal-event { width: 100%; max-width: 500px; }
 
 /* Repeat Fields Wrapper */
 .task-repeat-wrap { display: none; }
@@ -657,16 +657,35 @@
    ADDITIONAL MODAL STYLES — Inline styles replacement
    ════════════════════════════════════════════════════════════ */
 
-/* Modal widths */
-.modal-topic { max-width: 520px; }
-.modal-addclass { width: 580px; }
-.modal-flashcard { width: 500px; }
-.modal-flashcard-study { width: 600px; max-width: 95vw; text-align: center; }
-.modal-notes-search { width: 600px; max-width: 97vw; }
-.modal-quickadd { width: 340px; }
-.modal-editclass { width: 600px; max-height: 88vh; }
-.modal-semestre { width: 460px; }
-.modal-config { width: 500px; }
+/* Modal widths - Responsive pattern: width 100% + max-width */
+.modal-topic { width: 100%; max-width: 520px; }
+.modal-addclass { width: 100%; max-width: 580px; }
+.modal-flashcard { width: 100%; max-width: 500px; }
+.modal-flashcard-study { width: 100%; max-width: 600px; text-align: center; }
+.modal-notes-search { width: 100%; max-width: 600px; }
+.modal-quickadd { width: 100%; max-width: 340px; }
+.modal-editclass { width: 100%; max-width: 600px; max-height: 88vh; }
+.modal-semestre { width: 100%; max-width: 460px; }
+.modal-config { width: 100%; max-width: 500px; }
+
+/* Mobile adjustments for modals */
+@media (max-width: 768px) {
+  .modal-task,
+  .modal-event,
+  .modal-topic,
+  .modal-addclass,
+  .modal-flashcard,
+  .modal-flashcard-study,
+  .modal-notes-search,
+  .modal-quickadd,
+  .modal-editclass,
+  .modal-semestre,
+  .modal-config {
+    width: 95vw;
+    max-width: 95vw;
+    margin: 0 auto;
+  }
+}
 
 /* Section wrappers with border */
 .modal-section {
@@ -972,6 +991,112 @@
   width: 100%;
   background: #f87171;
   margin-top: 16px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE UTILITIES — Text overflow and mobile fixes
+   ════════════════════════════════════════════════════════════ */
+
+/* Prevent text overflow in all containers */
+.task-title,
+.task-meta,
+.note-editor-title-input,
+.notes-page-title,
+.card-title,
+.modal-title,
+.form-input,
+.form-textarea,
+.grade-input {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Ensure flex containers wrap on mobile */
+@media (max-width: 768px) {
+  .task-item {
+    flex-wrap: wrap;
+  }
+  
+  .task-meta {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  
+  .note-editor-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .note-editor-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .pomodoro-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .pomodoro-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chrono-secondary-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .pom-streak-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .pom-quick-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .sound-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .sound-btn-row {
+    flex-wrap: wrap;
+  }
+  
+  .pom-controls,
+  .chrono-controls {
+    flex-wrap: wrap;
+  }
+  
+  .pom-settings-grid {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .pom-goal-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .modal-overlay {
+    padding: 10px;
+  }
+  
+  .modal {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .notes-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .notes-btn-group {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .version-text {

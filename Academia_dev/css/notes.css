@@ -494,3 +494,129 @@
 .notes-editor-toolbar.active {
   display: block;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE FIXES — Text overflow and mobile adjustments
+   ════════════════════════════════════════════════════════════════ */
+
+/* Prevent text overflow */
+.note-editor-title-input,
+.notes-page-title,
+.canvas-note-title,
+.scanner-title,
+.scanner-filename,
+.canvas-toolbar-label,
+.note-editor-tags-input,
+.note-editor-tags-display {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .notes-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .notes-btn-group {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  
+  .note-editor-modal {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .note-editor-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  
+  .note-editor-title-input {
+    width: 100%;
+    font-size: 14px;
+  }
+  
+  .note-editor-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  
+  .note-editor-tags-wrap {
+    width: 100%;
+  }
+  
+  .notes-richtext-toolbar {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  
+  .rte-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  
+  .notes-editor-area {
+    padding: 0;
+  }
+  
+  .notes-richtext-editor {
+    padding: 12px 14px;
+    min-height: 150px;
+  }
+  
+  .canvas-toolbar-modal {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 10px;
+  }
+  
+  .canvas-colors,
+  .canvas-sizes,
+  .canvas-tools {
+    flex-wrap: wrap;
+  }
+  
+  .modal-canvas-full {
+    width: 100vw;
+    height: 100vh;
+  }
+  
+  .folder-icon-picker,
+  .folder-color-picker {
+    flex-wrap: wrap;
+  }
+  
+  .scanner-modal {
+    width: 95vw;
+    padding: 20px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .notes-top-bar-left {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  
+  .note-editor-meta-select {
+    width: 100%;
+  }
+  
+  .canvas-color-btn,
+  .canvas-size-btn {
+    width: 24px;
+    height: 24px;
+  }
+}
