@@ -1235,4 +1235,9 @@ document.addEventListener('click', (e) => {
     if (typeof closeModal === 'function') closeModal('modal-quickadd');
     if (typeof openAddClassModal === 'function') openAddClassModal();
   }
+
+  // Save topic from modal
+  if (actionType === 'save-topic') {
+    if (typeof saveTopic === 'function') saveTopic();
+  }
 });

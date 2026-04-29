@@ -426,7 +426,7 @@ html {
     max-height: 92vh !important;
     border-radius: 18px 18px 0 0 !important;
     overflow-y: auto !important;
-    padding: 16px !important;
+    padding: 16px 16px 90px !important;
   }
 
   /* Barra inferior respeta safe area */

@@ -162,22 +162,25 @@ const undoStyles = `
 <style>
 .undo-toast {
   position: fixed;
-  bottom: 30px;
+  bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #1a1f2e 0%, #111118 100%);
-  border: 2px solid #7c6aff;
+  background: linear-gradient(135deg, rgba(26,31,46,0.95) 0%, rgba(17,17,24,0.95) 100%);
+  border: 1px solid rgba(124,106,255,0.5);
   border-radius: 16px;
-  padding: 16px 24px;
+  padding: 14px 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 0 0 4px rgba(124,106,255,0.3), 
-              0 0 20px rgba(124,106,255,0.5),
-              0 0 40px rgba(124,106,255,0.3);
-  z-index: 9999;
+  gap: 12px;
+  box-shadow: 0 0 0 3px rgba(124,106,255,0.2),
+              0 0 20px rgba(124,106,255,0.4),
+              0 8px 32px rgba(0,0,0,0.4);
+  z-index: 99999;
   animation: undoSlideUp 0.4s cubic-bezier(0.16,1,0.3,1), undoPulse 2s infinite;
-  min-width: 400px;
+  min-width: 280px;
+  max-width: 90vw;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .undo-toast.hiding {
@@ -237,6 +240,25 @@ const undoStyles = `
 .undo-btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(124,106,255,0.4);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 480px) {
+  .undo-toast {
+    min-width: auto;
+    width: calc(100vw - 32px);
+    max-width: calc(100vw - 32px);
+    padding: 12px 16px;
+    bottom: 90px;
+    gap: 10px;
+  }
+  .undo-message {
+    font-size: 14px;
+  }
+  .undo-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
 }
 </style>
 `;

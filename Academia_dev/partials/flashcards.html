@@ -328,13 +328,14 @@ select.fc-input option { background: var(--surface2); color: var(--text); }
 .fc-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 .fc-back-btn {
-  display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
-  background: transparent; border: 1px solid var(--border2); border-radius: 20px;
-  color: var(--text2); font-size: 12px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.55); border-radius: 20px;
+  color: var(--text); font-size: 12px; font-weight: 700;
   font-family: var(--app-font, sans-serif); cursor: pointer;
-  transition: border-color .15s, color .15s, background .15s; white-space: nowrap;
+  transition: all .2s ease; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1);
 }
-.fc-back-btn:hover { border-color: var(--accent); color: var(--accent2); background: var(--accent-glow); }
+.fc-back-btn:hover { border-color: var(--accent2); color: var(--accent2); background: var(--accent-glow); box-shadow: 0 4px 18px rgba(124,106,255,0.35); transform: translateY(-2px); }
 
 .fc-title-wrap { display: flex; align-items: center; gap: 8px; }
 .fc-title-icon { font-size: 20px; }
