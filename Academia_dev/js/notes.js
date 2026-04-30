@@ -870,7 +870,12 @@ function saveNewFolder() {
   }
   saveState(['all']);
   closeModal('modal-new-folder');
-  if (_notesInHub) { _renderNotesHub(); } else { renderFoldersList(); }
+  renderFoldersList();
+  if (_notesInHub) { 
+    _renderNotesHub(); 
+  } else { 
+    _renderNotesFolderGrid(_currentFolderId); 
+  }
 }
 
 async function deleteNotesFolder(folderId) {
@@ -3141,7 +3146,7 @@ document.addEventListener('click', (e) => {
     return;
   }
   if (actionType === 'open-new-folder-modal') {
-    if (typeof openNewFolderModal === 'function') openNewFolderModal();
+    if (typeof openNewFolderModal === 'function') openNewFolderModal(null, _currentFolderId);
     return;
   }
 

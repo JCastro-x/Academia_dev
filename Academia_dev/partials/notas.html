@@ -43,32 +43,38 @@
         <div class="note-editor-header">
           <input type="text" id="notes-title-inp" class="form-input note-editor-title-input"
             placeholder="Título de la nota..." autocomplete="off" data-action="notes-title-input">
-          <span class="note-editor-autosave" id="notes-autosave-indicator">—</span>
-          <button class="btn btn-ghost btn-sm" data-action="expand-current-note" title="Pantalla completa">⛶</button>
-          <button class="btn btn-ghost btn-sm" data-action="export-current-note">⬇️</button>
-          <button class="btn btn-danger btn-sm" data-action="delete-current-note">🗑️</button>
-          <button class="note-editor-close-btn" data-action="close-note-editor">✕</button>
+          <div class="note-editor-header-tools">
+            <button class="note-editor-close-btn" data-action="close-note-editor">✕</button>
+            <span class="note-editor-autosave" id="notes-autosave-indicator">—</span>
+            <button class="btn btn-ghost btn-sm" data-action="expand-current-note" title="Pantalla completa">⛶</button>
+            <button class="btn btn-ghost btn-sm" data-action="export-current-note">⬇️</button>
+            <button class="btn btn-danger btn-sm" data-action="delete-current-note">🗑️</button>
+          </div>
         </div>
 
         <!-- Meta row -->
         <div id="notes-title-wrap" class="note-editor-meta">
-          <select id="notes-folder-sel-editor" class="form-select note-editor-meta-select" data-action="note-folder-change">
-            <option value="">— Sin carpeta —</option>
-          </select>
-          <select id="notes-mat-sel-editor" class="form-select note-editor-meta-select" data-action="note-mat-change">
-            <option value="">— Sin materia —</option>
-          </select>
+          <div class="note-editor-meta-selects">
+            <select id="notes-folder-sel-editor" class="form-select note-editor-meta-select" data-action="note-folder-change">
+              <option value="">— Sin carpeta —</option>
+            </select>
+            <select id="notes-mat-sel-editor" class="form-select note-editor-meta-select" data-action="note-mat-change">
+              <option value="">— Sin materia —</option>
+            </select>
+          </div>
           <span class="note-editor-timestamp" id="notes-timestamp">—</span>
-          <button class="btn btn-ghost btn-sm" data-action="open-canvas" title="Abrir canvas">🎨</button>
-          <label class="btn btn-ghost btn-sm" title="Escanear PDF/imagen">
-            📄 Escanear<input type="file" accept=".pdf,image/*" multiple class="pom-hidden" data-action="scan-document">
-          </label>
-          <label class="btn btn-ghost btn-sm" title="Adjuntar imágenes">
-            🖼️<input type="file" accept="image/*" multiple class="pom-hidden" data-action="attach-images">
-          </label>
-          <label class="btn btn-ghost btn-sm">
-            📑 PDF<input type="file" accept=".pdf" class="pom-hidden" data-action="load-pdf">
-          </label>
+          <div class="note-editor-meta-actions">
+            <button class="btn btn-ghost btn-sm" data-action="open-canvas" title="Abrir canvas">🎨</button>
+            <label class="btn btn-ghost btn-sm" title="Escanear PDF/imagen">
+              📄 Escanear<input type="file" accept=".pdf,image/*" multiple class="pom-hidden" data-action="scan-document">
+            </label>
+            <label class="btn btn-ghost btn-sm" title="Adjuntar imágenes">
+              🖼️<input type="file" accept="image/*" multiple class="pom-hidden" data-action="attach-images">
+            </label>
+            <label class="btn btn-ghost btn-sm">
+              📑 PDF<input type="file" accept=".pdf" class="pom-hidden" data-action="load-pdf">
+            </label>
+          </div>
           <div class="note-editor-tags-wrap">
             <span class="note-editor-tags-label">🏷</span>
             <input type="text" id="notes-tags-inp" class="form-input note-editor-tags-input"
