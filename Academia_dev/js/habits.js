@@ -211,7 +211,11 @@
 
   // Guardar hábitos
   function saveHabits() {
-    saveState(['settings']);
+    try {
+      saveStateNow(['settings']);
+    } catch (e) {
+      console.error('Error guardando hábitos:', e);
+    }
   }
 
   // Obtener estado de un día específico

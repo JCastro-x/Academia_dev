@@ -475,6 +475,7 @@ function _renderNotesFolderGrid(folderId) {
   if (!grid) return;
   
   let notes = _getNotesArray();
+  const folders = _getFoldersArray();
 
   if (folderId !== null) {
     if (String(folderId).startsWith('mat_')) {
@@ -483,12 +484,17 @@ function _renderNotesFolderGrid(folderId) {
     } else {
       notes = notes.filter(n => n.folderId === folderId);
     }
-    
+  }
+
+  // Filter subfolders with matching parentId
+  let subfolders = [];
+  if (folderId !== null) {
+    subfolders = folders.filter(f => f.parentId === folderId);
   }
 
   const sorted = [...notes].sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
 
-  if (!sorted.length) {
+  if (!sorted.length && !subfolders.length) {
     grid.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3);">
       <div style="font-size:40px;margin-bottom:12px;">📝</div>
       <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Sin notas aún</div>
@@ -497,8 +503,15 @@ function _renderNotesFolderGrid(folderId) {
     return;
   }
 
-  //let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">`;
   let html = '<div class="smart-grid">';
+  
+  // Render subfolders first
+  subfolders.forEach(f => {
+    const n = notes.filter(x => x.folderId === f.id).length;
+    html += _notesHubCard(`'${f.id}'`, f.icon||'📁', sanitizeHtml(f.name), n, f.color||'var(--accent)', null, true, f.id);
+  });
+  
+  // Then render notes
   sorted.forEach(note => {
     const mat     = note.matId ? State.materias.find(m => m.id === note.matId) : null;
     const isDraw  = note.type === 'draw';
@@ -756,12 +769,25 @@ let _newFolderParentId = null;
 
 function openNewFolderModal(folderId, parentId) {
   _editingFolderId = folderId || null;
-  _newFolderParentId = parentId || null;
+  // Si no se pasa parentId explícito, usar el contexto actual
+  _newFolderParentId = parentId !== undefined ? parentId : null;
   _selectedFolderIcon  = '📁';
   _selectedFolderColor = '#6366f1';
   document.getElementById('new-folder-name').value = '';
-  document.getElementById('new-folder-modal-title').textContent = folderId ? '✏️ Editar Carpeta' : (_newFolderParentId ? '📁 Nueva Subcarpeta' : '📁 Nueva Carpeta');
+  
+  // Determinar título basado en contexto
+  let modalTitle = '📁 Nueva Carpeta';
+  if (folderId) {
+    modalTitle = '✏️ Editar Carpeta';
+  } else if (_newFolderParentId) {
+    modalTitle = String(_newFolderParentId).startsWith('mat_') ? '📁 Carpeta en Materia' : '📁 Nueva Subcarpeta';
+  } else if (_currentFolderId) {
+    modalTitle = String(_currentFolderId).startsWith('mat_') ? '📁 Carpeta en Materia' : '📁 Nueva Subcarpeta';
+  }
+  
+  document.getElementById('new-folder-modal-title').textContent = modalTitle;
   document.getElementById('save-folder-btn').textContent = folderId ? 'Guardar' : 'Crear carpeta';
+  
   if (folderId) {
     const f = _getFoldersArray().find(x => x.id === folderId);
     if (f) {
@@ -797,11 +823,50 @@ function saveNewFolder() {
   const name = document.getElementById('new-folder-name').value.trim();
   if (!name) { document.getElementById('new-folder-name').focus(); return; }
   const folders = _getFoldersArray();
+  
+  // Determinar contextType y parentId basado en el contexto actual
+  let contextType = 'root';
+  let parentId = null;
+  
+  // Prioridad 1: Si estamos dentro de una carpeta
+  if (_currentFolderId && !String(_currentFolderId).startsWith('mat_')) {
+    parentId = _currentFolderId;
+    contextType = 'subfolder';
+  }
+  // Prioridad 2: Si estamos dentro de una materia (mat_ prefix)
+  else if (_currentFolderId && String(_currentFolderId).startsWith('mat_')) {
+    parentId = _currentFolderId;
+    contextType = 'subject';
+  }
+  // Prioridad 3: Si se pasó un parentId explícito (desde openNewFolderModal)
+  else if (_newFolderParentId) {
+    parentId = _newFolderParentId;
+    contextType = String(_newFolderParentId).startsWith('mat_') ? 'subject' : 'subfolder';
+  }
+  // Default: raíz
+  else {
+    parentId = null;
+    contextType = 'root';
+  }
+  
   if (_editingFolderId) {
     const f = folders.find(x => x.id === _editingFolderId);
-    if (f) { f.name = name; f.icon = _selectedFolderIcon; f.color = _selectedFolderColor; }
+    if (f) { 
+      f.name = name; 
+      f.icon = _selectedFolderIcon; 
+      f.color = _selectedFolderColor;
+      f.parentId = parentId;
+      f.contextType = contextType;
+    }
   } else {
-    folders.push({ id: 'folder_' + Date.now(), name, icon: _selectedFolderIcon, color: _selectedFolderColor, parentId: _newFolderParentId || null });
+    folders.push({ 
+      id: 'folder_' + Date.now(), 
+      name, 
+      icon: _selectedFolderIcon, 
+      color: _selectedFolderColor, 
+      parentId, 
+      contextType 
+    });
   }
   saveState(['all']);
   closeModal('modal-new-folder');
