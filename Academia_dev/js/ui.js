@@ -1,6 +1,38 @@
 
 const _goPageHooks = [];
 
+// ─── Navigation Stack System ───────────────────────────────────────
+const _navStack = [];
+const _MAX_STACK_SIZE = 20; // Limitar stack para evitar memory leaks
+
+// Niveles de navegación jerárquica
+const NAV_LEVELS = {
+  ROOT: 0,      // overview, materias, tareas, etc.
+  LIST: 1,      // lista de items (notas, flashcards, etc.)
+  DETAIL: 2,    // detalle de item individual
+  SUB_DETAIL: 3 // sub-detalle (ej. canvas en nota)
+};
+
+// Mapeo de páginas a niveles
+const PAGE_LEVELS = {
+  'overview': NAV_LEVELS.ROOT,
+  'materias': NAV_LEVELS.ROOT,
+  'tareas': NAV_LEVELS.ROOT,
+  'calendario': NAV_LEVELS.ROOT,
+  'calificaciones': NAV_LEVELS.ROOT,
+  'temas': NAV_LEVELS.ROOT,
+  'estadisticas': NAV_LEVELS.ROOT,
+  'pomodoro': NAV_LEVELS.ROOT,
+  'p-reloj': NAV_LEVELS.ROOT,
+  'semestres': NAV_LEVELS.ROOT,
+  'horario': NAV_LEVELS.ROOT,
+  'notas': NAV_LEVELS.LIST,
+  'perfil': NAV_LEVELS.ROOT,
+  'general': NAV_LEVELS.ROOT,
+  'flashcards': NAV_LEVELS.LIST,
+  'p-habits': NAV_LEVELS.ROOT
+};
+
 function onGoPage(fn) {
   if (typeof fn !== 'function') return () => {};
   _goPageHooks.push(fn);
@@ -12,13 +44,90 @@ function onGoPage(fn) {
 
 window._currentPageId = 'overview';
 
-async function goPage(id, el) {
+// Inicializar Navigation Stack con overview
+_pushToStack('overview');
+
+// ─── Push to Navigation Stack ───────────────────────────────────────
+function _pushToStack(pageId, context = null) {
+  // No duplicar si es la misma página
+  if (_navStack.length > 0 && _navStack[_navStack.length - 1].pageId === pageId) {
+    return;
+  }
+
+  // Limitar tamaño del stack
+  if (_navStack.length >= _MAX_STACK_SIZE) {
+    _navStack.shift(); // Eliminar el más antiguo
+  }
+
+  _navStack.push({
+    pageId,
+    level: PAGE_LEVELS[pageId] || NAV_LEVELS.ROOT,
+    context, // Datos contextuales (ej: noteId, taskId)
+    timestamp: Date.now()
+  });
+
+  console.log(`📚 Stack push: ${pageId} (level: ${PAGE_LEVELS[pageId] || 'ROOT'})`, _navStack.map(s => s.pageId));
+}
+
+// ─── Pop from Navigation Stack ───────────────────────────────────────
+function _popFromStack() {
+  if (_navStack.length === 0) {
+    console.warn('⚠️ Stack vacío, no hay donde regresar');
+    return null;
+  }
+
+  const current = _navStack.pop();
+  const previous = _navStack.length > 0 ? _navStack[_navStack.length - 1] : null;
+
+  console.log(`📚 Stack pop: ${current.pageId} → ${previous ? previous.pageId : 'ROOT'}`);
+
+  return previous;
+}
+
+// ─── Go Back (Navigation Stack) ───────────────────────────────────────
+function goBack() {
+  const previous = _popFromStack();
+
+  if (!previous) {
+    // Si el stack está vacío, ir a overview
+    console.log('📚 Stack vacío, navegando a overview');
+    goPage('overview');
+    return;
+  }
+
+  // Navegar a la página anterior
+  goPage(previous.pageId, null, previous.context);
+}
+
+// ─── Clear Navigation Stack ───────────────────────────────────────────
+function clearNavStack() {
+  _navStack.length = 0;
+  console.log('📚 Stack limpiado');
+}
+
+// ─── Get Current Stack State ─────────────────────────────────────────
+function getNavStackState() {
+  return {
+    current: _navStack[_navStack.length - 1] || null,
+    previous: _navStack.length > 1 ? _navStack[_navStack.length - 2] : null,
+    depth: _navStack.length,
+    stack: [..._navStack]
+  };
+}
+
+// Exponer funciones globalmente
+window.goBack = goBack;
+window.clearNavStack = clearNavStack;
+window.getNavStackState = getNavStackState;
+
+async function goPage(id, el, context = null) {
   _uiClick('nav');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  
-  // Push state to history for back button handling
+
+  // Push al Navigation Stack si es una navegación nueva
   if (window._currentPageId !== id) {
+    _pushToStack(id, context);
     history.pushState({ page: id, type: 'page' }, '', `#${id}`);
     window._currentPageId = id;
   }

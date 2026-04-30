@@ -135,18 +135,30 @@ function init() {
         db.init(auth.id);
         const dbData = await db.load();
         if (dbData) {
-          // Supabase es la fuente de verdad
-          if (dbData.semestres && dbData.semestres.length) {
-            localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
-            State.semestres.length = 0;
-            dbData.semestres.forEach(s => State.semestres.push(s));
-            if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
-            getMat.bust();
-          }
-          if (dbData.settings && Object.keys(dbData.settings).length) {
-            const mergedSettings = mergePomData(State.settings, dbData.settings);
-            localStorage.setItem('academia_v3_settings', JSON.stringify(mergedSettings));
-            Object.assign(State.settings, mergedSettings);
+          // Comparar timestamps para evitar sobrescribir cambios locales recientes
+          const remoteUpdatedAt = dbData.updatedAt ? Date.parse(dbData.updatedAt) : 0;
+          const localModifiedAt = window._localModifiedAt || 0;
+          const shouldUseRemote = remoteUpdatedAt > localModifiedAt;
+
+          console.log(`📊 Sync decision: remote=${remoteUpdatedAt}, local=${localModifiedAt}, useRemote=${shouldUseRemote}`);
+
+          // Solo sobrescribir si remoto es más reciente
+          if (shouldUseRemote) {
+            // Supabase es la fuente de verdad
+            if (dbData.semestres && dbData.semestres.length) {
+              localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
+              State.semestres.length = 0;
+              dbData.semestres.forEach(s => State.semestres.push(s));
+              if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
+              getMat.bust();
+            }
+            if (dbData.settings && Object.keys(dbData.settings).length) {
+              const mergedSettings = mergePomData(State.settings, dbData.settings);
+              localStorage.setItem('academia_v3_settings', JSON.stringify(mergedSettings));
+              Object.assign(State.settings, mergedSettings);
+            }
+          } else {
+            console.log('⏭️ Skipping remote sync - local data is more recent');
           }
           if (dbData.settings?.pomData && typeof dbData.settings.pomData === 'object') {
             const pomData = dbData.settings.pomData;
@@ -604,18 +616,25 @@ function continueInit(auth) {
       return;
     }
 
-    // 2. Si el usuario está en una sub-página, regresa al Overview
-    const currentPage = window._currentPageId || 'overview';
-    if (currentPage !== 'overview') {
-      if (typeof goPage === 'function') {
-        goPage('overview', document.querySelector('.nav-item[onclick*="overview"]'));
+    // 2. Usar Navigation Stack para regresar jerárquicamente
+    if (typeof goBack === 'function') {
+      const stackState = typeof getNavStackState === 'function' ? getNavStackState() : null;
+      const depth = stackState ? stackState.depth : 0;
+
+      if (depth > 1) {
+        // Hay historial en el stack, usar goBack()
+        goBack();
+        event.preventDefault?.();
+        return;
+      } else if (depth === 1 && window._currentPageId !== 'overview') {
+        // Solo overview en stack pero no estamos en overview, ir a overview
+        goPage('overview');
+        event.preventDefault?.();
+        return;
       }
-      // Prevent default back navigation
-      event.preventDefault?.();
-      return;
     }
 
-    // 3. Si ya está en Overview, implementar "doble clic para salir"
+    // 3. Si ya está en Overview (o stack vacío), implementar "doble clic para salir"
     const now = Date.now();
     if (now - _backButtonExitTs < _EXIT_DOUBLE_TAP_MS) {
       // Segundo tap dentro del tiempo permitido - dejar que la app se cierre

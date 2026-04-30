@@ -38,11 +38,25 @@ const DB_KEYS = {
 
 // ─── IndexedDB for large image data ────────────────────────────
 let _idb = null;
+const IDB_VERSION = 2; // Incrementado para agregar object store 'deleted_images'
+const UNDO_PERIOD_MS = 5000; // 5 segundos para Undo
+
 function _openIDB() {
   if (_idb) return Promise.resolve(_idb);
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('academia_images', 1);
-    req.onupgradeneeded = e => { e.target.result.createObjectStore('images'); };
+    const req = indexedDB.open('academia_images', IDB_VERSION);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      // Crear object store principal si no existe
+      if (!db.objectStoreNames.contains('images')) {
+        db.createObjectStore('images');
+      }
+      // Crear object store para soft delete con timestamps
+      if (!db.objectStoreNames.contains('deleted_images')) {
+        const deletedStore = db.createObjectStore('deleted_images');
+        deletedStore.createIndex('expiresAt', 'expiresAt', { unique: false });
+      }
+    };
     req.onsuccess = e => { _idb = e.target.result; resolve(_idb); };
     req.onerror = () => reject(req.error);
   });
@@ -107,11 +121,108 @@ async function idbDeleteImage(key) {
   try {
     const db = await _openIDB();
     return new Promise((res) => {
-      const tx = db.transaction('images','readwrite');
-      tx.objectStore('images').delete(key);
+      const tx = db.transaction(['images', 'deleted_images'], 'readwrite');
+      
+      // Soft delete: mover imagen a deleted_images con timestamp de expiración
+      const imagesStore = tx.objectStore('images');
+      const deletedStore = tx.objectStore('deleted_images');
+      
+      const getRequest = imagesStore.get(key);
+      getRequest.onsuccess = () => {
+        const imageData = getRequest.result;
+        if (imageData) {
+          // Guardar en deleted_images con timestamp de expiración
+          const expiresAt = Date.now() + UNDO_PERIOD_MS;
+          deletedStore.put({
+            key: key,
+            data: imageData,
+            deletedAt: Date.now(),
+            expiresAt: expiresAt
+          }, key);
+          
+          // Eliminar del store principal
+          imagesStore.delete(key);
+        }
+      };
+      
       tx.oncomplete = () => res(true);
+      tx.onerror = () => res(false);
     });
-  } catch(e) { return false; }
+  } catch(e) { 
+    console.warn('IDB soft delete error', e); 
+    return false; 
+  }
+}
+
+// Restaurar imagen desde deleted_images (para Undo)
+async function idbRestoreImage(key) {
+  try {
+    const db = await _openIDB();
+    return new Promise((res) => {
+      const tx = db.transaction(['images', 'deleted_images'], 'readwrite');
+      const deletedStore = tx.objectStore('deleted_images');
+      const imagesStore = tx.objectStore('images');
+      
+      const getRequest = deletedStore.get(key);
+      getRequest.onsuccess = () => {
+        const deletedRecord = getRequest.result;
+        if (deletedRecord && deletedRecord.expiresAt > Date.now()) {
+          // Restaurar al store principal
+          imagesStore.put(deletedRecord.data, key);
+          // Eliminar de deleted_images
+          deletedStore.delete(key);
+          res(true);
+        } else {
+          res(false); // No existe o expiró
+        }
+      };
+      
+      tx.oncomplete = () => {};
+      tx.onerror = () => res(false);
+    });
+  } catch(e) { 
+    console.warn('IDB restore error', e); 
+    return false; 
+  }
+}
+
+// Limpiar imágenes expiradas de deleted_images (llamar periódicamente)
+async function cleanupExpiredDeletedImages() {
+  try {
+    const db = await _openIDB();
+    const now = Date.now();
+    
+    return new Promise((res) => {
+      const tx = db.transaction('deleted_images', 'readwrite');
+      const store = tx.objectStore('deleted_images');
+      const index = store.index('expiresAt');
+      
+      // Buscar registros expirados
+      const range = IDBKeyRange.upperBound(now);
+      const request = index.openCursor(range);
+      
+      let deletedCount = 0;
+      request.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          cursor.delete();
+          deletedCount++;
+          cursor.continue();
+        }
+      };
+      
+      tx.oncomplete = () => {
+        if (deletedCount > 0) {
+          console.log(`🧹 Limpieza IndexedDB: ${deletedCount} imágenes expiradas eliminadas permanentemente`);
+        }
+        res(deletedCount);
+      };
+      tx.onerror = () => res(0);
+    });
+  } catch(e) { 
+    console.warn('Error limpiando imágenes expiradas:', e); 
+    return 0; 
+  }
 }
 
 // Limpiar imágenes no usadas de IndexedDB
@@ -168,6 +279,12 @@ async function cleanupUnusedImages() {
 
 // Exponer globalmente para uso manual
 window.cleanupUnusedImages = cleanupUnusedImages;
+window.cleanupExpiredDeletedImages = cleanupExpiredDeletedImages;
+
+// Cleanup periódico de imágenes expiradas (cada 10 minutos)
+setInterval(() => {
+  cleanupExpiredDeletedImages();
+}, 600000); // 10 minutos
 
 // ─── Modal de confirmación personalizado ─────────────────────────
 let _confirmCallback = null;
@@ -502,9 +619,15 @@ function saveStateNow(keys = ['all']) {
   // Guardar en Supabase inmediatamente con delta sync
   const db = _getAcademiaDB();
   if (db && db._ready) {
-    const changedFields = keys.includes('all') ? ['semestres', 'settings'] : 
+    // Mapeo correcto de keys a changedFields para sync
+    const changedFields = keys.includes('all') ? ['semestres', 'settings'] :
                           keys.includes('semestres') ? ['semestres'] :
-                          keys.includes('settings') ? ['settings'] : [];
+                          keys.includes('settings') ? ['settings'] :
+                          keys.includes('tasks') ? ['semestres'] :
+                          keys.includes('events') ? ['settings'] :
+                          keys.includes('materias') ? ['semestres'] :
+                          keys.includes('grades') ? ['semestres'] :
+                          keys.includes('topics') ? ['semestres'] : [];
     db.saveNow(State.semestres, State.settings, changedFields);
   }
 }

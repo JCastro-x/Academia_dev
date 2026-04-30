@@ -1306,11 +1306,19 @@ async function deleteNoteImage(noteId, imgKey) {
   saveState(['all']);
   _renderImagesStrip(note);
 
-  // Show undo toast
+  // Show undo toast con restauración de IndexedDB
   if (typeof showUndoToast === 'function') {
-    showUndoToast('Imagen eliminada', () => {
+    showUndoToast('Imagen eliminada', async () => {
       const note = _getNotesArray().find(n => n.id === noteId);
       if (note && note.images) {
+        // Restaurar imagen desde IndexedDB si es referencia IDB
+        if (val && val.startsWith('IDB:') && typeof idbRestoreImage === 'function') {
+          const restored = await idbRestoreImage(val.slice(4));
+          if (!restored) {
+            console.warn('⚠️ No se pudo restaurar imagen (expiró o no existe)');
+            // Aún así restaurar la referencia para consistencia
+          }
+        }
         note.images[imgKey] = val;
         saveState(['all']);
         _renderImagesStrip(note);

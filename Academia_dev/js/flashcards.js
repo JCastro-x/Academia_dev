@@ -224,6 +224,12 @@ function fcNavTo(view) {
   const el = document.getElementById(keys[view]); if (el) el.style.display = 'block';
 }
 function fcNavBack(to) {
+  // Usar Navigation Stack si está disponible
+  if (typeof goBack === 'function' && to !== 'materias') {
+    goBack();
+    return;
+  }
+
   if (to === 'materias') {
     _fcMatId = null; _fcFolderIdState = undefined;
     renderFcMateriasGrid(); updateFcHeaderStats(); fcNavTo('materias');
