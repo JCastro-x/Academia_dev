@@ -7,7 +7,7 @@ const NOTIFS_DB = (() => {
   'use strict';
 
   const DB_NAME = 'AcademiaNotifications';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2; // Incrementado para forzar migración de índices
   const STORE_NAME = 'scheduled_notifications';
   let _db = null;
 
@@ -26,11 +26,27 @@ const NOTIFS_DB = (() => {
 
       request.onupgradeneeded = (e) => {
         const db = e.target.result;
+        const transaction = e.target.transaction;
+        
+        // Crear store si no existe
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
           store.createIndex('scheduledFor', 'scheduledFor', { unique: false });
           store.createIndex('taskId', 'taskId', { unique: false });
           store.createIndex('type', 'type', { unique: false });
+        } else {
+          // Store existe: asegurar que los índices estén presentes (migración)
+          const store = transaction.objectStore(STORE_NAME);
+          
+          if (!store.indexNames.contains('scheduledFor')) {
+            store.createIndex('scheduledFor', 'scheduledFor', { unique: false });
+          }
+          if (!store.indexNames.contains('taskId')) {
+            store.createIndex('taskId', 'taskId', { unique: false });
+          }
+          if (!store.indexNames.contains('type')) {
+            store.createIndex('type', 'type', { unique: false });
+          }
         }
       };
     });
