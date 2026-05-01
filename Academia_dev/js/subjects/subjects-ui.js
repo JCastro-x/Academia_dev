@@ -374,3 +374,40 @@ window.renderGeneralHub    = renderGeneralHub;
 window.renderSemestresList = renderSemestresList;
 window._renderGradeCards   = _renderGradeCards;
 window.openFromHub         = openFromHub;
+
+// ── Pub/Sub Subscription for Reactivity ───────────────────────────────
+// Suscribirse a cambios en materias para re-renderizado granular
+if (typeof window.subscribe === 'function') {
+  const unsubscribeMaterias = window.subscribe('materias', (data) => {
+    console.log('[MATERIAS] Received update notification:', data);
+    if (data.type === 'update' && data.materia) {
+      // Actualizar solo la materia específica en el DOM si existe
+      const matEl = document.getElementById(`materia-${data.materia.id}`);
+      if (matEl) {
+        // Re-renderizar solo esta materia
+        const materias = State.materias;
+        const updatedMat = materias.find(m => m.id === data.materia.id);
+        if (updatedMat) {
+          // Actualizar contenido del DOM sin reconstruir todo
+          const nameEl = matEl.querySelector('.materia-name');
+          if (nameEl) nameEl.textContent = updatedMat.name;
+          const colorEl = matEl.querySelector('.materia-color-dot');
+          if (colorEl) colorEl.style.background = updatedMat.color;
+        }
+      } else {
+        // Si no existe el elemento, re-renderizar la lista completa
+        renderMaterias();
+      }
+    } else if (data.type === 'delete' && data.materiaId) {
+      // Eliminar materia del DOM
+      const matEl = document.getElementById(`materia-${data.materiaId}`);
+      if (matEl) matEl.remove();
+    } else {
+      // Para otros cambios, re-renderizar la lista completa
+      renderMaterias();
+    }
+  });
+  
+  console.log('[MATERIAS] Pub/Sub subscription initialized');
+}
+

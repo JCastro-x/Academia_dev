@@ -558,7 +558,23 @@ function _renderNotesFolderGrid(folderId) {
 
         if (canvasKey) {
           const data = await idbGetImage(canvasKey);
-          if (data) imgEl.src = data;
+          if (data) {
+            // Convertir data URL a Blob y crear URL temporal
+            const blob = await fetch(data).then(r => r.blob());
+            const objectUrl = URL.createObjectURL(blob);
+            imgEl.src = objectUrl;
+            // Guardar referencia para cleanup
+            imgEl.dataset.objectUrl = objectUrl;
+          } else {
+            // Fallback visual si la imagen no existe
+            imgEl.classList.add('img-error-placeholder');
+            imgEl.alt = 'Imagen no disponible';
+            imgEl.style.background = 'var(--surface3)';
+            imgEl.style.display = 'flex';
+            imgEl.style.alignItems = 'center';
+            imgEl.style.justifyContent = 'center';
+            imgEl.innerHTML = '<span style="font-size:24px;">⚠️</span>';
+          }
         } else if (legacyData) {
           imgEl.src = legacyData;
         }
@@ -621,6 +637,16 @@ function closeNoteEditorModal() {
   if (!backdrop || !modal) return;
   modal.style.opacity   = '0';
   modal.style.transform = 'translate(-50%,-50%) scale(.96)';
+  
+  // Cleanup object URLs para evitar fugas de memoria
+  document.querySelectorAll('[data-object-url]').forEach(img => {
+    const objectUrl = img.dataset.objectUrl;
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      delete img.dataset.objectUrl;
+    }
+  });
+  
   setTimeout(() => {
     modal.style.display    = 'none';
     backdrop.style.display = 'none';
@@ -1120,16 +1146,26 @@ function _handleRtePaste(e) {
         if (!note) return;
         if (!note.images) note.images = {};
         const key = 'IMG_' + Date.now();
-        // Store in IndexedDB
+        // Store in IndexedDB con verificación de atomicidad
         if (typeof idbSetImage === 'function') {
-          await idbSetImage(key, base64);
-          note.images[key] = 'IDB:' + key;
+          const saved = await idbSetImage(key, base64);
+          if (saved) {
+            note.images[key] = 'IDB:' + key;
+            saveState(['all']);
+            if (typeof _renderImagesStrip === 'function') _renderImagesStrip(note);
+            onNotesInput();
+          } else {
+            console.error('[NOTES] Error: No se pudo guardar imagen en IndexedDB');
+            if (typeof _appNotify === 'function') {
+              _appNotify('Error al guardar imagen. Espacio insuficiente.', 'error');
+            }
+          }
         } else {
           note.images[key] = base64;
+          saveState(['all']);
+          if (typeof _renderImagesStrip === 'function') _renderImagesStrip(note);
+          onNotesInput();
         }
-        saveState(['all']);
-        if (typeof _renderImagesStrip === 'function') _renderImagesStrip(note);
-        onNotesInput();
       };
       reader.readAsDataURL(file);
       return;
@@ -1165,25 +1201,32 @@ async function attachImagesToNote(files) {
     const reader = new FileReader();
     reader.onload = async ev => {
       const key = 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-      // Store image in IndexedDB to avoid syncing to Supabase
-      await idbSetImage(key, ev.target.result);
-      note.images[key] = 'IDB:' + key; // placeholder reference
-      note.updatedAt = Date.now();
-      loaded++;
-      if (loaded === totalImages) {
-        saveState(['all']);
-        // Get fresh note reference and render
-        const freshNote = _getNotesArray().find(n => n.id === _currentNoteId);
-        if (freshNote) {
-          _renderImagesStrip(freshNote);
-          // Force show strip
-          const strip = document.getElementById('notes-images-strip');
-          if (strip) strip.style.display = 'flex';
-          // Scroll to show images
-          setTimeout(() => {
-            if (strip) strip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }, 100);
-          if (typeof _appNotify === 'function') _appNotify(`${loaded} imagen(es) cargada(s)`, 'ok');
+      // Store image in IndexedDB con verificación de atomicidad
+      const saved = await idbSetImage(key, ev.target.result);
+      if (saved) {
+        note.images[key] = 'IDB:' + key; // placeholder reference
+        note.updatedAt = Date.now();
+        loaded++;
+        if (loaded === totalImages) {
+          saveState(['all']);
+          // Get fresh note reference and render
+          const freshNote = _getNotesArray().find(n => n.id === _currentNoteId);
+          if (freshNote) {
+            _renderImagesStrip(freshNote);
+            // Force show strip
+            const strip = document.getElementById('notes-images-strip');
+            if (strip) strip.style.display = 'flex';
+            // Scroll to show images
+            setTimeout(() => {
+              if (strip) strip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+            if (typeof _appNotify === 'function') _appNotify(`${loaded} imagen(es) cargada(s)`, 'ok');
+          }
+        }
+      } else {
+        console.error('[NOTES] Error: No se pudo guardar imagen en IndexedDB (drag & drop)');
+        if (typeof _appNotify === 'function') {
+          _appNotify('Error al guardar imagen. Espacio insuficiente.', 'error');
         }
       }
     };
@@ -1213,7 +1256,23 @@ function _renderImagesStrip(note) {
     if (val && val.startsWith('IDB:')) {
       const idbKey = val.slice(4);
       const data = await idbGetImage(idbKey);
-      if (data) imgEl.src = data;
+      if (data) {
+        // Convertir data URL a Blob y crear URL temporal
+        const blob = await fetch(data).then(r => r.blob());
+        const objectUrl = URL.createObjectURL(blob);
+        imgEl.src = objectUrl;
+        // Guardar referencia para cleanup
+        imgEl.dataset.objectUrl = objectUrl;
+      } else {
+        // Fallback visual si la imagen no existe
+        imgEl.classList.add('img-error-placeholder');
+        imgEl.alt = 'Imagen no disponible';
+        imgEl.style.background = 'var(--surface3)';
+        imgEl.style.display = 'flex';
+        imgEl.style.alignItems = 'center';
+        imgEl.style.justifyContent = 'center';
+        imgEl.innerHTML = '<span style="font-size:24px;">⚠️</span>';
+      }
     } else if (val) {
       imgEl.src = val;
     }
@@ -1231,7 +1290,23 @@ function _renderImagesStrip(note) {
         if (val && val.startsWith('IDB:')) {
           const idbKey = val.slice(4);
           const data = await idbGetImage(idbKey);
-          if (data) imgEl.src = data;
+          if (data) {
+            // Convertir data URL a Blob y crear URL temporal
+            const blob = await fetch(data).then(r => r.blob());
+            const objectUrl = URL.createObjectURL(blob);
+            imgEl.src = objectUrl;
+            // Guardar referencia para cleanup
+            imgEl.dataset.objectUrl = objectUrl;
+          } else {
+            // Fallback visual si la imagen no existe
+            imgEl.classList.add('img-error-placeholder');
+            imgEl.alt = 'Imagen no disponible';
+            imgEl.style.background = 'var(--surface3)';
+            imgEl.style.display = 'flex';
+            imgEl.style.alignItems = 'center';
+            imgEl.style.justifyContent = 'center';
+            imgEl.innerHTML = '<span style="font-size:24px;">⚠️</span>';
+          }
         } else if (val) {
           imgEl.src = val;
         }
@@ -1481,12 +1556,19 @@ function _handleNotesPaste(e) {
         if (!note) return;
         if (!note.images) note.images = {};
         const key = 'IMG_' + Date.now();
-        // Store actual image data in IndexedDB, keep only a placeholder in localStorage state
-        await idbSetImage(key, base64);
-        note.images[key] = 'IDB:' + key; // placeholder reference
-        saveState(['all']);
-        _renderImagesStrip(note);
-        onNotesInput();
+        // Store actual image data in IndexedDB con verificación de atomicidad
+        const saved = await idbSetImage(key, base64);
+        if (saved) {
+          note.images[key] = 'IDB:' + key; // placeholder reference
+          saveState(['all']);
+          _renderImagesStrip(note);
+          onNotesInput();
+        } else {
+          console.error('[NOTES] Error: No se pudo guardar imagen en IndexedDB (drop)');
+          if (typeof _appNotify === 'function') {
+            _appNotify('Error al guardar imagen. Espacio insuficiente.', 'error');
+          }
+        }
       };
       reader.readAsDataURL(file);
       return;
@@ -2163,22 +2245,29 @@ async function saveCanvasAndClose() {
   if (note) {
     const base64 = _canvas.toDataURL('image/png');
     const canvasKey = 'canvas_' + note.id;
-    // Store canvas data in IndexedDB to avoid syncing to Supabase
-    await idbSetImage(canvasKey, base64);
-    note.canvasData = 'IDB:' + canvasKey; // placeholder reference
-    note.updatedAt   = Date.now();
-    // Only change type to 'draw' if the note was originally created as a drawing note (has no text content)
-    // Don't override text notes' type - they can have both text AND canvas
-    if (note.type === 'draw' || (!note.content && !note.title)) {
-      note.type = 'draw';
+    // Store canvas data in IndexedDB con verificación de atomicidad
+    const saved = await idbSetImage(canvasKey, base64);
+    if (saved) {
+      note.canvasData = 'IDB:' + canvasKey; // placeholder reference
+      note.updatedAt   = Date.now();
+      // Only change type to 'draw' if the note was originally created as a drawing note (has no text content)
+      // Don't override text notes' type - they can have both text AND canvas
+      if (note.type === 'draw' || (!note.content && !note.title)) {
+        note.type = 'draw';
+      }
+      // For text notes with canvas: store canvas but keep as text type
+      saveState(['all']);
+      // refresh preview
+      const prev = document.getElementById('notes-drawing-preview');
+      if (prev) prev.src = base64;
+      renderNotesList();
+      // If it's a text note, re-render the images strip to show the canvas thumbnail
+    } else {
+      console.error('[NOTES] Error: No se pudo guardar canvas en IndexedDB');
+      if (typeof _appNotify === 'function') {
+        _appNotify('Error al guardar dibujo. Espacio insuficiente.', 'error');
+      }
     }
-    // For text notes with canvas: store canvas but keep as text type
-    saveState(['all']);
-    // refresh preview
-    const prev = document.getElementById('notes-drawing-preview');
-    if (prev) prev.src = base64;
-    renderNotesList();
-    // If it's a text note, re-render the images strip to show the canvas thumbnail
     if (note.type !== 'draw') {
       _renderImagesStrip(note);
     }
@@ -3407,3 +3496,41 @@ document.addEventListener('keyup', (e) => {
 
 // ── Notes grid refresh hook — moved inline into renderNotesList to avoid hoisting loop ──
 
+// ── Pub/Sub Subscription for Reactivity ───────────────────────────────
+// Suscribirse a cambios en notas para re-renderizado granular
+if (typeof window.subscribe === 'function') {
+  const unsubscribeNotes = window.subscribe('notes', (data) => {
+    console.log('[NOTES] Received update notification:', data);
+    if (data.type === 'update' && data.note) {
+      // Actualizar solo la nota específica en el DOM si existe
+      const noteEl = document.getElementById(`note-card-${data.note.id}`);
+      if (noteEl) {
+        // Re-renderizar solo esta nota
+        const notes = _getNotesArray();
+        const updatedNote = notes.find(n => n.id === data.note.id);
+        if (updatedNote) {
+          // Actualizar contenido del DOM sin reconstruir todo
+          const titleEl = noteEl.querySelector('.note-title');
+          if (titleEl) titleEl.textContent = updatedNote.title || 'Sin título';
+          const previewEl = noteEl.querySelector('.note-preview');
+          if (previewEl) {
+            const preview = (updatedNote.content || '').replace(/\n/g,' ').slice(0,50) || 'Sin contenido';
+            previewEl.textContent = preview;
+          }
+        }
+      } else {
+        // Si no existe el elemento, re-renderizar la lista completa
+        renderNotesList();
+      }
+    } else if (data.type === 'delete' && data.noteId) {
+      // Eliminar nota del DOM
+      const noteEl = document.getElementById(`note-card-${data.noteId}`);
+      if (noteEl) noteEl.remove();
+    } else {
+      // Para otros cambios, re-renderizar la lista completa
+      renderNotesList();
+    }
+  });
+  
+  console.log('[NOTES] Pub/Sub subscription initialized');
+}

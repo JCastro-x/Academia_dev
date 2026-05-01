@@ -268,10 +268,15 @@
     return { semestres: optimizedSemestres, settings: optimizedSettings };
   }
 
-  // ── save(semestres, settings, changedFields, semesterId?) — debounced 10000ms ────────────
+  // ── save(semestres, settings, changedFields, semesterId?) — debounced dinámico ────────────
   function save(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields, semesterId), 10000);
+    // Usar debounce dinámico basado en calidad de red
+    const delay = typeof window.getDynamicDebounceDelay === 'function' 
+      ? window.getDynamicDebounceDelay() 
+      : 10000;
+    console.log(`[SYNC] Debounce delay: ${delay}ms (network quality)`);
+    _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields, semesterId), delay);
   }
 
   // ── saveNow(semestres, settings, changedFields, semesterId?) — inmediato ────────────────

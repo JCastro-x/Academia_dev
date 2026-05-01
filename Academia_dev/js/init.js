@@ -155,7 +155,12 @@ function init() {
             if (dbData.settings && Object.keys(dbData.settings).length) {
               const mergedSettings = mergePomData(State.settings, dbData.settings);
               localStorage.setItem('academia_v3_settings', JSON.stringify(mergedSettings));
-              Object.assign(State.settings, mergedSettings);
+              // Usar deepMerge para preservar propiedades anidadas
+              if (typeof window.deepMerge === 'function') {
+                Object.assign(State.settings, window.deepMerge(State.settings, mergedSettings));
+              } else {
+                Object.assign(State.settings, mergedSettings);
+              }
             }
           } else {
             console.log('⏭️ Skipping remote sync - local data is more recent');
@@ -417,9 +422,10 @@ function continueInit(auth) {
       }
       const localModifiedAt = window._localModifiedAt || 0;
 
-      // Preflight barato: si no hay cambios remotos, evitar descargar JSONB.
-      // Fallback: si el método no existe, seguimos con load() como antes.
+      // Preflight inteligente: comparar hashes para evitar descargas innecesarias
       let remoteUpdatedAt = 0;
+      let shouldDownload = true;
+      
       if (!force && typeof db.getRemoteUpdatedAt === 'function') {
         // Throttle del preflight para evitar martillar en focus/visibility repetidos
         if (now - _lastRemoteCheckAt > 10000) {
@@ -431,13 +437,49 @@ function continueInit(auth) {
         }
 
         if (remoteUpdatedAt && remoteUpdatedAt <= localModifiedAt) {
+          console.log('[SYNC] Preflight: No hay cambios remotos (timestamp)');
           _lastSync = now;
           return;
+        }
+        
+        // Si timestamp indica cambios posibles, verificar con hash
+        if (remoteUpdatedAt && remoteUpdatedAt > localModifiedAt) {
+          if (typeof window.computeHash === 'function') {
+            const localSemHash = await window.computeHash(State.semestres);
+            const localSettingsHash = await window.computeHash(State.settings);
+            console.log(`[SYNC] Preflight hashes - Semestres: ${localSemHash.slice(0,8)}..., Settings: ${localSettingsHash.slice(0,8)}...`);
+            
+            // Descargar solo para comparar hashes remotos
+            const dbData = await db.load();
+            if (!dbData) return;
+            
+            const remoteSemHash = await window.computeHash(dbData.semestres);
+            const remoteSettingsHash = await window.computeHash(dbData.settings);
+            
+            if (localSemHash === remoteSemHash && localSettingsHash === remoteSettingsHash) {
+              console.log('[SYNC] Preflight: Hashes coinciden, skip download');
+              _lastSync = now;
+              return;
+            }
+            
+            console.log('[SYNC] Preflight: Hashes diferentes, procediendo con descarga');
+            // Continuar con dbData ya cargado
+            shouldDownload = false;
+          }
         }
       }
 
       _lastSync = now;
-      const dbData = await db.load();
+      
+      // Si ya descargamos en el preflight, usar dbData existente
+      let dbData;
+      if (!shouldDownload) {
+        // dbData ya fue cargado en el preflight
+        dbData = await db.load();
+      } else {
+        dbData = await db.load();
+      }
+      
       if (!dbData) return;
 
       remoteUpdatedAt = dbData.updatedAt ? Date.parse(dbData.updatedAt) : 0;
@@ -466,7 +508,13 @@ function continueInit(auth) {
           getMat.bust();
         }
         if (dbData.settings && typeof dbData.settings === 'object') {
-          Object.assign(State.settings, mergePomData(State.settings, dbData.settings));
+          // Usar deepMerge para preservar propiedades anidadas
+          const mergedSettings = mergePomData(State.settings, dbData.settings);
+          if (typeof window.deepMerge === 'function') {
+            Object.assign(State.settings, window.deepMerge(State.settings, mergedSettings));
+          } else {
+            Object.assign(State.settings, mergedSettings);
+          }
         }
         try {
           renderOverview     && renderOverview();

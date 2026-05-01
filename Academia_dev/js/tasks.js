@@ -1137,4 +1137,47 @@ document.addEventListener('touchstart', (e) => {
 // EXPOSICIÓN GLOBAL DE FUNCIONES CRÍTICAS
 // ═══════════════════════════════════════════════════════════════
 window.toggleTask = toggleTask;
+
+// ── Pub/Sub Subscription for Reactivity ───────────────────────────────
+// Suscribirse a cambios en tareas para re-renderizado granular
+if (typeof window.subscribe === 'function') {
+  const unsubscribeTasks = window.subscribe('tasks', (data) => {
+    console.log('[TASKS] Received update notification:', data);
+    if (data.type === 'update' && data.task) {
+      // Actualizar solo la tarea específica en el DOM si existe
+      const taskEl = document.getElementById(`task-${data.task.id}`);
+      if (taskEl) {
+        // Re-renderizar solo esta tarea
+        const tasks = State.tasks;
+        const updatedTask = tasks.find(t => t.id === data.task.id);
+        if (updatedTask) {
+          // Actualizar contenido del DOM sin reconstruir todo
+          const titleEl = taskEl.querySelector('.task-title');
+          if (titleEl) titleEl.textContent = updatedTask.title;
+          const dueEl = taskEl.querySelector('.task-due');
+          if (dueEl) dueEl.textContent = updatedTask.due || '';
+          // Actualizar estado de completado
+          if (updatedTask.done) {
+            taskEl.classList.add('done');
+          } else {
+            taskEl.classList.remove('done');
+          }
+        }
+      } else {
+        // Si no existe el elemento, re-renderizar la lista completa
+        renderTasks();
+      }
+    } else if (data.type === 'delete' && data.taskId) {
+      // Eliminar tarea del DOM
+      const taskEl = document.getElementById(`task-${data.taskId}`);
+      if (taskEl) taskEl.remove();
+    } else {
+      // Para otros cambios, re-renderizar la lista completa
+      renderTasks();
+    }
+  });
+  
+  console.log('[TASKS] Pub/Sub subscription initialized');
+}
+
 window.toggleSubtask = toggleSubtask;

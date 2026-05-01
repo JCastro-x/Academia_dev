@@ -26,6 +26,110 @@ function _schedRender(fn) {
   });
 }
 
+/* ─── Deep Merge Utility ─────────────────────────────────────────── */
+function deepMerge(target, source) {
+  if (!source || typeof source !== 'object') return target;
+  if (!target || typeof target !== 'object') return source;
+
+  const output = { ...target };
+
+  for (const key in source) {
+    if (source.hasOwnProperty(key)) {
+      if (source[key] instanceof Object && key in target) {
+        output[key] = deepMerge(target[key], source[key]);
+      } else {
+        output[key] = source[key];
+      }
+    }
+  }
+
+  return output;
+}
+
+/* ─── Pub/Sub System for Reactivity ─────────────────────────────── */
+const _subscribers = {
+  'semesters': new Set(),
+  'materias': new Set(),
+  'tasks': new Set(),
+  'notes': new Set(),
+  'settings': new Set(),
+  'calendar': new Set(),
+  'grades': new Set(),
+};
+
+function subscribe(entityType, callback) {
+  if (!_subscribers[entityType]) {
+    console.warn(`[PUBSUB] Entity type "${entityType}" not registered`);
+    return () => {};
+  }
+  _subscribers[entityType].add(callback);
+  console.log(`[PUBSUB] Subscribed to ${entityType} (total: ${_subscribers[entityType].size})`);
+  
+  // Return unsubscribe function
+  return () => {
+    _subscribers[entityType].delete(callback);
+    console.log(`[PUBSUB] Unsubscribed from ${entityType}`);
+  };
+}
+
+function notify(entityType, data) {
+  if (!_subscribers[entityType]) {
+    console.warn(`[PUBSUB] Entity type "${entityType}" not registered`);
+    return;
+  }
+  console.log(`[PUBSUB] Notifying ${entityType} subscribers (${_subscribers[entityType].size})`);
+  _subscribers[entityType].forEach(callback => {
+    try {
+      callback(data);
+    } catch (e) {
+      console.error(`[PUBSUB] Error in ${entityType} subscriber:`, e);
+    }
+  });
+}
+
+/* ─── Network Quality Detection ──────────────────────────────────── */
+function getNetworkQuality() {
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (!conn) return 'unknown';
+  
+  const effectiveType = conn.effectiveType;
+  const rtt = conn.rtt || 0;
+  const downlink = conn.downlink || 0;
+  
+  console.log(`[NETWORK] Quality: ${effectiveType}, RTT: ${rtt}ms, Downlink: ${downlink}Mbps`);
+  
+  if (effectiveType === '4g' && rtt < 100) return 'fast';
+  if (effectiveType === '4g' && rtt >= 100) return 'medium';
+  if (effectiveType === '3g') return 'medium';
+  if (effectiveType === '2g' || effectiveType === 'slow-2g') return 'slow';
+  return 'unknown';
+}
+
+function getDynamicDebounceDelay() {
+  const quality = getNetworkQuality();
+  switch(quality) {
+    case 'fast': return 5000;   // WiFi estable / 4G rápido
+    case 'medium': return 10000; // 3G / 4G lento
+    case 'slow': return 20000;   // 2G / mala conexión
+    default: return 10000;
+  }
+}
+
+/* ─── Hash Utility for Preflight Comparison ─────────────────────────── */
+async function computeHash(data) {
+  if (!data) return '';
+  const str = typeof data === 'string' ? data : JSON.stringify(data);
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(str);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+// Exponer hash utility globalmente
+window.computeHash = computeHash;
+
 const DB_KEYS = {
   SEMESTRES: 'academia_v4_semestres',
   POM_TODAY: 'academia_v3_pom_today',
@@ -107,15 +211,35 @@ async function idbSetImage(key, dataUrl) {
   } catch(e) { console.warn('IDB set error', e); return false; }
 }
 async function idbGetImage(key) {
+  if (!key) {
+    console.error('[IDB_MANAGER] Error: Key inválida (null/undefined)');
+    return null;
+  }
+
   try {
     const db = await _openIDB();
     return new Promise((res, rej) => {
       const tx = db.transaction('images','readonly');
       const req = tx.objectStore('images').get(key);
-      req.onsuccess = () => res(req.result || null);
-      req.onerror = () => rej(req.error);
+      req.onsuccess = () => {
+        const result = req.result;
+        if (!result) {
+          console.warn(`[IDB_MANAGER] Asset no encontrado: ${key}`);
+          res(null);
+        } else {
+          console.log(`[IDB_MANAGER] Asset recuperado: ${key} (${(result.length / 1024).toFixed(2)} KB)`);
+          res(result);
+        }
+      };
+      req.onerror = () => {
+        console.error(`[IDB_MANAGER] Error al recuperar asset ${key}:`, tx.error);
+        rej(tx.error);
+      };
     });
-  } catch(e) { return null; }
+  } catch(e) {
+    console.error(`[IDB_MANAGER] Excepción al recuperar asset ${key}:`, e);
+    return null;
+  }
 }
 async function idbDeleteImage(key) {
   try {
@@ -571,6 +695,13 @@ let _changedFields = new Set();
 
 // Guard para evitar que el sync de Supabase sobreescriba cambios locales recientes
 window._localModifiedAt = 0;
+
+// Exponer utilidades globalmente para uso en otros módulos
+window.deepMerge = deepMerge;
+window.subscribe = subscribe;
+window.notify = notify;
+window.getNetworkQuality = getNetworkQuality;
+window.getDynamicDebounceDelay = getDynamicDebounceDelay;
 
 function saveState(keys = ['all']) {
   window._localModifiedAt = Date.now(); // marcar modificación local
