@@ -120,6 +120,19 @@
       if (!settingsError && settingsData && settingsData.length > 0) {
         settings = settingsData[0].settings ? JSON.parse(settingsData[0].settings) : {};
         settingsUpdatedAt = settingsData[0].updated_at ? new Date(settingsData[0].updated_at).getTime() : null;
+
+        // Log what we received from Turso
+        console.log('📥 [TURSO] Received settings from Turso:', {
+          habitsCount: settings?.habits?.length || 0,
+          habitsSample: settings?.habits?.slice(0, 2) || [],
+          hasHabits: !!settings?.habits
+        });
+        console.table('📥 [TURSO] Settings received:', {
+          habits: settings?.habits || [],
+          hasHabits: !!settings?.habits
+        });
+      } else {
+        console.warn('⚠️ [TURSO] No settings data received or error:', settingsError);
       }
 
       // Si no se especifica semesterId, cargar todos los semestres
@@ -241,15 +254,27 @@
   async function _doSave(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     if (!_ready) return;
     try {
+      // Log what we're about to send to Turso
+      console.log('📤 [TURSO] Sending data to Turso:', {
+        changedFields,
+        semesterId,
+        habitsCount: settings?.habits?.length || 0,
+        habitsSample: settings?.habits?.slice(0, 2) || []
+      });
+      console.table('📤 [TURSO] Settings being sent:', {
+        habits: settings?.habits || [],
+        hasHabits: !!settings?.habits
+      });
+
       // Guardar settings globales si cambiaron
       if (changedFields.includes('settings')) {
         const optimizedSettings = _optimizeSettings(settings);
         const settingsSize = JSON.stringify(optimizedSettings).length;
-        
+
         const { error: settingsError } = await _tursoRequest(
-          `INSERT INTO user_settings (user_id, settings, updated_at) 
+          `INSERT INTO user_settings (user_id, settings, updated_at)
            VALUES (?, ?, datetime('now'))
-           ON CONFLICT(user_id) DO UPDATE SET 
+           ON CONFLICT(user_id) DO UPDATE SET
              settings = excluded.settings,
              updated_at = datetime('now')`,
           [_userId, JSON.stringify(optimizedSettings)]
@@ -257,6 +282,8 @@
 
         if (settingsError) {
           console.error('❌ Turso save settings FAILED:', settingsError);
+        } else {
+          console.log('✅ [TURSO] Settings saved successfully');
         }
       }
 

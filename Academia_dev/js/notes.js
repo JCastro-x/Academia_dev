@@ -2245,9 +2245,10 @@ async function saveCanvasAndClose() {
   if (note) {
     const base64 = _canvas.toDataURL('image/png');
     const canvasKey = 'canvas_' + note.id;
-    // Store canvas data in IndexedDB con verificación de atomicidad
+    console.log('💾 [NOTES] Saving canvas to IndexedDB:', { noteId: note.id, canvasKey });
     const saved = await idbSetImage(canvasKey, base64);
     if (saved) {
+      console.log('✅ [NOTES] Canvas saved to IndexedDB, saving to State');
       note.canvasData = 'IDB:' + canvasKey; // placeholder reference
       note.updatedAt   = Date.now();
       // Only change type to 'draw' if the note was originally created as a drawing note (has no text content)

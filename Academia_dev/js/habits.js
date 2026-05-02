@@ -21,9 +21,10 @@
 (function () {
   'use strict';
 
-  // Inicializar habits si no existe
+  // Inicializar habits si no existe o no es un array
   function initHabits() {
-    if (!State.settings.habits) {
+    if (!Array.isArray(State.settings.habits)) {
+      console.warn('[HABITS] State.settings.habits no es un array, reinicializando');
       State.settings.habits = [];
     }
   }
@@ -106,7 +107,14 @@
   function refreshAllStreaks() {
     initHabits();
     let updated = false;
-    
+
+    // Safety check: asegurar que habits es un array
+    if (!Array.isArray(State.settings.habits)) {
+      console.warn('[HABITS] State.settings.habits no es un array, inicializando como array vacío');
+      State.settings.habits = [];
+      return;
+    }
+
     State.settings.habits.forEach(habit => {
       const newStreak = calculateStreak(habit);
       if (habit.rachaActual !== newStreak) {
@@ -114,7 +122,7 @@
         updated = true;
       }
     });
-    
+
     if (updated) {
       saveHabits();
       console.log('🔄 Rachas actualizadas');
@@ -212,9 +220,14 @@
   // Guardar hábitos
   function saveHabits() {
     try {
+      console.log('💾 [HABITS] Saving habits to State and Turso:', {
+        habitsCount: State.settings.habits?.length || 0,
+        habitsSample: State.settings.habits?.slice(0, 2) || []
+      });
+      console.table('💾 [HABITS] Current habits:', State.settings.habits || []);
       saveStateNow(['settings']);
     } catch (e) {
-      console.error('Error guardando hábitos:', e);
+      console.error('❌ [HABITS] Error guardando hábitos:', e);
     }
   }
 

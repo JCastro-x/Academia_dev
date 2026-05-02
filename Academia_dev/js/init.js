@@ -129,12 +129,18 @@ function init() {
       }
       localStorage.setItem('_academia_last_user', auth.id);
 
-      // Inicializar DB y cargar desde Supabase
+      // Inicializar DB y cargar desde Supabase/Turso
       const db = getAcademiaDB();
       if (db) {
-        db.init(auth.id);
+        await db.init(auth.id);
         const dbData = await db.load();
+        console.log('🔄 [INIT] DB load result:', dbData ? 'Data received' : 'No data');
+
         if (dbData) {
+          // Log habits from remote data
+          console.log('📥 [INIT] Remote habits count:', dbData.settings?.habits?.length || 0);
+          console.table('📥 [INIT] Remote habits:', dbData.settings?.habits || []);
+
           // Comparar timestamps para evitar sobrescribir cambios locales recientes
           const remoteUpdatedAt = dbData.updatedAt ? Date.parse(dbData.updatedAt) : 0;
           const localModifiedAt = window._localModifiedAt || 0;
@@ -144,13 +150,14 @@ function init() {
 
           // Solo sobrescribir si remoto es más reciente
           if (shouldUseRemote) {
-            // Supabase es la fuente de verdad
+            // Turso/Supabase es la fuente de verdad
             if (dbData.semestres && dbData.semestres.length) {
               localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
               State.semestres.length = 0;
               dbData.semestres.forEach(s => State.semestres.push(s));
               if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
               getMat.bust();
+              console.log('✅ [INIT] Semestres rehydrated from remote');
             }
             if (dbData.settings && Object.keys(dbData.settings).length) {
               const mergedSettings = mergePomData(State.settings, dbData.settings);
@@ -161,6 +168,8 @@ function init() {
               } else {
                 Object.assign(State.settings, mergedSettings);
               }
+              console.log('✅ [INIT] Settings rehydrated from remote, habits count:', State.settings.habits?.length || 0);
+              console.table('📥 [INIT] State.settings.habits after rehydration:', State.settings.habits || []);
             }
           } else {
             console.log('⏭️ Skipping remote sync - local data is more recent');

@@ -66,7 +66,7 @@ self.addEventListener('install', e => {
         ))
       ),
     ]).then(() => {
-      console.log('[SW] Install completo — academia-v10');
+      console.log('[SW] Install completo — academia-v11');
       self.skipWaiting();
     })
   );
@@ -110,6 +110,9 @@ self.addEventListener('fetch', e => {
 
   // No interceptar peticiones POST/PUT/DELETE (formularios, sync)
   if (req.method !== 'GET') return;
+
+  // No interceptar blob: y data: URLs (para imágenes en IndexedDB)
+  if (url.protocol === 'blob:' || url.protocol === 'data:') return;
 
   const path = url.pathname;
 
