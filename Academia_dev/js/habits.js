@@ -273,6 +273,12 @@
     const weekDays = getWeekDays();
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
 
+    // Safety check: ensure habits is an array
+    if (!Array.isArray(State.settings.habits)) {
+      console.warn('[HABITS] State.settings.habits is not an array, initializing as empty array');
+      State.settings.habits = [];
+    }
+
     if (State.settings.habits.length === 0) {
       container.innerHTML = `
         <div class="habits-empty">

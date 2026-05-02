@@ -210,10 +210,13 @@ async function idbSetImage(key, dataUrl) {
     });
   } catch(e) { console.warn('IDB set error', e); return false; }
 }
+// Placeholder image for missing assets (simple gray square with text)
+const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzJhMmEzOCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTA5MGE4IiBmb250LXNpemU9IjE0IiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj5JbWFnZW4gbm8gZGlzcG9uaWJsZTwvdGV4dD48L3N2Zz4=';
+
 async function idbGetImage(key) {
   if (!key) {
     console.error('[IDB_MANAGER] Error: Key inválida (null/undefined)');
-    return null;
+    return PLACEHOLDER_IMAGE;
   }
 
   try {
@@ -224,8 +227,8 @@ async function idbGetImage(key) {
       req.onsuccess = () => {
         const result = req.result;
         if (!result) {
-          console.warn(`[IDB_MANAGER] Asset no encontrado: ${key}`);
-          res(null);
+          console.warn(`[IDB_MANAGER] Asset no encontrado: ${key} - usando placeholder`);
+          res(PLACEHOLDER_IMAGE);
         } else {
           console.log(`[IDB_MANAGER] Asset recuperado: ${key} (${(result.length / 1024).toFixed(2)} KB)`);
           res(result);
@@ -233,12 +236,14 @@ async function idbGetImage(key) {
       };
       req.onerror = () => {
         console.error(`[IDB_MANAGER] Error al recuperar asset ${key}:`, tx.error);
-        rej(tx.error);
+        // Fallback to placeholder on error instead of rejecting
+        res(PLACEHOLDER_IMAGE);
       };
     });
   } catch(e) {
     console.error(`[IDB_MANAGER] Excepción al recuperar asset ${key}:`, e);
-    return null;
+    // Fallback to placeholder on exception
+    return PLACEHOLDER_IMAGE;
   }
 }
 async function idbDeleteImage(key) {
