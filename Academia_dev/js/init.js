@@ -101,12 +101,21 @@ function init() {
       }
 
       if (!auth) {
+        console.error('❌ [INIT] Autenticación fallida - auth es null');
         const hasLocalData =
           !!localStorage.getItem('academia_v4_semestres') ||
           !!localStorage.getItem('academia_v3_settings');
         const hasKnownUser = !!localStorage.getItem('_academia_last_user');
         const isOffline = navigator.onLine === false;
         const canUseLocalAccess = hasLocalData && (isOffline || hasKnownUser);
+
+        console.log('🔍 [INIT] Diagnóstico auth:', {
+          hasLocalData,
+          hasKnownUser,
+          lastUser: localStorage.getItem('_academia_last_user'),
+          isOffline,
+          canUseLocalAccess
+        });
 
         if (canUseLocalAccess) {
           console.warn('⚠️ Acceso local habilitado: no se pudo validar sesión remota, continuando con datos cacheados');

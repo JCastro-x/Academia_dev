@@ -559,12 +559,8 @@ function _renderNotesFolderGrid(folderId) {
         if (canvasKey) {
           const data = await idbGetImage(canvasKey);
           if (data) {
-            // Convertir data URL a Blob y crear URL temporal
-            const blob = await fetch(data).then(r => r.blob());
-            const objectUrl = URL.createObjectURL(blob);
-            imgEl.src = objectUrl;
-            // Guardar referencia para cleanup
-            imgEl.dataset.objectUrl = objectUrl;
+            // Asignar data URL directamente al src (no necesita fetch, evita violación CSP)
+            imgEl.src = data;
           } else {
             // Fallback visual si la imagen no existe
             imgEl.classList.add('img-error-placeholder');
@@ -1257,12 +1253,8 @@ function _renderImagesStrip(note) {
       const idbKey = val.slice(4);
       const data = await idbGetImage(idbKey);
       if (data) {
-        // Convertir data URL a Blob y crear URL temporal
-        const blob = await fetch(data).then(r => r.blob());
-        const objectUrl = URL.createObjectURL(blob);
-        imgEl.src = objectUrl;
-        // Guardar referencia para cleanup
-        imgEl.dataset.objectUrl = objectUrl;
+        // Asignar data URL directamente al src (no necesita fetch, evita violación CSP)
+        imgEl.src = data;
       } else {
         // Fallback visual si la imagen no existe
         imgEl.classList.add('img-error-placeholder');
@@ -1291,12 +1283,8 @@ function _renderImagesStrip(note) {
           const idbKey = val.slice(4);
           const data = await idbGetImage(idbKey);
           if (data) {
-            // Convertir data URL a Blob y crear URL temporal
-            const blob = await fetch(data).then(r => r.blob());
-            const objectUrl = URL.createObjectURL(blob);
-            imgEl.src = objectUrl;
-            // Guardar referencia para cleanup
-            imgEl.dataset.objectUrl = objectUrl;
+            // Asignar data URL directamente al src (no necesita fetch, evita violación CSP)
+            imgEl.src = data;
           } else {
             // Fallback visual si la imagen no existe
             imgEl.classList.add('img-error-placeholder');
