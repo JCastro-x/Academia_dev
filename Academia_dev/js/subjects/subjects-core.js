@@ -36,36 +36,154 @@ function openSemestreEditModal(id) {
 }
 
 function saveNewSemestre() {
-  const nombre    = document.getElementById('ns-nombre').value.trim();
-  const objetivo  = parseFloat(document.getElementById('ns-objetivo').value) || 70;
-  const prevAvg   = parseFloat(document.getElementById('ns-prev-avg').value) || 0;
-  const prevCred  = parseFloat(document.getElementById('ns-prev-cred').value) || 0;
-  const activar   = document.getElementById('ns-activar')?.checked;
-  if (!nombre) { if (typeof _appNotify === 'function') _appNotify('Ingresa un nombre para el semestre.', 'warning'); return; }
+  try {
+    // Obtener valores de inputs
+    const nombreInput    = document.getElementById('ns-nombre');
+    const objetivoInput  = document.getElementById('ns-objetivo');
+    const prevAvgInput   = document.getElementById('ns-prev-avg');
+    const prevCredInput  = document.getElementById('ns-prev-cred');
+    const activarInput   = document.getElementById('ns-activar');
 
-  if (_editSemId) {
-    const sem = State.semestres.find(s => s.id === _editSemId);
-    if (sem) {
-      sem.nombre           = nombre;
-      sem.promedioObjetivo = objetivo;
-      sem.prevAvg          = prevAvg;
-      sem.prevCred         = prevCred;
-      if (activar && !sem.activo) { State.semestres.forEach(s => s.activo = false); sem.activo = true; State._activeSem = sem; }
+    if (!nombreInput) {
+      console.error('[saveNewSemestre] No se encontró el input ns-nombre');
+      throw new Error('Formulario de semestre no disponible');
     }
-  } else {
-    if (activar) State.semestres.forEach(s => s.activo = false);
-    const newSem = { id: 'sem_' + Date.now(), nombre, promedioObjetivo: objetivo, prevAvg, prevCred, activo: activar, cerrado: false, materias: [], tasks: [] };
-    State.semestres.push(newSem);
-    if (activar) State._activeSem = newSem;
-  }
 
-  saveState(['semestres']);
-  closeModal('modal-semestre');
-  
-  // Notificar cambio
-  window.dispatchEvent(new CustomEvent('semester:saved', { detail: { id: _editSemId || State.semestres[State.semestres.length-1].id } }));
-  if (_editSemId && document.getElementById('ns-activar')?.checked) {
-    window.dispatchEvent(new CustomEvent('semester:switched', { detail: { id: _editSemId } }));
+    const nombre    = nombreInput.value.trim();
+    const objetivo  = parseFloat(objetivoInput?.value) || 70;
+    const prevAvg   = parseFloat(prevAvgInput?.value) || 0;
+    const prevCred  = parseFloat(prevCredInput?.value) || 0;
+    const activar   = activarInput?.checked ?? true;
+
+    // Validación
+    if (!nombre) {
+      if (typeof _appNotify === 'function') _appNotify('Ingresa un nombre para el semestre.', 'warning');
+      return;
+    }
+
+    // Validar rangos numéricos
+    const promedioObjetivo = Math.max(0, Math.min(100, objetivo));
+    const prevAvgClamped = Math.max(0, Math.min(100, prevAvg));
+    const prevCredClamped = Math.max(0, prevCred);
+
+    console.log('[saveNewSemestre] Guardando semestre:', { nombre, promedioObjetivo, prevAvg: prevAvgClamped, prevCred: prevCredClamped, activar, isEdit: !!_editSemId });
+
+    const isEdit = !!_editSemId;
+    let targetSem = null;
+
+    if (isEdit) {
+      // Modo edición
+      targetSem = State.semestres.find(s => s.id === _editSemId);
+      if (!targetSem) {
+        console.error('[saveNewSemestre] Semestre a editar no encontrado:', _editSemId);
+        throw new Error('Semestre no encontrado');
+      }
+
+      // Actualizar campos
+      targetSem.nombre           = nombre;
+      targetSem.promedioObjetivo = promedioObjetivo;
+      targetSem.prevAvg          = prevAvgClamped;
+      targetSem.prevCred         = prevCredClamped;
+
+      // Si se quiere activar y no está activo
+      if (activar && !targetSem.activo) {
+        State.semestres.forEach(s => s.activo = false);
+        targetSem.activo = true;
+        // Actualizar getter _activeSem
+        Object.defineProperty(State, '_activeSemCache', { value: targetSem, writable: true });
+      }
+
+    } else {
+      // Modo creación - Schema completo del semestre
+      if (activar) {
+        State.semestres.forEach(s => s.activo = false);
+      }
+
+      // Crear con schema completo (coincide con _buildDefaultSemester)
+      const newSem = {
+        id: 'sem_' + Date.now(),
+        nombre,
+        promedioObjetivo,
+        prevAvg: prevAvgClamped,
+        prevCred: prevCredClamped,
+        activo: activar,
+        cerrado: false,
+        materias: [],
+        grades: {},
+        tasks: [],
+        events: [],
+        topics: [],
+        notes: {},
+        notesArray: [],
+        flashcards: [],
+        createdAt: new Date().toISOString()
+      };
+
+      State.semestres.push(newSem);
+      targetSem = newSem;
+
+      if (activar) {
+        Object.defineProperty(State, '_activeSemCache', { value: newSem, writable: true });
+      }
+
+      console.log('[saveNewSemestre] Nuevo semestre creado:', newSem.id);
+    }
+
+    // Guardar estado inmediatamente
+    saveStateNow(['semestres']);
+
+    // Cerrar modal
+    if (typeof closeModal === 'function') {
+      closeModal('modal-semestre');
+    }
+
+    // Disparar eventos de actualización
+    const semId = isEdit ? _editSemId : targetSem?.id;
+
+    // Notificar sistema pub/sub
+    if (typeof notify === 'function') {
+      notify('semesters', {
+        type: isEdit ? 'updated' : 'created',
+        semester: targetSem,
+        id: semId
+      });
+    }
+
+    // Evento legacy semester:saved
+    window.dispatchEvent(new CustomEvent('semester:saved', {
+      detail: { id: semId, type: isEdit ? 'updated' : 'created' }
+    }));
+
+    // Si se activó o editó un semestre activo
+    if (activar && targetSem?.activo) {
+      window.dispatchEvent(new CustomEvent('semester:switched', {
+        detail: { id: semId, name: nombre }
+      }));
+    }
+
+    // Forzar refresh de todas las vistas relacionadas
+    if (typeof _refreshAllViews === 'function') {
+      _refreshAllViews();
+    } else {
+      // Fallback: refrescar manualmente si la función no está disponible
+      if (typeof fillMatSels === 'function') fillMatSels();
+      if (typeof renderMaterias === 'function') renderMaterias();
+      if (typeof renderGrades === 'function') renderGrades();
+      if (typeof renderSemesterBadge === 'function') renderSemesterBadge();
+      if (typeof updateBadge === 'function') updateBadge();
+    }
+
+    // Resetear flag de edición
+    _editSemId = null;
+
+    console.log('[saveNewSemestre] Completado exitosamente');
+
+  } catch (error) {
+    console.error('[saveNewSemestre] Error:', error);
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error al guardar semestre: ' + (error.message || 'Error desconocido'), 'error');
+    }
+    throw error; // Re-lanzar para que el caller pueda manejar
   }
 }
 

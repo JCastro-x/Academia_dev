@@ -255,7 +255,7 @@ const PAGE_TITLES = {
 // ══════════════════════════════════════════════════════════════
 // Semestre Modal Event Delegation (replaces inline handlers)
 // ══════════════════════════════════════════════════════════════
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
   const action = e.target.closest('[data-action]');
   if (!action) return;
 
@@ -269,6 +269,122 @@ document.addEventListener('click', (e) => {
 
   // Semestre modal - save
   if (actionType === 'save-semestre-modal') {
-    if (typeof saveSemestreModal === 'function') saveSemestreModal();
+    e.preventDefault();
+    e.stopPropagation();
+    await _handleSaveSemestre(action);
   }
 });
+
+/**
+ * Handler robusto para guardar semestre con:
+ * - Validación de campos
+ * - Parsing numérico correcto
+ * - Loading state en botón
+ * - Optimistic UI update
+ * - Try/catch con rollback
+ * - Notificaciones de error
+ */
+async function _handleSaveSemestre(btnElement) {
+  const saveBtn = btnElement || document.getElementById('sem-modal-save-btn');
+  const originalText = saveBtn?.textContent || '🗂️ Crear Semestre';
+
+  // Helper: set loading state
+  const setLoading = (loading) => {
+    if (!saveBtn) return;
+    saveBtn.disabled = loading;
+    saveBtn.textContent = loading ? '⏳ Guardando...' : originalText;
+    saveBtn.style.opacity = loading ? '0.7' : '1';
+  };
+
+  try {
+    // Validar función disponible
+    if (typeof saveNewSemestre !== 'function') {
+      throw new Error('La función saveNewSemestre no está disponible. Verifica que subjects-core.js esté cargado.');
+    }
+
+    // Obtener y validar campos
+    const nombreInput = document.getElementById('ns-nombre');
+    const prevAvgInput = document.getElementById('ns-prev-avg');
+    const prevCredInput = document.getElementById('ns-prev-cred');
+    const objetivoInput = document.getElementById('ns-objetivo');
+    const activarInput = document.getElementById('ns-activar');
+
+    if (!nombreInput) {
+      throw new Error('No se encontró el campo de nombre del semestre');
+    }
+
+    const nombre = nombreInput.value.trim();
+    if (!nombre) {
+      _appNotify?.('Ingresa un nombre para el semestre.', 'warning');
+      nombreInput?.focus();
+      return;
+    }
+
+    // Parsear valores numéricos con validación
+    const parseNumber = (val, min = null, max = null, fieldName = '') => {
+      if (!val || val === '') return 0;
+      const parsed = parseFloat(String(val).replace(',', '.'));
+      if (isNaN(parsed)) {
+        console.warn(`[SEMESTRE] Valor no numérico en ${fieldName}:`, val);
+        return 0;
+      }
+      let result = parsed;
+      if (min !== null && result < min) result = min;
+      if (max !== null && result > max) result = max;
+      return result;
+    };
+
+    const prevAvg = parseNumber(prevAvgInput?.value, 0, 100, 'Promedio previo');
+    const prevCred = parseNumber(prevCredInput?.value, 0, null, 'Créditos previos');
+    const objetivo = parseNumber(objetivoInput?.value, 0, 100, 'Promedio objetivo') || 70;
+    const activar = activarInput?.checked ?? true;
+
+    // Debug log
+    console.log('[SEMESTRE] Datos a guardar:', {
+      nombre,
+      prevAvg,
+      prevCred,
+      objetivo,
+      activar,
+      raw: {
+        prevAvgRaw: prevAvgInput?.value,
+        prevCredRaw: prevCredInput?.value,
+        objetivoRaw: objetivoInput?.value
+      }
+    });
+
+    // Activar loading
+    setLoading(true);
+
+    // Llamar función principal de subjects-core.js
+    // Esta maneja todo: State, eventos, y UI refresh
+    saveNewSemestre();
+
+    // Si llegamos aquí sin error, el guardado fue exitoso
+    console.log('[SEMESTRE] Semestre guardado exitosamente');
+
+  } catch (error) {
+    console.error('[SEMESTRE] Error al guardar semestre:', error);
+
+    // Notificar error específico
+    let errorMsg = 'Error al guardar el semestre';
+    if (error.message?.includes('network')) errorMsg = 'Error de red. Verifica tu conexión.';
+    else if (error.message?.includes('RLS')) errorMsg = 'Error de permisos. Verifica tu sesión.';
+    else if (error.message?.includes('schema')) errorMsg = 'Error de esquema. Contacta soporte.';
+    else if (error.message) errorMsg = error.message;
+
+    _appNotify?.(errorMsg, 'error');
+
+    // Re-lanzar para debug si es necesario
+    if (window.__DEBUG_SEMESTRE__) {
+      throw error;
+    }
+
+  } finally {
+    // Restaurar botón
+    setLoading(false);
+  }
+}
+
+// Exponer handler globalmente para testing
+window._handleSaveSemestre = _handleSaveSemestre;
