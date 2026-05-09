@@ -291,6 +291,21 @@ function continueInit(auth) {
   const mgEl = document.getElementById('min-grade');
   if (mgEl) mgEl.value = State.settings.minGrade;
 
+  // Data cleanup: Remove null entries from arrays
+  if (State.materias && State.materias.some(m => !m)) {
+    State.materias = State.materias.filter(m => m);
+  }
+  State.semestres.forEach(sem => {
+    if (sem.materias && sem.materias.some(m => !m)) {
+      sem.materias = sem.materias.filter(m => m);
+    }
+  });
+
+  // Migration: Add apartados to existing subjects
+  if (typeof window.migrateSubjectsToApartados === 'function') {
+    window.migrateSubjectsToApartados();
+  }
+
   // Perfil
   const isGuest = localStorage.getItem('academia_guest_mode') === '1';
   if (!State.settings.profile || !State.settings.profile.name) {
@@ -722,15 +737,5 @@ function continueInit(auth) {
     event.preventDefault?.();
   });
 
-  // Prevent default back behavior on mobile
-  window.addEventListener('beforeunload', (e) => {
-    const now = Date.now();
-    if (now - _backButtonExitTs < _EXIT_DOUBLE_TAP_MS) {
-      // Allow exit if double-tapped
-      return;
-    }
-    // Prevent accidental exits
-    e.preventDefault();
-    e.returnValue = '';
-  });
+  // Note: beforeunload handler removed to prevent refresh confirmation dialog
 })();

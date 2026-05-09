@@ -23,13 +23,14 @@ function _renderMaterias() {
   const grid = _el('materias-grid');
   if (!grid) return;
   grid.classList.remove('skeleton-loading');
-  const roots = State.materias.filter(m => !m.parentId);
+  const roots = State.materias.filter(m => m && !m.parentId);
   let html = '';
 
   roots.forEach(m => {
+    if (!m) return;
     const t        = calcTotal(m.id);
     const pts      = t ? t.total.toFixed(1) : '—';
-    const maxPts   = m.zones.reduce((a,z) => a+z.maxPts, 0);
+    const maxPts   = (m.zones || []).reduce((a,z) => a+(z.maxPts||0), 0);
     const pct      = t ? t.pct : 0;
     const pend     = State.tasks.filter(x => x.matId===m.id && !x.done).length;
     const sc       = t ? (t.total>=min?'#4ade80':t.total>=min*.8?'#fbbf24':'#f87171') : '#5a5a72';
@@ -289,10 +290,11 @@ function _renderGradeCards() {
   if (!grid) return;
   const min = parseFloat(document.getElementById('min-grade')?.value) || State.settings.minGrade;
   const USAC_GANADA = 61;
-  grid.innerHTML = State.materias.map(mat => {
+  grid.innerHTML = State.materias.filter(m => m).map(mat => {
+    if (!mat) return '';
     const t = calcTotal(mat.id);
     const total = t ? t.total : 0;
-    const maxT = mat.zones.reduce((a,z) => a+z.maxPts, 0);
+    const maxT = (mat.zones || []).reduce((a,z) => a+(z.maxPts||0), 0);
     const pct = t ? t.pct : 0;
     const isGanada = t && total >= USAC_GANADA;
     const sc = !t ? '#5a5a72' : isGanada ? '#4ade80' : total >= min ? '#4ade80' : total >= min*.8 ? '#fbbf24' : '#f87171';

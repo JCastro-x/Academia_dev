@@ -153,12 +153,28 @@
     <div class="form-group"><label class="form-label">Título</label>
       <input type="text" class="form-input" id="ev-title" placeholder="Ej: Parcial 1 — Física I" autocomplete="off"></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="ev-mat" autocomplete="off"></select></div>
+      <div class="form-group"><label class="form-label">Materia</label><select class="form-select" id="ev-mat" autocomplete="off"><option value="">Selecciona una materia</option></select></div>
       <div class="form-group"><label class="form-label">Tipo</label>
         <select class="form-select" id="ev-type">
-          <option>Parcial</option><option>Lab</option><option>Entrega</option><option>Taller</option>
-          <option>Final</option><option>Quiz</option><option>Otro</option>
+          <option value="Otro">Otro</option><option value="Parcial">Parcial</option><option value="Lab">Lab</option><option value="Entrega">Entrega</option><option value="Taller">Taller</option>
+          <option value="Final">Final</option><option value="Quiz">Quiz</option>
         </select>
+      </div>
+    </div>
+    <!-- Exam configuration section (shown when type is Parcial) -->
+    <div id="ev-exam-section" style="display:none;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;background:var(--surface2);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <input type="checkbox" id="ev-is-exam" style="width:18px;height:18px;cursor:pointer;">
+        <label for="ev-is-exam" style="cursor:pointer;font-weight:600;color:var(--text);">📚 Este evento es un examen de parcial (para repasos)</label>
+      </div>
+      <div id="ev-apartado-container" style="display:none;">
+        <label class="form-label">Selecciona el parcial:</label>
+        <select class="form-select" id="ev-apartado">
+          <option value="">Selecciona un parcial</option>
+        </select>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;">
+          💡 Al guardar, se programarán automáticamente los repasos de los temas de este parcial hasta esta fecha.
+        </div>
       </div>
     </div>
     <div class="form-row">
@@ -182,11 +198,10 @@
     <div class="modal-title">📖 Registrar Tema de Clase</div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Materia</label>
-        <select class="form-select" id="tp-mat" data-action="update-exam-date-selector"></select></div>
-      <div class="form-group"><label class="form-label">Parcial</label>
-        <select class="form-select" id="tp-parcial" data-action="update-exam-date-selector">
-          <option value="1">Parcial 1</option><option value="2">Parcial 2</option>
-          <option value="3">Parcial 3</option><option value="final">Final</option>
+        <select class="form-select" id="tp-mat" data-action="update-apartado-selector"></select></div>
+      <div class="form-group"><label class="form-label">Apartado</label>
+        <select class="form-select" id="tp-apartado" data-action="update-exam-date-selector" disabled>
+          <option value="">Selecciona materia primero</option>
         </select></div>
     </div>
     <div class="form-row">
@@ -215,7 +230,7 @@
     </div>
     <div class="form-actions">
       <button class="btn btn-ghost" data-action="close-modal" data-target="modal-topic">Cancelar</button>
-      <button class="btn btn-primary" data-action="save-topic">💾 Guardar Tema</button>
+      <button class="btn btn-primary" onclick="saveTopic()">💾 Guardar Tema</button>
     </div>
   </div>
 </div>

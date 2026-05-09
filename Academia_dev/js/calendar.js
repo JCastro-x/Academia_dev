@@ -41,10 +41,17 @@ function _renderCalendar() {
     const de   = State.events.filter(e => e.date === ds);
     const dt   = State.tasks.filter(t => t.due === ds && !t.done);
     const total = de.length + dt.length;
+    
+    // Check if any event is a Parcial/Final (exam day)
+    const hasExam = de.some(e => e.type === 'Parcial' || e.type === 'Final');
 
     const eventsHtml = de.slice(0, 2).map(e => {
       const m = getMat(e.matId);
-      return `<div class="cal-event" style="background:${m.color||'#7c6aff'}2a;color:${m.color||'#7c6aff'};border-left:2px solid ${m.color||'#7c6aff'};" title="${e.title}">${e.title}</div>`;
+      // Use red color for Parcial/Final events, otherwise use materia color
+      const isExamEvent = e.type === 'Parcial' || e.type === 'Final';
+      const eventColor = isExamEvent ? '#f87171' : (m?.color || '#7c6aff');
+      const bgStyle = isExamEvent ? 'background:#f8717122;' : `background:${eventColor}2a;`;
+      return `<div class="cal-event" style="${bgStyle}color:${eventColor};border-left:2px solid ${eventColor};font-weight:${isExamEvent?'700':'500'};" title="${e.title}${isExamEvent?' (EXAMEN)':''}">${isExamEvent?'🎯 ':''}${e.title}</div>`;
     }).join('');
 
     const tasksHtml = de.length < 2 ? dt.slice(0, 2-de.length).map(t => {
@@ -59,6 +66,7 @@ function _renderCalendar() {
     else if (isPast) cellClass += ' past';
     if (d === 1) cellClass += ' first-day';
     if (d === daysInMonth) cellClass += ' last-day';
+    if (hasExam) cellClass += ' exam-day';
 
     html += `<div class="${cellClass}" data-action="cal-day-click" data-date="${ds}">
       <div class="cal-num">${d}</div>
@@ -87,11 +95,15 @@ function _renderCalendar() {
       else if (dLeft<=7)  { cdClass='warn';   cdText=`${dLeft} días`; }
       else                { cdClass='ok';     cdText=`${dLeft} días`; }
       const countdownBadge = `<span class="ev-countdown-badge ${cdClass}">${cdText}</span>`;
+      // Check if this is an exam event
+      const isExamEvent = e.type === 'Parcial' || e.type === 'Final';
+      const examBadge = isExamEvent ? `<span style="background:#f87171;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-left:6px;">🎯 EXAMEN</span>` : '';
+      const eventColor = isExamEvent ? '#f87171' : (m?.color || '#7c6aff');
       return `<div class="task-item" style="align-items:center;">
-        <div style="width:9px;height:9px;border-radius:50%;background:${m.color||'#7c6aff'};flex-shrink:0;margin-top:0;"></div>
+        <div style="width:9px;height:9px;border-radius:50%;background:${eventColor};flex-shrink:0;margin-top:0;"></div>
         <div style="flex:1;">
-          <div style="font-size:13.5px;font-weight:600;">${e.title}${countdownBadge}</div>
-          <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.name||''} · ${fmtD(e.date)}${e.hora?' · '+e.hora:''}${e.horaEnd?' - '+e.horaEnd:''}${e.desc?' · '+e.desc:''}</div>
+          <div style="font-size:13.5px;font-weight:600;">${e.title}${examBadge}${countdownBadge}</div>
+          <div style="font-size:11px;color:var(--text3);">${m?.icon||'📚'} ${m?.name||'Sin materia'} · ${fmtD(e.date)}${e.hora?' · '+e.hora:''}${e.horaEnd?' - '+e.horaEnd:''}${e.desc?' · '+e.desc:''}</div>
         </div>
         <span class="type-badge ${getTypeBadgeClass(e.type)}">${e.type||''}</span>
         <button class="btn btn-ghost btn-sm" data-action="edit-event" data-id="${e.id}">✏️</button>
@@ -291,12 +303,36 @@ function editEvent(id) {
   // Llenar el modal de evento con los datos del evento
   fillMatSels();
   document.getElementById('ev-title').value = event.title;
-  document.getElementById('ev-mat').value = event.matId;
-  document.getElementById('ev-type').value = event.type || 'Parcial';
+  document.getElementById('ev-mat').value = event.matId || '';
+  document.getElementById('ev-type').value = event.type || 'Otro';
   document.getElementById('ev-date').value = event.date;
   document.getElementById('ev-time').value = event.hora || '';
   document.getElementById('ev-time-end').value = event.horaEnd || '';
   document.getElementById('ev-desc').value = event.desc || '';
+  
+  // Setup listeners first
+  setupEventModalListeners();
+  
+  // Load exam configuration
+  const isExam = event.isExam || false;
+  const examSection = document.getElementById('ev-exam-section');
+  const isExamCb = document.getElementById('ev-is-exam');
+  
+  if (event.type === 'Parcial' || event.type === 'Final') {
+    examSection.style.display = 'block';
+    isExamCb.checked = isExam;
+    if (isExam) {
+      document.getElementById('ev-apartado-container').style.display = 'block';
+      fillEventApartadoSel();
+      document.getElementById('ev-apartado').value = event.apartadoKey || '';
+    } else {
+      document.getElementById('ev-apartado-container').style.display = 'none';
+    }
+  } else {
+    examSection.style.display = 'none';
+    isExamCb.checked = false;
+    document.getElementById('ev-apartado-container').style.display = 'none';
+  }
   
   // Guardar el ID del evento que se está editando
   document.getElementById('modal-event').dataset.editingId = id;
@@ -313,6 +349,16 @@ function openEventModal() {
   document.getElementById('ev-date').value = '';
   document.getElementById('ev-time').value = '';
   document.getElementById('ev-time-end').value = '';
+  document.getElementById('ev-type').value = 'Otro';
+  
+  // Reset exam configuration
+  document.getElementById('ev-is-exam').checked = false;
+  document.getElementById('ev-exam-section').style.display = 'none';
+  document.getElementById('ev-apartado-container').style.display = 'none';
+  document.getElementById('ev-apartado').innerHTML = '<option value="">Selecciona un parcial</option>';
+  
+  // Setup event listeners for exam configuration
+  setupEventModalListeners();
   
   // Limpiar el ID de edición y restaurar el título
   delete document.getElementById('modal-event').dataset.editingId;
@@ -320,11 +366,96 @@ function openEventModal() {
   
   document.getElementById('modal-event').classList.add('open');
 }
+
+// Setup event listeners for exam configuration section
+function setupEventModalListeners() {
+  // Type change - show/hide exam section
+  const typeSel = document.getElementById('ev-type');
+  const examSection = document.getElementById('ev-exam-section');
+  
+  typeSel.onchange = function() {
+    if (this.value === 'Parcial' || this.value === 'Final') {
+      examSection.style.display = 'block';
+    } else {
+      examSection.style.display = 'none';
+      document.getElementById('ev-is-exam').checked = false;
+      document.getElementById('ev-apartado-container').style.display = 'none';
+    }
+  };
+  
+  // Checkbox change - show/hide apartado selector
+  const isExamCb = document.getElementById('ev-is-exam');
+  isExamCb.onchange = function() {
+    document.getElementById('ev-apartado-container').style.display = this.checked ? 'block' : 'none';
+    if (this.checked) {
+      fillEventApartadoSel();
+    }
+  };
+  
+  // Materia change - update apartados
+  const matSel = document.getElementById('ev-mat');
+  matSel.onchange = function() {
+    if (document.getElementById('ev-is-exam').checked) {
+      fillEventApartadoSel();
+    }
+  };
+}
+
+// Fill apartado selector for event modal
+function fillEventApartadoSel() {
+  const sel = document.getElementById('ev-apartado');
+  const matId = document.getElementById('ev-mat')?.value;
+  
+  if (!sel) return;
+  
+  if (!matId) {
+    sel.innerHTML = '<option value="">Selecciona una materia primero</option>';
+    return;
+  }
+  
+  const mat = getMat(matId);
+  if (!mat || !mat.apartados) {
+    sel.innerHTML = '<option value="">Sin apartados</option>';
+    return;
+  }
+  
+  // Filter only parcial apartados
+  const parciales = mat.apartados.filter(a => a.tipo === 'parcial');
+  if (parciales.length === 0) {
+    sel.innerHTML = '<option value="">Sin parciales configurados</option>';
+    return;
+  }
+  
+  sel.innerHTML = '<option value="">Selecciona un parcial</option>' + 
+    parciales.sort((a, b) => (a.orden || 0) - (b.orden || 0)).map(ap => 
+      `<option value="${ap.parcialKey || ap.id}">${ap.nombre}</option>`
+    ).join('');
+}
 function saveEvent() {
   const title = document.getElementById('ev-title').value.trim();
   if (!title) return;
   
   const editingId = document.getElementById('modal-event').dataset.editingId;
+  const matId = document.getElementById('ev-mat').value;
+  const type = document.getElementById('ev-type').value;
+  const date = document.getElementById('ev-date').value;
+  const isExam = document.getElementById('ev-is-exam')?.checked || false;
+  const apartadoKey = document.getElementById('ev-apartado')?.value || '';
+  
+  // If marked as exam, save the exam date for the parcial
+  if (isExam && matId && apartadoKey && date) {
+    const sem = State._activeSem;
+    if (sem) {
+      if (!sem.examDates) sem.examDates = {};
+      sem.examDates[`${matId}__${apartadoKey}`] = date;
+      saveState(['semestres']);
+      
+      // Trigger reschedule of topics for this parcial
+      if (typeof PLANNER !== 'undefined' && PLANNER.rescheduleAll) {
+        setTimeout(() => PLANNER.rescheduleAll(), 100);
+      }
+    }
+  }
   
   if (editingId) {
     // Modo edición: actualizar evento existente
@@ -333,24 +464,28 @@ function saveEvent() {
       State.events[eventIndex] = {
         ...State.events[eventIndex],
         title,
-        matId: document.getElementById('ev-mat').value,
-        type:  document.getElementById('ev-type').value,
-        date:  document.getElementById('ev-date').value,
-        hora:  document.getElementById('ev-time').value,
+        matId: matId,
+        type: type,
+        date: date,
+        hora: document.getElementById('ev-time').value,
         horaEnd: document.getElementById('ev-time-end').value,
-        desc:  document.getElementById('ev-desc').value,
+        desc: document.getElementById('ev-desc').value,
+        isExam: isExam,
+        apartadoKey: apartadoKey,
       };
     }
   } else {
     // Modo creación: agregar nuevo evento
     State.events.push({
       id: Date.now().toString(), title,
-      matId: document.getElementById('ev-mat').value,
-      type:  document.getElementById('ev-type').value,
-      date:  document.getElementById('ev-date').value,
-      hora:  document.getElementById('ev-time').value,
+      matId: matId,
+      type: type,
+      date: date,
+      hora: document.getElementById('ev-time').value,
       horaEnd: document.getElementById('ev-time-end').value,
-      desc:  document.getElementById('ev-desc').value,
+      desc: document.getElementById('ev-desc').value,
+      isExam: isExam,
+      apartadoKey: apartadoKey,
     });
   }
   

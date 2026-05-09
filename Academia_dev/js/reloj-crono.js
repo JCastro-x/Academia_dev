@@ -16,7 +16,7 @@
 
   // Inicializar datos del cronómetro
   window.initChronoData = function() {
-    if (!State.settings.chronoData) {
+    if (!State.settings.chronoData || typeof State.settings.chronoData !== 'object') {
       State.settings.chronoData = {
         sessions: [],
         lastSession: null
@@ -170,6 +170,11 @@
     initChronoData();
     const container = document.getElementById('chrono-sessions');
     if (!container) return;
+    
+    // Ensure sessions is an array
+    if (!State.settings.chronoData.sessions || !Array.isArray(State.settings.chronoData.sessions)) {
+      State.settings.chronoData.sessions = [];
+    }
     
     const sessions = State.settings.chronoData.sessions.slice(0, 10);
     

@@ -50,10 +50,11 @@ function parseCredits(credStr) {
 function calcSemesterGPA(semId) {
   const sem = State.semestres.find(s => s.id === semId) || State._activeSem;
   const min = State.settings.minGrade || 70;
-  const roots = sem.materias.filter(m => !m.parentId);
+  const roots = (sem.materias || []).filter(m => m && !m.parentId);
 
   let weightedSum = 0, totalCred = 0, creditosAprobados = 0;
   const materiaStats = roots.map(m => {
+    if (!m) return null;
     const cred = parseCredits(m.credits);
 
     const savedActive = State.semestres.find(s => s.activo);
@@ -64,7 +65,7 @@ function calcSemesterGPA(semId) {
       m.zones.forEach(z => {
         if (z.isLabZone) {
 
-          const lab = sem.materias.find(x => x.id === m.linkedLabId);
+          const lab = (sem.materias || []).find(x => x && x.id === m.linkedLabId);
           if (lab) {
             let labGrade = mGrades[lab.id]?.nota ?? '';
             if (labGrade === '' && lab.zones?.[0]?.subs?.[0])
@@ -249,7 +250,11 @@ const PAGE_TITLES = {
   temas:'Temas del Curso', estadisticas:'Estadísticas', pomodoro:'Pomodoro',
   semestres:'Semestres', horario:'Mi Horario', notas:'Bloc de Notas',
   perfil:'Mi Perfil Académico', general:'General',
-  flashcards:'Flashcards'
+  flashcards:'Flashcards',
+  'p-reloj':'Reloj',
+  'p-reloj-pomodoro':'Pomodoro',
+  'p-reloj-crono':'Cronómetro',
+  'p-reloj-timer':'Temporizador'
 };
 
 // ══════════════════════════════════════════════════════════════

@@ -16,11 +16,15 @@
 
   // Inicializar datos del temporizador
   window.initTimerData = function() {
-    if (!State.settings.timerData) {
+    if (!State.settings.timerData || typeof State.settings.timerData !== 'object') {
       State.settings.timerData = {
         history: [],
         lastDuration: null
       };
+    }
+    // Ensure history is always an array
+    if (!State.settings.timerData.history || !Array.isArray(State.settings.timerData.history)) {
+      State.settings.timerData.history = [];
     }
   };
 
@@ -306,6 +310,11 @@
     initTimerData();
     const container = document.getElementById('timer-history-list');
     if (!container) return;
+    
+    // Ensure history is an array
+    if (!State.settings.timerData.history || !Array.isArray(State.settings.timerData.history)) {
+      State.settings.timerData.history = [];
+    }
     
     const history = State.settings.timerData.history.slice(0, 10);
     

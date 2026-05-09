@@ -292,6 +292,57 @@ async function deleteClass(matId) {
   }
 }
 
+// Helper function to generate UUID using crypto API
+function generateUUID() {
+  if (typeof self.crypto !== 'undefined' && self.crypto.randomUUID) {
+    return self.crypto.randomUUID();
+  }
+  // Fallback for older browsers
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// Helper function to generate default apartados (parciales) for a subject
+function generateDefaultApartados() {
+  const parcials = [
+    { key: '1', label: 'Parcial 1' },
+    { key: '2', label: 'Parcial 2' },
+    { key: '3', label: 'Parcial 3' },
+    { key: 'final', label: 'Final' }
+  ];
+  return parcials.map((p, idx) => ({
+    id: generateUUID(),
+    nombre: p.label,
+    tipo: 'parcial',
+    parcialKey: p.key,
+    orden: idx
+  }));
+}
+
+// Migration function: Add apartados to existing subjects that don't have them
+function migrateSubjectsToApartados() {
+  // First, clean up any null/undefined entries in materias array
+  if (State.materias.some(m => !m)) {
+    State.materias = State.materias.filter(m => m);
+    saveState(['materias']);
+    console.log('[MIGRATION] Cleaned up null entries from materias array');
+  }
+  
+  let migrated = false;
+  State.materias.forEach(mat => {
+    if (!mat.apartados || !Array.isArray(mat.apartados) || mat.apartados.length === 0) {
+      mat.apartados = generateDefaultApartados();
+      migrated = true;
+    }
+  });
+  if (migrated) {
+    saveState(['materias']);
+    console.log('[MIGRATION] Migrated subjects to include apartados array');
+  }
+}
+
 function saveNewClass() {
   const name = document.getElementById('nc-name').value.trim();
   const code = document.getElementById('nc-code').value.trim();
@@ -318,12 +369,13 @@ function saveNewClass() {
   });
   if (!zones.length) { if (typeof _appNotify === 'function') _appNotify('Agrega al menos una zona de calificación.', 'warning'); return; }
 
-  const newId  = 'mat_' + Date.now();
+  const newId  = generateUUID();
   const ncDias = Array.from(document.querySelectorAll('#nc-dias-checks input[type=checkbox]:checked')).map(cb=>cb.value).join(', ');
   const newMat = { id:newId, name, code, color:window.newColorSel, icon:window.newIconSel, credits, zones,
     seccion: document.getElementById('nc-seccion')?.value.trim() || '',
     catedratico: document.getElementById('nc-catedratico')?.value.trim() || '',
-    dias: ncDias, horario: document.getElementById('nc-horario')?.value.trim() || '' };
+    dias: ncDias, horario: document.getElementById('nc-horario')?.value.trim() || '',
+    apartados: generateDefaultApartados() };
 
   if (parentId) {
     newMat.parentId = parentId; newMat.labScale = 100; newMat.labMaxPts = 10;
@@ -333,10 +385,6 @@ function saveNewClass() {
     const pidx = State.materias.findIndex(m => m.id === parentId);
     if (pidx >= 0) {
       State.materias[pidx].linkedLabId = newId; State.materias[pidx].labMaxPts = 10; State.materias[pidx].labScale = 100;
-      if (!State.materias[pidx].zones.some(z => z.isLabZone)) {
-        State.materias[pidx].zones.push({ key:'lab', label:'Laboratorio (auto)', maxPts:10, color:newMat.color, isLabZone:true,
-          subs:[{key:'lab', label:name+' (enlazado)', maxPts:10}] });
-      }
     }
   }
   State.materias.push(newMat);
@@ -352,8 +400,6 @@ function saveNewClass() {
       zones:[{ key:'g', label:`Calificación (/${labScale})`, maxPts:labScale, color:'#4ade80',
         subs:[{key:'nota', label:'Nota General', maxPts:labScale}] }] });
     newMat.linkedLabId = labId; newMat.labMaxPts = labPts; newMat.labScale = labScale;
-    newMat.zones.push({ key:'lab', label:'Laboratorio (auto)', maxPts:labPts, color:'#4ade80', isLabZone:true,
-      subs:[{key:'lab', label:labName+' (enlazado)', maxPts:labPts}] });
   }
 
   saveState(['materias']);
@@ -446,9 +492,7 @@ function saveEditClassFromCreate() {
   closeModal('modal-addclass');
   window._editClassMatId = null;
   const titleEl = document.querySelector('#modal-addclass .modal-title');
-  const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
   if (titleEl) titleEl.textContent = '📚 Nueva Clase';
-  if (saveBtn) { saveBtn.onclick = saveNewClass; saveBtn.textContent = '💾 Crear Clase'; }
   window.dispatchEvent(new CustomEvent('subject:updated', { detail: { id: mat.id, name: mat.name } }));
 }
 
@@ -551,3 +595,6 @@ window.saveConfigModal      = saveConfigModal;
 window._gradesDetailMatId   = _gradesDetailMatId;
 window.gradesShowIndex      = gradesShowIndex;
 window.openGradesForMat     = openGradesForMat;
+window.generateUUID         = generateUUID;
+window.generateDefaultApartados = generateDefaultApartados;
+window.migrateSubjectsToApartados = migrateSubjectsToApartados;

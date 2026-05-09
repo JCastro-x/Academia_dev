@@ -487,6 +487,24 @@ body::before {
 .cal-cell.last-day { background:rgba(34,197,94,.18); border:1px solid rgba(34,197,94,.5); box-shadow:0 0 12px rgba(34,197,94,.25); }
 .cal-cell.last-day .cal-num { color:#22c55e; font-weight:800; }
 .cal-cell.empty { background:transparent; border-color:transparent; cursor:default; }
+
+/* Día de examen - fondo rojo difuminado */
+.cal-cell.exam-day { 
+  background: linear-gradient(135deg, rgba(248,113,113,.25) 0%, rgba(248,113,113,.08) 100%); 
+  border: 1px solid rgba(248,113,113,.5); 
+  box-shadow: 0 0 16px rgba(248,113,113,.3), inset 0 0 20px rgba(248,113,113,.1);
+}
+.cal-cell.exam-day .cal-num { 
+  color: #f87171; 
+  font-weight: 800;
+  background: rgba(248,113,113,.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.cal-cell.exam-day:hover { 
+  border-color: rgba(248,113,113,.8); 
+  box-shadow: 0 0 20px rgba(248,113,113,.4), inset 0 0 24px rgba(248,113,113,.15);
+}
 .cal-num   { font-size:11px; font-family:'Space Mono',monospace; color:var(--text2); margin-bottom:3px; }
 .ev-countdown-badge { display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-family:'Space Mono',monospace; font-weight:800; padding:4px 10px; border-radius:12px; margin-left:6px; vertical-align:middle; letter-spacing:.4px; }
 .ev-countdown-badge.urgent { background:rgba(248,113,113,.25); color:#f87171; border:1px solid rgba(248,113,113,.5); box-shadow:0 0 8px rgba(248,113,113,.2); }

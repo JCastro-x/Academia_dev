@@ -223,21 +223,26 @@ async function goPage(id, el, context = null) {
 }
 
 function fillMatSels() {
-  const targets = ['t-mat','ev-mat','tp-mat','tf-mat'];
+  const targets = ['t-mat','ev-mat','tp-mat'];
+  // Filter out null/undefined materias and those with undefined ids
+  const validMaterias = State.materias.filter(m => m && m.id && m.id !== 'undefined');
   targets.forEach(id => {
     const el = document.getElementById(id); if (!el) return;
     const prev = el.value;
-    el.innerHTML = '';
-    State.materias.forEach(m => {
+    el.innerHTML = '<option value="">Selecciona una materia</option>';
+    validMaterias.forEach(m => {
       const o = document.createElement('option'); o.value = m.id;
       o.textContent = `${m.icon||'📚'} ${m.name}`; el.appendChild(o);
     });
-    if (prev) el.value = prev;
+    // Only restore previous value if it exists and is valid
+    if (prev && prev !== '' && validMaterias.some(m => m.id === prev)) {
+      el.value = prev;
+    }
   });
   const tf = document.getElementById('tf-mat');
   if (tf) {
     tf.innerHTML = '<option value="">Todas las materias</option>';
-    State.materias.forEach(m => {
+    validMaterias.forEach(m => {
       const o = document.createElement('option'); o.value = m.id;
       o.textContent = `${m.icon||'📚'} ${m.name}`; tf.appendChild(o);
     });

@@ -6,10 +6,11 @@ if (typeof window.renderStats !== 'function') {
 
   const ctx1 = document.getElementById('chart-grades');
   if (!ctx1) return;
-  const labels  = State.materias.map(m => m.code);
-  const data    = State.materias.map(m => { const t = calcTotal(m.id); return t ? parseFloat(t.total.toFixed(1)) : 0; });
-  const maxVals = State.materias.map(m => m.zones.reduce((a,z)=>a+z.maxPts,0));
-  const colors  = State.materias.map(m => m.color);
+  const validMats = State.materias.filter(m => m);
+  const labels  = validMats.map(m => m.code);
+  const data    = validMats.map(m => { const t = calcTotal(m.id); return t ? parseFloat(t.total.toFixed(1)) : 0; });
+  const maxVals = validMats.map(m => (m.zones || []).reduce((a,z)=>a+(z.maxPts||0),0));
+  const colors  = validMats.map(m => m.color);
 
   const canvas = ctx1;
   const width = canvas.clientWidth || canvas.parentElement?.clientWidth || 0;

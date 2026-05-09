@@ -1012,6 +1012,87 @@
   hyphens: auto;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   TEMAS NAVIGATION STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Top bar - similar to notes */
+.temas-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  padding: 0 4px;
+}
+
+.temas-top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.temas-page-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.temas-btn-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Materia cards in hub view */
+.temas-materia-card {
+  transition: all 0.2s ease;
+  min-height: 80px;
+}
+
+.temas-materia-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.temas-materia-card:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Apartado cards in materia view */
+.temas-apartado-card {
+  transition: all 0.2s ease;
+  min-height: 90px;
+}
+
+.temas-apartado-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent);
+}
+
+.temas-apartado-card:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Safe Areas for mobile */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .temas-top-bar {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  #page-temas {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* Ensure flex containers wrap on mobile */
 @media (max-width: 768px) {
   .task-item {
@@ -1047,6 +1128,32 @@
   
   .pom-streak-grid {
     grid-template-columns: 1fr;
+  }
+  
+  /* Temas mobile adjustments */
+  .temas-top-bar {
+    margin-bottom: 12px;
+  }
+  
+  .temas-page-title {
+    font-size: 14px;
+  }
+  
+  .temas-materia-card,
+  .temas-apartado-card {
+    padding: 14px;
+    min-height: 70px;
+  }
+  
+  .temas-materia-card > div > div > div:first-child,
+  .temas-apartado-card > div > div > div:first-child {
+    font-size: 14px;
+  }
+  
+  #temas-hub-grid,
+  #temas-materia-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   
   .pom-quick-stats {

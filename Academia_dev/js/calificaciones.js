@@ -42,14 +42,9 @@ function _updateGradeSummary(matId) {
   const minG = parseFloat(document.getElementById('min-grade')?.value) || 70;
 
   let grandTotal = 0, grandMax = 0, anyFilled = false;
+  let labMaxPts = mat.labMaxPts || 0;
 
   mat.zones.forEach(z => {
-    if (z.isLabZone) {
-      const ld = getLabNetPts(mat);
-      if (ld) { grandTotal += Math.min(ld.netPts, z.maxPts); anyFilled = true; }
-      grandMax += z.maxPts;
-      return;
-    }
     let zTotal = 0, zAny = false;
     z.subs.forEach(s => {
       const v = getG(matId, s.key);
@@ -65,6 +60,13 @@ function _updateGradeSummary(matId) {
         <span style="font-family:'Space Mono',monospace;font-size:14px;font-weight:800;color:${c};">${zTotal.toFixed(2)} / ${z.maxPts} pts</span>`;
     }
   });
+
+  // Incluir puntos del lab en el resumen
+  if (mat.linkedLabId) {
+    const ld = getLabNetPts(mat);
+    if (ld) { grandTotal += Math.min(ld.netPts, labMaxPts); anyFilled = true; }
+    grandMax += labMaxPts;
+  }
 
   const totEl = document.querySelector(`[data-mat-total="${matId}"]`);
   if (totEl && anyFilled) {
@@ -96,19 +98,23 @@ function calcTotal(matId) {
   const mat = getMat(matId);
   if (!mat.zones) return null;
   let total = 0, filled = 0;
+  let labMaxPts = mat.labMaxPts || 0;
+
   mat.zones.forEach(z => {
-    if (z.isLabZone) {
-      const ld = getLabNetPts(mat);
-      if (ld) { total += Math.min(ld.netPts, z.maxPts); filled++; }
-    } else {
-      z.subs.forEach(s => {
-        const v = getG(matId, s.key);
-        if (v !== '') { total += Math.min(pctToNet(v, s.maxPts), s.maxPts); filled++; }
-      });
-    }
+    z.subs.forEach(s => {
+      const v = getG(matId, s.key);
+      if (v !== '') { total += Math.min(pctToNet(v, s.maxPts), s.maxPts); filled++; }
+    });
   });
+
+  // Sumar puntos del lab si existe
+  if (mat.linkedLabId) {
+    const ld = getLabNetPts(mat);
+    if (ld) { total += Math.min(ld.netPts, labMaxPts); filled++; }
+  }
+
   if (!filled) return null;
-  const maxTotal = mat.zones.reduce((a, z) => a + z.maxPts, 0);
+  const maxTotal = mat.zones.reduce((a, z) => a + z.maxPts, 0) + labMaxPts;
   return { total, maxTotal, pct: total / maxTotal * 100 };
 }
 
@@ -116,22 +122,26 @@ function calcProjected(matId) {
   const mat = getMat(matId);
   if (!mat.zones) return null;
   let earned = 0, potential = 0, filledPts = 0;
+  let labMaxPts = mat.labMaxPts || 0;
+
   mat.zones.forEach(z => {
-    if (z.isLabZone) {
-      const ld = getLabNetPts(mat);
-      if (ld) { earned += ld.netPts; filledPts += z.maxPts; }
-      potential += z.maxPts;
-    } else {
-      z.subs.forEach(s => {
-        const v = getG(matId, s.key);
-        if (v !== '') {
-          const net = Math.min(pctToNet(v, s.maxPts), s.maxPts);
-          earned += net; filledPts += s.maxPts;
-        }
-        potential += s.maxPts;
-      });
-    }
+    z.subs.forEach(s => {
+      const v = getG(matId, s.key);
+      if (v !== '') {
+        const net = Math.min(pctToNet(v, s.maxPts), s.maxPts);
+        earned += net; filledPts += s.maxPts;
+      }
+      potential += s.maxPts;
+    });
   });
+
+  // Incluir lab en el cálculo proyectado
+  if (mat.linkedLabId) {
+    const ld = getLabNetPts(mat);
+    if (ld) { earned += ld.netPts; filledPts += labMaxPts; }
+    potential += labMaxPts;
+  }
+
   if (!filledPts) return null;
   const avgRate = earned / filledPts;
   const remaining = potential - filledPts;
@@ -142,19 +152,23 @@ function calcMinNeeded(matId, targetPts) {
   const mat = getMat(matId);
   if (!mat.zones) return null;
   let earned = 0, remainingMax = 0;
+  let labMaxPts = mat.labMaxPts || 0;
+
   mat.zones.forEach(z => {
-    if (z.isLabZone) {
-      const ld = getLabNetPts(mat);
-      if (ld) earned += ld.netPts;
-      else remainingMax += z.maxPts;
-    } else {
-      z.subs.forEach(s => {
-        const v = getG(matId, s.key);
-        if (v !== '') earned += Math.min(pctToNet(v, s.maxPts), s.maxPts);
-        else remainingMax += s.maxPts;
-      });
-    }
+    z.subs.forEach(s => {
+      const v = getG(matId, s.key);
+      if (v !== '') earned += Math.min(pctToNet(v, s.maxPts), s.maxPts);
+      else remainingMax += s.maxPts;
+    });
   });
+
+  // Incluir lab en el cálculo de mínimo necesario
+  if (mat.linkedLabId) {
+    const ld = getLabNetPts(mat);
+    if (ld) earned += ld.netPts;
+    else remainingMax += labMaxPts;
+  }
+
   if (remainingMax === 0) return null;
   const needed = targetPts - earned;
   return { needed, remainingMax, pct: (needed / remainingMax) * 100 };
@@ -387,8 +401,7 @@ function _renderGrades() {
     let ph = `<div style="font-size:9px;font-family:'Space Mono',monospace;color:var(--text3);letter-spacing:1px;margin-bottom:12px;text-transform:uppercase;">📊 Resumen</div>`;
     mat.zones.forEach(z => {
       let zNet = 0, zAny = false;
-      if (z.isLabZone) { const ld = getLabNetPts(mat); if (ld) { zNet = ld.netPts; zAny = true; } }
-      else { z.subs.forEach(s => { const v = getG(mat.id, s.key); if (v !== '') { zNet += Math.min(pctToNet(v,s.maxPts),s.maxPts); zAny = true; } }); }
+      z.subs.forEach(s => { const v = getG(mat.id, s.key); if (v !== '') { zNet += Math.min(pctToNet(v,s.maxPts),s.maxPts); zAny = true; } });
       const zPct2 = z.maxPts > 0 ? zNet / z.maxPts * 100 : 0;
       ph += `<div style="display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:7px;">
         <div style="width:8px;height:8px;border-radius:2px;background:${z.color};flex-shrink:0;"></div>
@@ -396,6 +409,23 @@ function _renderGrades() {
         <span style="font-family:'Space Mono',monospace;font-weight:700;color:${zAny ? compColor(zPct2) : '#5a5a72'};">${zAny ? zNet.toFixed(2)+' / '+z.maxPts : '—'}</span>
       </div>`;
     });
+
+    // Incluir lab en el resumen si existe
+    if (mat.linkedLabId) {
+      const lab = getMat(mat.linkedLabId);
+      const labMaxPts = mat.labMaxPts || 0;
+      const ld = getLabNetPts(mat);
+      if (lab) {
+        const zNet = ld ? ld.netPts : 0;
+        const zAny = ld !== null;
+        const zPct2 = labMaxPts > 0 ? zNet / labMaxPts * 100 : 0;
+        ph += `<div style="display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:7px;">
+          <div style="width:8px;height:8px;border-radius:2px;background:#4ade80;flex-shrink:0;"></div>
+          <span style="color:var(--text2);flex:1;">🧪 ${lab.name}</span>
+          <span style="font-family:'Space Mono',monospace;font-weight:700;color:${zAny ? compColor(zPct2) : '#5a5a72'};">${zAny ? zNet.toFixed(2)+' / '+labMaxPts : '—'}</span>
+        </div>`;
+      }
+    }
     ph += `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
       <div style="font-size:9px;font-family:'Space Mono',monospace;color:var(--text3);letter-spacing:1px;margin-bottom:6px;text-transform:uppercase;">Total acumulado</div>
       <div style="font-size:28px;font-weight:800;color:${sc};" data-mat-total="${mat.id}">${t ? total.toFixed(2) : '—'}<span style="font-size:12px;color:var(--text3);"> / ${maxT}</span></div>

@@ -3017,7 +3017,9 @@ function _getProfile() {
 }
 
 function _getApprovedCourses() {
-  if (!State.settings.approvedCourses) State.settings.approvedCourses = [];
+  if (!State.settings.approvedCourses || !Array.isArray(State.settings.approvedCourses)) {
+    State.settings.approvedCourses = [];
+  }
   return State.settings.approvedCourses;
 }
 
