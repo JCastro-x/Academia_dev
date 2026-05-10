@@ -66,19 +66,39 @@
   // Si se proporciona localUpdatedAt, hace preflight check antes de descargar
   // options: { exclude: ['pomData', 'snapshots'], semesterId: 'id' } para cargar solo datos esenciales o un semestre específico
   async function load(localUpdatedAt, options = {}) {
-    if (!_ready) return null;
+    if (!_ready) {
+      console.warn('⚠️ [SYNC] DB no está ready, no se puede cargar');
+      return null;
+    }
 
     // Delegar a Turso si está configurado
     if (_useTurso && window.TursoDB) {
-      return await window.TursoDB.load(localUpdatedAt, options);
+      console.log('🔄 [SYNC] Cargando desde Turso...');
+      try {
+        return await window.TursoDB.load(localUpdatedAt, options);
+      } catch (tursoError) {
+        console.error('❌ [SYNC] Error en Turso, fallback a Supabase:', tursoError);
+        if (typeof _appNotify === 'function') {
+          _appNotify('Error en Turso, usando Supabase...', 'warning');
+        }
+        _useTurso = false; // Desactivar Turso temporalmente
+      }
     }
 
     // Fallback a Supabase
+    console.log('🔄 [SYNC] Cargando desde Supabase...');
+    
     // Preflight: si hay timestamp local, verificar si remoto es más reciente
     if (localUpdatedAt && typeof localUpdatedAt === 'number') {
-      const remoteUpdatedAt = await getRemoteUpdatedAt();
-      if (remoteUpdatedAt && remoteUpdatedAt <= localUpdatedAt) {
-        return null;
+      try {
+        const remoteUpdatedAt = await getRemoteUpdatedAt();
+        if (remoteUpdatedAt && remoteUpdatedAt <= localUpdatedAt) {
+          console.log('✅ [SYNC] Datos locales están actualizados');
+          return null;
+        }
+      } catch (preflightError) {
+        console.warn('⚠️ [SYNC] Error en preflight check:', preflightError);
+        // Continuar con la carga aunque falle el preflight
       }
     }
 
@@ -175,11 +195,24 @@
 
   // ── _doSave(semestres, settings, changedFields, semesterId?) ─────────────────
   async function _doSave(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
-    if (!_ready) return;
+    if (!_ready) {
+      console.warn('⚠️ [SYNC] DB no está ready, no se puede guardar');
+      return;
+    }
 
     // Delegar a Turso si está configurado
     if (_useTurso && window.TursoDB) {
-      return await window.TursoDB._doSave(semestres, settings, changedFields, semesterId);
+      console.log('💾 [SYNC] Guardando en Turso...');
+      try {
+        return await window.TursoDB._doSave(semestres, settings, changedFields, semesterId);
+      } catch (tursoError) {
+        console.error('❌ [SYNC] Error en Turso, fallback a Supabase:', tursoError);
+        if (typeof _appNotify === 'function') {
+          _appNotify('Error en Turso, usando Supabase...', 'warning');
+        }
+        _useTurso = false; // Desactivar Turso temporalmente
+        // Continuar con Supabase
+      }
     }
 
     // Fallback a Supabase

@@ -169,6 +169,14 @@ function init() {
               console.log('✅ [INIT] Semestres rehydrated from remote');
             }
             if (dbData.settings && Object.keys(dbData.settings).length) {
+              // 🔥 FIX: Asegurar que habits siempre sea un array
+              let habitsFixed = false;
+              if (dbData.settings.habits && !Array.isArray(dbData.settings.habits)) {
+                console.warn('⚠️ [INIT] Remote habits is not an array, converting to empty array');
+                dbData.settings.habits = [];
+                habitsFixed = true;
+              }
+              
               const mergedSettings = mergePomData(State.settings, dbData.settings);
               localStorage.setItem('academia_v3_settings', JSON.stringify(mergedSettings));
               // Usar deepMerge para preservar propiedades anidadas
@@ -179,6 +187,17 @@ function init() {
               }
               console.log('✅ [INIT] Settings rehydrated from remote, habits count:', State.settings.habits?.length || 0);
               console.table('📥 [INIT] State.settings.habits after rehydration:', State.settings.habits || []);
+              
+              // 🔥 FIX: Guardar datos corregidos en base de datos remota para evitar warning futuro
+              if (habitsFixed) {
+                console.log('💾 [INIT] Guardando datos corregidos en base de datos remota...');
+                try {
+                  await db.save(State.semestres, State.settings, ['settings']);
+                  console.log('✅ [INIT] Datos corregidos guardados en base de datos remota');
+                } catch (saveError) {
+                  console.error('❌ [INIT] Error guardando datos corregidos:', saveError);
+                }
+              }
             }
           } else {
             console.log('⏭️ Skipping remote sync - local data is more recent');

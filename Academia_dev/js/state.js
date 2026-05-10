@@ -198,17 +198,66 @@ async function compressImage(dataUrl, maxWidth = 1920, quality = 0.5) {
 }
 
 async function idbSetImage(key, dataUrl) {
+  if (!key || !dataUrl) {
+    console.error('❌ [IDB_MANAGER] Error: Key o dataUrl inválidos');
+    return false;
+  }
+
   try {
+    // 🔥 VERIFICAR ESPACIO ANTES DE GUARDAR
+    if ('storage' in navigator && 'estimate' in navigator.storage) {
+      const estimate = await navigator.storage.estimate();
+      if (estimate.usage && estimate.quota) {
+        const usagePercent = (estimate.usage / estimate.quota) * 100;
+        console.log(`💾 [IDB_MANAGER] Espacio usado: ${usagePercent.toFixed(1)}% (${(estimate.usage/1024/1024).toFixed(1)}MB / ${(estimate.quota/1024/1024).toFixed(1)}MB)`);
+        
+        if (usagePercent > 90) {
+          console.warn('⚠️ [IDB_MANAGER] Espacio casi lleno, limpiando imágenes no usadas...');
+          await cleanupUnusedImages();
+        }
+        
+        if (usagePercent > 95) {
+          console.error('❌ [IDB_MANAGER] Espacio insuficiente en IndexedDB');
+          if (typeof _appNotify === 'function') {
+            _appNotify('Espacio de almacenamiento casi lleno. Elimina imágenes antiguas.', 'warning');
+          }
+          return false;
+        }
+      }
+    }
+
     // Comprimir imagen antes de guardar
     const compressed = await compressImage(dataUrl);
+    console.log(`📦 [IDB_MANAGER] Guardando imagen: ${key} (${(compressed.length/1024).toFixed(1)}KB)`);
+    
     const db = await _openIDB();
     return new Promise((res, rej) => {
       const tx = db.transaction('images','readwrite');
-      tx.objectStore('images').put(compressed, key);
-      tx.oncomplete = () => res(true);
-      tx.onerror = () => rej(tx.error);
+      const store = tx.objectStore('images');
+      store.put(compressed, key);
+      
+      tx.oncomplete = () => {
+        console.log(`✅ [IDB_MANAGER] Imagen guardada exitosamente: ${key}`);
+        res(true);
+      };
+      
+      tx.onerror = () => {
+        console.error(`❌ [IDB_MANAGER] Error guardando imagen ${key}:`, tx.error);
+        if (tx.error?.name === 'QuotaExceededError') {
+          if (typeof _appNotify === 'function') {
+            _appNotify('Error: Espacio insuficiente. Elimina imágenes antiguas.', 'error');
+          }
+        }
+        rej(tx.error);
+      };
     });
-  } catch(e) { console.warn('IDB set error', e); return false; }
+  } catch(e) {
+    console.error(`❌ [IDB_MANAGER] Excepción crítica guardando imagen ${key}:`, e);
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error al guardar imagen. Intenta de nuevo.', 'error');
+    }
+    return false;
+  }
 }
 // Placeholder image for missing assets (simple gray square with text)
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzJhMmEzOCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTA5MGE4IiBmb250LXNpemU9IjE0IiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj5JbWFnZW4gbm8gZGlzcG9uaWJsZTwvdGV4dD48L3N2Zz4=';
@@ -709,6 +758,30 @@ window.getNetworkQuality = getNetworkQuality;
 window.getDynamicDebounceDelay = getDynamicDebounceDelay;
 
 function saveState(keys = ['all']) {
+  // 🔥 VALIDACIÓN CRÍTICA antes de guardar
+  if (!State || !State.semestres || !Array.isArray(State.semestres)) {
+    console.error('❌ Estado inválido en saveState - State o semestres corrupto');
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error crítico: Estado corrupto. Recarga la página.', 'error');
+    }
+    return;
+  }
+  
+  // Validar semestre activo
+  const activeSem = State._activeSem;
+  if (!activeSem || !activeSem.id) {
+    console.error('❌ Semestre activo inválido en saveState');
+    // Intentar recuperar semestre activo
+    const validSem = State.semestres.find(s => s && s.id && s.activo);
+    if (validSem) {
+      State._activeSem = validSem;
+      console.log('✅ Semestre activo recuperado:', validSem.id);
+    } else {
+      console.error('❌ No se pudo recuperar semestre activo');
+      return;
+    }
+  }
+  
   window._localModifiedAt = Date.now(); // marcar modificación local
   keys.forEach(k => {
     _pendingKeys.add(k);
@@ -725,7 +798,7 @@ function saveState(keys = ['all']) {
     } else if (k === 'tasks') {
       _changedFields.add('semestres');
     } else if (k === 'events') {
-      _changedFields.add('settings');
+      _changedFields.add('semestres'); // 🔥 FIX: events está en el semestre, no en settings
     }
   });
   clearTimeout(_saveTimer);
@@ -760,7 +833,7 @@ function saveStateNow(keys = ['all']) {
                           keys.includes('semestres') ? ['semestres'] :
                           keys.includes('settings') ? ['settings'] :
                           keys.includes('tasks') ? ['semestres'] :
-                          keys.includes('events') ? ['settings'] :
+                          keys.includes('events') ? ['semestres'] : // 🔥 FIX: events está en el semestre
                           keys.includes('materias') ? ['semestres'] :
                           keys.includes('grades') ? ['semestres'] :
                           keys.includes('topics') ? ['semestres'] : [];

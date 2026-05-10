@@ -392,25 +392,66 @@ function saveTopic() {
     return;
   }
   
-  const mat = getMat(matId);
-  const apartado = mat?.apartados?.find(a => a.id === apartadoId);
-  
-  const newTopic = {
-    id: generateUUID(),
-    matId: matId,
-    apartadoId: apartadoId,
-    name, seen: false, comp: 0, subs
-  };
-  
-  // For backward compatibility, also set parcial if it's a parcial apartado
-  if (apartado && apartado.tipo === 'parcial') {
-    newTopic.parcial = apartado.parcialKey;
+  // 🔥 VALIDACIÓN CRÍTICA de State
+  if (!State || !State.topics || !Array.isArray(State.topics)) {
+    console.error('❌ [TOPICS] Estado inválido - State.topics corrupto');
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error crítico: Estado corrupto. Recarga la página.', 'error');
+    }
+    return;
   }
   
-  State.topics.push(newTopic);
-  saveState(['topics']);
-  closeModal('modal-topic');
-  window.dispatchEvent(new CustomEvent('topic:created', { detail: { name } }));
+  try {
+    const mat = getMat(matId);
+    if (!mat) {
+      console.error('❌ [TOPICS] Materia no encontrada:', matId);
+      if (typeof _appNotify === 'function') {
+        _appNotify('Error: Materia no encontrada.', 'error');
+      }
+      return;
+    }
+    
+    const apartado = mat?.apartados?.find(a => a.id === apartadoId);
+    if (!apartado) {
+      console.error('❌ [TOPICS] Apartado no encontrado:', apartadoId);
+      if (typeof _appNotify === 'function') {
+        _appNotify('Error: Apartado no encontrado.', 'error');
+      }
+      return;
+    }
+    
+    const newTopic = {
+      id: generateUUID(),
+      matId: matId,
+      apartadoId: apartadoId,
+      name, seen: false, comp: 0, subs
+    };
+    
+    // For backward compatibility, also set parcial if it's a parcial apartado
+    if (apartado.tipo === 'parcial') {
+      newTopic.parcial = apartado.parcialKey;
+    }
+    
+    console.log(`📝 [TOPICS] Creando tema: ${name} en materia ${mat.name}`);
+    State.topics.push(newTopic);
+    
+    // 🔥 GUARDAR INMEDIATAMENTE para evitar pérdida
+    if (typeof saveStateNow === 'function') {
+      saveStateNow(['topics']);
+    } else {
+      saveState(['topics']);
+    }
+    
+    closeModal('modal-topic');
+    window.dispatchEvent(new CustomEvent('topic:created', { detail: { name } }));
+    console.log(`✅ [TOPICS] Tema creado exitosamente: ${name}`);
+    
+  } catch (error) {
+    console.error('❌ [TOPICS] Error crítico creando tema:', error);
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error al crear tema. Intenta de nuevo.', 'error');
+    }
+  }
   
   // Refresh current view if in temas
   if (_currentTemasMatId === matId) {

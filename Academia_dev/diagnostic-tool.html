@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔍 Herramienta de Diagnóstico - Academia</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0f0f23;
+  color: #e8e8f0;
+  line-height: 1.6;
+  padding: 20px;
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #2a2a3e;
+}
+h1 {
+  color: #7c6aff;
+  margin-bottom: 24px;
+  font-size: 28px;
+}
+.section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #16213e;
+  border-radius: 8px;
+  border: 1px solid #2a2a3e;
+}
+.section h3 {
+  color: #4ade80;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+.status {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.status.ok { background: #065f46; color: #4ade80; }
+.status.warning { background: #713f12; color: #fbbf24; }
+.status.error { background: #7f1d1d; color: #f87171; }
+.btn {
+  background: #7c6aff;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 4px;
+}
+.btn:hover { background: #6d5ce6; }
+.btn.danger { background: #ef4444; }
+.btn.danger:hover { background: #dc2626; }
+pre {
+  background: #0f0f23;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 12px;
+  border: 1px solid #2a2a3e;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔍 Herramienta de Diagnóstico - Academia</h1>
+  
+  <div class="section">
+    <h3>📊 Estado del Sistema</h3>
+    <div id="system-status"></div>
+    <button class="btn" onclick="checkSystemStatus()">Verificar Estado</button>
+  </div>
+  
+  <div class="section">
+    <h3>💾 Almacenamiento</h3>
+    <div id="storage-status"></div>
+    <button class="btn" onclick="checkStorage()">Verificar Storage</button>
+  </div>
+  
+  <div class="section">
+    <h3>🗄️ Base de Datos</h3>
+    <div id="db-status"></div>
+    <button class="btn" onclick="checkDatabase()">Verificar BD</button>
+  </div>
+  
+  <div class="section">
+    <h3>🖼️ Imágenes en IndexedDB</h3>
+    <div id="images-status"></div>
+    <button class="btn" onclick="checkImages()">Verificar Imágenes</button>
+    <button class="btn danger" onclick="cleanupImages()">Limpiar Imágenes Huérfanas</button>
+  </div>
+  
+  <div class="section">
+    <h3>🔧 Herramientas de Reparación</h3>
+    <button class="btn" onclick="repairState()">🔧 Reparar Estado Corrupto</button>
+    <button class="btn" onclick="clearCache()">🧹 Limpiar Caché</button>
+    <button class="btn danger" onclick="resetAll()">⚠️ Resetear Todo (Último Recurso)</button>
+  </div>
+  
+  <div class="section">
+    <h3>📝 Logs</h3>
+    <pre id="logs"></pre>
+  </div>
+</div>
+
+<script>
+function log(message, type = 'info') {
+  const logs = document.getElementById('logs');
+  const timestamp = new Date().toLocaleTimeString();
+  const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+  logs.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+  logs.scrollTop = logs.scrollHeight;
+}
+
+async function checkSystemStatus() {
+  log('🔍 Verificando estado del sistema...');
+  
+  const status = document.getElementById('system-status');
+  let html = '';
+  
+  // Verificar State
+  try {
+    if (typeof State !== 'undefined') {
+      html += '<div class="status ok">✅ State disponible</div>';
+      
+      if (State.semestres && Array.isArray(State.semestres)) {
+        html += `<div class="status ok">✅ Semestres: ${State.semestres.length}</div>`;
+        
+        const activeSem = State._activeSem;
+        if (activeSem && activeSem.id) {
+          html += `<div class="status ok">✅ Semestre activo: ${activeSem.nombre}</div>`;
+        } else {
+          html += '<div class="status error">❌ Sin semestre activo</div>';
+        }
+      } else {
+        html += '<div class="status error">❌ Semestres corrupto o no disponible</div>';
+      }
+    } else {
+      html += '<div class="status error">❌ State no disponible</div>';
+    }
+  } catch (e) {
+    html += '<div class="status error">❌ Error verificando State: ' + e.message + '</div>';
+    log('Error verificando State: ' + e.message, 'error');
+  }
+  
+  status.innerHTML = html;
+  log('✅ Verificación del sistema completada', 'success');
+}
+
+async function checkStorage() {
+  log('🔍 Verificando almacenamiento...');
+  
+  const status = document.getElementById('storage-status');
+  let html = '';
+  
+  try {
+    if ('storage' in navigator && 'estimate' in navigator.storage) {
+      const estimate = await navigator.storage.estimate();
+      const usageMB = (estimate.usage / 1024 / 1024).toFixed(1);
+      const quotaMB = (estimate.quota / 1024 / 1024).toFixed(1);
+      const usagePercent = ((estimate.usage / estimate.quota) * 100).toFixed(1);
+      
+      let statusClass = 'ok';
+      if (usagePercent > 80) statusClass = 'warning';
+      if (usagePercent > 95) statusClass = 'error';
+      
+      html += `<div class="status ${statusClass}">💾 Espacio usado: ${usageMB}MB / ${quotaMB}MB (${usagePercent}%)</div>`;
+      
+      if (usagePercent > 80) {
+        html += '<div class="status warning">⚠️ Espacio de almacenamiento casi lleno</div>';
+      }
+    } else {
+      html += '<div class="status warning">⚠️ API de almacenamiento no disponible</div>';
+    }
+    
+    // Verificar localStorage
+    let localStorageSize = 0;
+    for (let key in localStorage) {
+      if (localStorage.hasOwnProperty(key)) {
+        localStorageSize += localStorage[key].length + key.length;
+      }
+    }
+    const localStorageMB = (localStorageSize / 1024 / 1024).toFixed(2);
+    html += `<div class="status ok">📦 localStorage: ${localStorageMB}MB</div>`;
+    
+  } catch (e) {
+    html += '<div class="status error">❌ Error verificando storage: ' + e.message + '</div>';
+    log('Error verificando storage: ' + e.message, 'error');
+  }
+  
+  status.innerHTML = html;
+  log('✅ Verificación de almacenamiento completada', 'success');
+}
+
+async function checkDatabase() {
+  log('🔍 Verificando base de datos...');
+  
+  const status = document.getElementById('db-status');
+  let html = '';
+  
+  // Verificar Turso
+  const tursoUrl = localStorage.getItem('turso_url');
+  const tursoToken = localStorage.getItem('turso_auth_token');
+  
+  if (tursoUrl && tursoToken) {
+    html += '<div class="status ok">✅ Turso configurado</div>';
+    
+    try {
+      let testUrl = tursoUrl.replace('libsql://', 'https://');
+      const response = await fetch(testUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tursoToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          statements: [{
+            q: 'SELECT 1 as test',
+            params: []
+          }]
+        })
+      });
+      
+      if (response.ok) {
+        html += '<div class="status ok">✅ Conexión Turso exitosa</div>';
+      } else {
+        html += '<div class="status error">❌ Error en conexión Turso</div>';
+      }
+    } catch (e) {
+      html += '<div class="status error">❌ Error probando Turso: ' + e.message + '</div>';
+    }
+  } else {
+    html += '<div class="status warning">⚠️ Turso no configurado (usando Supabase)</div>';
+  }
+  
+  // Verificar configuración Supabase
+  if (typeof window.supabase !== 'undefined') {
+    html += '<div class="status ok">✅ Supabase disponible</div>';
+  } else {
+    html += '<div class="status warning">⚠️ Supabase no disponible</div>';
+  }
+  
+  status.innerHTML = html;
+  log('✅ Verificación de base de datos completada', 'success');
+}
+
+async function checkImages() {
+  log('🔍 Verificando imágenes en IndexedDB...');
+  
+  const status = document.getElementById('images-status');
+  let html = '';
+  
+  try {
+    // Abrir IndexedDB
+    const request = indexedDB.open('academia_images', 2);
+    
+    request.onsuccess = function(event) {
+      const db = event.target.result;
+      
+      if (db.objectStoreNames.contains('images')) {
+        const transaction = db.transaction('images', 'readonly');
+        const store = transaction.objectStore('images');
+        const getAllRequest = store.getAll();
+        
+        getAllRequest.onsuccess = function() {
+          const images = getAllRequest.result;
+          html += `<div class="status ok">🖼️ Imágenes en IndexedDB: ${images.length}</div>`;
+          
+          // Calcular tamaño total
+          let totalSize = 0;
+          images.forEach(img => {
+            if (img) totalSize += img.length;
+          });
+          const totalMB = (totalSize / 1024 / 1024).toFixed(2);
+          html += `<div class="status ok">💾 Tamaño total: ${totalMB}MB</div>`;
+          
+          // Verificar imágenes huérfanas
+          if (typeof State !== 'undefined' && State.semestres) {
+            const usedKeys = new Set();
+            State.semestres.forEach(sem => {
+              const notes = sem.notesArray || [];
+              notes.forEach(note => {
+                if (note.canvasData?.startsWith('IDB:')) {
+                  usedKeys.add(note.canvasData.replace('IDB:', ''));
+                }
+                if (note.images) {
+                  Object.values(note.images).forEach(val => {
+                    if (val?.startsWith('IDB:')) {
+                      usedKeys.add(val.replace('IDB:', ''));
+                    }
+                  });
+                }
+              });
+            });
+            
+            const allKeys = images.map((img, index) => {
+              // Necesitamos obtener las claves, no solo los valores
+              return 'key_' + index; // Placeholder
+            });
+            
+            const orphanedCount = Math.max(0, images.length - usedKeys.size);
+            if (orphanedCount > 0) {
+              html += `<div class="status warning">⚠️ ${orphanedCount} imágenes posiblemente huérfanas</div>`;
+            } else {
+              html += '<div class="status ok">✅ No hay imágenes huérfanas</div>';
+            }
+          }
+          
+          status.innerHTML = html;
+          log('✅ Verificación de imágenes completada', 'success');
+        };
+        
+        getAllRequest.onerror = function() {
+          html += '<div class="status error">❌ Error leyendo imágenes</div>';
+          status.innerHTML = html;
+          log('Error leyendo imágenes de IndexedDB', 'error');
+        };
+      } else {
+        html += '<div class="status warning">⚠️ No hay store de imágenes en IndexedDB</div>';
+        status.innerHTML = html;
+      }
+    };
+    
+    request.onerror = function() {
+      html += '<div class="status error">❌ Error abriendo IndexedDB</div>';
+      status.innerHTML = html;
+      log('Error abriendo IndexedDB', 'error');
+    };
+    
+  } catch (e) {
+    html += '<div class="status error">❌ Error verificando imágenes: ' + e.message + '</div>';
+    status.innerHTML = html;
+    log('Error verificando imágenes: ' + e.message, 'error');
+  }
+}
+
+async function cleanupImages() {
+  if (!confirm('¿Estás seguro de limpiar las imágenes huérfanas? Esta acción no se puede deshacer.')) {
+    return;
+  }
+  
+  log('🧹 Limpiando imágenes huérfanas...');
+  
+  try {
+    if (typeof cleanupUnusedImages === 'function') {
+      await cleanupUnusedImages();
+      log('✅ Limpieza de imágenes completada', 'success');
+      checkImages(); // Actualizar estado
+    } else {
+      log('❌ Función cleanupUnusedImages no disponible', 'error');
+    }
+  } catch (e) {
+    log('Error limpiando imágenes: ' + e.message, 'error');
+  }
+}
+
+function repairState() {
+  if (!confirm('¿Estás seguro de reparar el estado? Esto intentará recuperar datos corruptos.')) {
+    return;
+  }
+  
+  log('🔧 Iniciando reparación del estado...');
+  
+  try {
+    // Verificar y reparar State
+    if (typeof State !== 'undefined') {
+      // Asegurar que semestres sea un array
+      if (!Array.isArray(State.semestres)) {
+        log('❌ semestres no es un array, intentando recuperar...');
+        const saved = localStorage.getItem('academia_v4_semestres');
+        if (saved) {
+          try {
+            State.semestres = JSON.parse(saved);
+            log('✅ semestres recuperado desde localStorage', 'success');
+          } catch (e) {
+            log('❌ Error recuperando semestres: ' + e.message, 'error');
+            State.semestres = [];
+          }
+        } else {
+          State.semestres = [];
+        }
+      }
+      
+      // Asegurar que haya un semestre activo
+      if (!State._activeSem || !State._activeSem.id) {
+        const activeSem = State.semestres.find(s => s && s.id && s.activo);
+        if (activeSem) {
+          State._activeSem = activeSem;
+          log('✅ Semestre activo recuperado: ' + activeSem.nombre, 'success');
+        } else if (State.semestres.length > 0) {
+          State.semestres[0].activo = true;
+          State._activeSem = State.semestres[0];
+          log('✅ Primer semestre activado', 'success');
+        } else {
+          log('⚠️ No hay semestres disponibles', 'warning');
+        }
+      }
+      
+      // Guardar estado reparado
+      if (typeof saveStateNow === 'function') {
+        saveStateNow(['all']);
+        log('✅ Estado reparado y guardado', 'success');
+      }
+    }
+    
+    log('✅ Reparación del estado completada', 'success');
+    checkSystemStatus(); // Actualizar estado
+    
+  } catch (e) {
+    log('Error reparando estado: ' + e.message, 'error');
+  }
+}
+
+function clearCache() {
+  if (!confirm('¿Estás seguro de limpiar el caché? Esto puede mejorar el rendimiento.')) {
+    return;
+  }
+  
+  log('🧹 Limpiando caché...');
+  
+  try {
+    // Limpiar caché del navegador
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => {
+          caches.delete(name);
+        });
+        log('✅ Caché del navegador limpiado', 'success');
+      });
+    }
+    
+    // Limpiar sessionStorage (no datos importantes)
+    sessionStorage.clear();
+    log('✅ SessionStorage limpiado', 'success');
+    
+    log('✅ Limpieza de caché completada', 'success');
+    
+  } catch (e) {
+    log('Error limpiando caché: ' + e.message, 'error');
+  }
+}
+
+function resetAll() {
+  const confirmation = prompt('Esta acción eliminará TODOS tus datos locales. Escribe "BORRAR TODO" para confirmar:');
+  if (confirmation !== 'BORRAR TODO') {
+    log('❌ Reset cancelado - confirmación incorrecta', 'warning');
+    return;
+  }
+  
+  log('⚠️ INICIANDO RESET COMPLETO - ESTO ELIMINARÁ TODOS LOS DATOS');
+  
+  try {
+    // Limpiar todo
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Limpiar IndexedDB
+    if ('indexedDB' in window) {
+      indexedDB.deleteDatabase('academia_images');
+      indexedDB.deleteDatabase('AcademiaNotifications');
+    }
+    
+    // Limpiar caché
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => caches.delete(name));
+      });
+    }
+    
+    log('✅ Reset completado. La página se recargará en 3 segundos...', 'success');
+    
+    setTimeout(() => {
+      window.location.reload();
+    }, 3000);
+    
+  } catch (e) {
+    log('Error en reset completo: ' + e.message, 'error');
+  }
+}
+
+// Cargar estado inicial al cargar la página
+window.addEventListener('load', () => {
+  log('🔍 Herramienta de diagnóstico lista');
+  checkSystemStatus();
+});
+</script>
+</body>
+</html>

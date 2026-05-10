@@ -234,7 +234,7 @@ async function _checkPendingNotifications() {
   try {
     // Abrir IndexedDB de notificaciones
     const dbName = 'AcademiaNotifications';
-    const dbVersion = 1;
+    const dbVersion = 2; // 🔥 FIX: Actualizado a versión 2 para evitar conflicto
     const storeName = 'scheduled_notifications';
 
     const db = await new Promise((resolve, reject) => {

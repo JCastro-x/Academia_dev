@@ -302,4 +302,9 @@ function fillExamSel() {
   if (prev) sel.value = prev;
 }
 
-function renderOverview() { _schedRender(_renderOverview); }
+function renderOverview() { 
+  // Verificar si _renderOverview existe (se define en notes.js)
+  if (typeof _renderOverview === 'function') {
+    _schedRender(_renderOverview);
+  }
+}

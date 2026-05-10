@@ -1139,28 +1139,56 @@ function _handleRtePaste(e) {
       reader.onload = async (ev) => {
         const base64 = ev.target.result;
         const note = _getNotesArray().find(n => n.id === _currentNoteId);
-        if (!note) return;
+        if (!note) {
+          console.error('❌ [NOTES] Nota no encontrada para imagen:', _currentNoteId);
+          return;
+        }
+        
         if (!note.images) note.images = {};
         const key = 'IMG_' + Date.now();
-        // Store in IndexedDB con verificación de atomicidad
-        if (typeof idbSetImage === 'function') {
-          const saved = await idbSetImage(key, base64);
-          if (saved) {
-            note.images[key] = 'IDB:' + key;
-            saveState(['all']);
-            if (typeof _renderImagesStrip === 'function') _renderImagesStrip(note);
-            onNotesInput();
-          } else {
-            console.error('[NOTES] Error: No se pudo guardar imagen en IndexedDB');
-            if (typeof _appNotify === 'function') {
-              _appNotify('Error al guardar imagen. Espacio insuficiente.', 'error');
+        
+        try {
+          // Store in IndexedDB con verificación de atomicidad
+          if (typeof idbSetImage === 'function') {
+            console.log(`📸 [NOTES] Guardando imagen en nota ${note.id}: ${key}`);
+            const saved = await idbSetImage(key, base64);
+            
+            if (saved) {
+              note.images[key] = 'IDB:' + key;
+              note.updatedAt = Date.now();
+              
+              // 🔥 GUARDAR INMEDIATAMENTE para evitar pérdida
+              if (typeof saveStateNow === 'function') {
+                saveStateNow(['all']);
+              } else {
+                saveState(['all']);
+              }
+              
+              if (typeof _renderImagesStrip === 'function') {
+                _renderImagesStrip(note);
+              }
+              onNotesInput();
+              
+              console.log(`✅ [NOTES] Imagen guardada exitosamente: ${key}`);
+            } else {
+              throw new Error('No se pudo guardar imagen en IndexedDB');
             }
+          } else {
+            console.warn('⚠️ [NOTES] idbSetImage no disponible, usando localStorage');
+            note.images[key] = base64;
+            note.updatedAt = Date.now();
+            saveState(['all']);
+            
+            if (typeof _renderImagesStrip === 'function') {
+              _renderImagesStrip(note);
+            }
+            onNotesInput();
           }
-        } else {
-          note.images[key] = base64;
-          saveState(['all']);
-          if (typeof _renderImagesStrip === 'function') _renderImagesStrip(note);
-          onNotesInput();
+        } catch (error) {
+          console.error('❌ [NOTES] Error crítico guardando imagen:', error);
+          if (typeof _appNotify === 'function') {
+            _appNotify('Error al guardar imagen. Intenta de nuevo.', 'error');
+          }
         }
       };
       reader.readAsDataURL(file);
@@ -1179,56 +1207,112 @@ function _handleRtePaste(e) {
 /* ── Adjuntar imágenes desde el botón de la barra ── */
 async function attachImagesToNote(files) {
   if (!files || !files.length) return;
-  if (!_currentNoteId) { if (typeof _appNotify === 'function') _appNotify('Selecciona o crea una nota primero.', 'warning'); return; }
+  if (!_currentNoteId) { 
+    if (typeof _appNotify === 'function') {
+      _appNotify('Selecciona o crea una nota primero.', 'warning');
+    }
+    return;
+  }
+  
   const note = _getNotesArray().find(n => n.id === _currentNoteId);
-  if (!note) return;
+  if (!note) {
+    console.error('❌ [NOTES] Nota no encontrada:', _currentNoteId);
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error: Nota no encontrada. Intenta de nuevo.', 'error');
+    }
+    return;
+  }
+  
   if (!note.images) note.images = {};
 
   let loaded = 0;
+  let failed = 0;
   let totalImages = 0;
-  for (const file of Array.from(files)) {
-    if (!file.type.startsWith('image/')) continue;
-    totalImages++;
+  
+  // Filtrar solo archivos de imagen
+  const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+  totalImages = imageFiles.length;
+  
+  if (totalImages === 0) {
+    if (typeof _appNotify === 'function') {
+      _appNotify('No se encontraron archivos de imagen válidos.', 'warning');
+    }
+    return;
   }
-  if (totalImages === 0) return;
+  
+  console.log(`📸 [NOTES] Cargando ${totalImages} imágenes en nota ${note.id}`);
 
-  for (const file of Array.from(files)) {
-    if (!file.type.startsWith('image/')) continue;
+  for (const file of imageFiles) {
     const reader = new FileReader();
+    
     reader.onload = async ev => {
       const key = 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-      // Store image in IndexedDB con verificación de atomicidad
-      const saved = await idbSetImage(key, ev.target.result);
-      if (saved) {
-        note.images[key] = 'IDB:' + key; // placeholder reference
-        note.updatedAt = Date.now();
-        loaded++;
-        if (loaded === totalImages) {
-          saveState(['all']);
-          // Get fresh note reference and render
-          const freshNote = _getNotesArray().find(n => n.id === _currentNoteId);
-          if (freshNote) {
-            _renderImagesStrip(freshNote);
-            // Force show strip
-            const strip = document.getElementById('notes-images-strip');
-            if (strip) strip.style.display = 'flex';
-            // Scroll to show images
-            setTimeout(() => {
-              if (strip) strip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 100);
-            if (typeof _appNotify === 'function') _appNotify(`${loaded} imagen(es) cargada(s)`, 'ok');
+      
+      try {
+        console.log(`📦 [NOTES] Guardando imagen: ${key} (${(file.size/1024).toFixed(1)}KB)`);
+        
+        // Store image in IndexedDB con verificación de atomicidad
+        const saved = await idbSetImage(key, ev.target.result);
+        
+        if (saved) {
+          note.images[key] = 'IDB:' + key; // placeholder reference
+          note.updatedAt = Date.now();
+          loaded++;
+          console.log(`✅ [NOTES] Imagen guardada: ${key} (${loaded}/${totalImages})`);
+          
+          if (loaded === totalImages) {
+            // 🔥 GUARDAR INMEDIATAMENTE para evitar pérdida
+            if (typeof saveStateNow === 'function') {
+              saveStateNow(['all']);
+            } else {
+              saveState(['all']);
+            }
+            
+            // Get fresh note reference and render
+            const freshNote = _getNotesArray().find(n => n.id === _currentNoteId);
+            if (freshNote) {
+              _renderImagesStrip(freshNote);
+              // Force show strip
+              const strip = document.getElementById('notes-images-strip');
+              if (strip) strip.style.display = 'flex';
+              // Scroll to show images
+              setTimeout(() => {
+                if (strip) strip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              }, 100);
+              if (typeof _appNotify === 'function') {
+                _appNotify(`${loaded} imagen(es) cargada(s)`, 'ok');
+              }
+            }
+          }
+        } else {
+          throw new Error('No se pudo guardar imagen en IndexedDB');
+        }
+      } catch (error) {
+          failed++;
+          console.error(`❌ [NOTES] Error guardando imagen ${key}:`, error);
+          
+          if (failed === 1) {
+            // Solo mostrar notificación la primera vez
+            if (typeof _appNotify === 'function') {
+              _appNotify('Error al guardar imagen. Intenta de nuevo.', 'error');
+            }
+          }
+          
+          // Verificar si todas fallaron
+          if (loaded === 0 && failed === totalImages) {
+            console.error('❌ [NOTES] Todas las imágenes fallaron al guardar');
           }
         }
-      } else {
-        console.error('[NOTES] Error: No se pudo guardar imagen en IndexedDB (drag & drop)');
-        if (typeof _appNotify === 'function') {
-          _appNotify('Error al guardar imagen. Espacio insuficiente.', 'error');
-        }
-      }
-    };
-    reader.readAsDataURL(file);
+      };
+      
+      reader.onerror = () => {
+        failed++;
+        console.error(`❌ [NOTES] Error leyendo archivo: ${file.name}`);
+      };
+      
+      reader.readAsDataURL(file);
+    }
   }
-}
 
 function _renderImagesStrip(note) {
   const strip = document.getElementById('notes-images-strip');
