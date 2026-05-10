@@ -322,12 +322,38 @@ function generateDefaultApartados() {
 }
 
 // Migration function: Add apartados to existing subjects that don't have them
-function migrateSubjectsToApartados() {
-  // First, clean up any null/undefined entries in materias array
-  if (State.materias.some(m => !m)) {
-    State.materias = State.materias.filter(m => m);
+async function migrateSubjectsToApartados() {
+  // 🔥 FIX: Clean up null/undefined entries and materias with invalid IDs
+  const beforeCount = State.materias.length;
+  State.materias = State.materias.filter(m => {
+    // Eliminar materias null/undefined
+    if (!m) {
+      console.warn('[MIGRATION] Removing null/undefined materia');
+      return false;
+    }
+    // Eliminar materias con ID inválido (undefined, null, o string 'undefined')
+    if (!m.id || m.id === 'undefined' || m.id === 'null') {
+      console.warn('[MIGRATION] Removing materia with invalid ID:', m.id);
+      return false;
+    }
+    return true;
+  });
+  
+  if (State.materias.length !== beforeCount) {
+    console.log(`[MIGRATION] Cleaned up ${beforeCount - State.materias.length} invalid materias`);
     saveState(['materias']);
-    console.log('[MIGRATION] Cleaned up null entries from materias array');
+    
+    // 🔥 FIX: Guardar datos corregidos en base de datos remota
+    const db = window._getAcademiaDB ? window._getAcademiaDB() : null;
+    if (db && db._ready) {
+      console.log('💾 [MIGRATION] Guardando materias corregidas en base de datos remota...');
+      try {
+        await db.save(State.semestres, State.settings, ['semestres']);
+        console.log('✅ [MIGRATION] Materias corregidas guardadas en base de datos remota');
+      } catch (saveError) {
+        console.error('❌ [MIGRATION] Error guardando materias corregidas:', saveError);
+      }
+    }
   }
   
   let migrated = false;
@@ -369,7 +395,16 @@ function saveNewClass() {
   });
   if (!zones.length) { if (typeof _appNotify === 'function') _appNotify('Agrega al menos una zona de calificación.', 'warning'); return; }
 
+  // 🔥 FIX: Validar que el ID generado sea válido
   const newId  = generateUUID();
+  if (!newId || newId === 'undefined' || newId === 'null') {
+    console.error('❌ [SUBJECTS] Error: generateUUID returned invalid ID:', newId);
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error al generar ID de materia. Intenta de nuevo.', 'error');
+    }
+    return;
+  }
+  
   const ncDias = Array.from(document.querySelectorAll('#nc-dias-checks input[type=checkbox]:checked')).map(cb=>cb.value).join(', ');
   const newMat = { id:newId, name, code, color:window.newColorSel, icon:window.newIconSel, credits, zones,
     seccion: document.getElementById('nc-seccion')?.value.trim() || '',
