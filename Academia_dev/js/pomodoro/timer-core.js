@@ -267,7 +267,8 @@ function pomSavePartial() {
 
 function _savePomPartialInternal({ silent = false } = {}) {
   const totalWork = pomWork();
-  const elapsed = window.pomB ? totalWork : (totalWork - window.pomSL);
+  const totalBreak = pomBreak();
+  const elapsed = window.pomB ? (totalBreak - window.pomSL) : (totalWork - window.pomSL);
   if (elapsed < 60) {
     if (!silent && typeof _appNotify === 'function') _appNotify('Menos de 1 minuto transcurrido. No se guardará.', 'warning');
     return null;

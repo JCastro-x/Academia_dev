@@ -203,6 +203,9 @@ async function idbSetImage(key, dataUrl) {
     return false;
   }
 
+  // Invalidar caché cuando se modifica una imagen
+  _imageCache.delete(key);
+
   try {
     // 🔥 VERIFICAR ESPACIO ANTES DE GUARDAR
     if ('storage' in navigator && 'estimate' in navigator.storage) {
@@ -262,10 +265,20 @@ async function idbSetImage(key, dataUrl) {
 // Placeholder image for missing assets (simple gray square with text)
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzJhMmEzOCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTA5MGE4IiBmb250LXNpemU9IjE0IiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj5JbWFnZW4gbm8gZGlzcG9uaWJsZTwvdGV4dD48L3N2Zz4=';
 
+// Caché en memoria para imágenes cargadas de IndexedDB
+const _imageCache = new Map();
+const MAX_CACHE_SIZE = 50; // Máximo número de imágenes en caché
+
 async function idbGetImage(key) {
   if (!key) {
     console.error('[IDB_MANAGER] Error: Key inválida (null/undefined)');
     return PLACEHOLDER_IMAGE;
+  }
+
+  // Verificar caché primero
+  if (_imageCache.has(key)) {
+    console.log(`[IDB_MANAGER] Asset recuperado del caché: ${key}`);
+    return _imageCache.get(key);
   }
 
   try {
@@ -280,6 +293,13 @@ async function idbGetImage(key) {
           res(PLACEHOLDER_IMAGE);
         } else {
           console.log(`[IDB_MANAGER] Asset recuperado: ${key} (${(result.length / 1024).toFixed(2)} KB)`);
+          // Guardar en caché
+          if (_imageCache.size >= MAX_CACHE_SIZE) {
+            // Eliminar la entrada más antigua (FIFO)
+            const firstKey = _imageCache.keys().next().value;
+            _imageCache.delete(firstKey);
+          }
+          _imageCache.set(key, result);
           res(result);
         }
       };
@@ -295,7 +315,24 @@ async function idbGetImage(key) {
     return PLACEHOLDER_IMAGE;
   }
 }
+// Función para limpiar el caché de imágenes
+function clearImageCache() {
+  console.log('[IDB_MANAGER] Limpiando caché de imágenes');
+  _imageCache.clear();
+}
+
+// Función para invalidar una imagen específica del caché
+function invalidateImageCache(key) {
+  if (_imageCache.has(key)) {
+    console.log(`[IDB_MANAGER] Invalidando caché de imagen: ${key}`);
+    _imageCache.delete(key);
+  }
+}
+
 async function idbDeleteImage(key) {
+  // Invalidar caché cuando se elimina una imagen
+  invalidateImageCache(key);
+
   try {
     const db = await _openIDB();
     return new Promise((res) => {
@@ -458,6 +495,8 @@ async function cleanupUnusedImages() {
 // Exponer globalmente para uso manual
 window.cleanupUnusedImages = cleanupUnusedImages;
 window.cleanupExpiredDeletedImages = cleanupExpiredDeletedImages;
+window.clearImageCache = clearImageCache;
+window.invalidateImageCache = invalidateImageCache;
 
 // Cleanup periódico de imágenes expiradas (cada 10 minutos)
 setInterval(() => {
