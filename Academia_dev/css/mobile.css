@@ -83,7 +83,7 @@
   .ov-panels-grid { grid-template-columns: 1fr !important; }
 }
 
-@media (max-width:768px) {
+@media (max-width:1024px) {
   :root { --sidebar-w:0px; }
   .sidebar { display:none !important; }
   .main    { margin-left:0; }
@@ -148,7 +148,7 @@
   transform: translateX(0) !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* Show hamburger */
   .hamburger-btn { display: flex !important; }
 

@@ -8,7 +8,7 @@
 /* ──────────────────────────────────────────────────────────────
    1. TOPBAR — ocultar solo la flechita del sidebar toggle
    ────────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   /* La flechita ‹ que aparece en móvil */
   .sidebar-toggle,
   #sidebar-toggle-btn {
