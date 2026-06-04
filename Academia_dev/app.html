@@ -42,7 +42,7 @@
 <body>
 <div class="app">
 
-  <!-- Sidebar collapse toggle -->
+  <!-- Sidebar collapse toggle (desktop only) -->
   <button class="sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Ocultar/mostrar menú">‹</button>
 
   <!-- ═══════════════════════════════════════════════
@@ -132,6 +132,10 @@
 
     <!-- TOP BAR -->
     <div class="topbar">
+      <!-- Hamburger button for mobile sidebar -->
+      <button class="hamburger-btn" id="hamburger-btn" onclick="toggleMobileSidebar()" aria-label="Abrir menú">
+        <span></span><span></span><span></span>
+      </button>
       <div class="page-title" id="page-title">Resumen</div>
       <div class="topbar-right">
         <!-- Global search -->

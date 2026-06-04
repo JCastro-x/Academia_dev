@@ -727,7 +727,12 @@ if (!_rawSemestres || !Array.isArray(_rawSemestres) || !_rawSemestres.length) {
   dbSet(DB_KEYS.SEMESTRES, _rawSemestres);
 }
 
-if (!_rawSemestres.some(s => s.activo)) _rawSemestres[0].activo = true;
+// 🔥 FIX: Solo forzar primer semestre como activo si realmente no hay ninguno activo
+// y no estamos sobrescribiendo un semestre activo válido
+if (!_rawSemestres.some(s => s.activo)) {
+  console.warn('⚠️ [STATE] No semestre activo found in localStorage, forcing first as active');
+  _rawSemestres[0].activo = true;
+}
 
 const State = {
 

@@ -164,7 +164,14 @@ function init() {
               localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
               State.semestres.length = 0;
               dbData.semestres.forEach(s => State.semestres.push(s));
-              if (!State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
+              // 🔥 FIX: Solo forzar primer semestre como activo si realmente no hay ninguno activo
+              // y no estamos sobrescribiendo un semestre activo válido del servidor
+              if (!State.semestres.some(s => s.activo)) {
+                console.warn('⚠️ [INIT] No semestre activo found in remote data, forcing first as active');
+                State.semestres[0].activo = true;
+              } else {
+                console.log('✅ [INIT] Semestre activo preserved from remote:', State.semestres.find(s => s.activo)?.id);
+              }
               getMat.bust();
               console.log('✅ [INIT] Semestres rehydrated from remote');
             }
@@ -556,7 +563,15 @@ function continueInit(auth) {
         if (Array.isArray(dbData.semestres)) {
           State.semestres.length = 0;
           dbData.semestres.forEach(s => State.semestres.push(s));
-          if (State.semestres.length && !State.semestres.some(s => s.activo)) State.semestres[0].activo = true;
+          // 🔥 FIX: Solo forzar primer semestre como activo si realmente no hay ninguno activo
+          // y no estamos sobrescribiendo un semestre activo válido del servidor
+          if (State.semestres.length && !State.semestres.some(s => s.activo)) {
+            console.warn('⚠️ [SYNC] No semestre activo found in remote data, forcing first as active');
+            State.semestres[0].activo = true;
+          } else {
+            const activeSem = State.semestres.find(s => s.activo);
+            if (activeSem) console.log('✅ [SYNC] Semestre activo preserved:', activeSem.id);
+          }
           getMat.bust();
         }
         if (dbData.settings && typeof dbData.settings === 'object') {

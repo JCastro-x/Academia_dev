@@ -139,33 +139,9 @@
    ═══════════════════════════════════════════════════════ */
 
 /* ── Hamburger button ── */
-.hamburger-btn {
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  width: 36px;
-  height: 36px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  cursor: pointer;
-  padding: 7px;
-  flex-shrink: 0;
-  transition: background .2s;
+@media (max-width: 768px) {
+  .hamburger-btn { display: flex !important; }
 }
-.hamburger-btn:hover { background: var(--surface3); }
-.hamburger-btn span {
-  display: block;
-  width: 100%;
-  height: 2px;
-  background: var(--text2);
-  border-radius: 2px;
-  transition: all .25s;
-}
-.hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.hamburger-btn.open span:nth-child(2) { opacity: 0; }
-.hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 /* ── Sidebar mobile slide ── */
 .sidebar.mobile-open {
