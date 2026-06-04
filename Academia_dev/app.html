@@ -70,7 +70,7 @@
       </div>
       <!-- GENERAL -->
       <div class="nav-sec nav-sec-collapsible" onclick="toggleNavSection('sec-general',this)">General <span id="sec-general-arrow">▾</span></div>
-      <div id="sec-general">
+      <div id="sec-general"><span></span>
         <div class="nav-item" onclick="goPage('general',this)"><span class="icon">🧰</span>General</div>
       </div>
       <!-- CONFIG -->
@@ -196,7 +196,7 @@
 </nav>
 
 <!-- Mobile sidebar overlay -->
-<div id="mobile-sidebar-overlay" onclick="closeMobileSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149;backdrop-filter:blur(2px);"></div>
+<div id="mobile-sidebar-overlay" class="sidebar-overlay" onclick="closeMobileSidebar()"></div>
 
   <!-- ═══ LOADER — carga las páginas y modales desde partials/ ═══ -->
   <script src="js/loader.js"></script>

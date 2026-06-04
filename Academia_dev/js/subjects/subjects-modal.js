@@ -17,7 +17,11 @@ function openAddClassModal() {
   const titleEl = document.querySelector('#modal-addclass .modal-title');
   const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
   if (titleEl) titleEl.textContent = '📚 Nueva Clase';
-  if (saveBtn) { saveBtn.onclick = saveNewClass; saveBtn.textContent = '💾 Crear Clase'; }
+  if (saveBtn) { 
+    saveBtn.onclick = saveNewClass; 
+    saveBtn.textContent = '💾 Crear Clase';
+    saveBtn.setAttribute('data-action', 'save-new-class');
+  }
 
   document.getElementById('nc-name').value    = '';
   document.getElementById('nc-code').value    = '';
@@ -181,7 +185,11 @@ function openEditClassModal(matId) {
   const titleEl = document.querySelector('#modal-addclass .modal-title');
   const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
   if (titleEl) titleEl.textContent = `: ${mat.name}`;
-  if (saveBtn) { saveBtn.onclick = saveEditClassFromCreate; saveBtn.textContent = ' Guardar Cambios'; }
+  if (saveBtn) { 
+    saveBtn.onclick = saveEditClassFromCreate; 
+    saveBtn.textContent = ' Guardar Cambios';
+    saveBtn.removeAttribute('data-action');
+  }
 
   document.getElementById('nc-name').value    = mat.name    || '';
   document.getElementById('nc-code').value    = mat.code    || '';

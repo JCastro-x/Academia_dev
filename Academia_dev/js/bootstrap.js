@@ -129,7 +129,7 @@ function toggleMobileSidebar() {
   const btn     = document.getElementById('hamburger-btn');
   if (!sidebar) return;
   const isOpen  = sidebar.classList.toggle('mobile-open');
-  overlay.style.display = isOpen ? 'block' : 'none';
+  overlay.classList.toggle('visible', isOpen);
   btn && btn.classList.toggle('open', isOpen);
   document.body.style.overflow = isOpen ? 'hidden' : '';
 }
@@ -140,7 +140,7 @@ function closeMobileSidebar() {
   const btn     = document.getElementById('hamburger-btn');
   if (!sidebar) return;
   sidebar.classList.remove('mobile-open');
-  overlay.style.display = 'none';
+  overlay.classList.remove('visible');
   btn && btn.classList.remove('open');
   document.body.style.overflow = '';
 }

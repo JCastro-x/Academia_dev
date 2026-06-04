@@ -389,8 +389,37 @@ function saveNewClass() {
     subsRows.forEach((sr, i) => {
       const subLabel = sr.querySelector('.zone-sub-label')?.value.trim() || lbl + ' ' + (i+1);
       const subPts   = parseFloat(sr.querySelector('.zone-sub-pts')?.value) || 0;
-      if (subPts > 0) { subs.push({ key: key + '_' + (i+1), label: subLabel, maxPts: subPts }); totalPts += subPts; }
+      subs.push({ key: key + '_' + (i+1), label: subLabel, maxPts: subPts });
+      totalPts += subPts;
     });
+    
+    // Check for manual total input
+    const totalInput = row.querySelector('input[id$="-total"]');
+    const manualTotal = totalInput ? parseFloat(totalInput.value) || 0 : 0;
+    
+    // Auto-distribute points if manual total is set but individual points are 0
+    if (manualTotal > 0 && subs.length > 0) {
+      const subsWithPts = subs.filter(s => s.maxPts > 0);
+      const currentSubTotal = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
+      
+      // If no subs have points, or manual total is different from current total, redistribute
+      if (subsWithPts.length === 0 || Math.abs(manualTotal - currentSubTotal) > 0.01) {
+        // Distribute points evenly among all subs
+        const ptsPerSub = manualTotal / subs.length;
+        subs.forEach((s, i) => {
+          s.maxPts = parseFloat(ptsPerSub.toFixed(2));
+          // Add rounding difference to last sub
+          if (i === subs.length - 1) {
+            const distributedTotal = subs.reduce((a, sub) => a + sub.maxPts, 0);
+            s.maxPts = parseFloat((s.maxPts + (manualTotal - distributedTotal)).toFixed(2));
+          }
+        });
+        totalPts = manualTotal;
+      } else {
+        totalPts = manualTotal;
+      }
+    }
+    
     if (totalPts > 0) zones.push({ key, label: lbl, maxPts: totalPts, color: window.newColorSel, subs });
   });
   if (!zones.length) { if (typeof _appNotify === 'function') _appNotify('Agrega al menos una zona de calificación.', 'warning'); return; }
@@ -471,8 +500,31 @@ function saveEditClass() {
       subs.push({ key: existingKey, label: subLabel, maxPts: subPts }); totalPts += subPts;
     });
     const totalInput  = row.querySelector('[id$="-total"]');
-    const manualTotal = parseFloat(totalInput?.value);
-    if (!isNaN(manualTotal) && manualTotal > 0) totalPts = manualTotal;
+    const manualTotal = parseFloat(totalInput?.value) || 0;
+    
+    // Auto-distribute points if manual total is set but individual points are 0
+    if (manualTotal > 0 && subs.length > 0) {
+      const subsWithPts = subs.filter(s => s.maxPts > 0);
+      const currentSubTotal = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
+      
+      // If no subs have points, or manual total is different from current total, redistribute
+      if (subsWithPts.length === 0 || Math.abs(manualTotal - currentSubTotal) > 0.01) {
+        // Distribute points evenly among all subs
+        const ptsPerSub = manualTotal / subs.length;
+        subs.forEach((s, i) => {
+          s.maxPts = parseFloat(ptsPerSub.toFixed(2));
+          // Add rounding difference to last sub
+          if (i === subs.length - 1) {
+            const distributedTotal = subs.reduce((a, sub) => a + sub.maxPts, 0);
+            s.maxPts = parseFloat((s.maxPts + (manualTotal - distributedTotal)).toFixed(2));
+          }
+        });
+        totalPts = manualTotal;
+      } else {
+        totalPts = manualTotal;
+      }
+    }
+    
     if (totalPts === 0 && subs.length > 0) totalPts = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
     newZones.push({ key, label: lbl, maxPts: totalPts, color: window.newColorSel, subs });
   });
@@ -480,6 +532,12 @@ function saveEditClass() {
   if (!newZones.length) { if (typeof _appNotify === 'function') _appNotify('Agrega al menos una zona con nombre y puntos.', 'warning'); return; }
   mat.zones = [...newZones, ...labZones];
   getMat.bust(); saveState(['materias']);
+  
+  // Recalculate grade summary with new zone structure
+  if (typeof _updateGradeSummary === 'function') {
+    _updateGradeSummary(mat.id);
+  }
+  
   closeModal('modal-editclass');
   window.dispatchEvent(new CustomEvent('subject:updated', { detail: { id: mat.id, name: mat.name } }));
 }
@@ -515,7 +573,32 @@ function saveEditClassFromCreate() {
     });
     const totalInput = row.querySelector('input[id$="-total"]');
     const manualTotal = totalInput ? parseFloat(totalInput.value) || 0 : 0;
-    totalPts = manualTotal > 0 ? manualTotal : totalPts;
+    
+    // Auto-distribute points if manual total is set but individual points are 0
+    if (manualTotal > 0 && subs.length > 0) {
+      const subsWithPts = subs.filter(s => s.maxPts > 0);
+      const currentSubTotal = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
+      
+      // If no subs have points, or manual total is different from current total, redistribute
+      if (subsWithPts.length === 0 || Math.abs(manualTotal - currentSubTotal) > 0.01) {
+        // Distribute points evenly among all subs
+        const ptsPerSub = manualTotal / subs.length;
+        subs.forEach((s, i) => {
+          s.maxPts = parseFloat(ptsPerSub.toFixed(2));
+          // Add rounding difference to last sub
+          if (i === subs.length - 1) {
+            const distributedTotal = subs.reduce((a, sub) => a + sub.maxPts, 0);
+            s.maxPts = parseFloat((s.maxPts + (manualTotal - distributedTotal)).toFixed(2));
+          }
+        });
+        totalPts = manualTotal;
+      } else {
+        totalPts = manualTotal;
+      }
+    } else {
+      totalPts = currentSubTotal;
+    }
+    
     if (totalPts === 0 && subs.length === 0) return;
     if (totalPts === 0 && subs.length > 0) totalPts = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
     newZones.push({ key, label: lbl, maxPts: totalPts, color: window.newColorSel, subs });
@@ -524,6 +607,12 @@ function saveEditClassFromCreate() {
   if (!newZones.length) { if (typeof _appNotify === 'function') _appNotify('Agrega al least una zona de calificación.', 'warning'); return; }
   mat.zones = [...newZones, ...labZones];
   getMat.bust(); saveState(['materias']);
+  
+  // Recalculate grade summary with new zone structure
+  if (typeof _updateGradeSummary === 'function') {
+    _updateGradeSummary(mat.id);
+  }
+  
   closeModal('modal-addclass');
   window._editClassMatId = null;
   const titleEl = document.querySelector('#modal-addclass .modal-title');
