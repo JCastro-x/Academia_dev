@@ -52,7 +52,7 @@
 
 /* Override anterior que aÃ±adÃ­a scale */
 #notes-hub-grid .card::before {
-  background: linear-gradient(135deg, rgba(124,106,255,.10), transparent 55%);
+  background: linear-gradient(135deg, rgba(255,255,255,.02), transparent 55%);
 }
 
 /* Entrada con stagger igual que flashcards */

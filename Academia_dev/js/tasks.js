@@ -379,27 +379,42 @@ function toggleSubtask(taskId, idx) {
   t.subtasks[idx].done = !t.subtasks[idx].done;
   t.done = t.subtasks.length > 0 && t.subtasks.every(s => s.done);
 
-    // Animación visual al completar subtarea
-  if (!wasSubtaskDone && t.subtasks[idx].done) {
-    // Buscar el elemento de la subtarea y animarlo
-    const subtaskRow = document.querySelector(`[data-action="toggle-subtask"][data-id="${taskId}"][data-index="${idx}"]`);
-    if (subtaskRow) {
+  // Buscar el elemento de la subtarea para animación visual
+  const subtaskRow = document.querySelector(`[data-action="toggle-subtask"][data-id="${taskId}"][data-index="${idx}"]`);
+  if (subtaskRow) {
+    const checkBox = subtaskRow.querySelector('.subtask-check, [data-subtask-box]');
+    const checkSpan = subtaskRow.querySelector('[data-subtask-check] span, .subtask-check span');
+
+    if (t.subtasks[idx].done) {
+      // Marcar como completado
       subtaskRow.classList.add('done');
       subtaskRow.style.animation = 'subtaskComplete 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-      const checkBox = subtaskRow.querySelector('.subtask-check, [data-subtask-box]');
       if (checkBox) {
         checkBox.classList.add('done');
         checkBox.style.background = 'linear-gradient(135deg, #a78bfa 0%, #7c6aff 100%)';
         checkBox.style.borderColor = 'var(--accent)';
         checkBox.style.boxShadow = '0 2px 6px rgba(124,106,255,0.4)';
       }
-      const checkSpan = subtaskRow.querySelector('[data-subtask-check] span, .subtask-check span');
       if (checkSpan) {
         checkSpan.style.transform = 'scale(1)';
         checkSpan.style.opacity = '1';
       }
       // Efecto de celebración sutil
       _showSubtaskCompleteEffect(subtaskRow);
+    } else {
+      // Desmarcar - limpiar estilos de completado
+      subtaskRow.classList.remove('done');
+      subtaskRow.style.animation = '';
+      if (checkBox) {
+        checkBox.classList.remove('done');
+        checkBox.style.background = 'transparent';
+        checkBox.style.borderColor = 'var(--border2)';
+        checkBox.style.boxShadow = 'none';
+      }
+      if (checkSpan) {
+        checkSpan.style.transform = 'scale(0)';
+        checkSpan.style.opacity = '0';
+      }
     }
   }
 

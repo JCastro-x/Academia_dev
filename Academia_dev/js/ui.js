@@ -47,6 +47,127 @@ window._currentPageId = 'overview';
 // Inicializar Navigation Stack con overview
 _pushToStack('overview');
 
+// ─── Control Center Widget Switcher ───────────────────────────────────────
+let _currentWidget = 'calendar';
+let _zenModeActive = false;
+
+function switchWidget(viewName) {
+  console.log('switchWidget called with:', viewName);
+
+  // Update button states
+  document.querySelectorAll('.view-selector-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.view === viewName) {
+      btn.classList.add('active');
+    }
+  });
+
+  // Hide all widgets
+  document.querySelectorAll('.control-widget').forEach(widget => {
+    widget.style.display = 'none';
+  });
+
+  // Hide empty state and events list
+  const emptyState = document.getElementById('events-empty-state');
+  const eventsList = document.getElementById('events-list');
+  if (emptyState) emptyState.style.display = 'none';
+  if (eventsList) eventsList.style.display = 'none';
+
+  // Show selected widget
+  const widgetMap = {
+    'calendar': 'widget-calendar',
+    'myday': 'widget-myday',
+    'habits': 'widget-habits'
+  };
+
+  if (widgetMap[viewName]) {
+    const widget = document.getElementById(widgetMap[viewName]);
+    console.log('Widget element found:', !!widget);
+    console.log('Widget element:', widget);
+    if (widget) {
+      widget.style.display = 'block';
+      widget.style.visibility = 'visible';
+      widget.style.opacity = '1';
+      console.log('Widget display set to block, current display:', widget.style.display);
+      console.log('Widget innerHTML length:', widget.innerHTML.length);
+      _currentWidget = viewName;
+      // Persist widget selection
+      sessionStorage.setItem('controlCenterWidget', viewName);
+    } else {
+      console.error('Widget element not found for:', widgetMap[viewName]);
+    }
+  }
+
+  console.log('Widget switched to:', viewName);
+}
+
+// Initialize default widget on page load
+function initControlCenter() {
+  console.log('Initializing Control Center');
+  // Check if widgets exist in DOM
+  const widgets = document.querySelectorAll('.control-widget');
+  console.log('Control widgets found:', widgets.length);
+  widgets.forEach(w => console.log('Widget ID:', w.id, 'Display:', w.style.display));
+
+  // Restore saved widget or default to calendar
+  const savedWidget = sessionStorage.getItem('controlCenterWidget') || 'calendar';
+  switchWidget(savedWidget);
+}
+
+// ─── Zen Mode Toggle ─────────────────────────────────────────────────────
+function toggleZenMode() {
+  console.log('toggleZenMode called');
+
+  _zenModeActive = !_zenModeActive;
+  const grid = document.querySelector('.overview-two-column-grid');
+  const zenBtn = document.getElementById('zen-mode-toggle-btn');
+
+  console.log('Zen Mode toggling to:', _zenModeActive);
+
+  if (_zenModeActive) {
+    // Activate Zen Mode
+    grid.classList.add('zen-mode');
+    zenBtn.textContent = '✕ Salir Zen';
+    zenBtn.style.background = 'var(--red)';
+    zenBtn.style.borderColor = 'var(--red)';
+    zenBtn.style.color = '#fff';
+    sessionStorage.setItem('zenMode', 'true');
+  } else {
+    // Deactivate Zen Mode
+    grid.classList.remove('zen-mode');
+    zenBtn.textContent = '🧘 Zen';
+    zenBtn.style.background = '';
+    zenBtn.style.borderColor = '';
+    zenBtn.style.color = '';
+    sessionStorage.setItem('zenMode', 'false');
+  }
+
+  console.log('Zen Mode now:', _zenModeActive ? 'active' : 'inactive');
+}
+
+// Restore Zen Mode state on page load
+function restoreZenModeState() {
+  const savedZenMode = sessionStorage.getItem('zenMode');
+  if (savedZenMode === 'true') {
+    _zenModeActive = true;
+    const grid = document.querySelector('.overview-two-column-grid');
+    const zenBtn = document.getElementById('zen-mode-toggle-btn');
+    if (grid) grid.classList.add('zen-mode');
+    if (zenBtn) {
+      zenBtn.textContent = '✕ Salir Zen';
+      zenBtn.style.background = 'var(--red)';
+      zenBtn.style.borderColor = 'var(--red)';
+      zenBtn.style.color = '#fff';
+    }
+  }
+}
+
+// Expose functions globally
+window.switchWidget = switchWidget;
+window.toggleZenMode = toggleZenMode;
+window.restoreZenModeState = restoreZenModeState;
+window.initControlCenter = initControlCenter;
+
 // ─── Push to Navigation Stack ───────────────────────────────────────
 function _pushToStack(pageId, context = null) {
   // No duplicar si es la misma página

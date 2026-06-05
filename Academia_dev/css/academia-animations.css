@@ -312,8 +312,8 @@
   transition:border-color .32s ease, box-shadow .32s ease !important;
 }
 #agenda-card:hover, #tasks-panel-card:hover {
-  border-color:rgba(124,106,255,.22) !important;
-  box-shadow:0 6px 28px rgba(124,106,255,.09) !important;
+  border-color:var(--border2) !important;
+  box-shadow:0 8px 30px rgba(0,0,0,0.3) !important;
 }
 
 /* Badge pendientes */

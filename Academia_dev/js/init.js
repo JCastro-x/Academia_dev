@@ -411,6 +411,16 @@ function continueInit(auth) {
     renderOverview(); renderMaterias(); updateBadge(); initCal();
     renderSemesterBadge();
 
+    // Initialize Control Center
+    if (typeof initControlCenter === 'function') {
+      setTimeout(() => initControlCenter(), 100);
+    }
+
+    // Restore Zen Mode state if saved
+    if (typeof restoreZenModeState === 'function') {
+      setTimeout(() => restoreZenModeState(), 100);
+    }
+
     // Navegar a la página inicial configurada (después de un pequeño delay)
     const defaultPage = State.settings.defaultHomePage || 'overview';
     if (defaultPage !== 'overview' && document.getElementById('page-' + defaultPage)) {

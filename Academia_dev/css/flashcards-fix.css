@@ -254,8 +254,8 @@ select.input option {
 .fc-card-front:hover { border-color: var(--border2); }
 .fc-card-back {
   transform: rotateY(180deg);
-  background: linear-gradient(135deg, rgba(124, 106, 255, .07), rgba(255, 107, 157, .05));
-  border-color: rgba(124, 106, 255, .35);
+  background: var(--surface);
+  border-color: var(--border);
 }
 
 .fc-card-label {
@@ -308,7 +308,7 @@ select.input option {
 
 /* ── Botón flotante "Modo Estudio" ── */
 #fc-study-trigger button {
-  background: linear-gradient(135deg, var(--accent), #9b6fff);
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
   border: none;
   color: #fff;
   font-weight: 800;
@@ -316,7 +316,7 @@ select.input option {
 }
 #fc-study-trigger button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(124, 106, 255, .45);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
 }
 
 /* ── Modal de flashcard ── */

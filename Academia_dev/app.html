@@ -24,8 +24,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@400;600;700;800&display=swap" rel="stylesheet"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/flashcards-fix.css">
@@ -89,7 +89,7 @@
         </div>
       </div>
       <div class="sem-badge" onclick="toggleSemSwitcher(event)">
-        <div class="sem-lbl">📂 SEMESTRE · <span style="color:var(--accent2);">click para cambiar</span></div>
+        <div class="sem-lbl">📂 SEMESTRE</div>
         <div class="sem-name-edit" onclick="event.stopPropagation()">
           <div class="sem-val" id="sidebar-sem-nombre" ondblclick="startSemEdit()" style="cursor:text;" title="Doble clic para editar">—</div>
           <button class="sem-edit-btn" id="sem-edit-btn" onclick="startSemEdit()" title="Editar nombre del semestre">✏️</button>
@@ -102,20 +102,6 @@
     </div>
 
     <!-- Botón StudySpace eliminado -->
-
-    <!-- Botón tutorial -->
-    <div style="padding:3px 12px 8px;">
-      <button onclick="showTutorial()" style="
-        width:100%;padding:5px 10px;background:none;
-        border:1px solid var(--border);border-radius:7px;
-        color:var(--text3);cursor:pointer;font-size:10px;
-        display:flex;align-items:center;gap:7px;
-        transition:border-color .15s,color .15s;
-      " onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-         onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text3)'">
-        ❓ <span>Ver tutorial</span>
-      </button>
-    </div>
 
     <!-- Botón cerrar sesión -->
     <div style="padding:2px 12px 10px;">

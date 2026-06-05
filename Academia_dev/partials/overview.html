@@ -1,61 +1,111 @@
       <div class="page active" id="page-overview">
 
-        <!-- Header: greeting + reloj+fecha (top-right) -->
+        <!-- Header: greeting + small clock (top-right) -->
         <div class="mc-header">
           <div class="mc-greeting">
             <div style="display:none;" id="ov-date"></div>
-            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-              <div style="font-size:20px;font-weight:800;letter-spacing:-.4px;line-height:1.2;" id="ov-greeting"></div>
-              <span id="ov-wave-hand" class="ov-wave-emoji" style="font-size:22px;line-height:1;">👋</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <div style="font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1.2;" id="ov-greeting"></div>
+              <span id="ov-wave-hand" class="ov-wave-emoji" style="font-size:24px;line-height:1;">👋</span>
             </div>
             <div style="display:none;" id="ov-sub"></div>
           </div>
 
-          <!-- Reloj + separador + Fecha (misma fuente/tamaño/color que la hora) -->
-          <div class="ov-clock-block">
-            <div id="ov-clock-icon" style="font-size:22px;line-height:1;">☀️</div>
-            <div id="ov-clock" style="font-family:'Space Mono',monospace;font-size:36px;font-weight:700;color:var(--text);letter-spacing:2px;line-height:1;">—</div>
-            <div id="ov-clock-ampm" style="font-family:'Space Mono',monospace;font-size:13px;color:var(--accent2);letter-spacing:3px;text-transform:uppercase;align-self:flex-end;margin-bottom:3px;">—</div>
-            <div class="ov-clock-sep">|</div>
-            <div id="ov-date-short" style="font-family:'Space Mono',monospace;font-size:36px;font-weight:700;color:var(--text);letter-spacing:2px;line-height:1;">—</div>
+          <!-- Small clock + date + Zen Mode toggle -->
+          <div class="ov-clock-block" style="gap:12px;">
+            <div id="ov-clock-icon" style="font-size:18px;line-height:1;">☀️</div>
+            <div id="ov-clock" style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;color:var(--text2);letter-spacing:0.5px;line-height:1;">—</div>
+            <div id="ov-clock-ampm" style="font-family:'Inter',sans-serif;font-size:12px;color:var(--text3);letter-spacing:0.5px;text-transform:uppercase;align-self:flex-end;margin-bottom:2px;">—</div>
+            <div class="ov-clock-sep" style="color:var(--border);margin:0 4px;">|</div>
+            <div id="ov-date-short" style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--text2);letter-spacing:0.3px;line-height:1;">—</div>
+            <div class="ov-clock-sep" style="color:var(--border);margin:0 4px;">|</div>
+            <button id="zen-mode-toggle-btn" onclick="toggleZenMode()" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">🧘 Zen</button>
           </div>
         </div>
 
         <!-- 📅 AGENDA SEMANAL RODANTE -->
-        <div class="card" style="margin-bottom:16px;" id="agenda-card">
-          <div class="card-header" style="padding:10px 16px;">
+        <div class="card" style="margin-bottom:20px;" id="agenda-card">
+          <div class="card-header" style="padding:14px 20px;">
             <span class="card-title">📅 Agenda Semanal</span>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:11px;color:var(--accent2);font-family:'Space Mono',monospace;" id="ov-agenda-filter-label"></span>
-              <button class="btn btn-ghost btn-sm" onclick="goPage('calendario',document.querySelector('[onclick*=calendario]'))" style="font-size:11px;">Ver calendario →</button>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:12px;color:var(--accent2);font-family:'Inter',sans-serif;font-weight:500;" id="ov-agenda-filter-label"></span>
+              <button class="btn btn-ghost btn-sm" onclick="goPage('calendario',document.querySelector('[onclick*=calendario]'))" style="font-size:12px;">Ver calendario →</button>
             </div>
           </div>
-          <div class="card-body" style="padding:10px 14px 14px;">
+          <div class="card-body" style="padding:16px 20px;">
             <div id="ov-day-strip"></div>
           </div>
         </div>
 
-        <!-- 📋 PANEL DE TAREAS -->
-        <div class="card" id="tasks-panel-card">
-          <div class="card-header">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span class="card-title">⚡ Tareas Pendientes</span>
-              <span style="font-size:11px;font-family:'Space Mono',monospace;color:var(--red);" id="ov-pending-badge"></span>
+        <!-- 📋 PANEL DE TAREAS Y EVENTOS - Two Column Layout -->
+        <div class="overview-two-column-grid">
+          <!-- 📋 PANEL DE TAREAS -->
+          <div class="card" id="tasks-panel-card">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="card-title">⚡ Tareas Pendientes</span>
+                <span style="font-size:12px;font-family:'Inter',sans-serif;color:var(--red);font-weight:600;" id="ov-pending-badge"></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <button class="btn btn-ghost btn-sm" id="ov-clear-filter-btn" onclick="ovClearDayFilter()" style="display:none;font-size:12px;">✕ Quitar filtro</button>
+                <button class="btn btn-ghost btn-sm" onclick="goPage('tareas',document.querySelector('[onclick*=tareas]'))">Ver todas →</button>
+              </div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button class="btn btn-ghost btn-sm" id="ov-clear-filter-btn" onclick="ovClearDayFilter()" style="display:none;font-size:11px;">✕ Quitar filtro</button>
-              <button class="btn btn-ghost btn-sm" onclick="goPage('tareas',document.querySelector('[onclick*=tareas]'))">Ver todas →</button>
-            </div>
+            <div id="ov-tasks-list" style="max-height:560px;overflow-y:auto;"></div>
           </div>
-          <div id="ov-tasks-list" style="max-height:560px;overflow-y:auto;"></div>
-        </div>
 
-        <div class="card" style="margin-top:16px;">
-          <div class="card-header">
-            <span class="card-title">🗓️ Plan del Día</span>
-            <button class="btn btn-ghost btn-sm" onclick="goPage('temas',document.querySelector('[onclick*=temas]'))" style="font-size:11px;">Ver repasos →</button>
+          <!-- 🗓️ EVENTOS -->
+          <div class="card" id="events-panel-card">
+            <div class="card-header">
+              <span class="card-title">🗓️ Centro de Control</span>
+              <button class="btn btn-ghost btn-sm" onclick="goPage('calendario',document.querySelector('[onclick*=calendario]'))" style="font-size:12px;">Ver calendario →</button>
+            </div>
+            <!-- View Selector -->
+            <div class="view-selector" style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="view-selector-btn active" data-view="calendar" onclick="switchWidget('calendar')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">📅 Calendario</button>
+              <button class="view-selector-btn" data-view="myday" onclick="switchWidget('myday')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">📋 Mi Día</button>
+              <button class="view-selector-btn" data-view="habits" onclick="switchWidget('habits')" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">🔥 Hábitos</button>
+            </div>
+            <div id="events-content" style="min-height:200px;">
+              <!-- Calendar Widget -->
+              <div id="widget-calendar" class="control-widget" style="display:none;padding:20px;">
+                <div id="calendar-widget-content">
+                  <div style="text-align:center;padding:40px 20px;color:var(--text3);">
+                    <div style="font-size:48px;margin-bottom:12px;">📅</div>
+                    <div style="font-size:14px;">Calendario</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- My Day Widget -->
+              <div id="widget-myday" class="control-widget" style="display:none;padding:20px;">
+                <div id="myday-widget-content">
+                  <div style="text-align:center;padding:40px 20px;color:var(--text3);">
+                    <div style="font-size:48px;margin-bottom:12px;">📋</div>
+                    <div style="font-size:14px;">Mi Día</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Habits Widget -->
+              <div id="widget-habits" class="control-widget" style="display:none;padding:20px;">
+                <div id="habits-widget-content">
+                  <div style="text-align:center;padding:40px 20px;color:var(--text3);">
+                    <div style="font-size:48px;margin-bottom:12px;">🔥</div>
+                    <div style="font-size:14px;">Hábitos</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty state - minimalist design (default view) -->
+              <div class="events-empty-state" id="events-empty-state">
+                <div class="events-empty-day" id="events-empty-day"></div>
+                <div class="events-empty-month" id="events-empty-month"></div>
+              </div>
+              <!-- Events list will be populated by JavaScript -->
+              <div id="events-list" style="display:none;"></div>
+            </div>
           </div>
-          <div id="planner-daily-plan" style="min-height:60px;"></div>
         </div>
 
         <!-- Elementos legacy -->
