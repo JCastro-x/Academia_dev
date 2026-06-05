@@ -19,7 +19,7 @@
             <div class="ov-clock-sep" style="color:var(--border);margin:0 4px;">|</div>
             <div id="ov-date-short" style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:var(--text2);letter-spacing:0.3px;line-height:1;">—</div>
             <div class="ov-clock-sep" style="color:var(--border);margin:0 4px;">|</div>
-            <button id="zen-mode-toggle-btn" onclick="toggleZenMode()" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">🧘 Zen</button>
+            <button id="zen-mode-toggle-btn" onclick="toggleZenMode()" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;">✕ Ocultar</button>
           </div>
         </div>
 
@@ -69,32 +69,17 @@
             <div id="events-content" style="min-height:200px;">
               <!-- Calendar Widget -->
               <div id="widget-calendar" class="control-widget" style="display:none;padding:20px;">
-                <div id="calendar-widget-content">
-                  <div style="text-align:center;padding:40px 20px;color:var(--text3);">
-                    <div style="font-size:48px;margin-bottom:12px;">📅</div>
-                    <div style="font-size:14px;">Calendario</div>
-                  </div>
-                </div>
+                <div id="calendar-widget-content"></div>
               </div>
 
               <!-- My Day Widget -->
               <div id="widget-myday" class="control-widget" style="display:none;padding:20px;">
-                <div id="myday-widget-content">
-                  <div style="text-align:center;padding:40px 20px;color:var(--text3);">
-                    <div style="font-size:48px;margin-bottom:12px;">📋</div>
-                    <div style="font-size:14px;">Mi Día</div>
-                  </div>
-                </div>
+                <div id="myday-widget-content"></div>
               </div>
 
               <!-- Habits Widget -->
               <div id="widget-habits" class="control-widget" style="display:none;padding:20px;">
-                <div id="habits-widget-content">
-                  <div style="text-align:center;padding:40px 20px;color:var(--text3);">
-                    <div style="font-size:48px;margin-bottom:12px;">🔥</div>
-                    <div style="font-size:14px;">Hábitos</div>
-                  </div>
-                </div>
+                <div id="habits-widget-content"></div>
               </div>
 
               <!-- Empty state - minimalist design (default view) -->

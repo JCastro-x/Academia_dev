@@ -493,6 +493,7 @@ function saveEvent() {
   closeModal('modal-event');
   renderCalendar();
   renderOverview();
+  if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
 }
 async function deleteEvent(id) {
   const event = State.events.find(e => e.id === id);
@@ -505,12 +506,14 @@ async function deleteEvent(id) {
 
   State.events = State.events.filter(e => e.id !== id);
   saveState(['events']); renderCalendar(); renderOverview();
+  if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
 
   // Show undo toast
   if (typeof showUndoToast === 'function') {
     showUndoToast(`Evento "${event.title}" eliminado`, () => {
       State.events.push(deletedEvent);
       saveState(['events']); renderCalendar(); renderOverview();
+      if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
     });
   }
 }

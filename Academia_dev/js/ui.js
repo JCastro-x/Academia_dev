@@ -73,7 +73,7 @@ function switchWidget(viewName) {
   if (emptyState) emptyState.style.display = 'none';
   if (eventsList) eventsList.style.display = 'none';
 
-  // Show selected widget
+  // Show selected widget and render it
   const widgetMap = {
     'calendar': 'widget-calendar',
     'myday': 'widget-myday',
@@ -93,6 +93,15 @@ function switchWidget(viewName) {
       _currentWidget = viewName;
       // Persist widget selection
       sessionStorage.setItem('controlCenterWidget', viewName);
+
+      // Render the specific widget
+      if (viewName === 'calendar' && typeof renderMiniCalendarWidget === 'function') {
+        renderMiniCalendarWidget();
+      } else if (viewName === 'myday' && typeof renderMyDayWidget === 'function') {
+        renderMyDayWidget();
+      } else if (viewName === 'habits' && typeof renderHabitsWidget === 'function') {
+        renderHabitsWidget();
+      }
     } else {
       console.error('Widget element not found for:', widgetMap[viewName]);
     }
@@ -108,6 +117,9 @@ function initControlCenter() {
   const widgets = document.querySelectorAll('.control-widget');
   console.log('Control widgets found:', widgets.length);
   widgets.forEach(w => console.log('Widget ID:', w.id, 'Display:', w.style.display));
+
+  // Render widgets with real data
+  refreshAllWidgets();
 
   // Restore saved widget or default to calendar
   const savedWidget = sessionStorage.getItem('controlCenterWidget') || 'calendar';
@@ -125,17 +137,17 @@ function toggleZenMode() {
   console.log('Zen Mode toggling to:', _zenModeActive);
 
   if (_zenModeActive) {
-    // Activate Zen Mode
+    // Activate Zen Mode (hide panel)
     grid.classList.add('zen-mode');
-    zenBtn.textContent = '✕ Salir Zen';
-    zenBtn.style.background = 'var(--red)';
-    zenBtn.style.borderColor = 'var(--red)';
-    zenBtn.style.color = '#fff';
+    zenBtn.textContent = '👁️ Mostrar';
+    zenBtn.style.background = 'var(--surface2)';
+    zenBtn.style.borderColor = 'var(--border)';
+    zenBtn.style.color = 'var(--text)';
     sessionStorage.setItem('zenMode', 'true');
   } else {
-    // Deactivate Zen Mode
+    // Deactivate Zen Mode (show panel)
     grid.classList.remove('zen-mode');
-    zenBtn.textContent = '🧘 Zen';
+    zenBtn.textContent = '✕ Ocultar';
     zenBtn.style.background = '';
     zenBtn.style.borderColor = '';
     zenBtn.style.color = '';
@@ -154,12 +166,225 @@ function restoreZenModeState() {
     const zenBtn = document.getElementById('zen-mode-toggle-btn');
     if (grid) grid.classList.add('zen-mode');
     if (zenBtn) {
-      zenBtn.textContent = '✕ Salir Zen';
-      zenBtn.style.background = 'var(--red)';
-      zenBtn.style.borderColor = 'var(--red)';
-      zenBtn.style.color = '#fff';
+      zenBtn.textContent = '👁️ Mostrar';
+      zenBtn.style.background = 'var(--surface2)';
+      zenBtn.style.borderColor = 'var(--border)';
+      zenBtn.style.color = 'var(--text)';
     }
   }
+}
+
+// ─── Widget Rendering Functions ─────────────────────────────────────────────
+
+// Render My Day Widget with real data
+function renderMyDayWidget() {
+  const container = document.getElementById('myday-widget-content');
+  if (!container) return;
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  // Get today's tasks and events
+  const todayTasks = State.tasks.filter(t => t.due === todayStr && !t.done);
+  const todayEvents = State.events.filter(e => e.date === todayStr);
+
+  // Combine and sort chronologically
+  const allItems = [];
+
+  todayTasks.forEach(t => {
+    const mat = getMat(t.matId);
+    allItems.push({
+      type: 'task',
+      time: t.due ? '00:00' : '',
+      title: t.title,
+      meta: mat ? `${mat.icon || ''} ${mat.code || mat.name || ''}` : 'Sin materia',
+      priority: t.priority
+    });
+  });
+
+  todayEvents.forEach(e => {
+    const mat = getMat(e.matId);
+    allItems.push({
+      type: 'event',
+      time: e.hora || '',
+      title: e.title,
+      meta: mat ? `${mat.icon || ''} ${mat.code || mat.name || ''}` : 'Sin materia'
+    });
+  });
+
+  // Sort by time (items without time go to end)
+  allItems.sort((a, b) => {
+    if (!a.time) return 1;
+    if (!b.time) return -1;
+    return a.time.localeCompare(b.time);
+  });
+
+  if (allItems.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:var(--text3);">
+        <div style="font-size:48px;margin-bottom:12px;">🌴</div>
+        <div style="font-size:14px;">Día libre</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="myday-timeline">
+      ${allItems.map(item => `
+        <div class="myday-item">
+          <div class="myday-time">${item.time || '--:--'}</div>
+          <div class="myday-content">
+            <div class="myday-title">${item.title}</div>
+            <div class="myday-meta">${item.meta}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// Render Habits Widget with real data
+function renderHabitsWidget() {
+  const container = document.getElementById('habits-widget-content');
+  if (!container) return;
+
+  const habits = State.settings.habits || [];
+
+  if (habits.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;color:var(--text3);">
+        <div style="font-size:48px;margin-bottom:12px;">🌱</div>
+        <div style="font-size:14px;">Sin hábitos</div>
+      </div>
+    `;
+    return;
+  }
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  container.innerHTML = `
+    <div class="habits-list">
+      ${habits.map(habit => {
+        const isCompleted = habit.historial?.[todayStr] === true;
+        return `
+          <div class="habit-item">
+            <div class="habit-checkbox">
+              <input type="checkbox" id="habit-widget-${habit.id}" ${isCompleted ? 'checked' : ''} onchange="toggleHabitFromWidget('${habit.id}')">
+              <label for="habit-widget-${habit.id}"></label>
+            </div>
+            <div class="habit-info">
+              <div class="habit-name">${habit.emoji || '✅'} ${habit.nombre}</div>
+              <div class="habit-streak">🔥 ${habit.rachaActual || 0} días</div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// Toggle habit from widget checkbox
+function toggleHabitFromWidget(habitId) {
+  const habit = State.settings.habits?.find(h => h.id === habitId);
+  if (!habit) return;
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  // Toggle completion
+  if (habit.historial?.[todayStr] === true) {
+    habit.historial[todayStr] = false;
+  } else {
+    habit.historial[todayStr] = true;
+  }
+
+  // Recalculate streak
+  if (typeof Habits?.calculateStreak === 'function') {
+    habit.rachaActual = Habits.calculateStreak(habit);
+  }
+
+  saveState(['settings']);
+  renderHabitsWidget();
+}
+
+// Render Mini Calendar Widget dynamically
+function renderMiniCalendarWidget() {
+  const container = document.getElementById('calendar-widget-content');
+  if (!container) return;
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const dayNames = ['D','L','M','M','J','V','S'];
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Get days with events/tasks
+  const daysWithEvents = new Set();
+  State.events.forEach(e => {
+    const eventDate = new Date(e.date);
+    if (eventDate.getFullYear() === year && eventDate.getMonth() === month) {
+      daysWithEvents.add(eventDate.getDate());
+    }
+  });
+  State.tasks.forEach(t => {
+    if (t.due) {
+      const taskDate = new Date(t.due);
+      if (taskDate.getFullYear() === year && taskDate.getMonth() === month) {
+        daysWithEvents.add(taskDate.getDate());
+      }
+    }
+  });
+
+  let html = `
+    <div class="mini-calendar">
+      <div class="calendar-header">
+        <span class="calendar-month">${monthNames[month]} ${year}</span>
+      </div>
+      <div class="calendar-grid">
+  `;
+
+  // Day names
+  dayNames.forEach(day => {
+    html += `<div class="calendar-day-name">${day}</div>`;
+  });
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div class="calendar-day" style="visibility:hidden;"></div>`;
+  }
+
+  // Days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today;
+    const hasEvent = daysWithEvents.has(d);
+    html += `
+      <div class="calendar-day ${isToday ? 'calendar-today' : ''}">
+        ${d}
+        ${hasEvent ? '<div style="width:4px;height:4px;background:var(--accent);border-radius:50%;margin:2px auto 0;"></div>' : ''}
+      </div>
+    `;
+  }
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+// Refresh all widgets
+function refreshAllWidgets() {
+  renderMyDayWidget();
+  renderHabitsWidget();
+  renderMiniCalendarWidget();
 }
 
 // Expose functions globally
@@ -167,6 +392,8 @@ window.switchWidget = switchWidget;
 window.toggleZenMode = toggleZenMode;
 window.restoreZenModeState = restoreZenModeState;
 window.initControlCenter = initControlCenter;
+window.refreshAllWidgets = refreshAllWidgets;
+window.toggleHabitFromWidget = toggleHabitFromWidget;
 
 // ─── Push to Navigation Stack ───────────────────────────────────────
 function _pushToStack(pageId, context = null) {

@@ -308,6 +308,7 @@ function saveTask() {
   updateBadge();
   renderOverview();
   renderCalendar();
+  if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
 }
 
 function toggleTask(id) {
@@ -331,6 +332,7 @@ function toggleTask(id) {
   _uiClick(wasDone ? 'task-undone' : 'task-done');
   if (!wasDone) { _updateStreak(); }
   saveStateNow(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
+  if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
 }
 
 // Efecto visual de celebración al completar tarea
@@ -526,6 +528,7 @@ async function deleteTask(id) {
   updateBadge();
   renderOverview();
   renderCalendar();
+  if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
 
   // Show undo toast
   if (typeof showUndoToast === 'function') {
@@ -536,6 +539,7 @@ async function deleteTask(id) {
       updateBadge();
       renderOverview();
       renderCalendar();
+      if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
     });
   }
 }

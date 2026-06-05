@@ -708,6 +708,202 @@
   animation: fadeIn 0.15s ease;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   MINI CALENDAR WIDGET
+   ═══════════════════════════════════════════════════════════════ */
+
+.mini-calendar {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.calendar-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.calendar-month {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendar-day-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.calendar-day {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.calendar-day:hover {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+.calendar-day.calendar-today {
+  background: var(--accent-glow);
+  color: var(--accent2);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 8px rgba(124, 106, 255, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MY DAY TIMELINE WIDGET
+   ═══════════════════════════════════════════════════════════════ */
+
+.myday-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.myday-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.myday-item:hover {
+  background: var(--surface3);
+  border-color: var(--border2);
+  transform: translateX(2px);
+}
+
+.myday-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent2);
+  font-family: 'Inter', sans-serif;
+  min-width: 45px;
+  text-align: center;
+  padding: 4px 8px;
+  background: var(--accent-glow);
+  border-radius: 4px;
+}
+
+.myday-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.myday-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.myday-meta {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HABITS WIDGET
+   ═══════════════════════════════════════════════════════════════ */
+
+.habits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.habit-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.habit-item:hover {
+  background: var(--surface3);
+  border-color: var(--border2);
+}
+
+.habit-checkbox {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.habit-checkbox input[type="checkbox"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+}
+
+.habit-checkbox input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.habit-checkbox input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.habit-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.habit-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.habit-streak {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'Inter', sans-serif;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -722,7 +918,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .overview-two-column-grid {
-  transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: grid-template-columns 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .overview-two-column-grid.zen-mode {
@@ -730,24 +926,23 @@
 }
 
 .overview-two-column-grid.zen-mode #events-panel-card {
+  overflow: hidden;
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
-  transform: translateX(30px);
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .overview-two-column-grid.zen-mode #tasks-panel-card {
   grid-column: 1 / -1;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 #events-panel-card {
-  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 #tasks-panel-card {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Modal Actions */

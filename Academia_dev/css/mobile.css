@@ -399,10 +399,10 @@ html {
   .modal {
     width: 100% !important;
     max-width: 100% !important;
-    max-height: 92vh !important;
+    height: auto !important;
     border-radius: 18px 18px 0 0 !important;
     overflow-y: auto !important;
-    padding: 16px 16px 90px !important;
+    padding: 16px 16px calc(24px + env(safe-area-inset-bottom)) !important;
   }
 
   /* Barra inferior respeta safe area */

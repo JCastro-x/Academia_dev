@@ -438,6 +438,7 @@
       updateHabit(editId, { nombre, emoji, color, diasSemana });
       closeAddHabitModal();
       renderHabits();
+      if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
       _appNotify('Hábito actualizado', 'ok');
     } else {
       // Modo creación
@@ -450,6 +451,7 @@
       });
       closeAddHabitModal();
       renderHabits();
+      if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
       _appNotify('Hábito creado exitosamente', 'ok');
     }
   }
@@ -459,6 +461,7 @@
     const habit = toggleHabitCompletion(habitId, dateStr);
     if (habit) {
       renderHabits();
+      if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
       if (isTodayCheck(dateStr)) {
         const value = habit.historial[dateStr];
         if (value === true) {
@@ -479,6 +482,7 @@
         if (confirmed) {
           deleteHabit(id);
           renderHabits();
+          if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
           _appNotify('Hábito eliminado', 'ok');
         }
       });
