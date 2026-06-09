@@ -57,41 +57,43 @@
             </div>
             <div class="card-body">
               <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
-                <select class="form-select" id="pom-subject" style="width:100%;"></select>
+                <label for="reloj-pom-subject" class="pom-hidden">Materia</label>
+                <select class="form-select" id="reloj-pom-subject" style="width:100%;"></select>
                 <div style="width:100%;">
                   <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:6px;">📋 ESTUDIANDO</div>
-                  <select class="form-select" id="pom-task-sel" style="width:100%;font-size:12px;">
+                  <label for="reloj-pom-task-sel" class="pom-hidden">Tarea</label>
+                  <select class="form-select" id="reloj-pom-task-sel" style="width:100%;font-size:12px;">
                     <option value="">— Sin tarea específica —</option>
                   </select>
                 </div>
                 <div class="pom-ring">
                   <svg class="pom-svg" viewBox="0 0 190 190">
                     <circle class="pom-bg" cx="95" cy="95" r="82"/>
-                    <circle class="pom-prog" id="pom-ring" cx="95" cy="95" r="82" stroke-dasharray="515" stroke-dashoffset="0"/>
+                    <circle class="pom-prog" id="reloj-pom-ring" cx="95" cy="95" r="82" stroke-dasharray="515" stroke-dashoffset="0"/>
                   </svg>
                   <div class="pom-center">
-                    <div class="pom-time" id="pom-time">25:00</div>
-                    <div class="pom-mode" id="pom-mode">ENFOQUE</div>
+                    <div class="pom-time" id="reloj-pom-time">25:00</div>
+                    <div class="pom-mode" id="reloj-pom-mode">ENFOQUE</div>
                   </div>
                 </div>
-                <div style="display:flex;gap:5px;" id="pom-dots"></div>
+                <div style="display:flex;gap:5px;" id="reloj-pom-dots"></div>
                 <div style="display:flex;gap:10px;">
                   <button class="btn btn-ghost btn-sm" onclick="pomReset()">↺ Reset</button>
-                  <button class="btn btn-primary" id="pom-btn" onclick="pomToggle()">▶ Iniciar</button>
+                  <button class="btn btn-primary" id="reloj-pom-btn" onclick="pomToggle()">▶ Iniciar</button>
                   <button class="btn btn-ghost btn-sm" onclick="pomSkip()">⏭ Skip</button>
                 </div>
                 <div style="display:flex;gap:16px;">
                   <div style="text-align:center;">
-                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Enfoque (min)</div>
-                    <input type="number" id="pom-work" value="25" min="1" max="60" class="grade-input" style="width:58px;" onchange="pomReset()">
+                    <label for="reloj-pom-work" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Enfoque (min)</label>
+                    <input type="number" id="reloj-pom-work" value="25" min="1" max="60" class="grade-input" style="width:58px;" onchange="pomReset()">
                   </div>
                   <div style="text-align:center;">
-                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Descanso (min)</div>
-                    <input type="number" id="pom-break" value="5" min="1" max="30" class="grade-input" style="width:58px;" onchange="pomReset()">
+                    <label for="reloj-pom-break" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Descanso (min)</label>
+                    <input type="number" id="reloj-pom-break" value="5" min="1" max="30" class="grade-input" style="width:58px;" onchange="pomReset()">
                   </div>
                   <div style="text-align:center;">
-                    <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Ciclos meta</div>
-                    <input type="number" id="pom-cycles" value="4" min="1" max="20" class="grade-input" style="width:58px;" oninput="renderPomGoal()">
+                    <label for="reloj-pom-cycles" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Ciclos meta</label>
+                    <input type="number" id="reloj-pom-cycles" value="4" min="1" max="20" class="grade-input" style="width:58px;" oninput="renderPomGoal()">
                   </div>
                 </div>
                 <button class="btn btn-primary" onclick="pomSavePartial()" style="width:100%;font-size:13px;font-weight:700;">💾 Guardar progreso de sesión</button>
@@ -168,38 +170,39 @@
                 <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
                   <!-- Fila 1: Ruidos de concentración -->
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="pom-music-btn" id="noise-white-btn" onclick="toggleNoise('white')" title="Ruido blanco — espectro plano">
-                      <span id="noise-white-icon">▶</span> Blanco
+                    <button class="pom-music-btn" id="reloj-noise-white-btn" onclick="toggleNoise('white')" title="Ruido blanco — espectro plano">
+                      <span id="reloj-noise-white-icon">▶</span> Blanco
                     </button>
-                    <button class="pom-music-btn" id="noise-pink-btn" onclick="toggleNoise('pink')" title="Ruido rosa — 1/f, más natural">
-                      <span id="noise-pink-icon">▶</span> 🌸 Rosa
+                    <button class="pom-music-btn" id="reloj-noise-pink-btn" onclick="toggleNoise('pink')" title="Ruido rosa — 1/f, más natural">
+                      <span id="reloj-noise-pink-icon">▶</span> 🌸 Rosa
                     </button>
-                    <button class="pom-music-btn" id="noise-brown-btn" onclick="toggleNoise('brown')" title="Ruido tierra — grave y profundo">
-                      <span id="noise-brown-icon">▶</span> 🟤 Tierra
+                    <button class="pom-music-btn" id="reloj-noise-brown-btn" onclick="toggleNoise('brown')" title="Ruido tierra — grave y profundo">
+                      <span id="reloj-noise-brown-icon">▶</span> 🟤 Tierra
                     </button>
                   </div>
                   <!-- Fila 2: Naturaleza + Atmósferas -->
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="pom-music-btn" id="noise-rain-btn" onclick="toggleNoise('rain')" title="Lluvia suave">
-                      <span id="noise-rain-icon">▶</span> 🌧 Lluvia
+                    <button class="pom-music-btn" id="reloj-noise-rain-btn" onclick="toggleNoise('rain')" title="Lluvia suave">
+                      <span id="reloj-noise-rain-icon">▶</span> 🌧 Lluvia
                     </button>
-                    <button class="pom-music-btn" id="noise-storm-btn" onclick="toggleNoise('storm')" title="Tormenta con truenos">
-                      <span id="noise-storm-icon">▶</span> ⛈ Tormenta
+                    <button class="pom-music-btn" id="reloj-noise-storm-btn" onclick="toggleNoise('storm')" title="Tormenta con truenos">
+                      <span id="reloj-noise-storm-icon">▶</span> ⛈ Tormenta
                     </button>
-                    <button class="pom-music-btn" id="noise-fire-btn" onclick="toggleNoise('fire')" title="Fuego crepitando">
-                      <span id="noise-fire-icon">▶</span> 🔥 Fuego
+                    <button class="pom-music-btn" id="reloj-noise-fire-btn" onclick="toggleNoise('fire')" title="Fuego crepitando">
+                      <span id="reloj-noise-fire-icon">▶</span> 🔥 Fuego
                     </button>
-                    <button class="pom-music-btn" id="noise-forest-btn" onclick="toggleNoise('forest')" title="Bosque con pájaros">
-                      <span id="noise-forest-icon">▶</span> 🌿 Bosque
+                    <button class="pom-music-btn" id="reloj-noise-forest-btn" onclick="toggleNoise('forest')" title="Bosque con pájaros">
+                      <span id="reloj-noise-forest-icon">▶</span> 🌿 Bosque
                     </button>
-                    <button class="pom-music-btn" id="noise-ocean-btn" onclick="toggleNoise('ocean')" title="Olas del mar">
-                      <span id="noise-ocean-icon">▶</span> 🌊 Océano
+                    <button class="pom-music-btn" id="reloj-noise-ocean-btn" onclick="toggleNoise('ocean')" title="Olas del mar">
+                      <span id="reloj-noise-ocean-icon">▶</span> 🌊 Océano
                     </button>
                   </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
                   <span style="font-size:11px;">🔇</span>
-                  <input type="range" id="noise-vol" min="0" max="100" value="30" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setNoiseVol(this.value)">
+                  <label for="reloj-noise-vol" class="pom-hidden">Volumen de ruido</label>
+                  <input type="range" id="reloj-noise-vol" min="0" max="100" value="30" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setNoiseVol(this.value)">
                   <span style="font-size:11px;">🔊</span>
                 </div>
               </div>
@@ -207,18 +210,20 @@
               <!-- COLUMNA 2: Música propia MP3 -->
               <div>
                 <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:10px;">🎶 MÚSICA PROPIA</div>
-                <input type="file" id="pom-mp3-input" accept="audio/*" style="display:none;" onchange="loadLocalMusic(this)">
-                <button class="pom-music-btn" onclick="document.getElementById('pom-mp3-input').click()" style="width:100%;margin-bottom:6px;">📁 Cargar MP3 / Audio</button>
-                <button class="pom-music-btn" id="pom-music-btn" onclick="togglePomMusic()" style="display:none;width:100%;margin-bottom:6px;">
-                  <span id="pom-music-icon">▶</span> <span id="pom-music-label">Reproducir</span>
+                <label for="reloj-pom-mp3-input" class="pom-hidden"></label>
+                <input type="file" id="reloj-pom-mp3-input" accept="audio/*" style="display:none;" onchange="loadLocalMusic(this)">
+                <button class="pom-music-btn" onclick="document.getElementById('reloj-pom-mp3-input').click()" style="width:100%;margin-bottom:6px;">📁 Cargar MP3 / Audio</button>
+                <button class="pom-music-btn" id="reloj-pom-music-btn" onclick="togglePomMusic()" style="display:none;width:100%;margin-bottom:6px;">
+                  <span id="reloj-pom-music-icon">▶</span> <span id="reloj-pom-music-label">Reproducir</span>
                 </button>
                 <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
                   <span style="font-size:11px;">🔇</span>
-                  <input type="range" id="pom-vol" min="0" max="100" value="60" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setPomVol(this.value)">
+                  <label for="reloj-pom-vol" class="pom-hidden">Volumen de música</label>
+                  <input type="range" id="reloj-pom-vol" min="0" max="100" value="60" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setPomVol(this.value)">
                   <span style="font-size:11px;">🔊</span>
                 </div>
-                <div style="font-size:11px;color:var(--text3);margin-top:6px;" id="pom-music-status">Sin archivo · Carga un MP3</div>
-                <audio id="pom-audio" loop style="display:none;"></audio>
+                <div style="font-size:11px;color:var(--text3);margin-top:6px;" id="reloj-pom-music-status">Sin archivo · Carga un MP3</div>
+                <audio id="reloj-pom-audio" loop style="display:none;"></audio>
               </div>
 
             </div>
@@ -239,6 +244,7 @@
                   <div style="flex:1;">
                     <div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Sesiones objetivo hoy</div>
                     <div style="display:flex;align-items:center;gap:8px;">
+                      <label for="pom-goal" class="pom-hidden">Sesiones objetivo hoy</label>
                       <input type="number" id="pom-goal" min="1" max="20" value="4" class="grade-input" style="width:58px;" oninput="renderPomGoal()">
                       <span style="font-size:12px;color:var(--text3);">sesiones</span>
                     </div>

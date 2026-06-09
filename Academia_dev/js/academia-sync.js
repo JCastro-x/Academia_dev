@@ -73,7 +73,6 @@
 
     // Delegar a Turso si está configurado
     if (_useTurso && window.TursoDB) {
-      console.log('🔄 [SYNC] Cargando desde Turso...');
       try {
         return await window.TursoDB.load(localUpdatedAt, options);
       } catch (tursoError) {
@@ -86,14 +85,12 @@
     }
 
     // Fallback a Supabase
-    console.log('🔄 [SYNC] Cargando desde Supabase...');
     
     // Preflight: si hay timestamp local, verificar si remoto es más reciente
     if (localUpdatedAt && typeof localUpdatedAt === 'number') {
       try {
         const remoteUpdatedAt = await getRemoteUpdatedAt();
         if (remoteUpdatedAt && remoteUpdatedAt <= localUpdatedAt) {
-          console.log('✅ [SYNC] Datos locales están actualizados');
           return null;
         }
       } catch (preflightError) {
@@ -202,7 +199,6 @@
 
     // Delegar a Turso si está configurado
     if (_useTurso && window.TursoDB) {
-      console.log('💾 [SYNC] Guardando en Turso...');
       try {
         return await window.TursoDB._doSave(semestres, settings, changedFields, semesterId);
       } catch (tursoError) {
@@ -308,7 +304,6 @@
     const delay = typeof window.getDynamicDebounceDelay === 'function' 
       ? window.getDynamicDebounceDelay() 
       : 10000;
-    console.log(`[SYNC] Debounce delay: ${delay}ms (network quality)`);
     _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields, semesterId), delay);
   }
 

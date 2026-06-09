@@ -3606,6 +3606,4 @@ if (typeof window.subscribe === 'function') {
       renderNotesList();
     }
   });
-  
-  console.log('[NOTES] Pub/Sub subscription initialized');
 }

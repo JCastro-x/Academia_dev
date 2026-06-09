@@ -19,8 +19,15 @@ function updatePomDisp() {
   const circ = 2 * Math.PI * 82;
   const prog = window.pomTS > 0 ? window.pomSL / window.pomTS : 1;
   ringEl.style.strokeDashoffset = circ * (1 - prog);
-  ringEl.style.stroke = window.pomB ? '#4ade80' : 'var(--accent)';
-  modeEl.textContent = window.pomB ? 'DESCANSO' : 'ENFOQUE';
+  
+  // Color: verde para descanso normal, amarillo para descanso largo, accent para enfoque
+  if (window.pomB) {
+    ringEl.style.stroke = window._pomIsLongBreak ? '#fbbf24' : '#4ade80';
+    modeEl.textContent = window._pomIsLongBreak ? 'DESCANSO LARGO' : 'DESCANSO';
+  } else {
+    ringEl.style.stroke = 'var(--accent)';
+    modeEl.textContent = 'ENFOQUE';
+  }
 }
 
 function updatePomDots() {
@@ -30,6 +37,36 @@ function updatePomDots() {
   dotsEl.innerHTML = Array.from({ length: cycles }, (_, i) =>
     `<div style="width:9px;height:9px;border-radius:50%;background:${i < window.pomD % cycles ? 'var(--accent)' : 'var(--border2)'};"></div>`
   ).join('');
+}
+
+// Inicializar listeners para guardar configuración y actualizar dots
+function initPomSettingsListeners() {
+  const workInput = document.getElementById('pom-work');
+  const breakInput = document.getElementById('pom-break');
+  const longBreakInput = document.getElementById('pom-long-break');
+  const cyclesInput = document.getElementById('pom-cycles');
+
+  if (workInput) {
+    workInput.addEventListener('change', () => {
+      if (typeof savePomSettings === 'function') savePomSettings();
+    });
+  }
+  if (breakInput) {
+    breakInput.addEventListener('change', () => {
+      if (typeof savePomSettings === 'function') savePomSettings();
+    });
+  }
+  if (longBreakInput) {
+    longBreakInput.addEventListener('change', () => {
+      if (typeof savePomSettings === 'function') savePomSettings();
+    });
+  }
+  if (cyclesInput) {
+    cyclesInput.addEventListener('change', () => {
+      if (typeof savePomSettings === 'function') savePomSettings();
+      updatePomDots();
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -229,3 +266,4 @@ window.renderPomHistory = renderPomHistory;
 window.renderPomGoal = renderPomGoal;
 window._renderPomWeekStats = _renderPomWeekStats;
 window._pomDateLabel = _pomDateLabel;
+window.initPomSettingsListeners = initPomSettingsListeners;

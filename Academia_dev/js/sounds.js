@@ -692,6 +692,7 @@ window.closeModal = closeModal;
 window.closeAllModals = closeAllModals;
 window.setShowWeeklyBar = setShowWeeklyBar;
 window.setDefaultHomePage = setDefaultHomePage;
+window._stopNoise = _stopNoise;
 
 function _getGreeting() {
   const h = new Date().getHours();

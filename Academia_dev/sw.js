@@ -310,5 +310,3 @@ async function _checkPendingNotifications() {
     console.error('[SW] Error en check de notificaciones:', err);
   }
 }
-
-console.log('[SW] academia-v11 cargado con soporte de notificaciones');

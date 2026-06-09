@@ -63,12 +63,10 @@ function subscribe(entityType, callback) {
     return () => {};
   }
   _subscribers[entityType].add(callback);
-  console.log(`[PUBSUB] Subscribed to ${entityType} (total: ${_subscribers[entityType].size})`);
   
   // Return unsubscribe function
   return () => {
     _subscribers[entityType].delete(callback);
-    console.log(`[PUBSUB] Unsubscribed from ${entityType}`);
   };
 }
 
@@ -77,7 +75,6 @@ function notify(entityType, data) {
     console.warn(`[PUBSUB] Entity type "${entityType}" not registered`);
     return;
   }
-  console.log(`[PUBSUB] Notifying ${entityType} subscribers (${_subscribers[entityType].size})`);
   _subscribers[entityType].forEach(callback => {
     try {
       callback(data);
@@ -95,8 +92,6 @@ function getNetworkQuality() {
   const effectiveType = conn.effectiveType;
   const rtt = conn.rtt || 0;
   const downlink = conn.downlink || 0;
-  
-  console.log(`[NETWORK] Quality: ${effectiveType}, RTT: ${rtt}ms, Downlink: ${downlink}Mbps`);
   
   if (effectiveType === '4g' && rtt < 100) return 'fast';
   if (effectiveType === '4g' && rtt >= 100) return 'medium';

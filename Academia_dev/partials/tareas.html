@@ -6,6 +6,7 @@
             <!-- Inline search for tasks -->
             <div class="search-wrap" style="position:relative;">
               <span class="search-icon" style="left:8px;">🔍</span>
+              <label for="search-input" class="pom-hidden">Buscar tarea</label>
               <input id="search-input" class="search-input-bar" style="padding-left:28px;width:160px;" type="text" placeholder="Buscar tarea..." autocomplete="off" oninput="renderTasks()">
             </div>
             <select id="tf-mat" class="form-select" style="width:auto;padding:6px 10px;font-size:12px;" onchange="renderTasks()" autocomplete="off"><option value="">Todas las materias</option></select>

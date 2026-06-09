@@ -1195,8 +1195,6 @@ if (typeof window.subscribe === 'function') {
       renderTasks();
     }
   });
-  
-  console.log('[TASKS] Pub/Sub subscription initialized');
 }
 
 window.toggleSubtask = toggleSubtask;

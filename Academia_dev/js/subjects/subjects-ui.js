@@ -409,7 +409,5 @@ if (typeof window.subscribe === 'function') {
       renderMaterias();
     }
   });
-  
-  console.log('[MATERIAS] Pub/Sub subscription initialized');
 }
 

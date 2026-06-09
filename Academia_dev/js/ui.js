@@ -52,8 +52,6 @@ let _currentWidget = 'calendar';
 let _zenModeActive = false;
 
 function switchWidget(viewName) {
-  console.log('switchWidget called with:', viewName);
-
   // Update button states
   document.querySelectorAll('.view-selector-btn').forEach(btn => {
     btn.classList.remove('active');
@@ -82,14 +80,10 @@ function switchWidget(viewName) {
 
   if (widgetMap[viewName]) {
     const widget = document.getElementById(widgetMap[viewName]);
-    console.log('Widget element found:', !!widget);
-    console.log('Widget element:', widget);
     if (widget) {
       widget.style.display = 'block';
       widget.style.visibility = 'visible';
       widget.style.opacity = '1';
-      console.log('Widget display set to block, current display:', widget.style.display);
-      console.log('Widget innerHTML length:', widget.innerHTML.length);
       _currentWidget = viewName;
       // Persist widget selection
       sessionStorage.setItem('controlCenterWidget', viewName);
@@ -106,17 +100,12 @@ function switchWidget(viewName) {
       console.error('Widget element not found for:', widgetMap[viewName]);
     }
   }
-
-  console.log('Widget switched to:', viewName);
 }
 
 // Initialize default widget on page load
 function initControlCenter() {
-  console.log('Initializing Control Center');
   // Check if widgets exist in DOM
   const widgets = document.querySelectorAll('.control-widget');
-  console.log('Control widgets found:', widgets.length);
-  widgets.forEach(w => console.log('Widget ID:', w.id, 'Display:', w.style.display));
 
   // Render widgets with real data
   refreshAllWidgets();
@@ -128,13 +117,9 @@ function initControlCenter() {
 
 // ─── Zen Mode Toggle ─────────────────────────────────────────────────────
 function toggleZenMode() {
-  console.log('toggleZenMode called');
-
   _zenModeActive = !_zenModeActive;
   const grid = document.querySelector('.overview-two-column-grid');
   const zenBtn = document.getElementById('zen-mode-toggle-btn');
-
-  console.log('Zen Mode toggling to:', _zenModeActive);
 
   if (_zenModeActive) {
     // Activate Zen Mode (hide panel)
@@ -153,8 +138,6 @@ function toggleZenMode() {
     zenBtn.style.color = '';
     sessionStorage.setItem('zenMode', 'false');
   }
-
-  console.log('Zen Mode now:', _zenModeActive ? 'active' : 'inactive');
 }
 
 // Restore Zen Mode state on page load
@@ -249,7 +232,7 @@ function renderHabitsWidget() {
   const container = document.getElementById('habits-widget-content');
   if (!container) return;
 
-  const habits = State.settings.habits || [];
+  const habits = Array.isArray(State.settings?.habits) ? State.settings.habits : [];
 
   if (habits.length === 0) {
     container.innerHTML = `
@@ -413,8 +396,6 @@ function _pushToStack(pageId, context = null) {
     context, // Datos contextuales (ej: noteId, taskId)
     timestamp: Date.now()
   });
-
-  console.log(`📚 Stack push: ${pageId} (level: ${PAGE_LEVELS[pageId] || 'ROOT'})`, _navStack.map(s => s.pageId));
 }
 
 // ─── Pop from Navigation Stack ───────────────────────────────────────
@@ -427,8 +408,6 @@ function _popFromStack() {
   const current = _navStack.pop();
   const previous = _navStack.length > 0 ? _navStack[_navStack.length - 1] : null;
 
-  console.log(`📚 Stack pop: ${current.pageId} → ${previous ? previous.pageId : 'ROOT'}`);
-
   return previous;
 }
 
@@ -438,7 +417,6 @@ function goBack() {
 
   if (!previous) {
     // Si el stack está vacío, ir a overview
-    console.log('📚 Stack vacío, navegando a overview');
     goPage('overview');
     return;
   }
@@ -450,7 +428,6 @@ function goBack() {
 // ─── Clear Navigation Stack ───────────────────────────────────────────
 function clearNavStack() {
   _navStack.length = 0;
-  console.log('📚 Stack limpiado');
 }
 
 // ─── Get Current Stack State ─────────────────────────────────────────

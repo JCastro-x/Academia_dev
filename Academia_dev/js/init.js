@@ -109,14 +109,6 @@ function init() {
         const isOffline = navigator.onLine === false;
         const canUseLocalAccess = hasLocalData && (isOffline || hasKnownUser);
 
-        console.log('🔍 [INIT] Diagnóstico auth:', {
-          hasLocalData,
-          hasKnownUser,
-          lastUser: localStorage.getItem('_academia_last_user'),
-          isOffline,
-          canUseLocalAccess
-        });
-
         if (canUseLocalAccess) {
           console.warn('⚠️ Acceso local habilitado: no se pudo validar sesión remota, continuando con datos cacheados');
           const overlay = document.getElementById('auth-check-overlay');
@@ -143,19 +135,13 @@ function init() {
       if (db) {
         await db.init(auth.id);
         const dbData = await db.load();
-        console.log('🔄 [INIT] DB load result:', dbData ? 'Data received' : 'No data');
 
         if (dbData) {
-          // Log habits from remote data
-          console.log('📥 [INIT] Remote habits count:', dbData.settings?.habits?.length || 0);
-          console.table('📥 [INIT] Remote habits:', dbData.settings?.habits || []);
 
           // Comparar timestamps para evitar sobrescribir cambios locales recientes
           const remoteUpdatedAt = dbData.updatedAt ? Date.parse(dbData.updatedAt) : 0;
           const localModifiedAt = window._localModifiedAt || 0;
           const shouldUseRemote = remoteUpdatedAt > localModifiedAt;
-
-          console.log(`📊 Sync decision: remote=${remoteUpdatedAt}, local=${localModifiedAt}, useRemote=${shouldUseRemote}`);
 
           // Solo sobrescribir si remoto es más reciente
           if (shouldUseRemote) {
@@ -169,17 +155,13 @@ function init() {
               if (!State.semestres.some(s => s.activo)) {
                 console.warn('⚠️ [INIT] No semestre activo found in remote data, forcing first as active');
                 State.semestres[0].activo = true;
-              } else {
-                console.log('✅ [INIT] Semestre activo preserved from remote:', State.semestres.find(s => s.activo)?.id);
               }
               getMat.bust();
-              console.log('✅ [INIT] Semestres rehydrated from remote');
             }
             if (dbData.settings && Object.keys(dbData.settings).length) {
               // 🔥 FIX: Asegurar que habits siempre sea un array
               let habitsFixed = false;
               if (dbData.settings.habits && !Array.isArray(dbData.settings.habits)) {
-                console.warn('⚠️ [INIT] Remote habits is not an array, converting to empty array');
                 dbData.settings.habits = [];
                 habitsFixed = true;
               }
@@ -192,22 +174,18 @@ function init() {
               } else {
                 Object.assign(State.settings, mergedSettings);
               }
-              console.log('✅ [INIT] Settings rehydrated from remote, habits count:', State.settings.habits?.length || 0);
-              console.table('📥 [INIT] State.settings.habits after rehydration:', State.settings.habits || []);
               
               // 🔥 FIX: Guardar datos corregidos en base de datos remota para evitar warning futuro
               if (habitsFixed) {
-                console.log('💾 [INIT] Guardando datos corregidos en base de datos remota...');
                 try {
                   await db.save(State.semestres, State.settings, ['settings']);
-                  console.log('✅ [INIT] Datos corregidos guardados en base de datos remota');
                 } catch (saveError) {
                   console.error('❌ [INIT] Error guardando datos corregidos:', saveError);
                 }
               }
             }
           } else {
-            console.log('⏭️ Skipping remote sync - local data is more recent');
+            // Local data is more recent, skip sync
           }
           if (dbData.settings?.pomData && typeof dbData.settings.pomData === 'object') {
             const pomData = dbData.settings.pomData;
@@ -430,6 +408,8 @@ function continueInit(auth) {
       }, 100);
     }
     // Pomodoro functions now have guards - safe to call even if partial not loaded
+    if (typeof loadPomSettings === 'function') loadPomSettings();
+    if (typeof initPomSettingsListeners === 'function') initPomSettingsListeners();
     updatePomDots(); pomReset(); restorePomRunningState();
 
     document.querySelectorAll('.modal-overlay').forEach(o =>
@@ -506,7 +486,6 @@ function continueInit(auth) {
         }
 
         if (remoteUpdatedAt && remoteUpdatedAt <= localModifiedAt) {
-          console.log('[SYNC] Preflight: No hay cambios remotos (timestamp)');
           _lastSync = now;
           return;
         }
@@ -516,7 +495,6 @@ function continueInit(auth) {
           if (typeof window.computeHash === 'function') {
             const localSemHash = await window.computeHash(State.semestres);
             const localSettingsHash = await window.computeHash(State.settings);
-            console.log(`[SYNC] Preflight hashes - Semestres: ${localSemHash.slice(0,8)}..., Settings: ${localSettingsHash.slice(0,8)}...`);
             
             // Descargar solo para comparar hashes remotos
             const dbData = await db.load();
@@ -526,12 +504,10 @@ function continueInit(auth) {
             const remoteSettingsHash = await window.computeHash(dbData.settings);
             
             if (localSemHash === remoteSemHash && localSettingsHash === remoteSettingsHash) {
-              console.log('[SYNC] Preflight: Hashes coinciden, skip download');
               _lastSync = now;
               return;
             }
             
-            console.log('[SYNC] Preflight: Hashes diferentes, procediendo con descarga');
             // Continuar con dbData ya cargado
             shouldDownload = false;
           }
@@ -580,7 +556,6 @@ function continueInit(auth) {
             State.semestres[0].activo = true;
           } else {
             const activeSem = State.semestres.find(s => s.activo);
-            if (activeSem) console.log('✅ [SYNC] Semestre activo preserved:', activeSem.id);
           }
           getMat.bust();
         }

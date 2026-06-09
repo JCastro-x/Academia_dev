@@ -10,6 +10,8 @@ window.pomSL = 0;     // Segundos restantes
 window.pomTS = 0;     // Segundos totales del ciclo actual
 window.pomD = 0;      // Ciclos completados hoy
 window.pomI = null;   // Interval ID
+window._pomEndTime = 0; // Timestamp de fin del timer (para sincronización con popup)
+window._pomIsLongBreak = false; // ¿Es descanso largo?
 
 // ═══════════════════════════════════════════════════════════════
 // Helpers de cálculo de tiempo
@@ -20,6 +22,45 @@ function pomWork() {
 
 function pomBreak() {
   return (parseInt(document.getElementById('pom-break')?.value) || 5) * 60;
+}
+
+function pomLongBreak() {
+  return (parseInt(document.getElementById('pom-long-break')?.value) || 15) * 60;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Persistencia de configuración de Pomodoro
+// ═══════════════════════════════════════════════════════════════
+function savePomSettings() {
+  try {
+    const settings = {
+      workMins: parseInt(document.getElementById('pom-work')?.value || '25', 10),
+      breakMins: parseInt(document.getElementById('pom-break')?.value || '5', 10),
+      longBreakMins: parseInt(document.getElementById('pom-long-break')?.value || '15', 10),
+      cyclesGoal: parseInt(document.getElementById('pom-cycles')?.value || '4', 10),
+    };
+    localStorage.setItem('academia_pom_settings', JSON.stringify(settings));
+  } catch(e) {}
+}
+
+function loadPomSettings() {
+  try {
+    const raw = localStorage.getItem('academia_pom_settings');
+    if (!raw) return;
+    const settings = JSON.parse(raw);
+    if (document.getElementById('pom-work') && settings.workMins) {
+      document.getElementById('pom-work').value = settings.workMins;
+    }
+    if (document.getElementById('pom-break') && settings.breakMins) {
+      document.getElementById('pom-break').value = settings.breakMins;
+    }
+    if (document.getElementById('pom-long-break') && settings.longBreakMins) {
+      document.getElementById('pom-long-break').value = settings.longBreakMins;
+    }
+    if (document.getElementById('pom-cycles') && settings.cyclesGoal) {
+      document.getElementById('pom-cycles').value = settings.cyclesGoal;
+    }
+  } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -50,8 +91,11 @@ function _appendPomSession(session) {
 function _savePomRunningState() {
   if (!window.pomR) {
     savePomRunning(null);
+    window._pomEndTime = 0;
     return;
   }
+  // Calcular endTime basado en el tiempo restante actual
+  window._pomEndTime = Date.now() + (window.pomSL * 1000);
   savePomRunning({
     running: !!window.pomR,
     isBreak: !!window.pomB,
@@ -64,6 +108,7 @@ function _savePomRunningState() {
     subjectId: document.getElementById('pom-subject')?.value || '',
     taskId: document.getElementById('pom-task-sel')?.value || '',
     savedAt: Date.now(),
+    endTime: window._pomEndTime,
   });
 }
 
@@ -128,6 +173,8 @@ function restorePomRunningState() {
   window.pomD = Number(saved.cyclesDone) || 0;
   window.pomTS = Number(saved.total) || (window.pomB ? pomBreak() : pomWork());
   window.pomSL = Number(saved.remaining) || window.pomTS;
+  window._pomEndTime = Number(saved.endTime) || (Date.now() + (window.pomSL * 1000));
+  
   if (window.pomSL <= 0) {
     window.pomR = false;
     savePomRunning(null);
@@ -175,7 +222,7 @@ function restorePomRunningState() {
 // ═══════════════════════════════════════════════════════════════
 function pomReset() {
   if (window.pomI) { clearInterval(window.pomI); window.pomI = null; }
-  window.pomR = false; window.pomB = false; window.pomSL = window.pomTS = pomWork();
+  window.pomR = false; window.pomB = false; window._pomIsLongBreak = false; window.pomSL = window.pomTS = pomWork();
   savePomRunning(null);
   window.dispatchEvent(new CustomEvent('pomodoro:reset'));
 }
@@ -187,6 +234,10 @@ function pomToggle() {
     clearInterval(window.pomI); window.pomI = null; window.pomR = false;
     _savePomRunningState();
     _pomBeep('pause');
+    // Detener alarma si está sonando
+    _pomStopAlarm();
+    // Detener ruido ambiente si está sonando
+    if (typeof window._stopNoise === 'function') window._stopNoise();
     // Notify chrono: pom paused
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, null);
     window.dispatchEvent(new CustomEvent('pomodoro:pause'));
@@ -198,12 +249,12 @@ function pomToggle() {
     _pomBeep(window.pomB ? 'break' : 'start');
     // Notify chrono: pom running
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(true, window.pomB ? 'break' : 'work');
-    window.dispatchEvent(new CustomEvent('pomodoro:start', { detail: { isBreak: window.pomB } }));
+    window.dispatchEvent(new CustomEvent('pomodoro:start', { detail: { isBreak: window.pomB, isLongBreak: window._pomIsLongBreak } }));
     
     window.pomI = setInterval(() => {
       window.pomSL--;
       _savePomRunningState();
-      window.dispatchEvent(new CustomEvent('pomodoro:tick', { detail: { remaining: window.pomSL, total: window.pomTS, isBreak: window.pomB } }));
+      window.dispatchEvent(new CustomEvent('pomodoro:tick', { detail: { remaining: window.pomSL, total: window.pomTS, isBreak: window.pomB, isLongBreak: window._pomIsLongBreak } }));
       if (window.pomSL <= 10 && window.pomSL > 0) _pomCountdownBeep(window.pomSL);
       if (window.pomSL <= 0) {
         clearInterval(window.pomI); window.pomI = null; window.pomR = false;
@@ -224,12 +275,14 @@ function pomToggle() {
           _recordPomWeekSession(pomWork() / 60);
           _updateStreak();
           window.dispatchEvent(new CustomEvent('pomodoro:finish', { detail: { phase: 'work', sessions: window.pomD } }));
-          window.pomB = true; window.pomSL = window.pomTS = pomBreak();
+          // Después de cada 4 ciclos, usar descanso largo
+          window._pomIsLongBreak = (window.pomD % 4 === 0);
+          window.pomB = true; window.pomSL = window.pomTS = window._pomIsLongBreak ? pomLongBreak() : pomBreak();
           _pomMusicOnBreak();
           if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, 'break');
         } else {
           // Terminó descanso → inicia trabajo
-          window.pomB = false; window.pomSL = window.pomTS = pomWork();
+          window.pomB = false; window._pomIsLongBreak = false; window.pomSL = window.pomTS = pomWork();
           _pomMusicOnWork();
           window.dispatchEvent(new CustomEvent('pomodoro:finish', { detail: { phase: 'break' } }));
           if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, 'work');
@@ -242,14 +295,20 @@ function pomToggle() {
 function pomSkip() {
   if (window.pomI) { clearInterval(window.pomI); window.pomI = null; }
   window.pomR = false;
+  _pomStopAlarm();
+  // Detener ruido ambiente si está sonando
+  if (typeof window._stopNoise === 'function') window._stopNoise();
   savePomRunning(null);
   if (!window.pomB) {
-    window.pomD++; window.pomB = true; window.pomSL = window.pomTS = pomBreak(); _pomBeep('break');
+    window.pomD++;
+    // Después de cada 4 ciclos, usar descanso largo
+    window._pomIsLongBreak = (window.pomD % 4 === 0);
+    window.pomB = true; window.pomSL = window.pomTS = window._pomIsLongBreak ? pomLongBreak() : pomBreak(); _pomBeep('break');
     _pomMusicOnBreak();
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, 'break');
-    window.dispatchEvent(new CustomEvent('pomodoro:phase-change', { detail: { phase: 'break', skipped: true } }));
+    window.dispatchEvent(new CustomEvent('pomodoro:phase-change', { detail: { phase: 'break', skipped: true, isLongBreak: window._pomIsLongBreak } }));
   } else {
-    window.pomB = false; window.pomSL = window.pomTS = pomWork(); _pomBeep('resume');
+    window.pomB = false; window._pomIsLongBreak = false; window.pomSL = window.pomTS = pomWork(); _pomBeep('resume');
     _pomMusicOnWork();
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, 'work');
     window.dispatchEvent(new CustomEvent('pomodoro:phase-change', { detail: { phase: 'work', skipped: true } }));
@@ -268,12 +327,18 @@ function pomSavePartial() {
 function _savePomPartialInternal({ silent = false } = {}) {
   const totalWork = pomWork();
   const totalBreak = pomBreak();
-  const elapsed = window.pomB ? (totalBreak - window.pomSL) : (totalWork - window.pomSL);
-  if (elapsed < 60) {
+  
+  // Calcular tiempo acumulado: ciclos completados + tiempo actual
+  const completedCyclesMins = window.pomD * (totalWork / 60);
+  const currentElapsed = window.pomB ? (totalBreak - window.pomSL) : (totalWork - window.pomSL);
+  const totalElapsedSec = (window.pomD * totalWork) + currentElapsed;
+  
+  if (totalElapsedSec < 60) {
     if (!silent && typeof _appNotify === 'function') _appNotify('Menos de 1 minuto transcurrido. No se guardará.', 'warning');
     return null;
   }
-  const mins = Math.round(elapsed / 60);
+  
+  const mins = Math.round(totalElapsedSec / 60);
   const subj = document.getElementById('pom-subject').value;
   const m = getMat(subj);
   _appendPomSession({
@@ -295,11 +360,14 @@ function _savePomPartialInternal({ silent = false } = {}) {
 // ═══════════════════════════════════════════════════════════════
 window.pomWork = pomWork;
 window.pomBreak = pomBreak;
+window.pomLongBreak = pomLongBreak;
 window.pomReset = pomReset;
 window.pomToggle = pomToggle;
 window.pomSkip = pomSkip;
 window.pomSavePartial = pomSavePartial;
 window.restorePomRunningState = restorePomRunningState;
+window.savePomSettings = savePomSettings;
+window.loadPomSettings = loadPomSettings;
 window._savePomPartialInternal = _savePomPartialInternal;
 window._recordPomWeekSession = _recordPomWeekSession;
 window._getPomWeekHistory = _getPomWeekHistory;

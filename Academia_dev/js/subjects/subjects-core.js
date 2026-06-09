@@ -631,14 +631,15 @@ function openConfigModal() {
   document.getElementById('cfg-min-grade').value  = State.settings.minGrade || 70;
   document.getElementById('cfg-sem-target').value = sem.promedioObjetivo || 70;
   const savedApiKey = localStorage.getItem('gemini_api_key') || '';
-  document.getElementById('cfg-api-key').value = savedApiKey;
+  const apiKeyEl = document.getElementById('cfg-api-key');
+  if (apiKeyEl) apiKeyEl.value = savedApiKey;
   _updateConfigPreview();
   document.getElementById('modal-config').classList.add('open');
   const versionClick = document.getElementById('cfg-version-click');
   if (versionClick) {
     versionClick.onclick = () => {
       const apiSection = document.getElementById('cfg-api-section');
-      apiSection.style.display = apiSection.style.display === 'none' ? 'block' : 'none';
+      if (apiSection) apiSection.style.display = apiSection.style.display === 'none' ? 'block' : 'none';
     };
   }
 }
@@ -669,8 +670,11 @@ function saveConfigModal() {
   State.settings.minGrade = parseFloat(document.getElementById('cfg-min-grade').value) || 70;
   const mgEl = document.getElementById('min-grade');
   if (mgEl) mgEl.value = State.settings.minGrade;
-  const apiKey = document.getElementById('cfg-api-key').value.trim();
-  if (apiKey) localStorage.setItem('gemini_api_key', apiKey);
+  const apiKeyEl = document.getElementById('cfg-api-key');
+  if (apiKeyEl) {
+    const apiKey = apiKeyEl.value.trim();
+    if (apiKey) localStorage.setItem('gemini_api_key', apiKey);
+  }
   saveState(['all']);
   closeModal('modal-config');
   window.dispatchEvent(new CustomEvent('config:saved'));

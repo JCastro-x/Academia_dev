@@ -69,15 +69,19 @@
                 </div>
                 <div class="pom-settings-grid">
                   <div class="pom-setting-item">
-                    <div class="pom-setting-label">Enfoque (min)</div>
+                    <label class="pom-setting-label" for="pom-work">Enfoque (min)</label>
                     <input type="number" id="pom-work" value="25" min="1" max="60" class="grade-input pom-setting-input" data-action="pom-settings-change">
                   </div>
                   <div class="pom-setting-item">
-                    <div class="pom-setting-label">Descanso (min)</div>
+                    <label class="pom-setting-label" for="pom-break">Descanso (min)</label>
                     <input type="number" id="pom-break" value="5" min="1" max="30" class="grade-input pom-setting-input" data-action="pom-settings-change">
                   </div>
                   <div class="pom-setting-item">
-                    <div class="pom-setting-label">Ciclos meta</div>
+                    <label class="pom-setting-label" for="pom-long-break">Descanso largo (min)</label>
+                    <input type="number" id="pom-long-break" value="15" min="1" max="60" class="grade-input pom-setting-input" data-action="pom-settings-change">
+                  </div>
+                  <div class="pom-setting-item">
+                    <label class="pom-setting-label" for="pom-cycles">Ciclos meta</label>
                     <input type="number" id="pom-cycles" value="4" min="1" max="20" class="grade-input pom-setting-input" data-action="render-pom-goal">
                   </div>
                 </div>
@@ -192,6 +196,7 @@
               <!-- COLUMNA 2: Música propia MP3 -->
               <div class="sound-column">
                 <div class="sound-section-title">🎶 MÚSICA PROPIA</div>
+                <label for="pom-mp3-input" class="pom-hidden"></label>
                 <input type="file" id="pom-mp3-input" accept="audio/*" class="pom-hidden" data-action="load-local-music">
                 <button class="pom-music-btn sound-music-fullwidth" data-action="trigger-mp3-input">📁 Cargar MP3 / Audio</button>
                 <button class="pom-music-btn pom-hidden" id="pom-music-btn" data-action="toggle-pom-music">
@@ -199,6 +204,7 @@
                 </button>
                 <div class="sound-volume">
                   <span class="sound-volume-label">🔇</span>
+                  <label for="pom-vol" class="pom-hidden">Volumen de música</label>
                   <input type="range" id="pom-vol" min="0" max="100" value="60" class="sound-volume-slider" data-action="set-pom-vol">
                   <span class="sound-volume-label">🔊</span>
                 </div>
@@ -222,7 +228,7 @@
               <div class="card-body chrono-body">
                 <div class="pom-goal-section">
                   <div class="pom-goal-input-group">
-                    <div class="pom-goal-label">Sesiones objetivo hoy</div>
+                    <label class="pom-goal-label" for="pom-goal">Sesiones objetivo hoy</label>
                     <div class="pom-goal-input">
                       <input type="number" id="pom-goal" min="1" max="20" value="4" class="grade-input pom-goal-input-field" data-action="render-pom-goal">
                       <span class="pom-goal-suffix">sesiones</span>

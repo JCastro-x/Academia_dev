@@ -1,23 +1,5 @@
 ﻿/* Academia visual styles bundle. */
-/* Consolidates legacy patch and animation supplement files while preserving cascade order. */
 
-/* Academia bundle: patch + patch2 + v3 + anim-fix */
-
-
-/* ===== Source: academia-patch.css ===== */
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   ACADEMIA â€” Animations PATCH v5.2
-
-   Corrige: notas overflow, pomodoro vida, todos los inputs/ranges
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-
-
-/* â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
-   â•‘  FIX 1 â€” NOTAS HUB: sin scale, sin overflow                â•‘
-   â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   El grid no tiene overflow:hidden, entonces scale sale del borde.
-   Se usa translateY y sombra profunda para evitar desbordes. */
 
 #notes-hub-grid {
   /* Espacio para que el shadow no se corte */

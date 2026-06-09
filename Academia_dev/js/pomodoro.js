@@ -46,6 +46,7 @@ if (pomChannel) {
 // Este archivo solo proporciona la sincronización PiP/BroadcastChannel
 
 let _pomAudioCtx = null;
+let _pomAlarmOscillators = [];
 function initAudioContext() {
   if (_pomAudioCtx) return _pomAudioCtx;
   try {
@@ -53,6 +54,15 @@ function initAudioContext() {
     if (_pomAudioCtx.state === 'suspended') _pomAudioCtx.resume();
   } catch(e) { console.warn('AudioContext init failed', e); }
   return _pomAudioCtx;
+}
+
+function _pomStopAlarm() {
+  try {
+    _pomAlarmOscillators.forEach(osc => {
+      try { osc.stop(); } catch(e) {}
+    });
+    _pomAlarmOscillators = [];
+  } catch(e) {}
 }
 
 
@@ -105,137 +115,8 @@ function _openPomFallbackPopup() {
 }
 
 async function enterFloatingMode() {
-  if (!('documentPictureInPicture' in window)) {
-    _openPomFallbackPopup();
-    return;
-  }
-
-  // Si ya hay una abierta, solo enfocarla
-  if (_pomPipWin && !_pomPipWin.closed) {
-    _pomPipWin.focus();
-    return;
-  }
-
-  try {
-    _pomPipWin = await window.documentPictureInPicture.requestWindow({
-      width: 280,
-      height: 240,
-    });
-  } catch (err) {
-    console.warn('PiP request failed, using popup fallback', err);
-    _openPomFallbackPopup();
-    return;
-  }
-
-  const doc = _pomPipWin.document;
-
-  doc.body.innerHTML = `
-    <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { background: #0a0a0f; font-family: 'Space Mono', monospace, sans-serif; }
-      #pip-root {
-        height: 100vh; display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        text-align: center; user-select: none; color: white; gap: 10px;
-      }
-      #pip-label { font-size: 10px; letter-spacing: 2.5px; color: #a89cff; }
-      #pip-ring-wrap { position: relative; width: 150px; height: 150px; }
-      #pip-ring-wrap svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-      #pip-center {
-        position: absolute; inset: 0;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-      }
-      #pip-time { font-size: 32px; font-weight: 800; letter-spacing: 2px; color: #e8e8f0; }
-      #pip-mode { font-size: 9px; letter-spacing: 1.5px; color: #a89cff; margin-top: 3px; }
-      .pip-btns { display: flex; gap: 8px; }
-      .pip-btn {
-        padding: 8px 14px; border-radius: 10px;
-        border: 1px solid #2a2a38; background: #1e1e2a;
-        color: #e8e8f0; font-size: 13px; font-weight: 700;
-        cursor: pointer; font-family: inherit;
-        transition: background .12s, border-color .12s;
-      }
-      .pip-btn:hover { border-color: #7c6aff; background: #2a2a40; }
-      #pip-toggle { padding: 8px 22px; border: none; background: #7c6aff; color: #fff; }
-      #pip-toggle:hover { background: #6a58e8; }
-    </style>
-    <div id="pip-root">
-      <div id="pip-label">ENFOQUE</div>
-      <div id="pip-ring-wrap">
-        <svg viewBox="0 0 150 150">
-          <circle cx="75" cy="75" r="65" fill="none" stroke="#1e1e2a" stroke-width="8"/>
-          <circle id="pip-ring" cx="75" cy="75" r="65" fill="none" stroke="#7c6aff" stroke-width="8"
-            stroke-dasharray="408.4" stroke-dashoffset="0" stroke-linecap="round"/>
-        </svg>
-        <div id="pip-center">
-          <div id="pip-time">25:00</div>
-          <div id="pip-mode">ENFOQUE</div>
-        </div>
-      </div>
-      <div class="pip-btns">
-        <button class="pip-btn" id="pip-reset">↺ Reset</button>
-        <button class="pip-btn" id="pip-toggle">▶</button>
-        <button class="pip-btn" id="pip-skip">⏭ Skip</button>
-      </div>
-    </div>
-  `;
-
-  // Botones: llaman directamente a funciones del contexto principal
-  // documentPictureInPicture comparte el mismo JS realm
-  doc.getElementById('pip-toggle').addEventListener('click', () => {
-    if (typeof pomToggle === 'function') pomToggle();
-  });
-  doc.getElementById('pip-skip').addEventListener('click', () => {
-    if (typeof pomSkip === 'function') pomSkip();
-  });
-  doc.getElementById('pip-reset').addEventListener('click', () => {
-    if (typeof pomReset === 'function') pomReset();
-  });
-
-  // Loop que lee variables del contexto principal directamente (sin mensajes)
-  let _pipLoop = setInterval(() => {
-    if (!_pomPipWin || _pomPipWin.closed) { clearInterval(_pipLoop); return; }
-
-    const running   = typeof pomR !== 'undefined' ? pomR : false;
-    const isBreak   = typeof pomB !== 'undefined' ? pomB : false;
-    const endTime   = typeof _pomEndTime !== 'undefined' ? _pomEndTime : 0;
-    const total     = typeof pomTS !== 'undefined' && pomTS > 0 ? pomTS : 1500;
-    const paused_sl = typeof pomSL !== 'undefined' ? pomSL : 0;
-
-    // Tiempo: si corre → calcular desde endTime; si pausado → usar pomSL
-    const remaining = (running && endTime > 0)
-      ? Math.max(0, Math.round((endTime - Date.now()) / 1000))
-      : paused_sl;
-
-    const m = Math.floor(remaining / 60);
-    const s = remaining % 60;
-    const timeStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-
-    const modeText  = isBreak ? 'DESCANSO' : 'ENFOQUE';
-    const modeColor = isBreak ? '#4ade80'  : '#a89cff';
-    const ringColor = isBreak ? '#4ade80'  : '#7c6aff';
-    const pct       = total > 0 ? Math.max(0, Math.min(1, remaining / total)) : 1;
-    const offset    = 408.4 * (1 - pct);
-
-    const timeEl   = doc.getElementById('pip-time');
-    const labelEl  = doc.getElementById('pip-label');
-    const modeEl   = doc.getElementById('pip-mode');
-    const ringEl   = doc.getElementById('pip-ring');
-    const toggleEl = doc.getElementById('pip-toggle');
-
-    if (timeEl)   timeEl.textContent = timeStr;
-    if (labelEl)  { labelEl.textContent = modeText; labelEl.style.color = modeColor; }
-    if (modeEl)   { modeEl.textContent  = modeText; modeEl.style.color  = modeColor; }
-    if (ringEl)   { ringEl.style.stroke = ringColor; ringEl.style.strokeDashoffset = offset; }
-    if (toggleEl) toggleEl.textContent = running ? '⏸' : '▶';
-
-  }, 500);
-
-  _pomPipWin.addEventListener('pagehide', () => {
-    clearInterval(_pipLoop);
-    _pomPipWin = null;
-  });
+  // Always use the fallback popup (pom-popup.html) instead of PiP
+  _openPomFallbackPopup();
 }
 
 // Función que app.js llamará en cada tick
@@ -257,6 +138,7 @@ function pomPlayAlarm(isBreak) {
     const _doPlay = () => {
       const now = ctx.currentTime;
       const notes = isBreak ? [523,659,784,1047] : [880,659,523];
+      _pomAlarmOscillators = [];
       notes.forEach((freq, i) => {
         const osc  = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -268,6 +150,7 @@ function pomPlayAlarm(isBreak) {
         gain.gain.linearRampToValueAtTime(0.35, t + 0.04);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.50);
         osc.start(t); osc.stop(t + 0.55);
+        _pomAlarmOscillators.push(osc);
       });
     };
     if (ctx.state === 'suspended') ctx.resume().then(_doPlay).catch(e => console.warn('Alarm resume failed', e));

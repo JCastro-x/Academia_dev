@@ -230,7 +230,6 @@ const PLANNER = (() => {
 
     const changed = moved.length > 0 || stuck.length > 0;
     if (changed) saveState(['topics']);
-    console.log(`[PLANNER] Reagendado: ${moved.length} movidos, ${stuck.length} sin espacio`, { moved, stuck });
     return { moved, stuck };
   }
 

@@ -104,7 +104,6 @@ async function initNotifications() {
   if (typeof NOTIFS_DB !== 'undefined') {
     try {
       await NOTIFS_DB.init();
-      console.log('✅ IndexedDB de notificaciones inicializado');
     } catch (err) {
       console.warn('⚠️ Error inicializando IndexedDB de notificaciones:', err);
     }
