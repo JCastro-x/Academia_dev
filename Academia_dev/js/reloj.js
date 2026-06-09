@@ -107,28 +107,6 @@
       if (pomStreakEl) pomStreakEl.textContent = pomStreak;
       if (pomGoalEl) pomGoalEl.textContent = pomGoal;
 
-      // Renderizar sesiones de Pomodoro en la vista Reloj
-      const sessionsContainer = document.getElementById('reloj-pom-sessions');
-      if (sessionsContainer) {
-        const sessions = State.pomSessions || [];
-        if (sessions.length === 0) {
-          sessionsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text3); font-size: 13px;">Sin sesiones hoy. ¡Inicia tu primer Pomodoro!</div>';
-        } else {
-          sessionsContainer.innerHTML = sessions.map((session, idx) => {
-            const time = session.time || '00:00';
-            const completed = session.completed ? '✅' : '⏹️';
-            const task = session.task || 'Sin tarea';
-            return `<div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border);">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 14px;">${completed}</span>
-                <span style="font-size: 13px; color: var(--text);">${task}</span>
-              </div>
-              <span style="font-size: 12px; font-family: 'Space Mono', monospace; color: var(--accent);">${time}</span>
-            </div>`;
-          }).join('');
-        }
-      }
-
       // Cronometro stats
       const chronoData = State.settings?.chronoData;
       const lastEl = document.getElementById('chrono-last');

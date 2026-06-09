@@ -7,259 +7,97 @@
           </button>
         </div>
 
-        <!-- ── FILA 1: Temporizador + Cronómetro lado a lado ── -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:16px;">
+        <!-- ── LAYOUT: 2 Columnas ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
 
-          <!-- Temporizador Pomodoro -->
+          <!-- Columna izquierda: Pomodoro -->
           <div class="card">
             <div class="card-header">
               <span class="card-title">⏱️ Temporizador Pomodoro</span>
-              <!-- Botón Focus pequeño y discreto -->
-              <!-- Botón Popup flotante -->
-              <button id="pom-mini-toggle-btn"
-                onclick="enterFloatingMode()"
-                title="Ventana flotante — siempre visible sobre otras apps"
-                style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-weight:700;color:var(--accent2);display:flex;align-items:center;gap:5px;transition:all .2s;"
-                onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
-                onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'">
-                ⏰ Popup
-              </button>
-              <!-- Botón Focus Mode -->
-              <button onclick="enterFocusMode()"
-                title="Modo Focus — pantalla limpia"
-                style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:5px;transition:all .2s;"
-                onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
-                onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'">
-                🔥 Focus
-              </button>
-              <script>
-              // Mostrar aviso si el timer no corre al presionar el botón 📟
-              function _pomIsRunningCheck() {
-                if (typeof pomR !== "undefined" && pomR) {
-                  // Simular que estamos en otra página para que aparezca
-                  const p = document.getElementById("page-pomodoro");
-                  if (p) p.classList.remove("active");
-                  window._pomShowMiniFloat();
-                  setTimeout(() => { if (p) p.classList.add("active"); }, 50);
-                } else {
-                  const btn = document.getElementById("pom-mini-toggle-btn");
-                  if (btn) {
-                    btn.title = "⚠️ Inicia el timer primero";
-                    btn.style.borderColor = "#f87171";
-                    setTimeout(() => {
-                      btn.title = "📟 Mini Timer";
-                      btn.style.borderColor = "";
-                    }, 1500);
+              <div style="display:flex;gap:8px;">
+                <button id="pom-mini-toggle-btn"
+                  onclick="enterFloatingMode()"
+                  title="Ventana flotante — siempre visible sobre otras apps"
+                  style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-weight:700;color:var(--accent2);display:flex;align-items:center;gap:5px;transition:all .2s;"
+                  onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
+                  onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'">
+                  ⏰ Popup
+                </button>
+                <button onclick="enterFocusMode()"
+                  title="Modo Focus — pantalla limpia"
+                  style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-weight:700;color:var(--text2);display:flex;align-items:center;gap:5px;transition:all .2s;"
+                  onmouseover="this.style.background='var(--accent-glow)';this.style.borderColor='var(--accent)'"
+                  onmouseout="this.style.background='var(--surface2)';this.style.borderColor='var(--border2)'">
+                  🔥 Focus
+                </button>
+                <script>
+                function _pomIsRunningCheck() {
+                  if (typeof pomR !== "undefined" && pomR) {
+                    const p = document.getElementById("page-pomodoro");
+                    if (p) p.classList.remove("active");
+                    window._pomShowMiniFloat();
+                    setTimeout(() => { if (p) p.classList.add("active"); }, 50);
+                  } else {
+                    const btn = document.getElementById("pom-mini-toggle-btn");
+                    if (btn) {
+                      btn.title = "⚠️ Inicia el timer primero";
+                      btn.style.borderColor = "#f87171";
+                      setTimeout(() => {
+                        btn.title = "📟 Mini Timer";
+                        btn.style.borderColor = "";
+                      }, 1500);
+                    }
                   }
                 }
-              }
-              </script>
+                </script>
+              </div>
             </div>
             <div class="card-body">
               <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
-                <label for="reloj-pom-subject" class="pom-hidden">Materia</label>
-                <select class="form-select" id="reloj-pom-subject" style="width:100%;"></select>
-                <div style="width:100%;">
-                  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:6px;">📋 ESTUDIANDO</div>
-                  <label for="reloj-pom-task-sel" class="pom-hidden">Tarea</label>
-                  <select class="form-select" id="reloj-pom-task-sel" style="width:100%;font-size:12px;">
-                    <option value="">— Sin tarea específica —</option>
-                  </select>
-                </div>
                 <div class="pom-ring">
                   <svg class="pom-svg" viewBox="0 0 190 190">
                     <circle class="pom-bg" cx="95" cy="95" r="82"/>
-                    <circle class="pom-prog" id="reloj-pom-ring" cx="95" cy="95" r="82" stroke-dasharray="515" stroke-dashoffset="0"/>
+                    <circle class="pom-prog" id="pom-ring" cx="95" cy="95" r="82" stroke-dasharray="515" stroke-dashoffset="0"/>
                   </svg>
                   <div class="pom-center">
-                    <div class="pom-time" id="reloj-pom-time">25:00</div>
-                    <div class="pom-mode" id="reloj-pom-mode">ENFOQUE</div>
+                    <div class="pom-time" id="pom-time">25:00</div>
+                    <div class="pom-mode" id="pom-mode">ENFOQUE</div>
                   </div>
                 </div>
-                <div style="display:flex;gap:5px;" id="reloj-pom-dots"></div>
+                <div style="display:flex;gap:5px;" id="pom-dots"></div>
                 <div style="display:flex;gap:10px;">
                   <button class="btn btn-ghost btn-sm" onclick="pomReset()">↺ Reset</button>
-                  <button class="btn btn-primary" id="reloj-pom-btn" onclick="pomToggle()">▶ Iniciar</button>
+                  <button class="btn btn-primary" id="pom-btn" onclick="pomToggle()">▶ Iniciar</button>
                   <button class="btn btn-ghost btn-sm" onclick="pomSkip()">⏭ Skip</button>
                 </div>
-                <div style="display:flex;gap:16px;">
-                  <div style="text-align:center;">
-                    <label for="reloj-pom-work" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Enfoque (min)</label>
-                    <input type="number" id="reloj-pom-work" value="25" min="1" max="60" class="grade-input" style="width:58px;" onchange="pomReset()">
-                  </div>
-                  <div style="text-align:center;">
-                    <label for="reloj-pom-break" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Descanso (min)</label>
-                    <input type="number" id="reloj-pom-break" value="5" min="1" max="30" class="grade-input" style="width:58px;" onchange="pomReset()">
-                  </div>
-                  <div style="text-align:center;">
-                    <label for="reloj-pom-cycles" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Ciclos meta</label>
-                    <input type="number" id="reloj-pom-cycles" value="4" min="1" max="20" class="grade-input" style="width:58px;" oninput="renderPomGoal()">
-                  </div>
-                </div>
-                <button class="btn btn-primary" onclick="pomSavePartial()" style="width:100%;font-size:13px;font-weight:700;">💾 Guardar progreso de sesión</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Cronómetro inteligente -->
-          <div class="card" style="height:100%;">
-            <div class="card-header">
-              <span class="card-title">🕐 Cronómetro</span>
-              <span style="font-size:10px;color:var(--accent2);font-family:'Space Mono',monospace;background:var(--accent-glow);padding:2px 8px;border-radius:4px;" id="chrono-mode-badge">INDEPENDIENTE</span>
-            </div>
-            <div class="card-body" style="display:flex;flex-direction:column;gap:16px;padding:18px;">
-
-              <!-- Contador EFECTIVO grande (solo cuando corre el pomodoro) -->
-              <div id="chrono-work-block" style="background:rgba(74,222,128,.1);border:2px solid rgba(74,222,128,.3);border-radius:14px;padding:20px 16px;text-align:center;transition:all .25s;">
-                <div style="font-size:10px;color:var(--green);font-family:'Space Mono',monospace;letter-spacing:2px;margin-bottom:8px;">📚 TIEMPO EFECTIVO DE ESTUDIO</div>
-                <div style="font-size:52px;font-weight:800;font-family:'Space Mono',monospace;color:var(--green);letter-spacing:2px;line-height:1;" id="chrono-work">00:00:00</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:6px;">Solo cuenta cuando el pomodoro corre</div>
-              </div>
-
-              <!-- Contadores secundarios: Descanso + Total real -->
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div id="chrono-break-block" style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.25);border-radius:12px;padding:14px 10px;text-align:center;transition:all .25s;">
-                  <div style="font-size:9px;color:var(--blue);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:6px;">☕ DESCANSO</div>
-                  <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace;color:var(--blue);letter-spacing:1px;line-height:1;" id="chrono-break">00:00:00</div>
-                </div>
-                <div id="chrono-total-block" style="background:rgba(124,106,255,.08);border:1px solid rgba(124,106,255,.25);border-radius:12px;padding:14px 10px;text-align:center;transition:all .25s;">
-                  <div style="font-size:9px;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:6px;">⏱️ TIEMPO REAL</div>
-                  <div style="font-size:28px;font-weight:800;font-family:'Space Mono',monospace;color:var(--accent2);letter-spacing:1px;line-height:1;" id="chrono-total">00:00:00</div>
-                </div>
-              </div>
-
-              <!-- Status + Eficiencia -->
-              <div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-                  <span style="font-size:12px;color:var(--text2);" id="chrono-status">⏹ Detenido</span>
-                  <span style="font-size:11px;font-weight:700;font-family:'Space Mono',monospace;" id="chrono-pct" style="color:var(--green);">—</span>
-                </div>
-                <div class="prog-bar"><div class="prog-fill" id="chrono-bar" style="width:0%;background:var(--green);transition:width .5s;"></div></div>
-                <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:right;">eficiencia (estudio / tiempo real)</div>
-              </div>
-
-              <!-- Controles -->
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-primary" id="chrono-btn" onclick="chronoToggle()" style="flex:1;">▶ Iniciar</button>
-                <button class="btn btn-ghost btn-sm" onclick="chronoReset()" title="Reiniciar">↺</button>
-              </div>
-              <button class="btn btn-ghost btn-sm" onclick="chronoSwitchPhase()" style="width:100%;font-size:11px;" id="chrono-switch-btn">☕ Cambiar a descanso</button>
-
-              <!-- Resumen última sesión -->
-              <div id="chrono-summary" style="display:none;background:var(--surface2);border-radius:8px;padding:12px 14px;">
-                <div style="font-size:10px;font-weight:700;color:var(--accent2);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:8px;">📊 ÚLTIMA SESIÓN GUARDADA</div>
-                <div id="chrono-summary-text" style="font-size:12px;color:var(--text2);font-family:'Space Mono',monospace;line-height:2;"></div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- ── FILA 2: Ambiente Sonoro (ancho completo) ── -->
-        <div class="card" style="margin-bottom:16px;">
-          <div class="card-header">
-            <span class="card-title">🎵 Ambiente Sonoro</span>
-            <span style="font-size:11px;color:var(--text3);" id="sound-now-playing">— Sin sonido —</span>
-          </div>
-          <div class="card-body" style="padding:16px 18px;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
-
-              <!-- COLUMNA 1: Sonidos ambientales -->
-              <div>
-                <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:10px;">🌊 SONIDOS AMBIENTALES</div>
-                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
-                  <!-- Fila 1: Ruidos de concentración -->
-                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="pom-music-btn" id="reloj-noise-white-btn" onclick="toggleNoise('white')" title="Ruido blanco — espectro plano">
-                      <span id="reloj-noise-white-icon">▶</span> Blanco
-                    </button>
-                    <button class="pom-music-btn" id="reloj-noise-pink-btn" onclick="toggleNoise('pink')" title="Ruido rosa — 1/f, más natural">
-                      <span id="reloj-noise-pink-icon">▶</span> 🌸 Rosa
-                    </button>
-                    <button class="pom-music-btn" id="reloj-noise-brown-btn" onclick="toggleNoise('brown')" title="Ruido tierra — grave y profundo">
-                      <span id="reloj-noise-brown-icon">▶</span> 🟤 Tierra
-                    </button>
-                  </div>
-                  <!-- Fila 2: Naturaleza + Atmósferas -->
-                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="pom-music-btn" id="reloj-noise-rain-btn" onclick="toggleNoise('rain')" title="Lluvia suave">
-                      <span id="reloj-noise-rain-icon">▶</span> 🌧 Lluvia
-                    </button>
-                    <button class="pom-music-btn" id="reloj-noise-storm-btn" onclick="toggleNoise('storm')" title="Tormenta con truenos">
-                      <span id="reloj-noise-storm-icon">▶</span> ⛈ Tormenta
-                    </button>
-                    <button class="pom-music-btn" id="reloj-noise-fire-btn" onclick="toggleNoise('fire')" title="Fuego crepitando">
-                      <span id="reloj-noise-fire-icon">▶</span> 🔥 Fuego
-                    </button>
-                    <button class="pom-music-btn" id="reloj-noise-forest-btn" onclick="toggleNoise('forest')" title="Bosque con pájaros">
-                      <span id="reloj-noise-forest-icon">▶</span> 🌿 Bosque
-                    </button>
-                    <button class="pom-music-btn" id="reloj-noise-ocean-btn" onclick="toggleNoise('ocean')" title="Olas del mar">
-                      <span id="reloj-noise-ocean-icon">▶</span> 🌊 Océano
-                    </button>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span style="font-size:11px;">🔇</span>
-                  <label for="reloj-noise-vol" class="pom-hidden">Volumen de ruido</label>
-                  <input type="range" id="reloj-noise-vol" min="0" max="100" value="30" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setNoiseVol(this.value)">
-                  <span style="font-size:11px;">🔊</span>
-                </div>
-              </div>
-
-              <!-- COLUMNA 2: Música propia MP3 -->
-              <div>
-                <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:10px;">🎶 MÚSICA PROPIA</div>
-                <label for="reloj-pom-mp3-input" class="pom-hidden"></label>
-                <input type="file" id="reloj-pom-mp3-input" accept="audio/*" style="display:none;" onchange="loadLocalMusic(this)">
-                <button class="pom-music-btn" onclick="document.getElementById('reloj-pom-mp3-input').click()" style="width:100%;margin-bottom:6px;">📁 Cargar MP3 / Audio</button>
-                <button class="pom-music-btn" id="reloj-pom-music-btn" onclick="togglePomMusic()" style="display:none;width:100%;margin-bottom:6px;">
-                  <span id="reloj-pom-music-icon">▶</span> <span id="reloj-pom-music-label">Reproducir</span>
-                </button>
-                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-                  <span style="font-size:11px;">🔇</span>
-                  <label for="reloj-pom-vol" class="pom-hidden">Volumen de música</label>
-                  <input type="range" id="reloj-pom-vol" min="0" max="100" value="60" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setPomVol(this.value)">
-                  <span style="font-size:11px;">🔊</span>
-                </div>
-                <div style="font-size:11px;color:var(--text3);margin-top:6px;" id="reloj-pom-music-status">Sin archivo · Carga un MP3</div>
-                <audio id="reloj-pom-audio" loop style="display:none;"></audio>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        <!-- ── FILA 3: Stats + Racha + Historial ── -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
-
-          <!-- Columna izquierda: Meta + Racha + Stats rápidas -->
-          <div style="display:flex;flex-direction:column;gap:14px;">
-
-            <!-- Meta diaria -->
-            <div class="card">
-              <div class="card-header"><span class="card-title">🎯 Meta del Día</span></div>
-              <div class="card-body" style="padding:14px 18px;">
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                  <div style="flex:1;">
-                    <div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Sesiones objetivo hoy</div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                      <label for="pom-goal" class="pom-hidden">Sesiones objetivo hoy</label>
-                      <input type="number" id="pom-goal" min="1" max="20" value="4" class="grade-input" style="width:58px;" oninput="renderPomGoal()">
-                      <span style="font-size:12px;color:var(--text3);">sesiones</span>
+                <div style="width:100%;display:flex;flex-direction:column;gap:12px;">
+                  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:4px;">⚙️ CONFIGURACIÓN</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                      <label for="pom-work" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Enfoque (min)</label>
+                      <input type="number" id="pom-work" value="25" min="1" max="60" class="grade-input" style="width:100%;" onchange="pomReset()">
+                    </div>
+                    <div>
+                      <label for="pom-break" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Descanso (min)</label>
+                      <input type="number" id="pom-break" value="5" min="1" max="30" class="grade-input" style="width:100%;" onchange="pomReset()">
+                    </div>
+                    <div>
+                      <label for="pom-cycles" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Ciclos meta</label>
+                      <input type="number" id="pom-cycles" value="4" min="1" max="20" class="grade-input" style="width:100%;" oninput="renderPomGoal()">
+                    </div>
+                    <div>
+                      <label for="pom-goal" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Sesiones hoy</label>
+                      <input type="number" id="pom-goal" min="1" max="20" value="4" class="grade-input" style="width:100%;" oninput="renderPomGoal()">
                     </div>
                   </div>
-                  <div style="text-align:center;padding:12px 16px;background:var(--surface2);border-radius:12px;min-width:80px;">
-                    <div style="font-size:28px;font-weight:800;color:var(--accent2);" id="pom-goal-done">0</div>
-                    <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">HOY</div>
-                  </div>
+                  <button class="btn btn-primary" onclick="pomSavePartial()" style="width:100%;font-size:13px;font-weight:700;">💾 Guardar progreso de sesión</button>
                 </div>
-                <div class="prog-bar" style="margin-bottom:6px;">
-                  <div class="prog-fill" id="pom-goal-bar" style="background:var(--accent2);width:0%;transition:width .4s;"></div>
-                </div>
-                <div style="font-size:11px;color:var(--text3);" id="pom-goal-label">0 de 4 sesiones completadas</div>
               </div>
             </div>
+          </div>
+
+          <!-- Columna derecha: Racha + Sonidos -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
 
             <!-- Racha de estudio -->
             <div class="card">
@@ -283,34 +121,63 @@
                   <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-bottom:6px;">ACTIVIDAD — ÚLTIMOS 7 DÍAS</div>
                   <div style="display:flex;gap:4px;align-items:flex-end;height:40px;" id="pom-week-bars"></div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Stats rápidas hoy -->
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
-              <div class="card" style="text-align:center;">
-                <div class="card-body" style="padding:14px 10px;">
-                  <div style="font-size:24px;font-weight:800;color:var(--accent2);" id="pom-stat-total">0</div>
-                  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:2px;">SESIONES HOY</div>
-                </div>
-              </div>
-              <div class="card" style="text-align:center;">
-                <div class="card-body" style="padding:14px 10px;">
-                  <div style="font-size:24px;font-weight:800;color:var(--green);" id="pom-stat-mins">0</div>
-                  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:2px;">MIN HOY</div>
+                <div style="margin-top:12px;">
+                  <div class="prog-bar" style="margin-bottom:6px;">
+                    <div class="prog-fill" id="pom-goal-bar" style="background:var(--accent2);width:0%;transition:width .4s;"></div>
+                  </div>
+                  <div style="font-size:11px;color:var(--text3);text-align:center;" id="pom-goal-label">0 de 4 sesiones completadas</div>
                 </div>
               </div>
             </div>
 
-          </div>
-
-          <!-- Columna derecha: Historial de sesiones -->
-          <div class="card" style="height:100%;">
-            <div class="card-header">
-              <span class="card-title">📊 Historial de Sesiones</span>
-              <button class="btn btn-ghost btn-sm" onclick="clearPomHistory()" style="font-size:11px;color:var(--text3);">Limpiar hoy</button>
+            <!-- Ambiente Sonoro -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">🎵 Ambiente Sonoro</span>
+                <span style="font-size:11px;color:var(--text3);" id="sound-now-playing">— Sin sonido —</span>
+              </div>
+              <div class="card-body" style="padding:16px 18px;">
+                <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1.5px;margin-bottom:10px;">🌊 SONIDOS AMBIENTALES</div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+                  <!-- Fila 1: Ruidos de concentración -->
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="pom-music-btn" id="noise-white-btn" onclick="toggleNoise('white')" title="Ruido blanco — espectro plano">
+                      <span id="noise-white-icon">▶</span> Blanco
+                    </button>
+                    <button class="pom-music-btn" id="noise-pink-btn" onclick="toggleNoise('pink')" title="Ruido rosa — 1/f, más natural">
+                      <span id="noise-pink-icon">▶</span> 🌸 Rosa
+                    </button>
+                    <button class="pom-music-btn" id="noise-brown-btn" onclick="toggleNoise('brown')" title="Ruido tierra — grave y profundo">
+                      <span id="noise-brown-icon">▶</span> 🟤 Tierra
+                    </button>
+                  </div>
+                  <!-- Fila 2: Naturaleza + Atmósferas -->
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="pom-music-btn" id="noise-rain-btn" onclick="toggleNoise('rain')" title="Lluvia suave">
+                      <span id="noise-rain-icon">▶</span> 🌧 Lluvia
+                    </button>
+                    <button class="pom-music-btn" id="noise-storm-btn" onclick="toggleNoise('storm')" title="Tormenta con truenos">
+                      <span id="noise-storm-icon">▶</span> ⛈ Tormenta
+                    </button>
+                    <button class="pom-music-btn" id="noise-fire-btn" onclick="toggleNoise('fire')" title="Fuego crepitando">
+                      <span id="noise-fire-icon">▶</span> 🔥 Fuego
+                    </button>
+                    <button class="pom-music-btn" id="noise-forest-btn" onclick="toggleNoise('forest')" title="Bosque con pájaros">
+                      <span id="noise-forest-icon">▶</span> 🌿 Bosque
+                    </button>
+                    <button class="pom-music-btn" id="noise-ocean-btn" onclick="toggleNoise('ocean')" title="Olas del mar">
+                      <span id="noise-ocean-icon">▶</span> 🌊 Océano
+                    </button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:11px;">🔇</span>
+                  <input type="range" id="noise-vol" min="0" max="100" value="30" style="flex:1;accent-color:var(--accent);cursor:pointer;" oninput="setNoiseVol(this.value)">
+                  <span style="font-size:11px;">🔊</span>
+                </div>
+              </div>
             </div>
-            <div class="card-body" id="pom-history" style="max-height:500px;overflow-y:auto;padding:0;"></div>
+
           </div>
 
         </div>
@@ -323,18 +190,14 @@
 <script>
 // Inicializar pomodoro cuando se carga este partial
 document.addEventListener('partial-loaded', function(e) {
-  console.log('📥 Evento partial-loaded:', e.detail);
   if (e.detail && e.detail.name === 'p-reloj-pomodoro') {
-    console.log('✅ Pomodoro partial cargado, inicializando...');
     setTimeout(() => {
       // Inicializar selectores y renderizar historial/meta
-      if (typeof fillPomSel === 'function') fillPomSel();
       if (typeof renderPomHistory === 'function') renderPomHistory();
       if (typeof renderPomGoal === 'function') renderPomGoal();
       if (typeof updatePomDots === 'function') updatePomDots();
       if (typeof pomReset === 'function') pomReset();
       if (typeof restorePomRunningState === 'function') restorePomRunningState();
-      console.log('✅ Pomodoro inicializado');
     }, 150);
   }
 });
