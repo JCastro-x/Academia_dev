@@ -82,6 +82,10 @@
                       <input type="number" id="pom-break" value="5" min="1" max="30" class="grade-input" style="width:100%;" onchange="pomReset()">
                     </div>
                     <div>
+                      <label for="pom-long-break" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Desc. largo (min)</label>
+                      <input type="number" id="pom-long-break" value="15" min="5" max="60" class="grade-input" style="width:100%;" onchange="pomReset()">
+                    </div>
+                    <div>
                       <label for="pom-cycles" style="font-size:11px;color:var(--text3);margin-bottom:4px;display:block;">Ciclos meta</label>
                       <input type="number" id="pom-cycles" value="4" min="1" max="20" class="grade-input" style="width:100%;" oninput="renderPomGoal()">
                     </div>
@@ -192,11 +196,13 @@
 document.addEventListener('partial-loaded', function(e) {
   if (e.detail && e.detail.name === 'p-reloj-pomodoro') {
     setTimeout(() => {
+      // Cargar configuraciones guardadas
+      if (typeof loadPomSettings === 'function') loadPomSettings();
       // Inicializar selectores y renderizar historial/meta
       if (typeof renderPomHistory === 'function') renderPomHistory();
       if (typeof renderPomGoal === 'function') renderPomGoal();
       if (typeof updatePomDots === 'function') updatePomDots();
-      if (typeof pomReset === 'function') pomReset();
+      // Restaurar estado corriendo sin reiniciar
       if (typeof restorePomRunningState === 'function') restorePomRunningState();
     }, 150);
   }

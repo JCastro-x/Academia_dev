@@ -12,6 +12,7 @@ window.pomD = 0;      // Ciclos completados hoy
 window.pomI = null;   // Interval ID
 window._pomEndTime = 0; // Timestamp de fin del timer (para sincronización con popup)
 window._pomIsLongBreak = false; // ¿Es descanso largo?
+window._pomPausedNoiseType = null; // Tipo de ruido ambiental que estaba sonando antes de pausar
 
 // ═══════════════════════════════════════════════════════════════
 // Helpers de cálculo de tiempo
@@ -184,6 +185,12 @@ function restorePomRunningState() {
   // Notificar a UI para actualizar botón
   window.dispatchEvent(new CustomEvent('pomodoro:restored', { detail: { running: true } }));
   
+  // Limpiar cualquier intervalo existente antes de crear uno nuevo
+  if (window.pomI) {
+    clearInterval(window.pomI);
+    window.pomI = null;
+  }
+  
   // Reanudar intervalo
   window.pomI = setInterval(() => {
     window.pomSL--;
@@ -236,8 +243,11 @@ function pomToggle() {
     _pomBeep('pause');
     // Detener alarma si está sonando
     _pomStopAlarm();
-    // Detener ruido ambiente si está sonando
-    if (typeof window._stopNoise === 'function') window._stopNoise();
+    // Guardar y detener ruido ambiente si está sonando
+    if (typeof window._noiseType !== 'undefined' && window._noiseType) {
+      window._pomPausedNoiseType = window._noiseType;
+      if (typeof window._stopNoise === 'function') window._stopNoise();
+    }
     // Notify chrono: pom paused
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, null);
     window.dispatchEvent(new CustomEvent('pomodoro:pause'));
@@ -247,6 +257,11 @@ function pomToggle() {
     window.pomR = true;
     _savePomRunningState();
     _pomBeep(window.pomB ? 'break' : 'start');
+    // Reanudar ruido ambiente si estaba sonando antes de pausar
+    if (window._pomPausedNoiseType && typeof toggleNoise === 'function') {
+      toggleNoise(window._pomPausedNoiseType);
+      window._pomPausedNoiseType = null;
+    }
     // Notify chrono: pom running
     if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(true, window.pomB ? 'break' : 'work');
     window.dispatchEvent(new CustomEvent('pomodoro:start', { detail: { isBreak: window.pomB, isLongBreak: window._pomIsLongBreak } }));
@@ -329,9 +344,10 @@ function _savePomPartialInternal({ silent = false } = {}) {
   const totalBreak = pomBreak();
   
   // Calcular tiempo acumulado: ciclos completados + tiempo actual
-  const completedCyclesMins = window.pomD * (totalWork / 60);
+  // pomD es el número de ciclos COMPLETADOS (puntos llenos)
+  const completedCyclesSec = window.pomD * totalWork;
   const currentElapsed = window.pomB ? (totalBreak - window.pomSL) : (totalWork - window.pomSL);
-  const totalElapsedSec = (window.pomD * totalWork) + currentElapsed;
+  const totalElapsedSec = completedCyclesSec + currentElapsed;
   
   if (totalElapsedSec < 60) {
     if (!silent && typeof _appNotify === 'function') _appNotify('Menos de 1 minuto transcurrido. No se guardará.', 'warning');
@@ -339,7 +355,7 @@ function _savePomPartialInternal({ silent = false } = {}) {
   }
   
   const mins = Math.round(totalElapsedSec / 60);
-  const subj = document.getElementById('pom-subject').value;
+  const subj = document.getElementById('pom-subject')?.value || '';
   const m = getMat(subj);
   _appendPomSession({
     subject: m.name || subj || 'General',

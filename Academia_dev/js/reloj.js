@@ -47,7 +47,7 @@
               if (typeof renderPomHistory === 'function') renderPomHistory();
               if (typeof renderPomGoal === 'function') renderPomGoal();
               if (typeof updatePomDots === 'function') updatePomDots();
-              if (typeof pomReset === 'function') pomReset();
+              if (typeof restorePomRunningState === 'function') restorePomRunningState();
             } else if (mode === 'cronometro') {
               if (typeof initChronoData === 'function') initChronoData();
               if (typeof updateChronoDisplay === 'function') updateChronoDisplay();

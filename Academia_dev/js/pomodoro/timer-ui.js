@@ -11,15 +11,16 @@ function updatePomDisp() {
   const ringEl = document.getElementById('pom-ring');
   const modeEl = document.getElementById('pom-mode');
   if (!timeEl || !ringEl || !modeEl) return;
-  
+
   const m = Math.floor(window.pomSL / 60);
   const s = window.pomSL % 60;
-  timeEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  
+  const timeText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  timeEl.textContent = timeText;
+
   const circ = 2 * Math.PI * 82;
   const prog = window.pomTS > 0 ? window.pomSL / window.pomTS : 1;
   ringEl.style.strokeDashoffset = circ * (1 - prog);
-  
+
   // Color: verde para descanso normal, amarillo para descanso largo, accent para enfoque
   if (window.pomB) {
     ringEl.style.stroke = window._pomIsLongBreak ? '#fbbf24' : '#4ade80';
@@ -27,6 +28,11 @@ function updatePomDisp() {
   } else {
     ringEl.style.stroke = 'var(--accent)';
     modeEl.textContent = 'ENFOQUE';
+  }
+
+  // Sincronizar con PiP
+  if (typeof _pomUpdateSync === 'function') {
+    _pomUpdateSync(timeText, window.pomB);
   }
 }
 

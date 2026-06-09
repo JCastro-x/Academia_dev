@@ -520,7 +520,7 @@ async function goPage(id, el, context = null) {
     case 'calificaciones': renderGrades(); break;
     case 'temas':          fillMatSels(); fillTopicMatSel(); renderTopics(); break;
     case 'estadisticas':   renderStats(); break;
-    case 'pomodoro':       fillPomSel(); renderPomHistory(); renderPomGoal(); break;
+    case 'pomodoro':       fillPomSel(); renderPomHistory(); renderPomGoal(); setTimeout(() => { if (typeof restorePomRunningState === 'function') restorePomRunningState(); }, 100); break;
     case 'p-reloj':
       // Inicializar estadísticas del selector de reloj
       setTimeout(() => {

@@ -5,6 +5,7 @@
 let _uiSoundsEnabled = true;
 let _noiseNode = null, _noiseGain = null, _noiseType = null;
 let _noiseVol = 0.30;
+window._noiseType = _noiseType; // Exponer a window para pomodoro
 
 function toggleUiSounds() {
   _uiSoundsEnabled = !_uiSoundsEnabled;
@@ -351,6 +352,7 @@ function toggleNoise(type) {
       _noiseGain.gain.linearRampToValueAtTime(_noiseVol, ctx.currentTime + 1.2);
       src.start();
       _noiseNode = src; _noiseType = type;
+      window._noiseType = _noiseType; // Sincronizar con window
       _updateNoiseButtons();
 
       // Update "now playing" label
@@ -379,6 +381,7 @@ function _stopNoise() {
     _noiseNode = null; _noiseGain = null;
   }
   _noiseType = null;
+  window._noiseType = null; // Sincronizar con window
   _updateNoiseButtons();
   const np = document.getElementById('sound-now-playing');
   if (np) np.textContent = '— Sin sonido —';

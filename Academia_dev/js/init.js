@@ -410,7 +410,7 @@ function continueInit(auth) {
     // Pomodoro functions now have guards - safe to call even if partial not loaded
     if (typeof loadPomSettings === 'function') loadPomSettings();
     if (typeof initPomSettingsListeners === 'function') initPomSettingsListeners();
-    updatePomDots(); pomReset(); restorePomRunningState();
+    updatePomDots(); restorePomRunningState();
 
     document.querySelectorAll('.modal-overlay').forEach(o =>
       o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); })

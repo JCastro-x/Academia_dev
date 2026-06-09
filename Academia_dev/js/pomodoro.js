@@ -41,6 +41,18 @@ if (pomChannel) {
   };
 }
 
+// Escuchar comandos del PIP via window.opener.postMessage (para compatibilidad con PIP window)
+window.addEventListener('message', (e) => {
+  const d = e.data || {};
+  if (d.type === 'CMD') {
+    const a = d.action;
+    if      (a === 'TOGGLE') { if (typeof pomToggle === 'function') pomToggle(); }
+    else if (a === 'SKIP')   { if (typeof pomSkip   === 'function') pomSkip();   }
+    else if (a === 'RESET')  { if (typeof pomReset  === 'function') pomReset();  }
+    else if (a === 'FOCUS')  window.focus();
+  }
+});
+
 // NOTA: Variables pomR, pomB, pomSL, pomTS, pomD, pomI ahora están definidas
 // globalmente en window por js/pomodoro/timer-core.js
 // Este archivo solo proporciona la sincronización PiP/BroadcastChannel
@@ -115,22 +127,81 @@ function _openPomFallbackPopup() {
 }
 
 async function enterFloatingMode() {
-  // Always use the fallback popup (pom-popup.html) instead of PiP
-  _openPomFallbackPopup();
+  if (!('documentPictureInPicture' in window)) {
+    _openPomFallbackPopup();
+    return;
+  }
+  try {
+    _pomPipWin = await window.documentPictureInPicture.requestWindow({
+      width: 320,
+      height: 480
+    });
+    if (!_pomPipWin) {
+      _openPomFallbackPopup();
+      return;
+    }
+    _pomPipWin.document.write(`
+      <style>
+        body { margin:0; padding:20px; background:#0d0d14; color:#e8e8f0; font-family:'Inter',system-ui,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; }
+        #pip-root { display:flex; flex-direction:column; align-items:center; gap:16px; }
+        #pip-label { font-size:12px; letter-spacing:2px; color:#a89cff; font-family:'Space Mono',monospace; }
+        #pip-ring-wrap { position:relative; width:150px; height:150px; }
+        #pip-ring-wrap svg { transform:rotate(-90deg); }
+        #pip-ring { transition:stroke-dashoffset 0.5s linear; }
+        #pip-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        #pip-time { font-size:36px; font-weight:800; font-family:'Space Mono',monospace; letter-spacing:2px; }
+        #pip-mode { font-size:11px; color:#a89cff; font-family:'Space Mono',monospace; letter-spacing:1px; }
+        .pip-btns { display:flex; gap:8px; }
+        .pip-btn { padding:8px 16px; border-radius:8px; border:1px solid #2a2a38; background:#1e1e2a; color:#e8e8f0; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+        .pip-btn:hover { border-color:#7c6aff; background:#1e1e30; }
+      </style>
+      <div id="pip-root">
+        <div id="pip-label">ENFOQUE</div>
+        <div id="pip-ring-wrap">
+          <svg viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="65" fill="none" stroke="#1e1e2a" stroke-width="8"></circle>
+            <circle id="pip-ring" cx="75" cy="75" r="65" fill="none" stroke="#7c6aff" stroke-width="8" stroke-dasharray="408.4" stroke-dashoffset="0" stroke-linecap="round"></circle>
+          </svg>
+          <div id="pip-center">
+            <div id="pip-time">25:00</div>
+            <div id="pip-mode">ENFOQUE</div>
+          </div>
+        </div>
+        <div class="pip-btns">
+          <button class="pip-btn" id="pip-reset">↺ Reset</button>
+          <button class="pip-btn" id="pip-toggle">▶</button>
+          <button class="pip-btn" id="pip-skip">⏭ Skip</button>
+        </div>
+      </div>
+      <script>
+        document.getElementById('pip-reset').onclick = () => window.opener.postMessage({type:'CMD',action:'RESET'},'*');
+        document.getElementById('pip-toggle').onclick = () => window.opener.postMessage({type:'CMD',action:'TOGGLE'},'*');
+        document.getElementById('pip-skip').onclick = () => window.opener.postMessage({type:'CMD',action:'SKIP'},'*');
+      </script>
+    `);
+    _pomPipWin.document.close();
+    _pomShowFloatingHint('Modo Picture-in-Picture activado.');
+  } catch(e) {
+    _openPomFallbackPopup();
+  }
 }
 
 // Función que app.js llamará en cada tick
-/*function _pomUpdateSync(timeText, isBreak) {
+function _pomUpdateSync(timeText, isBreak) {
   if (_pomPipWin && !_pomPipWin.closed) {
     const timeEl = _pomPipWin.document.getElementById('pip-time');
     const modeEl = _pomPipWin.document.getElementById('pip-mode');
+    const ringEl = _pomPipWin.document.getElementById('pip-ring');
     if (timeEl) timeEl.textContent = timeText;
     if (modeEl) {
       modeEl.textContent = isBreak ? 'DESCANSO' : 'ENFOQUE';
       modeEl.style.color = isBreak ? '#4ade80' : '#a89cff';
     }
+    if (ringEl) {
+      ringEl.style.stroke = isBreak ? '#4ade80' : '#7c6aff';
+    }
   }
-}*/
+}
 function _pomAudio() { return initAudioContext(); }
 function pomPlayAlarm(isBreak) {
   try {
