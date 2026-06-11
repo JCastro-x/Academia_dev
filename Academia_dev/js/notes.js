@@ -262,16 +262,44 @@ function renderNotesPage() {
 }
 
 let _examInterval = null, _examRunning = false, _examSecs = 90*60;
+let _examNotes = '';
+let _examImages = [];
+let _examPDFs = [];
+
+// Cargar notas del examen desde localStorage al iniciar
+_examNotes = localStorage.getItem('exam_notes') || '';
+try {
+  _examImages = JSON.parse(localStorage.getItem('exam_images') || '[]');
+} catch {
+  _examImages = [];
+}
+try {
+  _examPDFs = JSON.parse(localStorage.getItem('exam_pdfs') || '[]');
+} catch {
+  _examPDFs = [];
+}
 
 function openExamMode() {
   fillExamSel();
   examReset();
   updateExamSubjectLabel();
+  loadExamNotes();
   document.getElementById('exam-overlay').classList.add('active');
+  // Setup paste event for images
+  const notesEl = document.getElementById('exam-notes-display');
+  if (notesEl) {
+    notesEl.addEventListener('paste', handleExamPaste);
+  }
 }
 function closeExamMode() {
   examStop();
+  saveExamNotes();
   document.getElementById('exam-overlay').classList.remove('active');
+  // Remove paste event listener
+  const notesEl = document.getElementById('exam-notes-display');
+  if (notesEl) {
+    notesEl.removeEventListener('paste', handleExamPaste);
+  }
 }
 function examReset() {
   examStop();
@@ -319,21 +347,281 @@ function updateExamSubjectLabel() {
   const lbl   = document.getElementById('exam-subject-label');
   if (lbl) lbl.textContent = mat ? `${mat.icon||'📝'} ${mat.name}` : '— Sin materia seleccionada —';
 
+  // NO cargar notas automáticamente - solo mostrar la etiqueta de materia
+  // Las notas del examen son independientes de las notas de la materia
+}
+function loadExamNotes() {
   const notesEl = document.getElementById('exam-notes-display');
   if (notesEl) {
-
-    let notesText = '';
-    if (matId) {
-      const notesArr = State._activeSem.notesArray || [];
-      const matNotes = notesArr.filter(n => n.matId === matId);
-      if (matNotes.length) {
-        notesText = matNotes.map(n => `## ${n.title}\n${n.content}`).join('\n\n---\n\n');
-      } else {
-        notesText = State.notes[matId] || 'Sin notas para esta materia.';
-      }
-    }
-    notesEl.textContent = notesText;
+    notesEl.value = _examNotes;
+    autoResizeTextarea(notesEl);
   }
+  renderExamImages();
+}
+
+function autoResizeTextarea(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 500) + 'px';
+}
+function saveExamNotes() {
+  const notesEl = document.getElementById('exam-notes-display');
+  if (notesEl) {
+    _examNotes = notesEl.value;
+    // Guardar en localStorage
+    localStorage.setItem('exam_notes', _examNotes);
+    localStorage.setItem('exam_images', JSON.stringify(_examImages));
+    localStorage.setItem('exam_pdfs', JSON.stringify(_examPDFs));
+  }
+}
+function handleExamPaste(e) {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type.indexOf('image') !== -1) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const imageData = event.target.result;
+          _examImages.push(imageData);
+          renderExamImages();
+          saveExamNotes();
+        };
+        reader.readAsDataURL(file);
+      }
+      break;
+    } else if (item.type === 'application/pdf') {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const pdfData = event.target.result;
+          _examPDFs.push({
+            name: file.name || 'PDF',
+            data: pdfData
+          });
+          renderExamImages();
+          saveExamNotes();
+        };
+        reader.readAsDataURL(file);
+      }
+      break;
+    }
+  }
+}
+
+function handleExamImageUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const imageData = event.target.result;
+    _examImages.push(imageData);
+    renderExamImages();
+    saveExamNotes();
+  };
+  reader.readAsDataURL(file);
+  input.value = ''; // Reset input
+}
+
+function handleExamPDFUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    const pdfData = event.target.result;
+    _examPDFs.push({
+      name: file.name || 'PDF',
+      data: pdfData
+    });
+    renderExamImages();
+    saveExamNotes();
+  };
+  reader.readAsDataURL(file);
+  input.value = ''; // Reset input
+}
+function renderExamImages() {
+  const container = document.getElementById('exam-images-container');
+  const section = document.getElementById('exam-attachments-section');
+  if (!container || !section) return;
+
+  const hasAttachments = _examImages.length > 0 || _examPDFs.length > 0;
+  const notesEl = document.getElementById('exam-notes-display');
+  const hasNotes = notesEl && notesEl.value.trim().length > 0;
+
+  // Solo mostrar sección si hay adjuntos O hay notas escritas
+  if (!hasAttachments && !hasNotes) {
+    section.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  section.style.display = 'block';
+  
+  let html = '';
+  
+  // Render images
+  html += _examImages.map((img, idx) => `
+    <div style="position:relative;">
+      <img src="${img}" style="max-width:150px;max-height:150px;border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="openExamImagePopup(${idx})">
+      <button onclick="removeExamImage(${idx})" style="position:absolute;top:-8px;right:-8px;background:var(--red);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;font-weight:700;">✕</button>
+    </div>
+  `).join('');
+  
+  // Render PDFs
+  html += _examPDFs.map((pdf, idx) => `
+    <div style="position:relative;">
+      <div onclick="openExamPDFPopup(${idx})" style="max-width:150px;padding:20px;border-radius:8px;border:1px solid var(--border);cursor:pointer;background:var(--surface);text-align:center;">
+        <div style="font-size:32px;">📄</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pdf.name}</div>
+      </div>
+      <button onclick="removeExamPDF(${idx})" style="position:absolute;top:-8px;right:-8px;background:var(--red);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;font-weight:700;">✕</button>
+    </div>
+  `).join('');
+  
+  container.innerHTML = html;
+}
+function removeExamImage(idx) {
+  _examImages.splice(idx, 1);
+  renderExamImages();
+  saveExamNotes();
+}
+function removeExamPDF(idx) {
+  _examPDFs.splice(idx, 1);
+  renderExamImages();
+  saveExamNotes();
+}
+function openExamPDFPopup(idx) {
+  const pdf = _examPDFs[idx];
+  if (!pdf) return;
+  
+  // Usar el modal de PDF existente
+  openPDFModal(pdf.data, pdf.name);
+}
+
+// Función para abrir PDF en el modal
+let _currentPDFDoc = null;
+let _currentPDFPage = 1;
+let _currentPDFTotalPages = 1;
+
+function openPDFModal(pdfData, pdfName) {
+  const modal = document.getElementById('modal-pdf-view');
+  const nameEl = document.getElementById('pdf-modal-name');
+  const container = document.getElementById('pdf-canvas-container');
+  const nav = document.getElementById('pdf-page-nav');
+  
+  if (!modal || !container) return;
+  
+  nameEl.textContent = pdfName || 'PDF';
+  modal.style.display = 'flex';
+  
+  // Limpiar contenedor anterior
+  container.innerHTML = '';
+  
+  // Cargar PDF usando PDF.js
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
+    // Convertir base64 a array buffer
+    const base64Data = pdfData.split(',')[1];
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    pdfjsLib.getDocument({ data: bytes }).promise.then(pdf => {
+      _currentPDFDoc = pdf;
+      _currentPDFTotalPages = pdf.numPages;
+      _currentPDFPage = 1;
+      
+      // Mostrar navegación si hay más de 1 página
+      if (pdf.numPages > 1) {
+        nav.style.display = 'flex';
+        document.getElementById('pdf-page-current').textContent = '1';
+        document.getElementById('pdf-page-total').textContent = pdf.numPages;
+      } else {
+        nav.style.display = 'none';
+      }
+      
+      renderPDFPage(1);
+    }).catch(err => {
+      console.error('Error cargando PDF:', err);
+      container.innerHTML = '<div style="color:var(--text3);text-align:center;padding:40px;">Error al cargar PDF</div>';
+    });
+  } else {
+    // Fallback: usar iframe
+    container.innerHTML = `<iframe src="${pdfData}" style="width:100%;height:100%;border:none;"></iframe>`;
+    nav.style.display = 'none';
+  }
+}
+
+function renderPDFPage(pageNum) {
+  if (!_currentPDFDoc) return;
+  
+  _currentPDFDoc.getPage(pageNum).then(page => {
+    const canvas = document.createElement('canvas');
+    const container = document.getElementById('pdf-canvas-container');
+    container.innerHTML = '';
+    container.appendChild(canvas);
+    
+    const context = canvas.getContext('2d');
+    const viewport = page.getViewport({ scale: 1.5 });
+    
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    
+    const renderContext = {
+      canvasContext: context,
+      viewport: viewport
+    };
+    
+    page.render(renderContext);
+  });
+}
+
+function pdfPrevPage() {
+  if (_currentPDFPage > 1) {
+    _currentPDFPage--;
+    document.getElementById('pdf-page-current').textContent = _currentPDFPage;
+    renderPDFPage(_currentPDFPage);
+  }
+}
+
+function pdfNextPage() {
+  if (_currentPDFPage < _currentPDFTotalPages) {
+    _currentPDFPage++;
+    document.getElementById('pdf-page-current').textContent = _currentPDFPage;
+    renderPDFPage(_currentPDFPage);
+  }
+}
+
+function closePDFModal() {
+  const modal = document.getElementById('modal-pdf-view');
+  if (modal) modal.style.display = 'none';
+  _currentPDFDoc = null;
+}
+function openExamImagePopup(idx) {
+  const img = _examImages[idx];
+  if (!img) return;
+  
+  // Crear modal simple para ver imagen
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <img src="${img}" style="max-width:100%;max-height:100%;object-fit:contain;">
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:20px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:14px;font-weight:700;">✕ Cerrar</button>
+  `;
+  document.body.appendChild(modal);
+  modal.onclick = (e) => {
+    if (e.target === modal) modal.remove();
+  };
 }
 
 // ══════════════════════════════════════════════════════════════

@@ -825,6 +825,7 @@ function saveState(keys = ['all']) {
   keys.forEach(k => {
     _pendingKeys.add(k);
     // Mapear keys a campos específicos para delta sync
+    // Usar 'tasks' y 'notes' para sync granular (no enviar todo el semestre)
     if (k === 'all') {
       _changedFields.add('semestres');
       _changedFields.add('settings');
@@ -835,9 +836,11 @@ function saveState(keys = ['all']) {
     } else if (k === 'materias' || k === 'grades' || k === 'topics') {
       _changedFields.add('semestres');
     } else if (k === 'tasks') {
-      _changedFields.add('semestres');
+      _changedFields.add('tasks'); // 🔥 FIX: sync granular para tareas (no enviar notas)
+    } else if (k === 'notes') {
+      _changedFields.add('notes'); // 🔥 FIX: sync granular para notas
     } else if (k === 'events') {
-      _changedFields.add('semestres'); // 🔥 FIX: events está en el semestre, no en settings
+      _changedFields.add('semestres'); // events está en el semestre, no en settings
     }
   });
   clearTimeout(_saveTimer);
@@ -868,16 +871,19 @@ function saveStateNow(keys = ['all']) {
   const db = _getAcademiaDB();
   if (db && db._ready) {
     // Mapeo correcto de keys a changedFields para sync
+    // Usar 'tasks' en lugar de 'semestres' para sync granular (no enviar notas)
     const changedFields = keys.includes('all') ? ['semestres', 'settings'] :
                           keys.includes('semestres') ? ['semestres'] :
                           keys.includes('settings') ? ['settings'] :
-                          keys.includes('tasks') ? ['semestres'] :
-                          keys.includes('events') ? ['semestres'] : // 🔥 FIX: events está en el semestre
+                          keys.includes('tasks') ? ['tasks'] : // 🔥 FIX: sync granular para tareas
+                          keys.includes('notes') ? ['notes'] : // 🔥 FIX: sync granular para notas
+                          keys.includes('events') ? ['semestres'] :
                           keys.includes('materias') ? ['semestres'] :
                           keys.includes('grades') ? ['semestres'] :
                           keys.includes('topics') ? ['semestres'] : [];
-    db.saveNow(State.semestres, State.settings, changedFields);
+    return db.saveNow(State.semestres, State.settings, changedFields);
   }
+  return Promise.resolve();
 }
 function savePom() {
   dbSet(DB_KEYS.POM_TODAY, State.pomSessions);

@@ -331,8 +331,23 @@ function toggleTask(id) {
 
   _uiClick(wasDone ? 'task-undone' : 'task-done');
   if (!wasDone) { _updateStreak(); }
-  saveStateNow(['tasks']); renderTasks(); updateBadge(); renderOverview(); renderCalendar();
-  if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
+  
+  // Guardar inmediatamente y esperar a que complete antes de actualizar UI
+  saveStateNow(['tasks']).then(() => {
+    renderTasks();
+    updateBadge();
+    renderOverview();
+    renderCalendar();
+    if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
+  }).catch(err => {
+    console.error('Error guardando tarea:', err);
+    // Aún actualizar UI localmente aunque falle el sync
+    renderTasks();
+    updateBadge();
+    renderOverview();
+    renderCalendar();
+    if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
+  });
 }
 
 // Efecto visual de celebración al completar tarea
@@ -421,15 +436,29 @@ function toggleSubtask(taskId, idx) {
   }
 
   const needsFullRender = _needsFullTaskRenderOnSubtaskToggle(wasDone, t.done);
-  saveStateNow(['tasks']);
-  if (needsFullRender) {
-    renderTasks();
-  } else {
-    _updateSingleTaskProgressUI(taskId);
-  }
-  updateBadge();
-  renderOverview();
-  renderCalendar();
+  
+  // Guardar inmediatamente y esperar a que complete antes de actualizar UI
+  saveStateNow(['tasks']).then(() => {
+    if (needsFullRender) {
+      renderTasks();
+    } else {
+      _updateSingleTaskProgressUI(taskId);
+    }
+    updateBadge();
+    renderOverview();
+    renderCalendar();
+  }).catch(err => {
+    console.error('Error guardando subtarea:', err);
+    // Aún actualizar UI localmente aunque falle el sync
+    if (needsFullRender) {
+      renderTasks();
+    } else {
+      _updateSingleTaskProgressUI(taskId);
+    }
+    updateBadge();
+    renderOverview();
+    renderCalendar();
+  });
 }
 
 // Efecto visual de celebración al completar subtarea
@@ -1116,7 +1145,17 @@ document.addEventListener('touchstart', (e) => {
 // ═══════════════════════════════════════════════════════════════
 // LISTENER ESPECÍFICO PARA SUBTAREAS (Android fix)
 // ═══════════════════════════════════════════════════════════════
+let _lastTouchSubtask = null;
+let _lastTouchTime = 0;
+
 function _handleSubtaskClick(e) {
+  // Prevenir doble toggle en móvil (touchstart + click)
+  const now = Date.now();
+  if (now - _lastTouchTime < 300) {
+    _lastTouchTime = 0;
+    return;
+  }
+
   // Buscar específicamente el .subtask-check o el contenedor de subtarea
   const subtaskRow = e.target.closest('[data-action="toggle-subtask"]');
   if (!subtaskRow) return;
@@ -1148,6 +1187,7 @@ document.addEventListener('touchstart', (e) => {
 
   if (taskId && index !== undefined && typeof toggleSubtask === 'function') {
     e.stopPropagation();
+    _lastTouchTime = Date.now();
     toggleSubtask(taskId, parseInt(index));
   }
 }, { capture: true, passive: false });

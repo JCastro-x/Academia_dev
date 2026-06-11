@@ -219,6 +219,46 @@
 
       if (changedFields.includes('semestres')) {
         payload.semestres = dataToSend.semestres || [];
+      } else if (changedFields.includes('tasks')) {
+        // Solo enviar tareas del semestre activo, no todo el semestre
+        const activeSemId = semestres.find(s => s.activo)?.id;
+        if (activeSemId) {
+          payload.semestres = semestres.map(sem => {
+            if (sem.id !== activeSemId) {
+              // Para otros semestres, solo enviar ID y metadatos básicos
+              return { id: sem.id, nombre: sem.nombre, activo: sem.activo };
+            }
+            // Para el semestre activo, enviar solo tareas (sin notas)
+            return {
+              id: sem.id,
+              nombre: sem.nombre,
+              activo: sem.activo,
+              tasks: sem.tasks || [],
+              // No enviar notesArray, notes, grades, etc.
+            };
+          });
+        }
+      } else if (changedFields.includes('notes')) {
+        // Solo enviar notas del semestre activo
+        const activeSemId = semestres.find(s => s.activo)?.id;
+        if (activeSemId) {
+          payload.semestres = semestres.map(sem => {
+            if (sem.id !== activeSemId) {
+              return { id: sem.id, nombre: sem.nombre, activo: sem.activo };
+            }
+            return {
+              id: sem.id,
+              nombre: sem.nombre,
+              activo: sem.activo,
+              notes: sem.notes || {},
+              notesArray: (sem.notesArray || []).map(note => ({
+                ...note,
+                content: note.content || '',
+                canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
+              })),
+            };
+          });
+        }
       }
       if (changedFields.includes('settings')) {
         payload.settings = dataToSend.settings || {};
@@ -231,6 +271,7 @@
 
       // Log egress size
       const dataSize = JSON.stringify(payload).length;
+      console.log(`📤 [SYNC] Enviando ${dataSize} bytes con changedFields:`, changedFields);
 
       const { error } = await _getClient()
         .from('user_data')
@@ -245,6 +286,7 @@
       if (error) {
         console.error('❌ Supabase save FAILED:', error.message, 'Payload:', payload);
       } else {
+        console.log('✅ [SYNC] Guardado exitoso');
       }
     } catch (err) {
       console.warn('⚠️ DB.save excepción:', err.message);
