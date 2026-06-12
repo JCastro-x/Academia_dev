@@ -129,6 +129,11 @@ function updateZonaSuma() { updateUsacSuma(); }
 function applyZonaPreset() { applyUsacZones(); }
 
 function renderHorario() {
+  // 🔥 Guard: verificar que State.materias exista
+  if (!State.materias || !Array.isArray(State.materias)) {
+    console.warn('[renderHorario] State.materias no está disponible aún');
+    return;
+  }
   const allMats = State.materias.filter(m => (m.dias || m.horario || m.catedratico));
   const container = _el('horario-table-container');
   const detail    = _el('horario-detail-list');

@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 // NOTIFICACIONES: Revisa IndexedDB al activarse para disparar pendientes
 
-const CACHE_VERSION  = 'academia-v11';
+const CACHE_VERSION  = 'academia-v12';
 const CACHE_STATIC   = `${CACHE_VERSION}-static`;
 const CACHE_PAGES    = `${CACHE_VERSION}-pages`;
 const CACHE_ASSETS   = `${CACHE_VERSION}-assets`;

@@ -323,6 +323,11 @@ function generateDefaultApartados() {
 
 // Migration function: Add apartados to existing subjects that don't have them
 async function migrateSubjectsToApartados() {
+  // 🔥 Guard: verificar que State.materias exista
+  if (!State.materias || !Array.isArray(State.materias)) {
+    console.warn('[migrateSubjectsToApartados] State.materias no está disponible aún');
+    return;
+  }
   // 🔥 FIX: Clean up null/undefined entries and materias with invalid IDs
   const beforeCount = State.materias.length;
   State.materias = State.materias.filter(m => {

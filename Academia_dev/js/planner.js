@@ -188,6 +188,12 @@ const PLANNER = (() => {
     const moved    = [];
     const stuck    = [];
 
+    // 🔥 Guard: verificar que State.topics exista
+    if (!State.topics || !Array.isArray(State.topics)) {
+      console.warn('[rescheduleAll] State.topics no está disponible aún');
+      return;
+    }
+
     const pending = [];
     State.topics.forEach(topic => {
       const parcialKey = getTopicParcialKey(topic);

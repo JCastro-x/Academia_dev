@@ -734,19 +734,24 @@ const State = {
   semestres: _rawSemestres,
 
   get _activeSem() {
-    return this.semestres.find(s => s.activo) || this.semestres[0];
+    const sem = this.semestres.find(s => s.activo) || this.semestres[0];
+    if (!sem) {
+      console.warn('[State] No semestre activo disponible, creando semestre por defecto');
+      return _buildDefaultSemester('sem_' + Date.now(), '1er Año · 2do Sem');
+    }
+    return sem;
   },
 
-  get materias()    { return this._activeSem.materias;           },
-  set materias(v)   { this._activeSem.materias = v;              },
-  get grades()      { return this._activeSem.grades;             },
-  set grades(v)     { this._activeSem.grades   = v;              },
-  get tasks()       { return this._activeSem.tasks;              },
-  set tasks(v)      { this._activeSem.tasks    = v;              },
-  get events()      { return this._activeSem.events;             },
-  set events(v)     { this._activeSem.events   = v;              },
-  get topics()      { return this._activeSem.topics;             },
-  set topics(v)     { this._activeSem.topics   = v;              },
+  get materias()    { return this._activeSem?.materias || [];           },
+  set materias(v)   { if (this._activeSem) this._activeSem.materias = v;              },
+  get grades()      { return this._activeSem?.grades || {};             },
+  set grades(v)     { if (this._activeSem) this._activeSem.grades   = v;              },
+  get tasks()       { return this._activeSem?.tasks || [];              },
+  set tasks(v)      { if (this._activeSem) this._activeSem.tasks    = v;              },
+  get events()      { return this._activeSem?.events || [];             },
+  set events(v)     { if (this._activeSem) this._activeSem.events   = v;              },
+  get topics()      { return this._activeSem?.topics || [];             },
+  set topics(v)     { if (this._activeSem) this._activeSem.topics   = v;              },
   get notes()       { return this._activeSem.notes  || (this._activeSem.notes = {}); },
   set notes(v)      { this._activeSem.notes    = v;              },
   get notesArray()  { return this._activeSem.notesArray || (this._activeSem.notesArray = []); },

@@ -23,6 +23,11 @@ function _renderMaterias() {
   const grid = _el('materias-grid');
   if (!grid) return;
   grid.classList.remove('skeleton-loading');
+  // 🔥 Guard: verificar que State.materias exista
+  if (!State.materias || !Array.isArray(State.materias)) {
+    console.warn('[_renderMaterias] State.materias no está disponible aún');
+    return;
+  }
   const roots = State.materias.filter(m => m && !m.parentId);
   let html = '';
 
@@ -244,7 +249,8 @@ function renderSemestresList() {
     const avg = gpa.promedioSemestre;
     const obj = sem.promedioObjetivo || 70;
     const avgColor = avg === null ? 'var(--text3)' : avg >= obj ? '#4ade80' : avg >= obj*.8 ? '#fbbf24' : '#f87171';
-    const matCount = sem.materias.filter(m => !m.parentId).length;
+    // 🔥 Guard: verificar que sem.materias exista
+    const matCount = (sem.materias || []).filter(m => !m.parentId).length;
     const taskDone = (sem.tasks||[]).filter(t => t.done).length;
     const taskCount = (sem.tasks||[]).length;
     const border = isActive ? 'var(--accent)' : isClosed ? 'var(--border)' : 'var(--border)';
@@ -327,6 +333,11 @@ function _renderGradeCards() {
 // ═══════════════════════════════════════════════════════════════
 
 function renderGeneralHub() {
+  // 🔥 Guard: verificar que State.materias exista
+  if (!State.materias || !Array.isArray(State.materias)) {
+    console.warn('[renderGeneralHub] State.materias no está disponible aún');
+    return;
+  }
   const min = parseFloat(document.getElementById('min-grade')?.value) || State.settings.minGrade;
   const atRisk = State.materias.filter(m => { const t = calcTotal(m.id); return t && t.total < min; }).length;
   const passed = State.materias.filter(m => { const t = calcTotal(m.id); return t && t.total >= min; }).length;

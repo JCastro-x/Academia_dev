@@ -549,6 +549,11 @@ async function goPage(id, el, context = null) {
 
 function fillMatSels() {
   const targets = ['t-mat','ev-mat','tp-mat'];
+  // 🔥 Guard: verificar que State.materias exista
+  if (!State.materias || !Array.isArray(State.materias)) {
+    console.warn('[fillMatSels] State.materias no está disponible aún');
+    return;
+  }
   // Filter out null/undefined materias and those with undefined ids
   const validMaterias = State.materias.filter(m => m && m.id && m.id !== 'undefined');
   targets.forEach(id => {
