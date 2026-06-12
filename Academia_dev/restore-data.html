@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurar Datos - Academia</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #e5e7eb;
+        }
+        .container {
+            background: #2d2d44;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #60a5fa;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #065f46;
+            border: 1px solid #059669;
+        }
+        .error {
+            background: #7f1d1d;
+            border: 1px solid #dc2626;
+        }
+        .info {
+            background: #1e3a5f;
+            border: 1px solid #3b82f6;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: #1a1a2e;
+            color: #e5e7eb;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #1f2937;
+            border-radius: 8px;
+        }
+        .step h3 {
+            color: #fbbf24;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Restaurar Datos desde Snapshot de Supabase</h1>
+        
+        <div class="step">
+            <h3>Paso 1: Pegar el snapshot</h3>
+            <p>Pega aquí el JSON completo del snapshot de Supabase:</p>
+            <textarea id="snapshotInput" placeholder='{"snapshot": {"settings": {...}, "semestres": [...]}}'></textarea>
+        </div>
+
+        <div class="step">
+            <h3>Paso 2: Restaurar en localStorage</h3>
+            <button id="restoreLocalBtn" onclick="restoreToLocal()">Restaurar en localStorage</button>
+            <div id="localStatus"></div>
+        </div>
+
+        <div id="finalStatus"></div>
+    </div>
+
+    <script>
+        function logStatus(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function restoreToLocal() {
+            try {
+                let snapshotStr = document.getElementById('snapshotInput').value;
+                if (!snapshotStr.trim()) {
+                    logStatus('localStatus', '❌ Por favor pega el snapshot primero', 'error');
+                    return;
+                }
+
+                // Limpiar caracteres de control inválidos en el JSON
+                // Reemplazar newlines dentro de strings con \n
+                snapshotStr = snapshotStr.replace(/[\x00-\x1F\x7F]/g, (match) => {
+                    if (match === '\n') return '\\n';
+                    if (match === '\r') return '\\r';
+                    if (match === '\t') return '\\t';
+                    return '';
+                });
+
+                const snapshot = JSON.parse(snapshotStr);
+                
+                if (!snapshot.snapshot) {
+                    logStatus('localStatus', '❌ El snapshot debe tener la estructura {"snapshot": {...}}', 'error');
+                    return;
+                }
+
+                const data = snapshot.snapshot;
+                
+                if (!data.semestres || !Array.isArray(data.semestres)) {
+                    logStatus('localStatus', '❌ El snapshot no contiene semestres válidos', 'error');
+                    return;
+                }
+
+                // Guardar en localStorage
+                localStorage.setItem('academia_v4_semestres', JSON.stringify(data.semestres));
+                
+                if (data.settings) {
+                    localStorage.setItem('academia_v3_settings', JSON.stringify(data.settings));
+                }
+
+                const matCount = data.semestres.reduce((acc, sem) => acc + (sem.materias || []).length, 0);
+                const taskCount = data.semestres.reduce((acc, sem) => acc + (sem.tasks || []).length, 0);
+                const noteCount = data.semestres.reduce((acc, sem) => acc + (sem.notesArray || []).length, 0);
+
+                logStatus('localStatus', 
+                    `✅ Datos restaurados en localStorage:<br>
+                    - ${data.semestres.length} semestre(s)<br>
+                    - ${matCount} materia(s)<br>
+                    - ${taskCount} tarea(s)<br>
+                    - ${noteCount} nota(s)`, 
+                    'success');
+
+                logStatus('finalStatus', 
+                    `🎉 <strong>Restauración completada!</strong><br>
+                    Los datos han sido restaurados en localStorage.<br>
+                    <strong>Próximos pasos:</strong><br>
+                    1. Recarga la aplicación principal (app.html)<br>
+                    2. La aplicación sincronizará automáticamente con Supabase<br>
+                    3. Verifica que tus 6 materias aparezcan correctamente`, 
+                    'success');
+
+            } catch (e) {
+                logStatus('localStatus', `❌ Error: ${e.message}`, 'error');
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>

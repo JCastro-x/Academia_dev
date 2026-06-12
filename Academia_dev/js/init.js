@@ -143,20 +143,30 @@ function init() {
           const localModifiedAt = window._localModifiedAt || 0;
           const shouldUseRemote = remoteUpdatedAt > localModifiedAt;
 
-          // Solo sobrescribir si remoto es más reciente
+          // Solo sobrescribir si remoto es más reciente Y tiene datos válidos
           if (shouldUseRemote) {
-            // Turso/Supabase es la fuente de verdad
-            if (dbData.semestres && dbData.semestres.length) {
-              localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
-              State.semestres.length = 0;
-              dbData.semestres.forEach(s => State.semestres.push(s));
-              // 🔥 FIX: Solo forzar primer semestre como activo si realmente no hay ninguno activo
-              // y no estamos sobrescribiendo un semestre activo válido del servidor
-              if (!State.semestres.some(s => s.activo)) {
-                console.warn('⚠️ [INIT] No semestre activo found in remote data, forcing first as active');
-                State.semestres[0].activo = true;
+            // 🔥 GUARD: Verificar que datos remotos no estén vacíos/corruptos antes de sobrescribir
+            const localSemestres = JSON.parse(localStorage.getItem('academia_v4_semestres') || '[]');
+            const hasLocalData = localSemestres && localSemestres.length > 0 && localSemestres.some(s => s.materias && s.materias.length > 0);
+            const hasRemoteData = dbData.semestres && dbData.semestres.length > 0 && dbData.semestres.some(s => s.materias && s.materias.length > 0);
+
+            if (!hasRemoteData && hasLocalData) {
+              console.warn('⚠️ [INIT] Datos remotos vacíos pero locales tienen datos - PRESERVANDO DATOS LOCALES');
+              // No sobrescribir - mantener datos locales
+            } else {
+              // Turso/Supabase es la fuente de verdad
+              if (dbData.semestres && dbData.semestres.length) {
+                localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
+                State.semestres.length = 0;
+                dbData.semestres.forEach(s => State.semestres.push(s));
+                // 🔥 FIX: Solo forzar primer semestre como activo si realmente no hay ninguno activo
+                // y no estamos sobrescribiendo un semestre activo válido del servidor
+                if (!State.semestres.some(s => s.activo)) {
+                  console.warn('⚠️ [INIT] No semestre activo found in remote data, forcing first as active');
+                  State.semestres[0].activo = true;
+                }
+                getMat.bust();
               }
-              getMat.bust();
             }
             if (dbData.settings && Object.keys(dbData.settings).length) {
               // 🔥 FIX: Asegurar que habits siempre sea un array
