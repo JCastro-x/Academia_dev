@@ -25,6 +25,7 @@ function setG(matId, key, val) {
   _updateGradeSummary(matId);
   renderMaterias();
   renderOverview();
+  if (typeof renderGeneralHub === 'function') renderGeneralHub();
 }
 
 // Live update % and pts columns in the grade row without full re-render
@@ -358,7 +359,7 @@ function _renderGrades() {
       hdr.className = 'zone-header';
       hdr.style.background = `rgba(100,100,100,.04)`;
       hdr.innerHTML = `<span class="zone-title" style="color:${z.color};">${z.label}</span>
-        <span style="font-size:11px;font-family:'Space Mono',monospace;color:var(--text2);">
+        <span style="font-size:12px;font-family:'Space Mono',monospace;color:var(--text2);">
           máx <strong style="color:${z.color};">${z.maxPts}</strong> pts ·
           obtenido <strong style="color:${zColor};">${zFilled ? zTotal.toFixed(2) : '—'}</strong>
           ${zFilled ? `<span style="color:${zColor};">(${zPct.toFixed(1)}%)</span>` : ''}

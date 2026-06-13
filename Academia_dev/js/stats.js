@@ -84,7 +84,7 @@ if (typeof window.renderStats !== 'function') {
     const highest = tots2.length ? tots2.reduce((a,b)=>b.total>a.total?b:a) : null;
     const atRisk  = State.materias.filter(m=>{ const t=calcTotal(m.id); return t && t.total < State.settings.minGrade*0.8; }).length;
     statsEl.innerHTML = `
-      <div class="stat-mini"><div class="stat-mini-lbl">📊 PROM. PONDERADO</div><div class="stat-mini-val" style="color:#7c6aff;">${avg}</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">${gpaData.totalCreditos} créditos</div></div>
+      <div class="stat-mini"><div class="stat-mini-lbl">📊 PROM. PONDERADO</div><div class="stat-mini-val" style="color:#7c6aff;">${avg}</div><div style="font-size:12px;color:var(--text3);margin-top:2px;">${gpaData.totalCreditos} créditos</div></div>
       <div class="stat-mini"><div class="stat-mini-lbl">🏆 MEJOR MATERIA</div><div class="stat-mini-val" style="color:#4ade80;font-size:15px;">${highest ? State.materias.find(m=>calcTotal(m.id)?.total===highest.total)?.name||'—' : '—'}</div></div>
       <div class="stat-mini"><div class="stat-mini-lbl">⚠️ EN RIESGO</div><div class="stat-mini-val" style="color:#f87171;">${atRisk}</div></div>
       <div class="stat-mini"><div class="stat-mini-lbl">✅ CRED. APROBADOS</div><div class="stat-mini-val" style="color:#60a5fa;">${gpaData.creditosAprobados}/${gpaData.totalCreditos}</div></div>`;

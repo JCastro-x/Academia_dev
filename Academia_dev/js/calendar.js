@@ -21,7 +21,7 @@ function _renderCalendar() {
 
   const legendEl = _el('cal-legend');
   if (legendEl) {
-    legendEl.innerHTML = `<span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-right:4px;">CLASES:</span>`
+    legendEl.innerHTML = `<span style="font-size:12px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-right:4px;">CLASES:</span>`
       + State.materias.slice(0,8).map(m =>
           `<span class="cal-legend-item" style="--lc:${m.color};">${m.icon||''} ${m.code}</span>`
         ).join('')
@@ -97,13 +97,13 @@ function _renderCalendar() {
       const countdownBadge = `<span class="ev-countdown-badge ${cdClass}">${cdText}</span>`;
       // Check if this is an exam event
       const isExamEvent = e.type === 'Parcial' || e.type === 'Final';
-      const examBadge = isExamEvent ? `<span style="background:#f87171;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-left:6px;">🎯 EXAMEN</span>` : '';
+      const examBadge = isExamEvent ? `<span style="background:#f87171;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;margin-left:6px;">🎯 EXAMEN</span>` : '';
       const eventColor = isExamEvent ? '#f87171' : (m?.color || '#7c6aff');
       return `<div class="task-item" style="align-items:center;">
         <div style="width:9px;height:9px;border-radius:50%;background:${eventColor};flex-shrink:0;margin-top:0;"></div>
         <div style="flex:1;">
           <div style="font-size:13.5px;font-weight:600;">${e.title}${examBadge}${countdownBadge}</div>
-          <div style="font-size:11px;color:var(--text3);">${m?.icon||'📚'} ${m?.name||'Sin materia'} · ${fmtD(e.date)}${e.hora?' · '+e.hora:''}${e.horaEnd?' - '+e.horaEnd:''}${e.desc?' · '+e.desc:''}</div>
+          <div style="font-size:12px;color:var(--text3);">${m?.icon||'📚'} ${m?.name||'Sin materia'} · ${fmtD(e.date)}${e.hora?' · '+e.hora:''}${e.horaEnd?' - '+e.horaEnd:''}${e.desc?' · '+e.desc:''}</div>
         </div>
         <span class="type-badge ${getTypeBadgeClass(e.type)}">${e.type||''}</span>
         <button class="btn btn-ghost btn-sm" data-action="edit-event" data-id="${e.id}">✏️</button>
@@ -120,10 +120,10 @@ function _renderCalendar() {
         <div class="task-check ${t.done?'checked':''}" data-action="toggle-task" data-id="${t.id}"></div>
         <div style="flex:1;">
           <div style="font-size:13px;font-weight:600;">${t.title}</div>
-          <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.code||''} · ${fmtD(t.due)} · ${t.type||'Tarea'}</div>
+          <div style="font-size:12px;color:var(--text3);">${m.icon||''} ${m.code||''} · ${fmtD(t.due)} · ${t.type||'Tarea'}</div>
           ${prog ? `<div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
             <div class="prog-bar" style="width:80px;"><div class="prog-fill" style="background:#7c6aff;width:${prog.pct}%;"></div></div>
-            <span style="font-size:10px;color:var(--text3);">${prog.done}/${prog.total}</span>
+            <span style="font-size:11px;color:var(--text3);">${prog.done}/${prog.total}</span>
           </div>` : ''}
         </div>
         ${prioBadge(t.priority)}
@@ -193,13 +193,13 @@ function openDayEventsModal(date, events, tasks) {
     
     // Línea de tiempo - mostrar solo si hay eventos con hora
     if (eventsWithTime.length > 0) {
-      html += '<div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:12px;">HORARIO DEL DÍA</div>';
+      html += '<div style="font-size:12px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:12px;">HORARIO DEL DÍA</div>';
       html += '<div style="display:flex;gap:16px;background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:16px;">';
       
       // Columna de horas (izquierda)
       html += '<div style="flex:0 0 60px;position:relative;border-right:2px solid var(--border);padding-right:12px;">';
       for (let hour = startHour; hour < endHour; hour++) {
-        html += `<div style="height:60px;display:flex;align-items:center;justify-content:flex-end;font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;padding-right:8px;">${String(hour).padStart(2,'0')}:00</div>`;
+        html += `<div style="height:60px;display:flex;align-items:center;justify-content:flex-end;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;padding-right:8px;">${String(hour).padStart(2,'0')}:00</div>`;
         html += `<div style="height:1px;background:var(--border);margin-left:-20px;margin-right:-12px;"></div>`;
       }
       html += '</div>';
@@ -233,9 +233,9 @@ function openDayEventsModal(date, events, tasks) {
         
         html += `
           <div style="position:absolute;top:${top}px;left:8px;right:8px;height:${height}px;background:${m.color||'#7c6aff'}22;border-left:4px solid ${m.color||'#7c6aff'};border-radius:6px;padding:8px 10px;cursor:pointer;overflow:hidden;" data-action="edit-event" data-id="${e.id}">
-            <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div>
-            <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${e.hora}${e.horaEnd ? ' - '+e.horaEnd : ''}</div>
-            <div style="font-size:10px;color:var(--text3);">${m.icon||''} ${m.code||m.name||''}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.title}</div>
+            <div style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">${e.hora}${e.horaEnd ? ' - '+e.horaEnd : ''}</div>
+            <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.code||m.name||''}</div>
           </div>
         `;
       });
@@ -250,7 +250,7 @@ function openDayEventsModal(date, events, tasks) {
     
     // Eventos sin hora - mostrar lista
     if (eventsWithoutTime.length > 0) {
-      html += '<div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:8px;">EVENTOS SIN HORA</div>';
+      html += '<div style="font-size:12px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:8px;">EVENTOS SIN HORA</div>';
       eventsWithoutTime.forEach(e => {
         const m = getMat(e.matId);
         html += `
@@ -258,7 +258,7 @@ function openDayEventsModal(date, events, tasks) {
             <div style="width:9px;height:9px;border-radius:50%;background:${m.color||'#7c6aff'};flex-shrink:0;margin-top:0;"></div>
             <div style="flex:1;">
               <div style="font-size:13.5px;font-weight:600;">${e.title}</div>
-              <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.name||''} · ${e.type||''}${e.desc?' · '+e.desc:''}</div>
+              <div style="font-size:12px;color:var(--text3);">${m.icon||''} ${m.name||''} · ${e.type||''}${e.desc?' · '+e.desc:''}</div>
             </div>
             <button class="btn btn-ghost btn-sm" data-action="edit-event" data-id="${e.id}">✏️</button>
             <button class="btn btn-danger btn-sm" data-action="delete-event" data-id="${e.id}" data-close-modal="modal-day-events">🗑️</button>
@@ -269,7 +269,7 @@ function openDayEventsModal(date, events, tasks) {
     
     // Tareas
     if (tasks.length > 0) {
-      html += '<div style="font-size:11px;color:var(--text3);font-family:\'Space Mono\',monospace;margin:16px 0 8px;">TAREAS</div>';
+      html += '<div style="font-size:12px;color:var(--text3);font-family:\'Space Mono\',monospace;margin:16px 0 8px;">TAREAS</div>';
       tasks.forEach(t => {
         const m = getMat(t.matId);
         html += `
@@ -277,7 +277,7 @@ function openDayEventsModal(date, events, tasks) {
             <div class="task-check" data-action="toggle-task" data-id="${t.id}" data-close-modal="modal-day-events"></div>
             <div style="flex:1;">
               <div style="font-size:13px;font-weight:600;">${t.title}</div>
-              <div style="font-size:11px;color:var(--text3);">${m.icon||''} ${m.code||''} · ${t.type||'Tarea'}</div>
+              <div style="font-size:12px;color:var(--text3);">${m.icon||''} ${m.code||''} · ${t.type||'Tarea'}</div>
             </div>
           </div>
         `;

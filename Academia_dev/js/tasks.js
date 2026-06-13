@@ -115,10 +115,10 @@ function renderSubtasksEditor(list) {
         style="accent-color:var(--accent);cursor:pointer;width:15px;height:15px;">
       <input type="text" class="form-input" value="${sanitizeHtml((s.text||'')).replace(/"/g,'&quot;')}"
         oninput="subtaskEditorText(${i},this.value)"
-        style="flex:1;padding:5px 8px;font-size:12px;" placeholder="Subtarea...">
+        style="flex:1;padding:5px 8px;font-size:13px;" placeholder="Subtarea...">
       <button class="btn btn-danger btn-sm" data-action="subtask-editor-remove" data-index="${i}" style="padding:3px 8px;">✕</button>
     </div>`).join('')
-    + `<button class="btn btn-ghost btn-sm" data-action="subtask-editor-add" style="margin-top:4px;font-size:11px;">+ Agregar subtarea</button>`;
+    + `<button class="btn btn-ghost btn-sm" data-action="subtask-editor-add" style="margin-top:4px;font-size:12px;">+ Agregar subtarea</button>`;
 }
 function subtaskEditorAdd()      { _editSubtasks.push({ text:'', done:false }); renderSubtasksEditor(_editSubtasks); }
 function subtaskEditorText(i, v) { if (_editSubtasks[i]) _editSubtasks[i].text = v; }
@@ -146,11 +146,11 @@ function renderAttachmentsEditor(list) {
   c.innerHTML = _editAttachments.map((a, i) => `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:7px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border);">
       <span style="font-size:18px;">${a.type === 'pdf' ? '📄' : '🖼️'}</span>
-      <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitizeHtml(a.name)}</span>
-      <button class="btn btn-ghost btn-sm" data-action="preview-attachment" data-index="${i}" style="font-size:11px;">👁 Ver</button>
+      <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sanitizeHtml(a.name)}</span>
+      <button class="btn btn-ghost btn-sm" data-action="preview-attachment" data-index="${i}" style="font-size:12px;">👁 Ver</button>
       <button class="btn btn-danger btn-sm" data-action="remove-attachment" data-index="${i}" style="padding:3px 7px;">✕</button>
     </div>`).join('')
-    + `<label class="btn btn-ghost btn-sm" style="cursor:pointer;margin-top:4px;font-size:11px;display:inline-flex;align-items:center;gap:5px;">
+    + `<label class="btn btn-ghost btn-sm" style="cursor:pointer;margin-top:4px;font-size:12px;display:inline-flex;align-items:center;gap:5px;">
         📎 Adjuntar archivo
         <input type="file" accept="image/*,.pdf" style="display:none;" onchange="handleAttachmentUpload(this)">
        </label>`;
@@ -161,13 +161,13 @@ function renderCommentsEditor(list) {
   c.innerHTML = _editComments.map((x, i) => `
     <div style="background:var(--surface2);border-radius:7px;padding:9px 11px;margin-bottom:6px;border-left:2px solid var(--border2);">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${sanitizeHtml(x.date || '')}</span>
-        <button class="btn btn-danger btn-sm" data-action="remove-comment" data-index="${i}" style="padding:2px 6px;font-size:10px;">✕</button>
+        <span style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;">${sanitizeHtml(x.date || '')}</span>
+        <button class="btn btn-danger btn-sm" data-action="remove-comment" data-index="${i}" style="padding:2px 6px;font-size:11px;">✕</button>
       </div>
-      <textarea class="form-textarea" rows="2" style="font-size:12px;"
+      <textarea class="form-textarea" rows="2" style="font-size:13px;"
         oninput="commentText(${i},this.value)">${sanitizeHtml(x.text || '').replace(/</g,'&lt;')}</textarea>
     </div>`).join('')
-    + `<button class="btn btn-ghost btn-sm" data-action="add-comment" style="margin-top:4px;font-size:11px;">💬 Agregar comentario</button>`;
+    + `<button class="btn btn-ghost btn-sm" data-action="add-comment" style="margin-top:4px;font-size:12px;">💬 Agregar comentario</button>`;
 }
 function addComment() {
   const now = new Date().toLocaleString('es-ES', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
@@ -719,7 +719,7 @@ function _renderTasks() {
           <div class="prog-bar" style="flex:1;height:4px;">
             <div class="prog-fill" data-subtask-progress-fill style="background:${prog.pct===100?'#4ade80':'#7c6aff'};width:${prog.pct}%;"></div>
           </div>
-          <span data-subtask-progress-text style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;white-space:nowrap;">${prog.done}/${prog.total}</span>
+          <span data-subtask-progress-text style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace;white-space:nowrap;">${prog.done}/${prog.total}</span>
         </div>
         ${t.subtasks.map((s, i) => `
           <div class="subtask-row${s.done ? ' done' : ''}" data-action="toggle-subtask" data-id="${t.id}" data-index="${i}"
@@ -731,9 +731,9 @@ function _renderTasks() {
               background:${s.done?'linear-gradient(135deg, #a78bfa 0%, #7c6aff 100%)':'transparent'};
               display:flex;align-items:center;justify-content:center;
               box-shadow:${s.done?'0 2px 6px rgba(124,106,255,0.4)':'none'};">
-              <span data-subtask-check="${i}" style="transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);${s.done ? 'transform:scale(1);opacity:1;' : 'transform:scale(0);opacity:0;'}">${s.done ? '<span style="font-size:10px;color:#fff;font-weight:700;">✓</span>' : ''}</span>
+              <span data-subtask-check="${i}" style="transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);${s.done ? 'transform:scale(1);opacity:1;' : 'transform:scale(0);opacity:0;'}">${s.done ? '<span style="font-size:11px;color:#fff;font-weight:700;">✓</span>' : ''}</span>
             </div>
-            <span data-subtask-text="${i}" style="font-size:12px;transition:all 0.3s ease;${s.done?'text-decoration:line-through;color:var(--text3);':'color:var(--text);'}">${sanitizeHtml(s.text)}</span>
+            <span data-subtask-text="${i}" style="font-size:13px;transition:all 0.3s ease;${s.done?'text-decoration:line-through;color:var(--text3);':'color:var(--text);'}">${sanitizeHtml(s.text)}</span>
           </div>`).join('')}
       </div>` : '';
 
@@ -741,18 +741,18 @@ function _renderTasks() {
       <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;">
         ${t.attachments.map((a, i) => `
           <button data-action="preview-task-attachment" data-id="${t.id}" data-index="${i}"
-            class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 7px;">
+            class="btn btn-ghost btn-sm" style="font-size:11px;padding:2px 7px;">
             ${a.type === 'pdf' ? '📄' : '🖼️'} ${sanitizeHtml(a.name.length > 18 ? a.name.slice(0,16)+'…' : a.name)}
           </button>`).join('')}
       </div>` : '';
 
     const descHtml = t.notes ? `
-      <div id="desc-${t.id}" style="display:none;font-size:12px;color:var(--text2);margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;white-space:pre-wrap;">${t.notes.replace(/</g,'&lt;')}</div>
+      <div id="desc-${t.id}" style="display:none;font-size:13px;color:var(--text2);margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;white-space:pre-wrap;">${t.notes.replace(/</g,'&lt;')}</div>
       <button id="descbtn-${t.id}" data-action="toggle-desc" data-id="${t.id}"
-        style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;margin-top:4px;padding:0;">▸ Ver descripción</button>` : '';
+        style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;margin-top:4px;padding:0;">▸ Ver descripción</button>` : '';
 
     const commBadge = t.comments?.length
-      ? `<span style="font-size:11px;color:var(--text3);">💬 ${t.comments.length}</span>` : '';
+      ? `<span style="font-size:12px;color:var(--text3);">💬 ${t.comments.length}</span>` : '';
 
     return `<div class="task-item${t.done ? ' done' : ''}${highGlowClass}${dueTodayBlinkClass}" draggable="true" 
       data-id="${t.id}"
@@ -771,7 +771,7 @@ function _renderTasks() {
           <span class="type-badge ${tBadge}">${sanitizeHtml(t.type || 'Tarea')}</span>
           ${prioBadge(t.priority)}
           ${t.due ? `<span class="task-due ${dc}">📅 ${fmtD(t.due)}</span>` : ''}
-          ${t.timeEst ? `<span style="font-size:10px;color:var(--text3);">⏱ ${t.timeEst>=60?(t.timeEst/60)+'h':t.timeEst+'min'}</span>` : ''}
+          ${t.timeEst ? `<span style="font-size:11px;color:var(--text3);">⏱ ${t.timeEst>=60?(t.timeEst/60)+'h':t.timeEst+'min'}</span>` : ''}
           ${(t.tags||[]).map(tg=>`<span class="tag-chip">#${sanitizeHtml(tg)}</span>`).join('')}
           ${commBadge}
         </div>
@@ -856,7 +856,7 @@ function openTaskDetail(id) {
     '<div class="detail-section-title">📋 Subtareas</div>' +
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">' +
     '<div class="prog-bar" style="flex:1;height:6px;"><div class="prog-fill" style="background:' + (prog && prog.pct===100?'#4ade80':'#7c6aff') + ';width:' + (prog?prog.pct:0) + '%;"></div></div>' +
-    '<span style="font-size:11px;color:var(--text3);font-family:Space Mono,monospace;">' + (prog?prog.done:0) + '/' + (prog?prog.total:0) + '</span>' +
+    '<span style="font-size:12px;color:var(--text3);font-family:Space Mono,monospace;">' + (prog?prog.done:0) + '/' + (prog?prog.total:0) + '</span>' +
     '</div>' +
     t.subtasks.map(function(s,i) {
       return '<div class="subtask-row' + (s.done?' done':'') + '" data-action="toggle-subtask" data-id="' + t.id + '" data-index="' + i + '" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;margin:2px 0;border-radius:6px;transition:all 0.3s ease;">' +

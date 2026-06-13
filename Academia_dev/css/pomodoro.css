@@ -74,11 +74,11 @@
   width: 100%;
 }
 
-.pom-task-label { font-size:11px; color:var(--text3); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:8px; font-weight:500; }
+.pom-task-label { font-size:13px; color:var(--text3); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:8px; font-weight:500; }
 
 .pom-task-select {
   width: 100%;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* Pomodoro Ring - existing classes maintained */
@@ -130,7 +130,7 @@
 }
 
 .pom-setting-label {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text3);
   margin-bottom: 4px;
 }
@@ -146,7 +146,7 @@
 }
 
 /* ── Chrono Section ──────────────────────────────────────────────── */
-.chrono-badge { font-size:11px; color:var(--accent2); font-family:'Inter',sans-serif; background:var(--accent-glow); padding:3px 10px; border-radius:6px; font-weight:600; }
+.chrono-badge { font-size:13px; color:var(--accent2); font-family:'Inter',sans-serif; background:var(--accent-glow); padding:3px 10px; border-radius:6px; font-weight:600; }
 
 .chrono-work-block {
   background: rgba(74, 222, 128, 0.1);
@@ -157,12 +157,12 @@
   transition: all 0.25s;
 }
 
-.chrono-work-label { font-size:11px; color:var(--green); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:10px; font-weight:600; }
+.chrono-work-label { font-size:13px; color:var(--green); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:10px; font-weight:600; }
 
 .chrono-work-time { font-size:52px; font-weight:800; font-family:'Inter',sans-serif; color:var(--green); letter-spacing:-1px; line-height:1; }
 
 .chrono-work-sub {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text3);
   margin-top: 6px;
 }
@@ -182,7 +182,7 @@
   transition: all 0.25s;
 }
 
-.chrono-break-label { font-size:10px; color:var(--blue); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:8px; font-weight:600; }
+.chrono-break-label { font-size:12px; color:var(--blue); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:8px; font-weight:600; }
 
 .chrono-break-time { font-size:28px; font-weight:800; font-family:'Inter',sans-serif; color:var(--blue); letter-spacing:-0.5px; line-height:1; }
 
@@ -195,7 +195,7 @@
   transition: all 0.25s;
 }
 
-.chrono-total-label { font-size:10px; color:var(--accent2); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:8px; font-weight:600; }
+.chrono-total-label { font-size:12px; color:var(--accent2); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:8px; font-weight:600; }
 
 .chrono-total-time { font-size:28px; font-weight:800; font-family:'Inter',sans-serif; color:var(--accent2); letter-spacing:-0.5px; line-height:1; }
 
@@ -211,14 +211,14 @@
 }
 
 .chrono-status {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text2);
 }
 
-.chrono-pct { font-size:12px; font-weight:700; font-family:'Inter',sans-serif; color:var(--green); }
+.chrono-pct { font-size:13px; font-weight:700; font-family:'Inter',sans-serif; color:var(--green); }
 
 .chrono-efficiency-sub {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text3);
   margin-top: 4px;
   text-align: right;
@@ -235,7 +235,7 @@
 
 .chrono-switch-btn {
   width: 100%;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .chrono-summary {
@@ -269,7 +269,7 @@
   gap: 6px;
 }
 
-.sound-section-title { font-size:11px; color:var(--text3); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:12px; font-weight:600; }
+.sound-section-title { font-size:13px; color:var(--text3); font-family:'Inter',sans-serif; letter-spacing:0.5px; margin-bottom:12px; font-weight:600; }
 
 .sound-btn-row {
   display: flex;
@@ -289,7 +289,7 @@
 }
 
 .sound-volume-label {
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .sound-volume-slider {
@@ -299,7 +299,7 @@
 }
 
 .sound-music-status {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text3);
   margin-top: 6px;
 }
@@ -328,7 +328,7 @@
 }
 
 .pom-goal-label {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text3);
   margin-bottom: 5px;
 }
@@ -344,7 +344,7 @@
 }
 
 .pom-goal-suffix {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text3);
 }
 
@@ -362,14 +362,14 @@
   color: var(--accent2);
 }
 
-.pom-goal-sub { font-size:11px; color:var(--text3); font-family:'Inter',sans-serif; }
+.pom-goal-sub { font-size:13px; color:var(--text3); font-family:'Inter',sans-serif; }
 
 .pom-goal-progress {
   margin-bottom: 6px;
 }
 
 .pom-goal-text {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text3);
 }
 
@@ -404,13 +404,13 @@
   color: var(--green);
 }
 
-.pom-stat-label { font-size:10px; color:var(--text3); font-family:'Inter',sans-serif; margin-top:6px; }
+.pom-stat-label { font-size:12px; color:var(--text3); font-family:'Inter',sans-serif; margin-top:6px; }
 
 .pom-activity-section {
   margin-top: 12px;
 }
 
-.pom-activity-title { font-size:11px; color:var(--text3); font-family:'Inter',sans-serif; margin-bottom:8px; }
+.pom-activity-title { font-size:13px; color:var(--text3); font-family:'Inter',sans-serif; margin-bottom:8px; }
 
 .pom-activity-bars {
   display: flex;
@@ -440,7 +440,7 @@
   color: var(--green);
 }
 
-.pom-quick-stat-label { font-size:11px; color:var(--text3); font-family:'Inter',sans-serif; margin-top:4px; }
+.pom-quick-stat-label { font-size:13px; color:var(--text3); font-family:'Inter',sans-serif; margin-top:4px; }
 
 /* ── History Section ───────────────────────────────────────────── */
 .pom-history-card {
@@ -454,7 +454,7 @@
 }
 
 .pom-history-clear-btn {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text3);
 }
 
