@@ -293,11 +293,15 @@ function saveTask() {
     return;
   }
 
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+  if (!activeSem) return;
+
   if (editTaskId) {
-    const idx = State.tasks.findIndex(t => t.id === editTaskId);
-    if (idx >= 0) State.tasks[idx] = task;
+    const idx = (activeSem.tasks || []).findIndex(t => t.id === editTaskId);
+    if (idx >= 0) activeSem.tasks[idx] = task;
   } else {
-    State.tasks.unshift(task);
+    if (!activeSem.tasks) activeSem.tasks = [];
+    activeSem.tasks.unshift(task);
   }
 
   if (typeof _plannerApplyTaskDates === 'function') _plannerApplyTaskDates(task);

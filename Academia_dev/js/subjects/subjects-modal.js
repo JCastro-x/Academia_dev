@@ -18,7 +18,8 @@ function openAddClassModal() {
   const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
   if (titleEl) titleEl.textContent = '📚 Nueva Clase';
   if (saveBtn) { 
-    saveBtn.onclick = saveNewClass; 
+    // 🔥 FIX: Remover onclick directo para evitar duplicación con event delegation
+    saveBtn.onclick = null;
     saveBtn.textContent = '💾 Crear Clase';
     saveBtn.setAttribute('data-action', 'save-new-class');
   }
@@ -186,9 +187,10 @@ function openEditClassModal(matId) {
   const saveBtn = document.querySelector('#modal-addclass .form-actions .btn-primary');
   if (titleEl) titleEl.textContent = `: ${mat.name}`;
   if (saveBtn) { 
-    saveBtn.onclick = saveEditClassFromCreate; 
+    // 🔥 FIX: Remover onclick directo para evitar duplicación con event delegation
+    saveBtn.onclick = null;
     saveBtn.textContent = ' Guardar Cambios';
-    saveBtn.removeAttribute('data-action');
+    saveBtn.setAttribute('data-action', 'save-edit-class');
   }
 
   document.getElementById('nc-name').value    = mat.name    || '';

@@ -33,9 +33,10 @@ function renderTemasHub() {
     return;
   }
   
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
   let html = '';
   materias.forEach(mat => {
-    const topicCount = State.topics.filter(t => t.matId === mat.id).length;
+    const topicCount = (activeSem?.topics || []).filter(t => t.matId === mat.id).length;
     html += `<div class="temas-materia-card" onclick="openTemasMateria('${mat.id}')" style="cursor:pointer;border-left:4px solid ${mat.color};background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;transition:all 0.2s ease;">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
         <div>
@@ -95,9 +96,10 @@ function renderTemasMateria(matId) {
     return;
   }
   
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
   let html = '';
   apartados.sort((a, b) => (a.orden || 0) - (b.orden || 0)).forEach(ap => {
-    const topicCount = State.topics.filter(t => t.matId === matId && (t.apartadoId === ap.id || t.parcial === ap.parcialKey)).length;
+    const topicCount = (activeSem?.topics || []).filter(t => t.matId === matId && (t.apartadoId === ap.id || t.parcial === ap.parcialKey)).length;
     const isManual = ap.tipo === 'manual';
     html += `<div class="temas-apartado-card" onclick="openTemasApartado('${matId}', '${ap.id}')" style="cursor:pointer;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.2s ease;${isManual ? 'border-left:4px solid #7c6aff;' : ''}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
@@ -152,11 +154,12 @@ function renderTemasApartado(matId, apartadoId) {
   if (!apartado) return;
   
   // Filter topics for this apartado
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
   let matTopics;
   if (apartado.tipo === 'parcial') {
-    matTopics = State.topics.filter(t => t.matId === matId && t.parcial === apartado.parcialKey);
+    matTopics = (activeSem?.topics || []).filter(t => t.matId === matId && t.parcial === apartado.parcialKey);
   } else {
-    matTopics = State.topics.filter(t => t.matId === matId && t.apartadoId === apartadoId);
+    matTopics = (activeSem?.topics || []).filter(t => t.matId === matId && t.apartadoId === apartadoId);
   }
   
   const container = document.getElementById('topics-container');
@@ -433,7 +436,9 @@ function saveTopic() {
     }
     
     console.log(`📝 [TOPICS] Creando tema: ${name} en materia ${mat.name}`);
-    State.topics.push(newTopic);
+    const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+    if (!activeSem.topics) activeSem.topics = [];
+    activeSem.topics.push(newTopic);
     
     // 🔥 GUARDAR INMEDIATAMENTE para evitar pérdida
     if (typeof saveStateNow === 'function') {
@@ -464,17 +469,20 @@ function saveTopic() {
 }
 
 async function deleteTopic(id) {
-  const topic = State.topics.find(t => t.id === id);
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+  const topic = (activeSem?.topics || []).find(t => t.id === id);
   if (!topic) return;
   const confirmed = await showConfirm(`¿Eliminar el tema "${topic.name}"?`, { danger: true });
   if (!confirmed) return;
   const deletedTopic = { ...topic };
-  State.topics = State.topics.filter(t=>t.id!==id);
+  activeSem.topics = (activeSem.topics || []).filter(t=>t.id!==id);
   saveState(['topics']);
   window.dispatchEvent(new CustomEvent('topic:deleted', { detail: { id, name: deletedTopic.name } }));
   if (typeof showUndoToast === 'function') {
     showUndoToast(`Tema "${topic.name}" eliminado`, () => {
-      State.topics.push(deletedTopic);
+      const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+      if (!activeSem.topics) activeSem.topics = [];
+      activeSem.topics.push(deletedTopic);
       saveState(['topics']);
       window.dispatchEvent(new CustomEvent('topic:created', { detail: { name: deletedTopic.name } }));
     });
@@ -486,7 +494,8 @@ async function deleteTopic(id) {
 // ═══════════════════════════════════════════════════════════════
 
 function toggleTopicSeen(id) {
-  const t = State.topics.find(x=>x.id===id); if (!t) return;
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+  const t = (activeSem?.topics || []).find(x=>x.id===id); if (!t) return;
   t.seen = !t.seen;
   if (t.seen && t.comp===0) t.comp=100;
   if (!t.seen) t.comp=0;
@@ -495,7 +504,8 @@ function toggleTopicSeen(id) {
 }
 
 function toggleSubSeen(tid,idx) {
-  const t = State.topics.find(x=>x.id===tid); if (!t?.subs?.[idx]) return;
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+  const t = (activeSem?.topics || []).find(x=>x.id===tid); if (!t?.subs?.[idx]) return;
   t.subs[idx].seen = !t.subs[idx].seen;
   if (t.subs[idx].seen && t.subs[idx].comp===0) t.subs[idx].comp=100;
   if (!t.subs[idx].seen) t.subs[idx].comp=0;
@@ -506,7 +516,8 @@ function toggleSubSeen(tid,idx) {
 function openCompPopup(e,topicId,subIdx) {
   e.stopPropagation();
   compTarget = { topicId, subIdx: subIdx!=null ? subIdx : null };
-  const t   = State.topics.find(x=>x.id===topicId);
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+  const t   = (activeSem?.topics || []).find(x=>x.id===topicId);
   const cur = subIdx!=null ? t.subs[subIdx].comp : t.comp;
   const slider = document.getElementById('comp-slider');
   slider.value = cur;
@@ -522,7 +533,8 @@ function openCompPopup(e,topicId,subIdx) {
 function applyComp() {
   if (!compTarget) return;
   const val = parseInt(document.getElementById('comp-slider').value)||0;
-  const t   = State.topics.find(x=>x.id===compTarget.topicId);
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+  const t   = (activeSem?.topics || []).find(x=>x.id===compTarget.topicId);
   if (t) { if (compTarget.subIdx!=null) t.subs[compTarget.subIdx].comp=val; else t.comp=val; }
   saveState(['topics']);
   closeCompPopup();
@@ -542,7 +554,8 @@ if (typeof window.renderTopics !== 'function') {
     if (!container) return;
     if (!matId) { container.innerHTML=''; return; }
     const mat      = getMat(matId);
-    const matTopics = State.topics.filter(t=>t.matId===matId);
+    const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+    const matTopics = (activeSem?.topics || []).filter(t=>t.matId===matId);
     const totalT   = matTopics.length, seenT = matTopics.filter(t=>t.seen).length;
     const avgComp  = totalT ? Math.round(matTopics.reduce((a,t)=>a+t.comp,0)/totalT) : 0;
     const needRev  = matTopics.filter(t=>t.comp<70&&t.seen).length;

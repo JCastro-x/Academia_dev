@@ -61,19 +61,22 @@ const PLANNER = (() => {
   // ── Carga real de un día ──────────────────────────────────────
   function getDayMinutes(dateStr) {
     let total = 0;
+    const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+    const activeTasks = activeSem?.tasks || [];
+    const activeTopics = activeSem?.topics || [];
     // Evitar doble conteo: si una tarea tiene datePlanned Y plannedWorkDates,
     // priorizar datePlanned (timeEst) y no contarla de nuevo por plannedWorkDates
-    State.tasks.filter(t => !t.done && t.datePlanned === dateStr)
+    activeTasks.filter(t => !t.done && t.datePlanned === dateStr)
       .forEach(t => { total += t.timeEst || 60; });
-    State.tasks.filter(t => !t.done && t.datePlanned !== dateStr && (t.plannedWorkDates || []).includes(dateStr))
+    activeTasks.filter(t => !t.done && t.datePlanned !== dateStr && (t.plannedWorkDates || []).includes(dateStr))
       .forEach(t => { total += Math.round((t.estHoursPerDay || 1) * 60); });
-    State.topics.forEach(topic => {
+    activeTopics.forEach(topic => {
       (topic.reviewSchedule || []).forEach(r => {
         if (r.date === dateStr && !r.done && r.status === 'pending')
           total += r.minutes || REVIEW_MINS[topic.difficulty || 'normal'];
       });
     });
-    State.topics.filter(t => t.dateAdded === dateStr)
+    activeTopics.filter(t => t.dateAdded === dateStr)
       .forEach(t => { total += t.estMinutes || NEW_TOPIC_MIN; });
     return total;
   }
@@ -195,7 +198,9 @@ const PLANNER = (() => {
     }
 
     const pending = [];
-    State.topics.forEach(topic => {
+    const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+    const activeTopics = activeSem?.topics || [];
+    activeTopics.forEach(topic => {
       const parcialKey = getTopicParcialKey(topic);
       const examDate = parcialKey ? getExamDate(topic.matId, parcialKey) : null;
       (topic.reviewSchedule || []).forEach((review, idx) => {

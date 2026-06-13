@@ -200,16 +200,16 @@ async function deleteSemester(id) {
   const deletedGrades = {};
   const deletedTopics = [];
   sem.materias.forEach(m => {
-    if (State.grades[m.id]) deletedGrades[m.id] = JSON.parse(JSON.stringify(State.grades[m.id]));
-    State.topics.filter(t => t.matId === m.id).forEach(t => deletedTopics.push(JSON.parse(JSON.stringify(t))));
+    if (sem.grades?.[m.id]) deletedGrades[m.id] = JSON.parse(JSON.stringify(sem.grades[m.id]));
+    (sem.topics || []).filter(t => t.matId === m.id).forEach(t => deletedTopics.push(JSON.parse(JSON.stringify(t))));
   });
 
   State.semestres = State.semestres.filter(s => s.id !== id);
   sem.materias.forEach(m => {
-    delete State.grades[m.id];
-    if (m.linkedLabId) delete State.grades[m.linkedLabId];
+    delete sem.grades[m.id];
+    if (m.linkedLabId) delete sem.grades[m.linkedLabId];
   });
-  State.topics = State.topics.filter(t => !sem.materias.some(m => m.id === t.matId));
+  sem.topics = (sem.topics || []).filter(t => !sem.materias.some(m => m.id === t.matId));
 
   saveState(['semestres', 'grades', 'topics']);
   window.dispatchEvent(new CustomEvent('semester:deleted', { detail: { id, name: deletedSem.nombre } }));
@@ -217,7 +217,10 @@ async function deleteSemester(id) {
   if (typeof showUndoToast === 'function') {
     showUndoToast(`Semestre "${deletedSem.nombre}" eliminado`, () => {
       State.semestres.push(deletedSem);
-      Object.assign(State.grades, deletedGrades);
+      const restoredSem = State.semestres.find(s => s.id === deletedSem.id);
+      if (restoredSem) {
+        restoredSem.grades = { ...(restoredSem.grades || {}), ...deletedGrades };
+      }
       State.topics = [...State.topics, ...deletedTopics];
       saveState(['semestres', 'grades', 'topics']);
       window.dispatchEvent(new CustomEvent('semester:saved', { detail: { id: deletedSem.id } }));
@@ -262,18 +265,19 @@ async function deleteClass(matId) {
   const confirmed = await showConfirm(`¿Eliminar la materia "${mat.name}"?`, { danger: true });
   if (!confirmed) return;
 
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
   const deletedData = { mat: { ...mat }, linkedLab: mat.linkedLabId ? getMat(mat.linkedLabId) : null,
-    grades: State.grades[matId] ? { [matId]: { ...State.grades[matId] } } : null,
-    topics: State.topics.filter(t => t.matId === matId).map(t => ({ ...t })) };
+    grades: activeSem?.grades?.[matId] ? { [matId]: { ...activeSem.grades[matId] } } : null,
+    topics: (activeSem?.topics || []).filter(t => t.matId === matId).map(t => ({ ...t })) };
 
   if (mat.linkedLabId) {
     State.materias = State.materias.filter(m => m.id !== mat.linkedLabId);
-    delete State.grades[mat.linkedLabId];
-    State.topics = State.topics.filter(t => t.matId !== mat.linkedLabId);
+    if (activeSem?.grades) delete activeSem.grades[mat.linkedLabId];
+    activeSem.topics = (activeSem.topics || []).filter(t => t.matId !== mat.linkedLabId);
   }
   State.materias = State.materias.filter(m => m.id !== matId);
-  delete State.grades[matId];
-  State.topics = State.topics.filter(t => t.matId !== matId);
+  if (activeSem?.grades) delete activeSem.grades[matId];
+  activeSem.topics = (activeSem.topics || []).filter(t => t.matId !== matId);
   
   saveState(['materias', 'grades', 'topics']);
   window.dispatchEvent(new CustomEvent('subject:deleted', { detail: { id: matId, name: mat.name } }));
@@ -402,13 +406,13 @@ function saveNewClass() {
     const totalInput = row.querySelector('input[id$="-total"]');
     const manualTotal = totalInput ? parseFloat(totalInput.value) || 0 : 0;
     
-    // Auto-distribute points if manual total is set but individual points are 0
+    // Auto-distribute points ONLY if subs have no points (user hasn't set individual values)
     if (manualTotal > 0 && subs.length > 0) {
       const subsWithPts = subs.filter(s => s.maxPts > 0);
       const currentSubTotal = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
       
-      // If no subs have points, or manual total is different from current total, redistribute
-      if (subsWithPts.length === 0 || Math.abs(manualTotal - currentSubTotal) > 0.01) {
+      // 🔥 FIX: Only redistribute if NO subs have points (respect user's individual values)
+      if (subsWithPts.length === 0) {
         // Distribute points evenly among all subs
         const ptsPerSub = manualTotal / subs.length;
         subs.forEach((s, i) => {
@@ -421,7 +425,8 @@ function saveNewClass() {
         });
         totalPts = manualTotal;
       } else {
-        totalPts = manualTotal;
+        // User has set individual points - respect them, use their total
+        totalPts = currentSubTotal;
       }
     }
     
@@ -507,13 +512,13 @@ function saveEditClass() {
     const totalInput  = row.querySelector('[id$="-total"]');
     const manualTotal = parseFloat(totalInput?.value) || 0;
     
-    // Auto-distribute points if manual total is set but individual points are 0
+    // Auto-distribute points ONLY if subs have no points (user hasn't set individual values)
     if (manualTotal > 0 && subs.length > 0) {
       const subsWithPts = subs.filter(s => s.maxPts > 0);
       const currentSubTotal = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
       
-      // If no subs have points, or manual total is different from current total, redistribute
-      if (subsWithPts.length === 0 || Math.abs(manualTotal - currentSubTotal) > 0.01) {
+      // 🔥 FIX: Only redistribute if NO subs have points (respect user's individual values)
+      if (subsWithPts.length === 0) {
         // Distribute points evenly among all subs
         const ptsPerSub = manualTotal / subs.length;
         subs.forEach((s, i) => {
@@ -526,7 +531,8 @@ function saveEditClass() {
         });
         totalPts = manualTotal;
       } else {
-        totalPts = manualTotal;
+        // User has set individual points - respect them, use their total
+        totalPts = currentSubTotal;
       }
     }
     

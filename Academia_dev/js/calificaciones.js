@@ -9,11 +9,18 @@ function getMat(id) {
   return getMat._cache[id];
 }
 getMat.bust = function() { getMat._cache = Object.create(null); };
-function getG(matId, key)       { return State.grades[matId]?.[key] ?? ''; }
+function getG(matId, key)       { return State._activeSem?.grades?.[matId]?.[key] ?? ''; }
 function setG(matId, key, val) {
-  if (!State.grades[matId]) State.grades[matId] = {};
+  // 🔥 Guard: Obtener semestre activo directamente (no usar getter)
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+  if (!activeSem) {
+    console.error('[setG] No semestre activo disponible');
+    return;
+  }
+  if (!activeSem.grades) activeSem.grades = {};
+  if (!activeSem.grades[matId]) activeSem.grades[matId] = {};
   const num = val === '' ? '' : Math.min(Math.max(parseFloat(val) || 0, 0), 100);
-  State.grades[matId][key] = num;
+  activeSem.grades[matId][key] = num;
   saveState(['grades']);
   _updateGradeSummary(matId);
   renderMaterias();

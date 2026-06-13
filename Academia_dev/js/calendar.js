@@ -457,12 +457,15 @@ function saveEvent() {
     }
   }
   
+  const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
+  if (!activeSem) return;
+
   if (editingId) {
     // Modo edición: actualizar evento existente
-    const eventIndex = State.events.findIndex(e => e.id === editingId);
+    const eventIndex = (activeSem.events || []).findIndex(e => e.id === editingId);
     if (eventIndex !== -1) {
-      State.events[eventIndex] = {
-        ...State.events[eventIndex],
+      activeSem.events[eventIndex] = {
+        ...activeSem.events[eventIndex],
         title,
         matId: matId,
         type: type,
@@ -476,7 +479,8 @@ function saveEvent() {
     }
   } else {
     // Modo creación: agregar nuevo evento
-    State.events.push({
+    if (!activeSem.events) activeSem.events = [];
+    activeSem.events.push({
       id: Date.now().toString(), title,
       matId: matId,
       type: type,

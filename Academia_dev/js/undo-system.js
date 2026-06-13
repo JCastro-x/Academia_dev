@@ -94,24 +94,24 @@ function deleteClassWithUndo(matId) {
   if (!mat) return;
 
   // Store data for undo
+  const sem = getActiveSem();
   const deletedData = {
     mat: { ...mat },
     linkedLab: mat.linkedLabId ? getMat(mat.linkedLabId) : null,
-    grades: State.grades[matId] ? { [matId]: State.grades[matId] } : null,
-    topics: State.topics.filter(t => t.matId === matId)
+    grades: sem.grades?.[matId] ? { [matId]: sem.grades[matId] } : null,
+    topics: (sem.topics || []).filter(t => t.matId === matId)
   };
 
   // Perform delete
-  const sem = getActiveSem();
   sem.materias = sem.materias.filter(m => m.id !== matId);
-  
+
   if (mat.linkedLabId) {
     sem.materias = sem.materias.filter(m => m.id !== mat.linkedLabId);
-    delete State.grades[mat.linkedLabId];
-    State.topics = State.topics.filter(t => t.matId !== mat.linkedLabId);
+    delete sem.grades[mat.linkedLabId];
+    sem.topics = (sem.topics || []).filter(t => t.matId !== mat.linkedLabId);
   }
-  delete State.grades[matId];
-  State.topics = State.topics.filter(t => t.matId !== matId);
+  delete sem.grades[matId];
+  sem.topics = (sem.topics || []).filter(t => t.matId !== matId);
 
   saveState(['materias', 'grades', 'topics']);
   renderMaterias();
