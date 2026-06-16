@@ -537,9 +537,14 @@ function _updateSingleTaskProgressUI(taskId) {
     if (row) row.style.opacity = s.done ? '.5' : '';
     if (box) {
       box.style.borderColor = s.done ? 'var(--accent)' : 'var(--border2)';
-      box.style.background = s.done ? 'var(--accent)' : 'transparent';
+      box.style.background = s.done ? 'linear-gradient(135deg, #a78bfa 0%, #7c6aff 100%)' : 'transparent';
+      box.style.boxShadow = s.done ? '0 2px 6px rgba(124,106,255,0.4)' : 'none';
     }
-    if (check) check.innerHTML = s.done ? '<span style="font-size:9px;color:#fff;">✓</span>' : '';
+    if (check) {
+      check.innerHTML = s.done ? '<span style="font-size:11px;color:#fff;font-weight:700;">✓</span>' : '';
+      check.style.transform = s.done ? 'scale(1)' : 'scale(0)';
+      check.style.opacity = s.done ? '1' : '0';
+    }
     if (txt) {
       txt.style.textDecoration = s.done ? 'line-through' : '';
       txt.style.color = s.done ? 'var(--text3)' : '';

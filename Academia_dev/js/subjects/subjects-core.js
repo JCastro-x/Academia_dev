@@ -484,30 +484,31 @@ function saveNewClass() {
 function saveEditClass() {
   const mat = getMat(window._editClassMatId);
   if (!mat) return;
-  const name = document.getElementById('ec-name')?.value.trim();
-  const code = document.getElementById('ec-code')?.value.trim();
+  const name = document.getElementById('nc-name')?.value.trim();
+  const code = document.getElementById('nc-code')?.value.trim();
   if (!name || !code) { if (typeof _appNotify === 'function') _appNotify('Ingresa nombre y código.', 'warning'); return; }
 
   mat.name = name; mat.code = code;
-  mat.credits     = document.getElementById('ec-credits')?.value.trim()     || mat.credits;
-  mat.catedratico = document.getElementById('ec-catedratico')?.value.trim() || '';
-  mat.seccion     = document.getElementById('ec-seccion')?.value.trim()     || '';
-  mat.horario     = document.getElementById('ec-horario')?.value.trim()     || '';
+  mat.credits     = document.getElementById('nc-credits')?.value.trim()     || mat.credits;
+  mat.catedratico = document.getElementById('nc-catedratico')?.value.trim() || '';
+  mat.seccion     = document.getElementById('nc-seccion')?.value.trim()     || '';
+  mat.horario     = document.getElementById('nc-horario')?.value.trim()     || '';
   mat.color       = window.newColorSel; mat.icon = window.newIconSel;
-  mat.dias = Array.from(document.querySelectorAll('#ec-dias-checks input:checked')).map(cb => cb.value).join(', ');
+  mat.dias = Array.from(document.querySelectorAll('#nc-dias-checks input:checked')).map(cb => cb.value).join(', ');
 
   const labZones = mat.zones.filter(z => z.isLabZone);
   const newZones = [];
-  document.getElementById('ec-zones-builder').querySelectorAll('div[id^="ecz-"]').forEach(row => {
-    const lbl = row.querySelector('.ec-zone-name')?.value.trim(); if (!lbl) return;
-    const key  = lbl.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20);
+  document.getElementById('zones-builder').querySelectorAll('div[id^="zr-"]').forEach(row => {
+    const lbl = row.querySelector('.zone-name-inp')?.value.trim(); if (!lbl) return;
+    const origKey = row.querySelector('.zone-orig-key')?.value || '';
+    const key     = origKey || lbl.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20);
     const subs = []; let totalPts = 0;
     row.querySelectorAll('.zone-sub-row').forEach((sr, i) => {
-      const subLabel = sr.querySelector('.ec-sub-label')?.value.trim() || lbl + ' ' + (i + 1);
-      const subPts   = parseFloat(sr.querySelector('.ec-sub-pts')?.value) || 0;
-      const existingZone = mat.zones.find(z => z.label === lbl);
-      const existingKey  = existingZone?.subs?.[i]?.key || (key + '_' + (i + 1));
-      subs.push({ key: existingKey, label: subLabel, maxPts: subPts }); totalPts += subPts;
+      const subLabel   = sr.querySelector('.zone-sub-label')?.value.trim() || lbl + ' ' + (i + 1);
+      const subPts     = parseFloat(sr.querySelector('.zone-sub-pts')?.value) || 0;
+      const origSubKey = sr.querySelector('.zone-sub-orig-key')?.value || '';
+      const subKey     = origSubKey || (key + '_' + (i + 1));
+      subs.push({ key: subKey, label: subLabel, maxPts: subPts }); totalPts += subPts;
     });
     const totalInput  = row.querySelector('[id$="-total"]');
     const manualTotal = parseFloat(totalInput?.value) || 0;
@@ -549,7 +550,10 @@ function saveEditClass() {
     _updateGradeSummary(mat.id);
   }
   
-  closeModal('modal-editclass');
+  closeModal('modal-addclass');
+  window._editClassMatId = null;
+  const titleEl = document.querySelector('#modal-addclass .modal-title');
+  if (titleEl) titleEl.textContent = '📚 Nueva Clase';
   window.dispatchEvent(new CustomEvent('subject:updated', { detail: { id: mat.id, name: mat.name } }));
 }
 
