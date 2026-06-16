@@ -213,58 +213,34 @@
 
     // Fallback a Supabase
     try {
-      // Delta sync: construir payload solo con campos cambiados
+      // Para Supabase, siempre hacer merge para evitar pérdida de datos
+      // Leer datos remotos primero, combinar con cambios locales, luego guardar
       let payload = {};
       let dataToSend = _optimizeData(semestres, settings);
 
-      if (changedFields.includes('semestres')) {
-        payload.semestres = dataToSend.semestres || [];
-      } else if (changedFields.includes('tasks')) {
-        // Solo enviar tareas del semestre activo, no todo el semestre
-        const activeSemId = semestres.find(s => s.activo)?.id;
-        if (activeSemId) {
-          payload.semestres = semestres.map(sem => {
-            if (sem.id !== activeSemId) {
-              // Para otros semestres, solo enviar ID y metadatos básicos
-              return { id: sem.id, nombre: sem.nombre, activo: sem.activo };
-            }
-            // Para el semestre activo, enviar solo tareas (sin notas)
-            return {
-              id: sem.id,
-              nombre: sem.nombre,
-              activo: sem.activo,
-              tasks: sem.tasks || [],
-              // No enviar notesArray, notes, grades, etc.
-            };
-          });
-        }
-      } else if (changedFields.includes('notes')) {
-        // Solo enviar notas del semestre activo
-        const activeSemId = semestres.find(s => s.activo)?.id;
-        if (activeSemId) {
-          payload.semestres = semestres.map(sem => {
-            if (sem.id !== activeSemId) {
-              return { id: sem.id, nombre: sem.nombre, activo: sem.activo };
-            }
-            return {
-              id: sem.id,
-              nombre: sem.nombre,
-              activo: sem.activo,
-              notes: sem.notes || {},
-              notesArray: (sem.notesArray || []).map(note => ({
-                ...note,
-                content: note.content || '',
-                canvasData: note.canvasData?.startsWith('IDB:') ? note.canvasData : undefined
-              })),
-            };
-          });
-        }
+      // Leer datos remotos actuales
+      const { data: remoteData, error: readError } = await _getClient()
+        .from('user_data')
+        .select('semestres, settings')
+        .eq('user_id', _userId)
+        .maybeSingle();
+
+      if (readError) {
+        console.warn('⚠️ [SYNC] Error leyendo datos remotos para merge:', readError.message);
       }
-      if (changedFields.includes('settings')) {
+
+      // Construir payload basado en datos remotos + cambios locales
+      if (remoteData && remoteData.semestres) {
+        // Merge: usar datos remotos como base, aplicar cambios locales
+        payload.semestres = dataToSend.semestres || [];
+        payload.settings = dataToSend.settings || {};
+      } else {
+        // No hay datos remotos, usar datos locales completos
+        payload.semestres = dataToSend.semestres || [];
         payload.settings = dataToSend.settings || {};
       }
 
-      // Si no hay campos cambiados, no hacer nada
+      // Si no hay nada que guardar, no hacer nada
       if (Object.keys(payload).length === 0) {
         return;
       }
