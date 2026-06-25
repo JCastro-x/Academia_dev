@@ -513,13 +513,13 @@ function saveEditClass() {
     const totalInput  = row.querySelector('[id$="-total"]');
     const manualTotal = parseFloat(totalInput?.value) || 0;
     
-    // Auto-distribute points ONLY if subs have no points (user hasn't set individual values)
-    if (manualTotal > 0 && subs.length > 0) {
+    // 🔥 FIX: If user set a manual total, ALWAYS respect it regardless of individual sub values
+    if (manualTotal > 0) {
       const subsWithPts = subs.filter(s => s.maxPts > 0);
       const currentSubTotal = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
       
-      // 🔥 FIX: Only redistribute if NO subs have points (respect user's individual values)
-      if (subsWithPts.length === 0) {
+      // Only redistribute if NO subs have points OR user changed the manual total significantly
+      if (subsWithPts.length === 0 || Math.abs(manualTotal - currentSubTotal) > 0.01) {
         // Distribute points evenly among all subs
         const ptsPerSub = manualTotal / subs.length;
         subs.forEach((s, i) => {
@@ -532,9 +532,12 @@ function saveEditClass() {
         });
         totalPts = manualTotal;
       } else {
-        // User has set individual points - respect them, use their total
+        // User has set individual points that match the total - respect them
         totalPts = currentSubTotal;
       }
+    } else {
+      // No manual total set - use sum of individual sub values
+      totalPts = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
     }
     
     if (totalPts === 0 && subs.length > 0) totalPts = subs.reduce((a, s) => a + (s.maxPts || 0), 0);

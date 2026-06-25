@@ -240,7 +240,9 @@ function _renderGrades() {
     const sc    = t ? (isGanada ? '#22c55e' : zonaMinOk ? '#fbbf24' : '#ef4444') : '#5a5a72';
     const sl    = t ? (isGanada ? '🏆 GANADA' : zonaMinOk ? '⚠ En zona' : '✗ En riesgo') : 'Sin datos';
     const proj  = calcProjected(mat.id);
-    const minN  = calcMinNeeded(mat.id, min);
+    // 🔥 FIX: Para cálculo de "necesitas X% en lo que queda", usar USAC_GANADA (61) si estamos en zona mínima
+    const targetForCalc = zonaMinOk ? USAC_GANADA : min;
+    const minN  = calcMinNeeded(mat.id, targetForCalc);
 
     let faltaParaGanar = null;
     if (t && !isGanada && zonaMinOk) {

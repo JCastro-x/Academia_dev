@@ -38,15 +38,17 @@ function _renderMaterias() {
     const maxPts   = (m.zones || []).reduce((a,z) => a+(z.maxPts||0), 0);
     const pct      = t ? t.pct : 0;
     const pend     = State.tasks.filter(x => x.matId===m.id && !x.done).length;
-    const sc       = t ? (t.total>=min?'#4ade80':t.total>=min*.8?'#fbbf24':'#f87171') : '#5a5a72';
-    const sl       = t ? (t.total>=min?'✓ Aprobado':t.total>=min*.8?'⚠ En zona':'✗ En riesgo') : 'Sin notas';
-    const linkedLab= m.linkedLabId ? getMat(m.linkedLabId) : null;
-    const labData  = m.linkedLabId ? getLabNetPts(m) : null;
-
-    const zonaMin = State.settings?.zonaMin || 36, zonaGanada = State.settings?.zonaGanada || 61;
+    
+    // 🔥 FIX: Usar umbrales USAC (36 zona mínima, 61 ganada) en lugar de min configurado
+    const zonaMin = 36, zonaGanada = 61;
     const totalPts = t ? t.total : null;
     const isGanada = totalPts !== null && totalPts >= zonaGanada;
     const hasZona  = totalPts !== null && totalPts >= zonaMin;
+    const sc       = t ? (isGanada?'#22c55e':hasZona?'#fbbf24':'#ef4444') : '#5a5a72';
+    const sl       = t ? (isGanada?'🏆 GANADA':hasZona?'⚠ En zona':'✗ En riesgo') : 'Sin datos';
+    
+    const linkedLab= m.linkedLabId ? getMat(m.linkedLabId) : null;
+    const labData  = m.linkedLabId ? getLabNetPts(m) : null;
     const usacBanner = totalPts !== null ? (
       isGanada
         ? `<div style="margin-top:8px;background:${m.color}22;border:2px solid ${m.color};border-radius:8px;padding:7px 10px;font-size:11px;font-weight:800;color:${m.color};display:flex;align-items:center;gap:6px;">🏆 GANADA — ${totalPts.toFixed(1)} pts ≥ 61</div>`
@@ -294,17 +296,18 @@ function renderSemestresList() {
 function _renderGradeCards() {
   const grid = document.getElementById('grades-cards-grid');
   if (!grid) return;
-  const min = parseFloat(document.getElementById('min-grade')?.value) || State.settings.minGrade;
-  const USAC_GANADA = 61;
+  const USAC_ZONA_MIN = 36, USAC_GANADA = 61;
   grid.innerHTML = State.materias.filter(m => m).map(mat => {
     if (!mat) return '';
     const t = calcTotal(mat.id);
     const total = t ? t.total : 0;
     const maxT = (mat.zones || []).reduce((a,z) => a+(z.maxPts||0), 0);
     const pct = t ? t.pct : 0;
+    // 🔥 FIX: Usar umbrales USAC (36 zona mínima, 61 ganada) en lugar de min configurado
     const isGanada = t && total >= USAC_GANADA;
-    const sc = !t ? '#5a5a72' : isGanada ? '#4ade80' : total >= min ? '#4ade80' : total >= min*.8 ? '#fbbf24' : '#f87171';
-    const sl = !t ? 'Sin datos' : isGanada ? '🏆 Ganada' : total >= min ? '✓ Aprobado' : total >= min*.8 ? '⚠ En zona' : '✗ En riesgo';
+    const zonaMinOk = t && total >= USAC_ZONA_MIN;
+    const sc = !t ? '#5a5a72' : isGanada ? '#22c55e' : zonaMinOk ? '#fbbf24' : '#ef4444';
+    const sl = !t ? 'Sin datos' : isGanada ? '🏆 GANADA' : zonaMinOk ? '⚠ En zona' : '✗ En riesgo';
     const border = isGanada ? '#4ade80' : mat.color;
     return `<div class="card" onclick="openGradesForMat('${mat.id}')" style="cursor:pointer;border-left:4px solid ${border};transition:transform .15s,box-shadow .15s;" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.3)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">
       <div class="card-body" style="padding:16px 18px;">

@@ -302,8 +302,21 @@ function continueInit(auth) {
   _applyFont(State.settings.font || 'Syne');
   _applyAccentColor(State.settings.accentColor || '#7c6aff');
 
+  // 🔥 FIX: Asegurar que min-grade se cargue correctamente después de que el DOM esté listo
   const mgEl = document.getElementById('min-grade');
-  if (mgEl) mgEl.value = State.settings.minGrade;
+  if (mgEl) {
+    mgEl.value = State.settings.minGrade || 70;
+    console.log('[init] min-grade set to:', mgEl.value, 'from State.settings.minGrade:', State.settings.minGrade);
+  } else {
+    console.warn('[init] min-grade element not found, will retry after DOM load');
+    setTimeout(() => {
+      const retryEl = document.getElementById('min-grade');
+      if (retryEl) {
+        retryEl.value = State.settings.minGrade || 70;
+        console.log('[init] min-grade set on retry to:', retryEl.value);
+      }
+    }, 100);
+  }
 
   // Data cleanup: Remove null entries from arrays
   if (State.materias && State.materias.some(m => !m)) {
@@ -388,6 +401,7 @@ function continueInit(auth) {
       minGradeEl.addEventListener('input', () => {
         State.settings.minGrade = parseFloat(minGradeEl.value)||70;
         saveState(['settings']);
+        renderGrades();
       });
     }
 

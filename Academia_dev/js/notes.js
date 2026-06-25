@@ -2835,19 +2835,38 @@ function saveEditClass() {
         const subLabel = sr.querySelector('.ec-sub-label')?.value.trim() || (lbl + ' ' + (i+1));
         const subPts   = parseFloat(sr.querySelector('.ec-sub-pts')?.value) || 0;
         if (subPts > 0) {
-
           const existSub = (mat.zones||[]).flatMap(z=>z.subs||[]).find(s=>s.key===key+'_'+(i+1));
           subs.push({ key: key+'_'+(i+1), label: subLabel, maxPts: subPts,
             ...(existSub ? { _prev: existSub } : {}) });
           totalPts += subPts;
         }
       });
-      // Leer el total del input editable directamente
+      // 🔥 FIX: Leer el total del input editable directamente y respetarlo
       const totalInput = row.querySelector('input[id$="-total"]');
       const manualTotal = totalInput ? parseFloat(totalInput.value) || 0 : 0;
-      // Usar el manual si el usuario lo editó, si no usar la suma de apartados
+      // 🔥 FIX: Si el usuario editó el manual total, usarlo siempre (no solo si > 0)
       if (manualTotal > 0) {
-        totalPts = manualTotal;
+        const subsWithPts = subs.filter(s => s.maxPts > 0);
+        const currentSubTotal = subs.reduce((a, s) => a + (s.maxPts || 0), 0);
+        
+        // Solo redistribuir si NO hay apartados con puntos o el total cambió significativamente
+        if (subsWithPts.length === 0 || Math.abs(manualTotal - currentSubTotal) > 0.01) {
+          // Distribuir puntos entre los apartados
+          if (subs.length > 0) {
+            const ptsPerSub = manualTotal / subs.length;
+            subs.forEach((s, i) => {
+              s.maxPts = parseFloat(ptsPerSub.toFixed(2));
+              if (i === subs.length - 1) {
+                const distributedTotal = subs.reduce((a, sub) => a + sub.maxPts, 0);
+                s.maxPts = parseFloat((s.maxPts + (manualTotal - distributedTotal)).toFixed(2));
+              }
+            });
+          }
+          totalPts = manualTotal;
+        } else {
+          // Respetar los valores individuales de los apartados
+          totalPts = currentSubTotal;
+        }
       }
       if (totalPts > 0) {
         const existZone = (mat.zones||[]).find(z=>z.key===key);
