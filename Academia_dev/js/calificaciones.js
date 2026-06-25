@@ -1,6 +1,6 @@
 function pctToNet(pct, maxPts)  { return (parseFloat(pct) || 0) / 100 * maxPts; }
-function compColor(v)           { return v >= 80 ? '#4ade80' : v >= 60 ? '#fbbf24' : '#f87171'; }
-function barColor(v)            { return v >= 80 ? '#4ade80' : v >= 50 ? '#fbbf24' : '#f87171'; }
+function compColor(v)           { return v >= 61 ? '#22c55e' : v >= 36 ? '#fbbf24' : '#ef4444'; } // Verde (ganado), Amarillo (zona mínima), Rojo (riesgo)
+function barColor(v)            { return v >= 61 ? '#22c55e' : v >= 36 ? '#fbbf24' : '#ef4444'; } // Verde (ganado), Amarillo (zona mínima), Rojo (riesgo)
 function getMat(id) {
   if (!getMat._cache) getMat._cache = Object.create(null);
   if (getMat._cache[id]) return getMat._cache[id];
@@ -129,7 +129,7 @@ function calcTotal(matId) {
 function calcProjected(matId) {
   const mat = getMat(matId);
   if (!mat.zones) return null;
-  let earned = 0, potential = 0, filledPts = 0;
+  let earned = 0, potential = 0, earnedMax = 0;
   let labMaxPts = mat.labMaxPts || 0;
 
   mat.zones.forEach(z => {
@@ -137,7 +137,7 @@ function calcProjected(matId) {
       const v = getG(matId, s.key);
       if (v !== '') {
         const net = Math.min(pctToNet(v, s.maxPts), s.maxPts);
-        earned += net; filledPts += s.maxPts;
+        earned += net; earnedMax += s.maxPts;
       }
       potential += s.maxPts;
     });
@@ -146,13 +146,13 @@ function calcProjected(matId) {
   // Incluir lab en el cálculo proyectado
   if (mat.linkedLabId) {
     const ld = getLabNetPts(mat);
-    if (ld) { earned += ld.netPts; filledPts += labMaxPts; }
+    if (ld) { earned += ld.netPts; earnedMax += labMaxPts; }
     potential += labMaxPts;
   }
 
-  if (!filledPts) return null;
-  const avgRate = earned / filledPts;
-  const remaining = potential - filledPts;
+  if (!earnedMax) return null;
+  const avgRate = earned / earnedMax;
+  const remaining = potential - earnedMax;
   return { projected: earned + avgRate * remaining, maxTotal: potential };
 }
 
@@ -163,23 +163,38 @@ function calcMinNeeded(matId, targetPts) {
   let labMaxPts = mat.labMaxPts || 0;
 
   mat.zones.forEach(z => {
+    if (z.isLabZone) return; // Skip lab zones, handled separately
+    let zoneEarned = 0, zoneRemaining = 0;
     z.subs.forEach(s => {
       const v = getG(matId, s.key);
-      if (v !== '') earned += Math.min(pctToNet(v, s.maxPts), s.maxPts);
-      else remainingMax += s.maxPts;
+      if (v !== '') {
+        zoneEarned += Math.min(pctToNet(v, s.maxPts), s.maxPts);
+      } else {
+        zoneRemaining += s.maxPts;
+      }
     });
+    // Solo agregar a remainingMax si hay apartados vacíos en esta zona
+    if (zoneRemaining > 0) {
+      remainingMax += zoneRemaining;
+    }
+    earned += zoneEarned;
   });
 
   // Incluir lab en el cálculo de mínimo necesario
   if (mat.linkedLabId) {
     const ld = getLabNetPts(mat);
-    if (ld) earned += ld.netPts;
-    else remainingMax += labMaxPts;
+    if (ld) {
+      earned += ld.netPts;
+    } else {
+      remainingMax += labMaxPts;
+    }
   }
 
   if (remainingMax === 0) return null;
   const needed = targetPts - earned;
-  return { needed, remainingMax, pct: (needed / remainingMax) * 100 };
+  const pct = (needed / remainingMax) * 100;
+  console.log(`[calcMinNeeded] matId=${matId}, target=${targetPts}, earned=${earned.toFixed(2)}, remainingMax=${remainingMax.toFixed(2)}, needed=${needed.toFixed(2)}, pct=${pct.toFixed(1)}%`);
+  return { needed, remainingMax, pct };
 }
 
 function renderGrades() { 
@@ -217,14 +232,15 @@ function _renderGrades() {
     const total = t ? t.total : 0;
     const maxT  = mat.zones.reduce((a, z) => a + z.maxPts, 0);
     const pct   = t ? t.pct : 0;
-    const sc    = t ? (total >= min ? '#4ade80' : total >= min * .8 ? '#fbbf24' : '#f87171') : '#5a5a72';
-    const sl    = t ? (total >= min ? '✓ Aprobado' : total >= min * .8 ? '⚠ En zona' : '✗ En riesgo') : 'Sin datos';
-    const proj  = calcProjected(mat.id);
-    const minN  = calcMinNeeded(mat.id, min);
-
     const isUSAC       = maxT >= 80 && maxT <= 120;
     const zonaMinOk    = t && total >= USAC_ZONA_MIN;
     const isGanada     = t && total >= USAC_GANADA;
+    
+    // Color basado en zona mínima USAC (36) y ganada (61), no en el min configurado
+    const sc    = t ? (isGanada ? '#22c55e' : zonaMinOk ? '#fbbf24' : '#ef4444') : '#5a5a72';
+    const sl    = t ? (isGanada ? '🏆 GANADA' : zonaMinOk ? '⚠ En zona' : '✗ En riesgo') : 'Sin datos';
+    const proj  = calcProjected(mat.id);
+    const minN  = calcMinNeeded(mat.id, min);
 
     let faltaParaGanar = null;
     if (t && !isGanada && zonaMinOk) {
@@ -295,14 +311,14 @@ function _renderGrades() {
       projEl.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);';
       let _ph = '';
       if (proj) {
-        const projColor = proj.projected >= min ? '#4ade80' : proj.projected >= min*.8 ? '#fbbf24' : '#f87171';
+        const projColor = proj.projected >= USAC_GANADA ? '#22c55e' : proj.projected >= USAC_ZONA_MIN ? '#fbbf24' : '#ef4444';
         _ph += `<div style="flex:1;padding:10px 20px;border-right:1px solid var(--border);">
           <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:3px;">📈 NOTA PROYECTADA</div>
           <div style="font-size:20px;font-weight:800;color:${projColor};">${proj.projected.toFixed(2)}<span style="font-size:11px;color:var(--text3);"> / ${proj.maxTotal}</span></div>
         </div>`;
       }
       if (minN && minN.needed > 0) {
-        const mnColor = minN.pct <= 100 ? '#fbbf24' : '#f87171';
+        const mnColor = minN.pct <= 100 ? '#fbbf24' : '#ef4444';
         const mnMsg   = minN.pct <= 100 ? `Necesitas ${minN.pct.toFixed(0)}% en lo que queda` : 'Ya no es posible alcanzar el mínimo';
         _ph += `<div style="flex:1;padding:10px 20px;">
           <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:3px;">⚠️ MÍNIMO NECESARIO</div>
@@ -311,7 +327,7 @@ function _renderGrades() {
       } else if (minN && minN.needed <= 0) {
         _ph += `<div style="flex:1;padding:10px 20px;">
           <div style="font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:3px;">✅ ESTADO</div>
-          <div style="font-size:13px;font-weight:700;color:#4ade80;">¡Ya alcanzaste el mínimo para aprobar!</div>
+          <div style="font-size:13px;font-weight:700;color:#22c55e;">¡Ya alcanzaste el mínimo para aprobar!</div>
         </div>`;
       }
       projEl.innerHTML = _ph;

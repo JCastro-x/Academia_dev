@@ -331,11 +331,15 @@ function toggleTask(id) {
       // Efecto de celebración sutil
       _showTaskCompleteEffect(taskEl);
     }
+    // Eliminar notificaciones pendientes para esta tarea
+    if (typeof NOTIFS_DB !== 'undefined') {
+      NOTIFS_DB.deleteByTaskId(id).catch(err => console.warn('Error cancelando notificaciones:', err));
+    }
   }
 
   _uiClick(wasDone ? 'task-undone' : 'task-done');
   if (!wasDone) { _updateStreak(); }
-  
+
   // Guardar inmediatamente y esperar a que complete antes de actualizar UI
   saveStateNow(['tasks']).then(() => {
     renderTasks();

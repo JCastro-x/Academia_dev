@@ -384,7 +384,7 @@ function continueInit(auth) {
 
     const minGradeEl = document.getElementById('min-grade');
     if (minGradeEl) {
-      minGradeEl.value = State.settings.minGrade;
+      minGradeEl.value = State.settings.minGrade || 70;
       minGradeEl.addEventListener('input', () => {
         State.settings.minGrade = parseFloat(minGradeEl.value)||70;
         saveState(['settings']);

@@ -162,7 +162,7 @@ function _showDailyBanner() {
   // Tareas relevantes para hoy
   const dueToday      = tasks.filter(t => t.due === today);
   const plannedToday  = tasks.filter(t => t.datePlanned === today);
-  const overdue       = tasks.filter(t => t.due && t.due < today);
+  const overdue       = tasks.filter(t => t.due && t.due < today && !t.done);
 
   // ── Banner vencidas (solo si hay, solo una vez al día) ──
   if (overdue.length && !_wasFired('daily-overdue')) {

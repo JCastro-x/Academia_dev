@@ -2846,7 +2846,9 @@ function saveEditClass() {
       const totalInput = row.querySelector('input[id$="-total"]');
       const manualTotal = totalInput ? parseFloat(totalInput.value) || 0 : 0;
       // Usar el manual si el usuario lo editó, si no usar la suma de apartados
-      totalPts = manualTotal > 0 ? manualTotal : totalPts;
+      if (manualTotal > 0) {
+        totalPts = manualTotal;
+      }
       if (totalPts > 0) {
         const existZone = (mat.zones||[]).find(z=>z.key===key);
         newZones.push({ ...(existZone||{}), key, label: lbl, maxPts: totalPts, color: _ecColorSel, subs });
