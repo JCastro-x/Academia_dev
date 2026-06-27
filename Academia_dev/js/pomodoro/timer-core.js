@@ -253,7 +253,26 @@ function pomToggle() {
     window.dispatchEvent(new CustomEvent('pomodoro:pause'));
   } else {
     // Iniciar
-    if (window.pomSL <= 0 || window.pomTS === 0) pomReset();
+    // 🔥 FIX: Si el timer está en 0, iniciar la siguiente fase automáticamente en lugar de resetear
+    if (window.pomSL <= 0 || window.pomTS === 0) {
+      if (!window.pomB) {
+        // Terminó trabajo → iniciar descanso
+        window.pomD++;
+        window._pomIsLongBreak = (window.pomD % 4 === 0);
+        window.pomB = true; window.pomSL = window.pomTS = window._pomIsLongBreak ? pomLongBreak() : pomBreak();
+        _pomBeep('break');
+        _pomMusicOnBreak();
+        if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, 'break');
+        window.dispatchEvent(new CustomEvent('pomodoro:phase-change', { detail: { phase: 'break', auto: true, isLongBreak: window._pomIsLongBreak } }));
+      } else {
+        // Terminó descanso → iniciar trabajo
+        window.pomB = false; window._pomIsLongBreak = false; window.pomSL = window.pomTS = pomWork();
+        _pomBeep('resume');
+        _pomMusicOnWork();
+        if (typeof _chronoNotifyPomState !== 'undefined') _chronoNotifyPomState(false, 'work');
+        window.dispatchEvent(new CustomEvent('pomodoro:phase-change', { detail: { phase: 'work', auto: true } }));
+      }
+    }
     window.pomR = true;
     _savePomRunningState();
     _pomBeep(window.pomB ? 'break' : 'start');

@@ -398,8 +398,11 @@ function continueInit(auth) {
     const minGradeEl = document.getElementById('min-grade');
     if (minGradeEl) {
       minGradeEl.value = State.settings.minGrade || 70;
+      console.log('[init] min-grade loaded:', minGradeEl.value, 'from State.settings.minGrade:', State.settings.minGrade);
       minGradeEl.addEventListener('input', () => {
-        State.settings.minGrade = parseFloat(minGradeEl.value)||70;
+        const newVal = parseFloat(minGradeEl.value)||70;
+        State.settings.minGrade = newVal;
+        console.log('[init] min-grade changed to:', newVal, 'saving to State.settings.minGrade');
         saveState(['settings']);
         renderGrades();
       });

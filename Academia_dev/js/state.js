@@ -553,18 +553,25 @@ window.showConfirm = function(message, options = {}) {
 
 const DEFAULT_MATERIAS = [];
 
-const DEFAULT_SETTINGS = { 
-  minGrade: 70, 
-  theme: 'dark', 
-  semester: '1er Año · 2do Sem', 
-  font: 'Syne', 
-  soundVariant: 'classic', 
+const DEFAULT_SETTINGS = {
+  minGrade: 70,
+  theme: 'dark',
+  semester: '1er Año · 2do Sem',
+  font: 'Syne',
+  soundVariant: 'classic',
   accentColor: '#7c6aff',
   habits: [] // Hábitos globales (independientes del semestre)
 };
 
 function dbGet(key, fallback = null) {
-  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }
+  try {
+    const r = localStorage.getItem(key);
+    const val = r ? JSON.parse(r) : fallback;
+    if (key === 'academia_settings') {
+      console.log('[dbGet] Loaded settings from localStorage:', val);
+    }
+    return val;
+  } catch { return fallback; }
 }
 let _storageWarnTimer = null;
 function _showStorageWarning(msg) {
@@ -651,6 +658,9 @@ if (typeof window._uiClick !== 'function') {
 function dbSet(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    if (key === 'academia_settings') {
+      console.log('[dbSet] Saved settings to localStorage:', value);
+    }
   } catch(e) {
     const isQuota = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.code === 1014;
     console.warn('Storage error', e);
@@ -770,6 +780,7 @@ const State = {
   pomSnapshots: dbGet(DB_KEYS.POM_SNAPSHOTS, {}),
   settings: { ...DEFAULT_SETTINGS, ...dbGet(DB_KEYS.SETTINGS, {}) },
 };
+console.log('[State] Initial State.settings.minGrade:', State.settings.minGrade);
 
 if ((!State.pomSessions || !State.pomSessions.length) && State.settings?.pomData?.date === new Date().toDateString()) {
   State.pomSessions = Array.isArray(State.settings.pomData.today) ? State.settings.pomData.today : [];

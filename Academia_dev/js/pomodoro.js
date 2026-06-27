@@ -192,6 +192,7 @@ function _pomUpdateSync(timeText, isBreak) {
     const timeEl = _pomPipWin.document.getElementById('pip-time');
     const modeEl = _pomPipWin.document.getElementById('pip-mode');
     const ringEl = _pomPipWin.document.getElementById('pip-ring');
+    const toggleBtn = _pomPipWin.document.getElementById('pip-toggle');
     if (timeEl) timeEl.textContent = timeText;
     if (modeEl) {
       modeEl.textContent = isBreak ? 'DESCANSO' : 'ENFOQUE';
@@ -199,6 +200,10 @@ function _pomUpdateSync(timeText, isBreak) {
     }
     if (ringEl) {
       ringEl.style.stroke = isBreak ? '#4ade80' : '#7c6aff';
+    }
+    // 🔥 FIX: Sincronizar botón play/pause en ventana PiP
+    if (toggleBtn && typeof window.pomR !== 'undefined') {
+      toggleBtn.textContent = window.pomR ? '⏸' : '▶';
     }
   }
 }

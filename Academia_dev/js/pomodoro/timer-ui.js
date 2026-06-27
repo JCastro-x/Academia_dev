@@ -226,12 +226,18 @@ window.addEventListener('pomodoro:start', (e) => {
   updatePomDisp();
   updatePomDots();
   const btn = document.getElementById('pom-btn');
-  if (btn) btn.textContent = '⏸ Pausar';
+  if (btn) {
+    btn.textContent = '⏸ Pausar';
+    console.log('[pomodoro:start] Button set to Pausar, pomR:', window.pomR);
+  }
 });
 
 window.addEventListener('pomodoro:pause', () => {
   const btn = document.getElementById('pom-btn');
-  if (btn) btn.textContent = '▶ Reanudar';
+  if (btn) {
+    btn.textContent = '▶ Reanudar';
+    console.log('[pomodoro:pause] Button set to Reanudar, pomR:', window.pomR);
+  }
 });
 
 window.addEventListener('pomodoro:reset', () => {
