@@ -1,8 +1,6 @@
-/* ═══════════════════════════════════════════════════════════
-   AI ASSISTANT MODULE  v1.0
-   ─ Chat con Gemini API
-   ─ Análisis contextual de notas, flashcards, archivos
-   ═══════════════════════════════════════════════════════════ */
+// AI ASSISTANT MODULE v1.0
+// Chat con Gemini API
+// Análisis contextual de notas, flashcards, archivos
 
 let _aiChatHistory = [];
 let _aiContext = null; // { type: 'note'|'flashcard'|'file', data: ... }
@@ -28,7 +26,7 @@ function _checkApiKey() {
   return true;
 }
 
-/* ── MODAL CONTROLS ─────────────────────────────────────────── */
+// Controles del modal
 function toggleAIChat() {
   const modal = document.getElementById('ai-chat-modal');
   if (modal.style.display === 'none') {
@@ -39,7 +37,7 @@ function toggleAIChat() {
   }
 }
 
-/* ── CONTEXT ATTACHMENT ─────────────────────────────────────── */
+// Adjuntar contexto
 function attachCurrentNote() {
   const sem = typeof State !== 'undefined' ? State._activeSem : null;
   if (!sem || !Array.isArray(sem.notesArray)) {
@@ -47,7 +45,7 @@ function attachCurrentNote() {
     return;
   }
   
-  // Try to get current note ID from notes.js
+  // Intentar obtener ID de nota actual desde notes.js
   const currentNoteId = typeof _currentNoteId !== 'undefined' ? _currentNoteId : null;
   if (!currentNoteId) {
     addSystemMessage('💡 Dirígete a la nota que quieres que analice, luego vuelve aquí y pulsa "Nota actual".');
@@ -60,7 +58,7 @@ function attachCurrentNote() {
     return;
   }
   
-  // Extract text from note
+  // Extraer texto de nota
   let text = '';
   if (note.content) {
     const div = document.createElement('div');
@@ -85,8 +83,8 @@ function attachCurrentFlashcard() {
     return;
   }
   
-  // Try to get current flashcard context from flashcards.js
-  // This would need to be set by flashcards.js when viewing a card
+  // Intentar obtener contexto de flashcard actual desde flashcards.js
+  // Esto debería ser establecido por flashcards.js al ver una tarjeta
   const currentCardId = typeof _currentCardId !== 'undefined' ? _currentCardId : null;
   if (!currentCardId) {
     addSystemMessage('💡 Dirígete a la flashcard que quieres que analice, luego vuelve aquí y pulsa "Flashcard actual".');
@@ -226,21 +224,21 @@ function addSystemMessage(text) {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-/* ── SEND MESSAGE ──────────────────────────────────────────── */
+// Enviar mensaje
 async function sendAIMessage() {
   const input = document.getElementById('ai-chat-input');
   const message = input.value.trim();
   
   if (!message) return;
 
-  // Check if API key is configured
+  // Verificar si API key está configurada
   if (!_checkApiKey()) return;
 
-  // Add user message
+  // Agregar mensaje de usuario
   addChatMessage(message, 'user');
   input.value = '';
   
-  // Add typing indicator
+  // Agregar indicador de escritura
   addTypingIndicator();
   
   try {
@@ -249,7 +247,7 @@ async function sendAIMessage() {
     addChatMessage(response, 'ai');
   } catch (error) {
     removeTypingIndicator();
-    // Hide all technical errors, show user-friendly message only
+    // Ocultar todos los errores técnicos, mostrar solo mensaje amigable al usuario
     addChatMessage('🚫 El asistente no está disponible en este momento. Por favor intenta de nuevo más tarde.', 'ai');
   }
 }
@@ -262,7 +260,7 @@ function addChatMessage(text, sender) {
   messagesDiv.appendChild(msgDiv);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
   
-  // Add to history
+  // Agregar al historial
   _aiChatHistory.push({ role: sender === 'user' ? 'user' : 'model', parts: [{ text }] });
 }
 
@@ -281,9 +279,9 @@ function removeTypingIndicator() {
   if (indicator) indicator.remove();
 }
 
-/* ── GEMINI CHAT API ─────────────────────────────────────────── */
+// API de chat Gemini
 async function _callGeminiChat(userMessage) {
-  // Check if user wants to create a task
+  // Verificar si usuario quiere crear tarea
   const taskCreationKeywords = ['agrega', 'añade', 'crea', 'nueva tarea', 'tarea nueva', 'agregar', 'añadir', 'crear'];
   const wantsTask = taskCreationKeywords.some(kw => userMessage.toLowerCase().includes(kw));
 
@@ -291,7 +289,7 @@ async function _callGeminiChat(userMessage) {
     return await _handleTaskCreation(userMessage);
   }
 
-  // Auto-attach full context for task/priority/activity questions
+  // Auto-adjuntar contexto completo para preguntas de tareas/prioridad/actividad
   const contextKeywords = ['tarea', 'prioridad', 'urgente', 'actividad', 'qué tengo', 'pendiente', 'vence', 'fecha', 'entrega', 'examen', 'estudio'];
   const needsContext = contextKeywords.some(kw => userMessage.toLowerCase().includes(kw));
 
@@ -340,7 +338,7 @@ ${Object.keys(c.grades).length > 0 ? Object.entries(c.grades).map(([subject, gra
 `;
     }
   } else if (needsContext) {
-    // Auto-attach full context when user asks about tasks/priorities
+    // Auto-adjuntar contexto completo cuando usuario pregunta sobre tareas/prioridades
     const sem = typeof State !== 'undefined' ? State._activeSem : null;
     if (sem) {
       const tasks = sem.tasks ? sem.tasks.filter(t => !t.done) : [];
@@ -431,7 +429,7 @@ INSTRUCCIONES DE RESPUESTA:
   });
 
   if (!response.ok) {
-    // Don't log detailed errors to console to avoid exposing sensitive info
+    // No loguear errores detallados a consola para evitar exponer información sensible
     console.error('Gemini API request failed');
     throw new Error('API request failed');
   }
@@ -440,14 +438,14 @@ INSTRUCCIONES DE RESPUESTA:
   return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo obtener respuesta';
 }
 
-/* ── TASK CREATION FROM CHAT ───────────────────────────────────── */
+// Creación de tareas desde chat
 async function _handleTaskCreation(userMessage) {
   const sem = typeof State !== 'undefined' ? State._activeSem : null;
   if (!sem || !Array.isArray(sem.materias)) {
     return '💡 No hay materias disponibles. Primero crea una materia en la sección de Materias.';
   }
   
-  // Get available subjects
+  // Obtener materias disponibles
   const subjects = sem.materias.map(m => ({ id: m.id, name: m.name }));
   
   const prompt = `El usuario quiere crear una tarea. Extrae la siguiente información del mensaje: "${userMessage}"
@@ -478,14 +476,14 @@ async function _handleTaskCreation(userMessage) {
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
-    // Parse JSON
+    // Parsear JSON
     let jsonText = text;
     const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlockMatch) jsonText = codeBlockMatch[1];
     
     const taskData = JSON.parse(jsonText);
     
-    // Create the task
+    // Crear la tarea
     if (typeof State !== 'undefined' && Array.isArray(State.tasks)) {
       const newTask = {
         id: Date.now().toString(),

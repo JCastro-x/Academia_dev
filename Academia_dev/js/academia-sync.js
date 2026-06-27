@@ -1,14 +1,10 @@
-/**
- * Client-side sync adapter for user academic data.
- *
- * Exposes `window.AcademiaDB` as the canonical sync API.
- * Legacy alias `window.DB` is kept for backward compatibility.
- * 
- * Data source strategy:
- * - Supabase: Used only for auth (Google Login)
- * - Turso: Used for heavy data (semestres, settings) - separated by user_id
- * - Fallback: Can use Supabase for data if Turso not configured
- */
+// Adaptador de sincronización client-side para datos académicos del usuario
+// Expone `window.AcademiaDB` como la API de sincronización canónica
+// Alias legacy `window.DB` mantenido para compatibilidad hacia atrás
+// Estrategia de fuente de datos:
+// - Supabase: Usado solo para auth (Google Login)
+// - Turso: Usado para datos pesados (semestres, settings) - separado por user_id
+// - Fallback: Puede usar Supabase para datos si Turso no está configurado
 
 (function () {
   'use strict';
@@ -19,7 +15,7 @@
   let _saveTimer = null;
   let _useTurso = false; // Flag para usar Turso en lugar de Supabase
 
-  // ── Obtener cliente Supabase (del módulo Auth) ──────────────
+// Obtener cliente Supabase (del módulo Auth)
   function _getClient() {
     if (_client) return _client;
     if (window.Auth && typeof window.Auth.getClient === 'function') {
@@ -28,12 +24,12 @@
     return _client;
   }
 
-  // ── Verificar si Turso está configurado ──────────────────────
+// Verificar si Turso está configurado
   function _isTursoConfigured() {
     return !!(localStorage.getItem('turso_url') && localStorage.getItem('turso_auth_token'));
   }
 
-  // ── init(userId) ────────────────────────────────────────────
+// init(userId)
   async function init(userId) {
     _userId = userId;
     _client = _getClient();
@@ -62,9 +58,9 @@
     }
   }
 
-  // load(localUpdatedAt?, options?) -> { semestres, settings, updatedAt } | null
-  // Si se proporciona localUpdatedAt, hace preflight check antes de descargar
-  // options: { exclude: ['pomData', 'snapshots'], semesterId: 'id' } para cargar solo datos esenciales o un semestre específico
+// load(localUpdatedAt?, options?) -> { semestres, settings, updatedAt } | null
+// Si se proporciona localUpdatedAt, hace preflight check antes de descargar
+// options: { exclude: ['pomData', 'snapshots'], semesterId: 'id' } para cargar solo datos esenciales o un semestre específico
   async function load(localUpdatedAt, options = {}) {
     if (!_ready) {
       console.warn('⚠️ [SYNC] DB no está ready, no se puede cargar');
@@ -137,7 +133,7 @@
         settings = { ...settings, pomData: null };
       }
 
-      // Optimizar semestres: eliminar contenido de notas muy largas y datos innecesarios
+      // Optimizar semestres, eliminar contenido de notas muy largas y datos innecesarios
       let optimizedSemestres = (data.semestres || []).map(sem => {
         const optimizedNotes = (sem.notesArray || []).map(note => ({
           ...note,
@@ -164,8 +160,8 @@
     }
   }
 
-  // getRemoteUpdatedAt(semesterId?) -> number (ms since epoch) | 0
-  // Cheap preflight to avoid downloading large JSONB when unchanged.
+// getRemoteUpdatedAt(semesterId?) -> number (ms since epoch) | 0
+// Preflight barato para evitar descargar JSONB grande cuando no cambió
   async function getRemoteUpdatedAt(semesterId = null) {
     if (!_ready) return 0;
 
@@ -190,7 +186,7 @@
     }
   }
 
-  // ── _doSave(semestres, settings, changedFields, semesterId?) ─────────────────
+// _doSave(semestres, settings, changedFields, semesterId?)
   async function _doSave(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     if (!_ready) {
       console.warn('⚠️ [SYNC] DB no está ready, no se puede guardar');
@@ -231,7 +227,7 @@
 
       // Construir payload basado en datos remotos + cambios locales
       if (remoteData && remoteData.semestres) {
-        // Merge: usar datos remotos como base, aplicar cambios locales
+        // Merge, usar datos remotos como base, aplicar cambios locales
         payload.semestres = dataToSend.semestres || [];
         payload.settings = dataToSend.settings || {};
       } else {
@@ -269,7 +265,7 @@
     }
   }
 
-  // ── _optimizeData(semestres, settings) ────────────────────────
+// _optimizeData(semestres, settings)
   function _optimizeData(semestres, settings) {
     // Eliminar datos pesados que no necesitan sincronizarse
     const optimizedSemestres = (semestres || []).map(sem => ({
@@ -284,7 +280,7 @@
       }))
     }));
 
-    // Eliminar datos de pomodoro de settings - AGRESIVO para reducir ancho de banda
+    // Eliminar datos de pomodoro de settings, AGRESIVO para reducir ancho de banda
     const optimizedSettings = { ...settings };
     if (optimizedSettings.pomData) {
       const pomSize = JSON.stringify(optimizedSettings.pomData).length;
@@ -315,7 +311,7 @@
     return { semestres: optimizedSemestres, settings: optimizedSettings };
   }
 
-  // ── save(semestres, settings, changedFields, semesterId?) — debounced dinámico ────────────
+// save(semestres, settings, changedFields, semesterId?) — debounced dinámico
   function save(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     clearTimeout(_saveTimer);
     // Usar debounce dinámico basado en calidad de red
@@ -325,7 +321,7 @@
     _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields, semesterId), delay);
   }
 
-  // ── saveNow(semestres, settings, changedFields, semesterId?) — inmediato ────────────────
+// saveNow(semestres, settings, changedFields, semesterId?) — inmediato
   async function saveNow(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     clearTimeout(_saveTimer);
     await _doSave(semestres, settings, changedFields, semesterId);
@@ -340,13 +336,13 @@
     get _ready() { return _ready; },
   };
 
-  // Canonical name for personal data synchronization.
+// Nombre canónico para sincronización de datos personales
   Object.defineProperty(window, 'AcademiaDB', {
     get() { return API; },
     configurable: true,
   });
 
-  // Backward-compatible alias used by older modules.
+// Alias compatible hacia atrás usado por módulos antiguos
   Object.defineProperty(window, 'DB', {
     get() { return API; },
     configurable: true,

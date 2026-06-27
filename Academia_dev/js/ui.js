@@ -1,7 +1,7 @@
 
 const _goPageHooks = [];
 
-// ─── Navigation Stack System ───────────────────────────────────────
+// Sistema de Navigation Stack
 const _navStack = [];
 const _MAX_STACK_SIZE = 20; // Limitar stack para evitar memory leaks
 
@@ -47,12 +47,12 @@ window._currentPageId = 'overview';
 // Inicializar Navigation Stack con overview
 _pushToStack('overview');
 
-// ─── Control Center Widget Switcher ───────────────────────────────────────
+// Switcher de widgets del Control Center
 let _currentWidget = 'calendar';
 let _zenModeActive = false;
 
 function switchWidget(viewName) {
-  // Update button states
+  // Actualizar estados de botones
   document.querySelectorAll('.view-selector-btn').forEach(btn => {
     btn.classList.remove('active');
     if (btn.dataset.view === viewName) {
@@ -60,18 +60,18 @@ function switchWidget(viewName) {
     }
   });
 
-  // Hide all widgets
+  // Ocultar todos los widgets
   document.querySelectorAll('.control-widget').forEach(widget => {
     widget.style.display = 'none';
   });
 
-  // Hide empty state and events list
+  // Ocultar estado vacío y lista de eventos
   const emptyState = document.getElementById('events-empty-state');
   const eventsList = document.getElementById('events-list');
   if (emptyState) emptyState.style.display = 'none';
   if (eventsList) eventsList.style.display = 'none';
 
-  // Show selected widget and render it
+  // Mostrar widget seleccionado y renderizarlo
   const widgetMap = {
     'calendar': 'widget-calendar',
     'myday': 'widget-myday',
@@ -85,10 +85,10 @@ function switchWidget(viewName) {
       widget.style.visibility = 'visible';
       widget.style.opacity = '1';
       _currentWidget = viewName;
-      // Persist widget selection
+      // Persistir selección de widget
       sessionStorage.setItem('controlCenterWidget', viewName);
 
-      // Render the specific widget
+      // Renderizar el widget específico
       if (viewName === 'calendar' && typeof renderMiniCalendarWidget === 'function') {
         renderMiniCalendarWidget();
       } else if (viewName === 'myday' && typeof renderMyDayWidget === 'function') {
@@ -102,27 +102,27 @@ function switchWidget(viewName) {
   }
 }
 
-// Initialize default widget on page load
+// Inicializar widget por defecto al cargar página
 function initControlCenter() {
-  // Check if widgets exist in DOM
+  // Verificar si widgets existen en DOM
   const widgets = document.querySelectorAll('.control-widget');
 
-  // Render widgets with real data
+  // Renderizar widgets con datos reales
   refreshAllWidgets();
 
-  // Restore saved widget or default to calendar
+  // Restaurar widget guardado o usar calendar por defecto
   const savedWidget = sessionStorage.getItem('controlCenterWidget') || 'calendar';
   switchWidget(savedWidget);
 }
 
-// ─── Zen Mode Toggle ─────────────────────────────────────────────────────
+// Toggle de modo Zen
 function toggleZenMode() {
   _zenModeActive = !_zenModeActive;
   const grid = document.querySelector('.overview-two-column-grid');
   const zenBtn = document.getElementById('zen-mode-toggle-btn');
 
   if (_zenModeActive) {
-    // Activate Zen Mode (hide panel)
+    // Activar modo Zen (ocultar panel)
     grid.classList.add('zen-mode');
     zenBtn.textContent = '👁️ Mostrar';
     zenBtn.style.background = 'var(--surface2)';
@@ -130,7 +130,7 @@ function toggleZenMode() {
     zenBtn.style.color = 'var(--text)';
     sessionStorage.setItem('zenMode', 'true');
   } else {
-    // Deactivate Zen Mode (show panel)
+    // Desactivar modo Zen (mostrar panel)
     grid.classList.remove('zen-mode');
     zenBtn.textContent = '✕ Ocultar';
     zenBtn.style.background = '';
@@ -140,7 +140,7 @@ function toggleZenMode() {
   }
 }
 
-// Restore Zen Mode state on page load
+// Restaurar estado de modo Zen al cargar página
 function restoreZenModeState() {
   const savedZenMode = sessionStorage.getItem('zenMode');
   if (savedZenMode === 'true') {
@@ -157,9 +157,9 @@ function restoreZenModeState() {
   }
 }
 
-// ─── Widget Rendering Functions ─────────────────────────────────────────────
+// Funciones de renderizado de widgets
 
-// Render My Day Widget with real data
+// Renderizar widget Mi Día con datos reales
 function renderMyDayWidget() {
   const container = document.getElementById('myday-widget-content');
   if (!container) return;
@@ -167,11 +167,11 @@ function renderMyDayWidget() {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
-  // Get today's tasks and events
+  // Obtener tareas y eventos de hoy
   const todayTasks = State.tasks.filter(t => t.due === todayStr && !t.done);
   const todayEvents = State.events.filter(e => e.date === todayStr);
 
-  // Combine and sort chronologically
+  // Combinar y ordenar cronológicamente
   const allItems = [];
 
   todayTasks.forEach(t => {
@@ -195,7 +195,7 @@ function renderMyDayWidget() {
     });
   });
 
-  // Sort by time (items without time go to end)
+  // Ordenar por tiempo (items sin tiempo van al final)
   allItems.sort((a, b) => {
     if (!a.time) return 1;
     if (!b.time) return -1;
@@ -227,7 +227,7 @@ function renderMyDayWidget() {
   `;
 }
 
-// Render Habits Widget with real data
+// Renderizar widget Hábitos con datos reales
 function renderHabitsWidget() {
   const container = document.getElementById('habits-widget-content');
   if (!container) return;
@@ -276,14 +276,14 @@ function toggleHabitFromWidget(habitId) {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
 
-  // Toggle completion
+  // Alternar completado
   if (habit.historial?.[todayStr] === true) {
     habit.historial[todayStr] = false;
   } else {
     habit.historial[todayStr] = true;
   }
 
-  // Recalculate streak
+  // Recalcular racha
   if (typeof Habits?.calculateStreak === 'function') {
     habit.rachaActual = Habits.calculateStreak(habit);
   }
@@ -292,7 +292,7 @@ function toggleHabitFromWidget(habitId) {
   renderHabitsWidget();
 }
 
-// Render Mini Calendar Widget dynamically
+// Renderizar widget mini calendario dinámicamente
 function renderMiniCalendarWidget() {
   const container = document.getElementById('calendar-widget-content');
   if (!container) return;
@@ -308,7 +308,7 @@ function renderMiniCalendarWidget() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Get days with events/tasks
+  // Obtener días con eventos/tareas
   const daysWithEvents = new Set();
   State.events.forEach(e => {
     const eventDate = new Date(e.date);
@@ -333,17 +333,17 @@ function renderMiniCalendarWidget() {
       <div class="calendar-grid">
   `;
 
-  // Day names
+  // Nombres de días
   dayNames.forEach(day => {
     html += `<div class="calendar-day-name">${day}</div>`;
   });
 
-  // Empty cells before first day
+  // Celdas vacías antes del primer día
   for (let i = 0; i < firstDay; i++) {
     html += `<div class="calendar-day" style="visibility:hidden;"></div>`;
   }
 
-  // Days
+  // Días
   for (let d = 1; d <= daysInMonth; d++) {
     const isToday = d === today;
     const hasEvent = daysWithEvents.has(d);
@@ -363,14 +363,14 @@ function renderMiniCalendarWidget() {
   container.innerHTML = html;
 }
 
-// Refresh all widgets
+// Refrescar todos los widgets
 function refreshAllWidgets() {
   renderMyDayWidget();
   renderHabitsWidget();
   renderMiniCalendarWidget();
 }
 
-// Expose functions globally
+// Exponer funciones globalmente
 window.switchWidget = switchWidget;
 window.toggleZenMode = toggleZenMode;
 window.restoreZenModeState = restoreZenModeState;
@@ -378,7 +378,7 @@ window.initControlCenter = initControlCenter;
 window.refreshAllWidgets = refreshAllWidgets;
 window.toggleHabitFromWidget = toggleHabitFromWidget;
 
-// ─── Push to Navigation Stack ───────────────────────────────────────
+// Push al Navigation Stack
 function _pushToStack(pageId, context = null) {
   // No duplicar si es la misma página
   if (_navStack.length > 0 && _navStack[_navStack.length - 1].pageId === pageId) {
@@ -398,7 +398,7 @@ function _pushToStack(pageId, context = null) {
   });
 }
 
-// ─── Pop from Navigation Stack ───────────────────────────────────────
+// Pop del Navigation Stack
 function _popFromStack() {
   if (_navStack.length === 0) {
     console.warn('⚠️ Stack vacío, no hay donde regresar');
@@ -425,12 +425,12 @@ function goBack() {
   goPage(previous.pageId, null, previous.context);
 }
 
-// ─── Clear Navigation Stack ───────────────────────────────────────────
+// Limpiar Navigation Stack
 function clearNavStack() {
   _navStack.length = 0;
 }
 
-// ─── Get Current Stack State ─────────────────────────────────────────
+// Obtener estado actual del stack
 function getNavStackState() {
   return {
     current: _navStack[_navStack.length - 1] || null,
@@ -457,7 +457,7 @@ async function goPage(id, el, context = null) {
     window._currentPageId = id;
   }
   
-  // Ocultar sub-partials de Reloj (pomodoro, cronometro, temporizador) al navegar
+  // Ocultar sub-partials de Reloj al navegar
   ['pomodoro', 'cronometro', 'temporizador'].forEach(mode => {
     const page = document.getElementById(`page-${mode}`);
     if (page) {
@@ -475,14 +475,14 @@ async function goPage(id, el, context = null) {
   const searchResults = _el('search-results');
   if (searchResults) searchResults.style.display = 'none';
   
-  // Lazy load partial if not already loaded
+  // Lazy load partial si no está cargado
   const pageEl = document.getElementById('page-' + id);
   if (!pageEl) {
-    // Try to load the partial on-demand
+    // Intentar cargar el partial on-demand
     if (typeof window.loadPartial === 'function') {
       try {
         await window.loadPartial(id);
-        // After loading, get the element again
+        // Después de cargar, obtener el elemento nuevamente
         const newPageEl = document.getElementById('page-' + id);
         if (!newPageEl) {
           console.error('❌ Partial cargado pero elemento no encontrado:', id);
@@ -540,7 +540,7 @@ async function goPage(id, el, context = null) {
       break;
   }
 
-  // Post-navigation hooks for modules that need page-change side effects.
+  // Hooks post-navegación para módulos que necesitan efectos secundarios de cambio de página
   _goPageHooks.forEach(fn => {
     try { fn(id, el, pageEl); }
     catch (err) { console.warn('goPage hook error', err); }
@@ -549,12 +549,12 @@ async function goPage(id, el, context = null) {
 
 function fillMatSels() {
   const targets = ['t-mat','ev-mat','tp-mat'];
-  // 🔥 Guard: verificar que State.materias exista
+  // Guard: verificar que State.materias exista
   if (!State.materias || !Array.isArray(State.materias)) {
     console.warn('[fillMatSels] State.materias no está disponible aún');
     return;
   }
-  // Filter out null/undefined materias and those with undefined ids
+  // Filtrar materias null/undefined y aquellas con ids undefined
   const validMaterias = State.materias.filter(m => m && m.id && m.id !== 'undefined');
   targets.forEach(id => {
     const el = document.getElementById(id); if (!el) return;
@@ -564,7 +564,7 @@ function fillMatSels() {
       const o = document.createElement('option'); o.value = m.id;
       o.textContent = `${m.icon||'📚'} ${m.name}`; el.appendChild(o);
     });
-    // Only restore previous value if it exists and is valid
+    // Solo restaurar valor anterior si existe y es válido
     if (prev && prev !== '' && validMaterias.some(m => m.id === prev)) {
       el.value = prev;
     }
@@ -596,7 +596,7 @@ function fillPomSel() {
     const o = document.createElement('option'); o.value = m.id;
     o.textContent = `${m.icon||'📚'} ${m.name}`; sel.appendChild(o);
   });
-  // Also fill task selector
+  // También llenar selector de tareas
   const taskSel = document.getElementById('pom-task-sel');
   if (taskSel) {
     const prev = taskSel.value;

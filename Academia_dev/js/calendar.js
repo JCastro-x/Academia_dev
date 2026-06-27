@@ -42,12 +42,12 @@ function _renderCalendar() {
     const dt   = State.tasks.filter(t => t.due === ds && !t.done);
     const total = de.length + dt.length;
     
-    // Check if any event is a Parcial/Final (exam day)
+    // Verificar si algún evento es Parcial/Final (día de examen)
     const hasExam = de.some(e => e.type === 'Parcial' || e.type === 'Final');
 
     const eventsHtml = de.slice(0, 2).map(e => {
       const m = getMat(e.matId);
-      // Use red color for Parcial/Final events, otherwise use materia color
+      // Usar color rojo para eventos Parcial/Final, de lo contrario usar color de materia
       const isExamEvent = e.type === 'Parcial' || e.type === 'Final';
       const eventColor = isExamEvent ? '#f87171' : (m?.color || '#7c6aff');
       const bgStyle = isExamEvent ? 'background:#f8717122;' : `background:${eventColor}2a;`;
@@ -95,7 +95,7 @@ function _renderCalendar() {
       else if (dLeft<=7)  { cdClass='warn';   cdText=`${dLeft} días`; }
       else                { cdClass='ok';     cdText=`${dLeft} días`; }
       const countdownBadge = `<span class="ev-countdown-badge ${cdClass}">${cdText}</span>`;
-      // Check if this is an exam event
+      // Verificar si este es un evento de examen
       const isExamEvent = e.type === 'Parcial' || e.type === 'Final';
       const examBadge = isExamEvent ? `<span style="background:#f87171;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;margin-left:6px;">🎯 EXAMEN</span>` : '';
       const eventColor = isExamEvent ? '#f87171' : (m?.color || '#7c6aff');
@@ -191,7 +191,7 @@ function openDayEventsModal(date, events, tasks) {
       endHour = Math.min(24, evEndHour + 2);
     }
     
-    // Línea de tiempo - mostrar solo si hay eventos con hora
+    // Línea de tiempo, mostrar solo si hay eventos con hora
     if (eventsWithTime.length > 0) {
       html += '<div style="font-size:12px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:12px;">HORARIO DEL DÍA</div>';
       html += '<div style="display:flex;gap:16px;background:var(--surface2);border-radius:12px;padding:16px;margin-bottom:16px;">';
@@ -248,7 +248,7 @@ function openDayEventsModal(date, events, tasks) {
       html += '</div></div>';
     }
     
-    // Eventos sin hora - mostrar lista
+    // Eventos sin hora, mostrar lista
     if (eventsWithoutTime.length > 0) {
       html += '<div style="font-size:12px;color:var(--text3);font-family:\'Space Mono\',monospace;margin-bottom:8px;">EVENTOS SIN HORA</div>';
       eventsWithoutTime.forEach(e => {
@@ -310,10 +310,10 @@ function editEvent(id) {
   document.getElementById('ev-time-end').value = event.horaEnd || '';
   document.getElementById('ev-desc').value = event.desc || '';
   
-  // Setup listeners first
+  // Configurar listeners primero
   setupEventModalListeners();
   
-  // Load exam configuration
+  // Cargar configuración de examen
   const isExam = event.isExam || false;
   const examSection = document.getElementById('ev-exam-section');
   const isExamCb = document.getElementById('ev-is-exam');
@@ -351,13 +351,13 @@ function openEventModal() {
   document.getElementById('ev-time-end').value = '';
   document.getElementById('ev-type').value = 'Otro';
   
-  // Reset exam configuration
+  // Resetear configuración de examen
   document.getElementById('ev-is-exam').checked = false;
   document.getElementById('ev-exam-section').style.display = 'none';
   document.getElementById('ev-apartado-container').style.display = 'none';
   document.getElementById('ev-apartado').innerHTML = '<option value="">Selecciona un parcial</option>';
   
-  // Setup event listeners for exam configuration
+  // Configurar event listeners para configuración de examen
   setupEventModalListeners();
   
   // Limpiar el ID de edición y restaurar el título
@@ -367,9 +367,9 @@ function openEventModal() {
   document.getElementById('modal-event').classList.add('open');
 }
 
-// Setup event listeners for exam configuration section
+// Configurar event listeners para sección de configuración de examen
 function setupEventModalListeners() {
-  // Type change - show/hide exam section
+  // Cambio de tipo, mostrar/ocultar sección de examen
   const typeSel = document.getElementById('ev-type');
   const examSection = document.getElementById('ev-exam-section');
   
@@ -383,7 +383,7 @@ function setupEventModalListeners() {
     }
   };
   
-  // Checkbox change - show/hide apartado selector
+  // Cambio de checkbox, mostrar/ocultar selector de apartado
   const isExamCb = document.getElementById('ev-is-exam');
   isExamCb.onchange = function() {
     document.getElementById('ev-apartado-container').style.display = this.checked ? 'block' : 'none';
@@ -392,7 +392,7 @@ function setupEventModalListeners() {
     }
   };
   
-  // Materia change - update apartados
+  // Cambio de materia, actualizar apartados
   const matSel = document.getElementById('ev-mat');
   matSel.onchange = function() {
     if (document.getElementById('ev-is-exam').checked) {
@@ -401,7 +401,7 @@ function setupEventModalListeners() {
   };
 }
 
-// Fill apartado selector for event modal
+// Llenar selector de apartado para modal de evento
 function fillEventApartadoSel() {
   const sel = document.getElementById('ev-apartado');
   const matId = document.getElementById('ev-mat')?.value;
@@ -419,7 +419,7 @@ function fillEventApartadoSel() {
     return;
   }
   
-  // Filter only parcial apartados
+  // Filtrar solo apartados de parciales
   const parciales = mat.apartados.filter(a => a.tipo === 'parcial');
   if (parciales.length === 0) {
     sel.innerHTML = '<option value="">Sin parciales configurados</option>';
@@ -442,7 +442,7 @@ function saveEvent() {
   const isExam = document.getElementById('ev-is-exam')?.checked || false;
   const apartadoKey = document.getElementById('ev-apartado')?.value || '';
   
-  // If marked as exam, save the exam date for the parcial
+  // Si está marcado como examen, guardar la fecha del examen para el parcial
   if (isExam && matId && apartadoKey && date) {
     const sem = State._activeSem;
     if (sem) {
@@ -450,7 +450,7 @@ function saveEvent() {
       sem.examDates[`${matId}__${apartadoKey}`] = date;
       saveState(['semestres']);
       
-      // Trigger reschedule of topics for this parcial
+      // Activar reprogramación de temas para este parcial
       if (typeof PLANNER !== 'undefined' && PLANNER.rescheduleAll) {
         setTimeout(() => PLANNER.rescheduleAll(), 100);
       }
@@ -461,7 +461,7 @@ function saveEvent() {
   if (!activeSem) return;
 
   if (editingId) {
-    // Modo edición: actualizar evento existente
+    // Modo edición, actualizar evento existente
     const eventIndex = (activeSem.events || []).findIndex(e => e.id === editingId);
     if (eventIndex !== -1) {
       activeSem.events[eventIndex] = {
@@ -478,7 +478,7 @@ function saveEvent() {
       };
     }
   } else {
-    // Modo creación: agregar nuevo evento
+    // Modo creación, agregar nuevo evento
     if (!activeSem.events) activeSem.events = [];
     activeSem.events.push({
       id: Date.now().toString(), title,
@@ -512,7 +512,7 @@ async function deleteEvent(id) {
   saveState(['events']); renderCalendar(); renderOverview();
   if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
 
-  // Show undo toast
+  // Mostrar toast de deshacer
   if (typeof showUndoToast === 'function') {
     showUndoToast(`Evento "${event.title}" eliminado`, () => {
       State.events.push(deletedEvent);
@@ -523,11 +523,11 @@ async function deleteEvent(id) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Event Modal Event Delegation (replaces inline handlers)
+// Delegación de eventos del modal de eventos (reemplaza handlers inline)
 // ══════════════════════════════════════════════════════════════
-// Note: Placed in module scope (not DOMContentLoaded) because partials
-// are loaded dynamically via fetch(). Event delegation on document
-// will catch clicks on dynamically injected elements via bubbling.
+// Nota: Colocado en scope de módulo (no DOMContentLoaded) porque los partials
+// se cargan dinámicamente via fetch(). La delegación de eventos en document
+// capturará clicks en elementos inyectados dinámicamente via bubbling.
 
 document.addEventListener('click', (e) => {
   const action = e.target.closest('[data-action]');
@@ -535,30 +535,30 @@ document.addEventListener('click', (e) => {
 
   const actionType = action.dataset.action;
 
-  // Close modal
+  // Cerrar modal
   if (actionType === 'close-modal') {
     const target = action.dataset.target;
     if (target && typeof closeModal === 'function') closeModal(target);
   }
 
-  // Save event
+  // Guardar evento
   if (actionType === 'save-event') {
     if (typeof saveEvent === 'function') saveEvent();
   }
 
-  // Calendar day click
+  // Click en día del calendario
   if (actionType === 'cal-day-click') {
     const date = action.dataset.date;
     if (date && typeof calDayClick === 'function') calDayClick(date);
   }
 
-  // Edit event
+  // Editar evento
   if (actionType === 'edit-event') {
     const id = action.dataset.id;
     if (id && typeof editEvent === 'function') editEvent(id);
   }
 
-  // Delete event
+  // Eliminar evento
   if (actionType === 'delete-event') {
     const id = action.dataset.id;
     const closeModalTarget = action.dataset.closeModal;
@@ -568,7 +568,7 @@ document.addEventListener('click', (e) => {
     }
   }
 
-  // Toggle task
+  // Alternar tarea
   if (actionType === 'toggle-task') {
     const id = action.dataset.id;
     const closeModalTarget = action.dataset.closeModal;
@@ -578,7 +578,7 @@ document.addEventListener('click', (e) => {
     }
   }
 
-  // Open event modal with date
+  // Abrir modal de evento con fecha
   if (actionType === 'open-event-modal') {
     const date = action.dataset.date;
     const closeModalTarget = action.dataset.closeModal;

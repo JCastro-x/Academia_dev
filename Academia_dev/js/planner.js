@@ -1,6 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
 // PLANNER.JS v3 — Planificador Inteligente
-// ═══════════════════════════════════════════════════════════════
 
 const PLANNER = (() => {
   'use strict';
@@ -18,7 +16,7 @@ const PLANNER = (() => {
   const fmtShort = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' }) : '';
   const fmtMed   = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' }) : '';
 
-  // ── Fechas de examen ──────────────────────────────────────────
+// Fechas de examen
   const examKey = (matId, parcial) => `${matId}__${parcial}`;
 
   // Helper to get parcial key from topic (handles both old parcial and new apartadoId)
@@ -58,7 +56,7 @@ const PLANNER = (() => {
     _refreshAll();
   }
 
-  // ── Carga real de un día ──────────────────────────────────────
+// Carga real de un día
   function getDayMinutes(dateStr) {
     let total = 0;
     const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
@@ -88,7 +86,7 @@ const PLANNER = (() => {
     return { mins, pct, color: clr, label: `${(mins / 60).toFixed(1)}h / 4h` };
   }
 
-  // ── Encontrar mejor hueco ─────────────────────────────────────
+// Encontrar mejor hueco
   function findBestSlot(windowStart, windowEnd, durationMin) {
     const today   = todayStr();
     const slots   = [];
@@ -109,7 +107,7 @@ const PLANNER = (() => {
     return REVIEW_MINS[topic.difficulty || 'normal'];
   }
 
-  // ── Algoritmo: Repasos distribuidos desde creación hasta examen ─────────────
+// Algoritmo: Repasos distribuidos desde creación hasta examen
   function generateSmartReviews(topic) {
     const today    = todayStr();
     const topicDate = topic.dateAdded || today;
@@ -166,7 +164,7 @@ const PLANNER = (() => {
     return reviews;
   }
 
-  // ── Distribuir fechas de trabajo de tarea ─────────────────────
+// Distribuir fechas de trabajo de tarea
   function planTaskDates(task) {
     if (!task.due || !task.estDays || !task.estHoursPerDay) return [];
     const minsPerDay = Math.round(task.estHoursPerDay * 60);
@@ -182,16 +180,16 @@ const PLANNER = (() => {
     return [...new Set(dates)].sort();
   }
 
-  // ── Algoritmo de Supervivencia ────────────────────────────────
+// Algoritmo de Supervivencia
   // Recolecta repasos vencidos y sobrecargados, los ordena por
-  // examen más próximo (prioridad de asiento) y distribuye desde mañana.
+  // examen más próximo (prioridad de asiento) y distribuye desde mañana
   function rescheduleAll() {
     const today    = todayStr();
     const tomorrow = addDays(today, 1);
     const moved    = [];
     const stuck    = [];
 
-    // 🔥 Guard: verificar que State.topics exista
+    // Guard: verificar que State.topics exista
     if (!State.topics || !Array.isArray(State.topics)) {
       console.warn('[rescheduleAll] State.topics no está disponible aún');
       return;
@@ -244,7 +242,7 @@ const PLANNER = (() => {
     return { moved, stuck };
   }
 
-  // ── Plan del día ──────────────────────────────────────────────
+// Plan del día
   function getDailyPlan(dateStr) {
     const plan = {
       date: dateStr,
@@ -255,7 +253,7 @@ const PLANNER = (() => {
     };
     const today = todayStr();
 
-    // ── Temas nuevos: sólo si dateAdded === dateStr
+    // Temas nuevos: sólo si dateAdded === dateStr
     //    Y no tienen repasos ya generados (si los tienen = ya fueron procesados,
     //    sus repasos aparecerán en sus fechas correspondientes)
     State.topics.filter(t => {
@@ -271,7 +269,7 @@ const PLANNER = (() => {
       plan.totalMinutes += mins;
     });
 
-    // ── Repasos: sólo si r.date === dateStr (nunca futuros) ──────
+    // Repasos: sólo si r.date === dateStr (nunca futuros)
     State.topics.forEach(topic => {
       (topic.reviewSchedule || []).forEach((r, idx) => {
         if (r.done || r.date !== dateStr) return;
@@ -284,10 +282,10 @@ const PLANNER = (() => {
       });
     });
 
-    // ── Tareas:
+    // Tareas:
     //    a) datePlanned === dateStr
     //    b) plannedWorkDates incluye dateStr
-    //    c) Si dateStr === today: tareas con due <= today (atrasadas) ──
+    //    c) Si dateStr === today: tareas con due <= today (atrasadas)
     const seen = new Set();
     State.tasks
       .filter(t => {
@@ -324,7 +322,7 @@ const PLANNER = (() => {
     return plan;
   }
 
-  // ── Avisos de examen ──────────────────────────────────────────
+// Avisos de examen
   function _checkExamWarnings() {
     const today = todayStr();
     const sem   = State._activeSem;
@@ -341,7 +339,7 @@ const PLANNER = (() => {
     });
   }
 
-  // ── Acciones ──────────────────────────────────────────────────
+// Acciones
   function markReviewDone(topicId, reviewIdx) {
     const topic = State.topics.find(t => t.id === topicId);
     if (!topic?.reviewSchedule?.[reviewIdx]) return;
@@ -414,9 +412,7 @@ const PLANNER = (() => {
   };
 })();
 
-// ═══════════════════════════════════════════════════════════════
 // UI
-// ═══════════════════════════════════════════════════════════════
 
 function renderPlannerTimeline() {
   const container = document.getElementById('planner-timeline');
@@ -456,7 +452,7 @@ function renderPlannerTimeline() {
     </div>`;
 }
 
-// ── Plan del Día — reactivo al día seleccionado ───────────────
+// Plan del Día — reactivo al día seleccionado
 let _plannerActiveDate = null;
 // Track qué secciones están abiertas (persistir entre re-renders)
 const _pdSectOpen = { tasks: true, reviews: true, topics: true };
@@ -485,7 +481,7 @@ function renderDailyPlan(dateStr) {
     return;
   }
 
-  // ── Encabezado con barra ─────────────────────────────────────
+  // Encabezado con barra
   let html = `<div style="padding:10px 14px 6px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
       <span style="font-size:11px;color:var(--text2);font-weight:700;">${dateLabel}</span>
@@ -506,7 +502,7 @@ function renderDailyPlan(dateStr) {
   }
   html += `</div>`;
 
-  // ── Helper: cabecera de sección DESPLEGABLE ──────────────────
+  // Helper: cabecera de sección DESPLEGABLE
   const _secHdr = (id, icon, label, mins, open) => {
     const chev = open ? '▾' : '▸';
     return `<div class="planner-section-title planner-sec-toggle"
@@ -520,7 +516,7 @@ function renderDailyPlan(dateStr) {
     </div>`;
   };
 
-  // ── Formato de fecha resaltado ───────────────────────────────
+  // Formato de fecha resaltado
   const _fmtDueDate = (due, isOverdue) => {
     if (!due) return '';
     const d    = new Date(due + 'T00:00:00');
@@ -541,7 +537,7 @@ function renderDailyPlan(dateStr) {
     return `· <span style="color:${color};font-weight:700;font-family:'Space Mono',monospace;font-size:10px;">📅 ${lbl}${badge}</span>`;
   };
 
-  // ── 1. Tareas ────────────────────────────────────────────────
+  // 1. Tareas
   if (plan.tasks.length) {
     const taskMins = plan.tasks.reduce((s, t) => s + t.minutes, 0);
     const open = _pdSectOpen.tasks;
@@ -561,7 +557,7 @@ function renderDailyPlan(dateStr) {
     html += `</div>`;
   }
 
-  // ── 2. Repasos (solo los del día, sin low-priority en lista principal) ───
+  // 2. Repasos (solo los del día, sin low-priority en lista principal)
   if (plan.reviews.length) {
     const pendRevs  = plan.reviews.filter(r => r.status !== 'low-priority');
     const lowRevs   = plan.reviews.filter(r => r.status === 'low-priority');
@@ -598,7 +594,7 @@ function renderDailyPlan(dateStr) {
     html += `</div>`;
   }
 
-  // ── 3. Temas nuevos (sin repasos aún) ───────────────────────
+  // 3. Temas nuevos (sin repasos aún)
   if (plan.newTopics.length) {
     const topicMins = plan.newTopics.reduce((s, t) => s + t.minutes, 0);
     const open = _pdSectOpen.topics;
@@ -620,7 +616,7 @@ function renderDailyPlan(dateStr) {
   container.innerHTML = html;
 }
 
-// ── Toggle de sección en Plan del Día ────────────────────────
+// Toggle de sección en Plan del Día
 function _pdToggleSec(id) {
   const body = document.getElementById('pdsect-' + id);
   const chev = document.getElementById('pdchev-' + id);
@@ -632,7 +628,7 @@ function _pdToggleSec(id) {
 }
 
 
-// ── Cola de Repasos agrupada por Urgencia ─────────────────────
+// Cola de Repasos agrupada por Urgencia
 function renderReviewQueue() {
   const container = document.getElementById('planner-review-queue');
   if (!container) return;

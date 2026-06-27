@@ -1,11 +1,7 @@
-// ═══════════════════════════════════════════════════════════════
-// POMODORO TIMER UI — Renderizado y manipulación del DOM
+// UI del temporizador Pomodoro - Renderizado y manipulación del DOM
 // Escucha CustomEvents de timer-core.js para actualizarse
-// ═══════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════
 // Actualización de display principal
-// ═══════════════════════════════════════════════════════════════
 function updatePomDisp() {
   const timeEl = document.getElementById('pom-time');
   const ringEl = document.getElementById('pom-ring');
@@ -75,9 +71,7 @@ function initPomSettingsListeners() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Renderizado de historial
-// ═══════════════════════════════════════════════════════════════
 function renderPomHistory() {
   const hist = document.getElementById('pom-history');
   if (!hist) return;
@@ -116,7 +110,7 @@ function renderPomHistory() {
       return `${dayHeader}${dayRows}`;
     }).join('');
   }
-  // Update stats
+  // Actualizar estadísticas
   const totalEl = document.getElementById('pom-stat-total');
   const minsEl = document.getElementById('pom-stat-mins');
   if (totalEl) totalEl.textContent = todaySessions.length;
@@ -124,9 +118,7 @@ function renderPomHistory() {
   renderPomGoal();
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Meta diaria y progreso
-// ═══════════════════════════════════════════════════════════════
 function renderPomGoal() {
   const goalInput = document.getElementById('pom-goal');
   if (goalInput && !goalInput.dataset.bound) {
@@ -157,18 +149,16 @@ function renderPomGoal() {
       : `${done} de ${goal} sesiones · ${Math.round(pct)}%`;
   }
   _capturePomSnapshotIfGoalReached(goal, done);
-  // Streak
+  // Racha
   if (streakEl) {
     const sd = typeof _getStreakData === 'function' ? _getStreakData() : { count: 0 };
     streakEl.textContent = `🔥 ${sd.count}`;
   }
-  // Week stats
+  // Estadísticas semanales
   _renderPomWeekStats();
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Estadísticas semanales
-// ═══════════════════════════════════════════════════════════════
 function _renderPomWeekStats() {
   const arr = _getPomWeekHistory();
   const today = new Date();
@@ -182,7 +172,7 @@ function _renderPomWeekStats() {
   const wmEl = document.getElementById('pom-stat-week-mins');
   if (wsEl) wsEl.textContent = weekSessions.length;
   if (wmEl) wmEl.textContent = weekMins;
-  // Mini bar chart
+  // Gráfico de barras mini
   const barsEl = document.getElementById('pom-week-bars');
   if (barsEl) {
     const maxMins = Math.max(1, ...days.map(d => arr.filter(s => s.date === d).reduce((a, s) => a + (s.mins || 0), 0)));
@@ -200,9 +190,7 @@ function _renderPomWeekStats() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Helper de formato de fecha
-// ═══════════════════════════════════════════════════════════════
 function _pomDateLabel(isoDate) {
   try {
     return new Date(`${isoDate}T12:00:00`).toLocaleDateString('es-ES', {
@@ -215,9 +203,7 @@ function _pomDateLabel(isoDate) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Listeners de CustomEvents para auto-actualizar UI
-// ═══════════════════════════════════════════════════════════════
 window.addEventListener('pomodoro:tick', () => {
   updatePomDisp();
 });
@@ -269,9 +255,7 @@ window.addEventListener('pomodoro:session-saved', () => {
   renderPomHistory();
 });
 
-// ═══════════════════════════════════════════════════════════════
 // Exponer funciones al window
-// ═══════════════════════════════════════════════════════════════
 window.updatePomDisp = updatePomDisp;
 window.updatePomDots = updatePomDots;
 window.renderPomHistory = renderPomHistory;

@@ -3,4 +3,4 @@
 // subjects-ui.js    : Renderizado
 // subjects-modal.js : Modales
 // topics-core.js    : Gestión de temas
-// Este archivo se mantiene para compatibilidad backward pero está vacío.
+// Este archivo se mantiene para compatibilidad backward pero está vacío

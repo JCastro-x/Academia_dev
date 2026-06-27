@@ -5,9 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   _injectOfflineBanner();
 });
 
-// ═══════════════════════════════════════════════════════════════
-// BANNER MODO INVITADO
-// ═══════════════════════════════════════════════════════════════
+// Banner modo invitado
 function _injectGuestBanner() {
   if (localStorage.getItem('academia_guest_mode') !== '1') return;
 
@@ -54,17 +52,15 @@ function _injectGuestBanner() {
   if (mobileNav) mobileNav.style.bottom = '52px';
 }
 
-// Redirige al login para que se registre — los datos en localStorage se migran automáticamente
+// Redirige al login para que se registre, los datos en localStorage se migran automáticamente
 function handleGuestRegister() {
-  // NO limpiamos el localStorage — init.js lo migra a Supabase al autenticarse
+  // NO limpiamos el localStorage, init.js lo migra a Supabase al autenticarse
   // Solo quitamos el flag de invitado para que el auth-page no redirija de vuelta
   localStorage.removeItem('academia_guest_mode');
   window.location.href = 'auth-page.html';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// BANNER MODO OFFLINE
-// ═══════════════════════════════════════════════════════════════
+// Banner modo offline
 function _injectOfflineBanner() {
   if (localStorage.getItem('academia_offline_mode') !== '1') return;
 
@@ -110,7 +106,7 @@ function _injectOfflineBanner() {
   const mobileNav = document.querySelector('.mobile-nav');
   if (mobileNav) mobileNav.style.bottom = '52px';
   
-  // Auto-remove offline mode when connection is restored
+  // Auto-eliminar modo offline cuando se restaura la conexión
   window.addEventListener('online', () => {
     localStorage.removeItem('academia_offline_mode');
     const b = document.getElementById('offline-banner');
@@ -120,9 +116,7 @@ function _injectOfflineBanner() {
   });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MOBILE SIDEBAR — hamburger toggle
-// ═══════════════════════════════════════════════════════════════
+// Sidebar móvil - toggle hamburguesa
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.getElementById('mobile-sidebar-overlay');
@@ -179,37 +173,35 @@ async function handleLogout() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// Config Modal Event Delegation (replaces inline handlers)
-// ══════════════════════════════════════════════════════════════
+// Delegación de eventos del modal de configuración (reemplaza handlers inline)
 document.addEventListener('click', (e) => {
   const action = e.target.closest('[data-action]');
   if (!action) return;
 
   const actionType = action.dataset.action;
 
-  // Close modal
+  // Cerrar modal
   if (actionType === 'close-modal') {
     const target = action.dataset.target;
     if (target && typeof closeModal === 'function') closeModal(target);
   }
 
-  // Config modal - export data
+  // Modal de configuración - exportar datos
   if (actionType === 'export-data') {
     if (typeof exportData === 'function') exportData();
   }
 
-  // Config modal - export PDF
+  // Modal de configuración - exportar PDF
   if (actionType === 'export-pdf') {
     if (typeof exportPDF === 'function') exportPDF();
   }
 
-  // Config modal - save config
+  // Modal de configuración - guardar configuración
   if (actionType === 'save-config-modal') {
     if (typeof saveConfigModal === 'function') saveConfigModal();
   }
 
-  // Config modal - handle logout
+  // Modal de configuración - manejar logout
   if (actionType === 'handle-logout') {
     if (typeof handleLogout === 'function') handleLogout();
   }

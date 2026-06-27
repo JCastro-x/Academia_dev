@@ -1,22 +1,18 @@
-/**
- * HABITS.JS — Módulo de Hábitos para Academia
- * 
- * Los hábitos son GLOBALES (no dependen del semestre)
- * Se almacenan en State.settings.habits
- * 
- * Estructura de un hábito:
- * {
- *   id: string,
- *   nombre: string,
- *   frecuencia: 'diaria' | 'semanal' | 'personalizada',
- *   diasSemana: number[], // [0,1,2,3,4,5,6] donde 0=Dom, 1=Lun, ..., 6=Sab
- *   rachaActual: number,
- *   ultimaCompletada: string | null, // fecha ISO YYYY-MM-DD
- *   emoji: string,
- *   color: string, // hex color
- *   historial: { [fecha: string]: boolean } // registro de días
- * }
- */
+// HABITS.JS — Módulo de Hábitos para Academia
+// Los hábitos son GLOBALES (no dependen del semestre)
+// Se almacenan en State.settings.habits
+// Estructura de un hábito:
+// {
+//   id: string,
+//   nombre: string,
+//   frecuencia: 'diaria' | 'semanal' | 'personalizada',
+//   diasSemana: number[], // [0,1,2,3,4,5,6] donde 0=Dom, 1=Lun, ..., 6=Sab
+//   rachaActual: number,
+//   ultimaCompletada: string | null, // fecha ISO YYYY-MM-DD
+//   emoji: string,
+//   color: string, // hex color
+//   historial: { [fecha: string]: boolean } // registro de días
+// }
 
 (function () {
   'use strict';

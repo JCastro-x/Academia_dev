@@ -1,8 +1,4 @@
-/**
- * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- * AUTH.JS — Google OAuth con Supabase (Academia)
- * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- */
+// AUTH.JS - Google OAuth con Supabase (Academia)
 
 (function() {
   const SUPABASE_URL      = 'https://mwzezekdxrutpzqbduvh.supabase.co';
@@ -45,7 +41,7 @@ let prueba12;
     keysToRemove.forEach(k => localStorage.removeItem(k));
   }
 
-  // ── Google SignIn ────────────────────────────────────────────
+// Google SignIn
   async function signInGoogle() {
     try {
       if (!supabaseClient) return { success: false, error: 'Supabase no inicializado' };
@@ -73,7 +69,7 @@ let prueba12;
     }
   }
 
-  // ── Logout ───────────────────────────────────────────────────
+// Logout
   async function logoutUser() {
     try {
       if (!supabaseClient) return { success: false, error: 'Supabase no inicializado' };
@@ -86,13 +82,13 @@ let prueba12;
     }
   }
 
-  // ── Check auth ───────────────────────────────────────────────
+// Check auth
   async function checkAuth(timeoutMs = 5000) {
     try {
       if (!supabaseClient) initSupabase();
       if (!supabaseClient) return null;
       
-      // Add timeout for offline scenarios
+      // Agregar timeout para escenarios offline
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Auth timeout')), timeoutMs);
       });
@@ -108,7 +104,7 @@ let prueba12;
         name:  session.user.user_metadata?.full_name || session.user.email?.split('@')[0]
       };
     } catch (err) {
-      // If timeout or network error, return null to trigger offline fallback
+      // Si timeout o error de red, retornar null para activar fallback offline
       if (err.message === 'Auth timeout' || !navigator.onLine) {
         console.warn('⚠️ Auth check timed out or offline - will use cached data if available');
       }
@@ -116,7 +112,7 @@ let prueba12;
     }
   }
 
-  // ── Auth state listener ──────────────────────────────────────
+// Auth state listener
   function onAuthChange(callback) {
     if (!supabaseClient) return;
     supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -124,7 +120,7 @@ let prueba12;
     });
   }
 
-  // ── Export ───────────────────────────────────────────────────
+// Export
   window.Auth = {
     signInGoogle,
     logoutUser,

@@ -1,12 +1,10 @@
-// ═══════════════════════════════════════════════════════════════
-// POMODORO SYNC — BroadcastChannel en tiempo real con el popup
+// Sincronización Pomodoro - BroadcastChannel en tiempo real con el popup
 // Canal: 'academia_pomodoro' (mismo que usa pom-popup.html)
-// ═══════════════════════════════════════════════════════════════
 const pomChannel = (() => {
   try { return new BroadcastChannel('academia_pomodoro'); } catch(e) { return null; }
 })();
 
-/** Llamada desde updatePomDisp() en cada tick — envía estado completo al popup */
+// Llamada desde updatePomDisp() en cada tick, envía estado completo al popup
 function _pomUpdateSync(timeText, isBreak) {
   if (!pomChannel) return;
   try {
@@ -29,7 +27,7 @@ if (pomChannel) {
   pomChannel.onmessage = (e) => {
     const d = e.data || {};
     if (d.type === 'REQUEST') {
-      // Popup abrió y pide estado actual — responder inmediatamente
+      // Popup abrió y pide estado actual, responder inmediatamente
       if (typeof _pomUpdateSync === 'function') _pomUpdateSync('', typeof pomB !== 'undefined' ? pomB : false);
     } else if (d.type === 'CMD') {
       const a = d.action;
@@ -53,8 +51,7 @@ window.addEventListener('message', (e) => {
   }
 });
 
-// NOTA: Variables pomR, pomB, pomSL, pomTS, pomD, pomI ahora están definidas
-// globalmente en window por js/pomodoro/timer-core.js
+// Variables pomR, pomB, pomSL, pomTS, pomD, pomI están definidas globalmente en window por js/pomodoro/timer-core.js
 // Este archivo solo proporciona la sincronización PiP/BroadcastChannel
 
 let _pomAudioCtx = null;
@@ -201,7 +198,7 @@ function _pomUpdateSync(timeText, isBreak) {
     if (ringEl) {
       ringEl.style.stroke = isBreak ? '#4ade80' : '#7c6aff';
     }
-    // 🔥 FIX: Sincronizar botón play/pause en ventana PiP
+    // Sincronizar botón play/pause en ventana PiP
     if (toggleBtn && typeof window.pomR !== 'undefined') {
       toggleBtn.textContent = window.pomR ? '⏸' : '▶';
     }
@@ -234,7 +231,7 @@ function pomPlayAlarm(isBreak) {
   } catch(e) { console.warn('Alarm audio failed', e); }
 }
 
-// Short beep for UI events
+// Beep corto para eventos de UI
 function _pomBeep(type) {
   try {
     const ctx = _pomAudio();
@@ -242,7 +239,7 @@ function _pomBeep(type) {
     const _do = () => {
       const now = ctx.currentTime;
       if (type === 'start') {
-        // Two ascending soft tones
+        // Dos tonos ascendentes suaves
         [[440, 0], [550, 0.12]].forEach(([freq, delay]) => {
           const o = ctx.createOscillator(), g = ctx.createGain();
           o.connect(g); g.connect(ctx.destination);
@@ -253,7 +250,7 @@ function _pomBeep(type) {
           o.start(now+delay); o.stop(now+delay+0.3);
         });
       } else if (type === 'pause') {
-        // One descending soft tone
+        // Un tono descendente suave
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.connect(g); g.connect(ctx.destination);
         o.type = 'sine'; o.frequency.setValueAtTime(440, now);
@@ -263,7 +260,7 @@ function _pomBeep(type) {
         g.gain.exponentialRampToValueAtTime(0.001, now+0.22);
         o.start(now); o.stop(now+0.25);
       } else if (type === 'break') {
-        // Three soft ascending pleasant tones — "relax"
+        // Tres tonos ascendentes suaves, "relax"
         [[392,0],[494,0.15],[587,0.30]].forEach(([freq, delay]) => {
           const o = ctx.createOscillator(), g = ctx.createGain();
           o.connect(g); g.connect(ctx.destination);
@@ -274,7 +271,7 @@ function _pomBeep(type) {
           o.start(now+delay); o.stop(now+delay+0.5);
         });
       } else if (type === 'resume') {
-        // Work resume: short energetic ascending double
+        // Reanudar trabajo: doble ascendente energético corto
         [[523,0],[659,0.10]].forEach(([freq, delay]) => {
           const o = ctx.createOscillator(), g = ctx.createGain();
           o.connect(g); g.connect(ctx.destination);
@@ -291,10 +288,8 @@ function _pomBeep(type) {
   } catch(e) {}
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SW KEEPALIVE — ping al service worker para que no duerma
+// SW KEEPALIVE - ping al service worker para que no duerma
 // en background en móvil mientras el pomodoro corre
-// ═══════════════════════════════════════════════════════════════
 let _swKeepAliveInterval = null;
 
 function _pomStartSwKeepAlive() {
@@ -309,8 +304,7 @@ function _pomStartSwKeepAlive() {
         isBreak: pomB
       });
     }
-    // Fallback: fetch silencioso para evitar que el browser suspenda el contexto
-    // (solo en desktop, en móvil el SW maneja esto)
+    // Fallback: fetch silencioso para evitar que el browser suspenda el contexto (solo en desktop, en móvil el SW maneja esto)
   }, 20000); // cada 20 segundos
 }
 

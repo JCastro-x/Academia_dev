@@ -1,9 +1,7 @@
-/* ═══════════════════════════════════════════════════════════
-   FLASHCARDS MODULE  v3.1
-   ─ Sin confirm() para evitar race conditions con el sync
-   ─ saveStateNow en mutaciones críticas (write inmediato)
-   ─ Double-tap delete (mejor UX móvil + sin foco-events)
-   ═══════════════════════════════════════════════════════════ */
+// FLASHCARDS MODULE v3.1
+// Sin confirm() para evitar race conditions con el sync
+// saveStateNow en mutaciones críticas (write inmediato)
+// Double-tap delete (mejor UX móvil + sin foco-events)
 
 let _fcEditCardId    = null;
 let _fcEditFolderId  = null;
@@ -14,7 +12,7 @@ let _fcMatId         = null;
 let _fcFolderIdState = undefined; // undefined=fuera de vista-cards | null=todas | string=carpeta id
 let _fcReviewedCount = 0; // contador de tarjetas repasadas en la sesión
 
-/* ── Acceso al semestre activo ── */
+// Acceso al semestre activo
 function _fcSem() {
   try {
     if (typeof State === 'undefined') return null;
@@ -49,7 +47,7 @@ function fcSetFolders(arr) {
   else if (typeof saveState === 'function') saveState(['semestres']);
 }
 
-/* ════════════════ RENDER PRINCIPAL ════════════════ */
+// RENDER PRINCIPAL
 function renderFlashcards() {
   _fcFolderIdState = undefined; _fcMatId = null;
   updateFcHeaderStats(); renderFcMateriasGrid(); fcNavTo('materias');
@@ -67,7 +65,7 @@ function updateFcHeaderStats() {
 }
 window.updateFcHeaderStats = updateFcHeaderStats;
 
-/* ════════════════ VISTA 1 — MATERIAS ════════════════ */
+// VISTA 1 — MATERIAS
 function renderFcMateriasGrid() {
   const grid    = document.getElementById('fc-materias-grid');
   const emptyEl = document.getElementById('fc-global-empty');
@@ -100,7 +98,7 @@ function renderFcMateriasGrid() {
   if (!cards.length && emptyEl) emptyEl.style.display = 'block';
 }
 
-/* ════════════════ VISTA 2 — CARPETAS ════════════════ */
+// VISTA 2 — CARPETAS
 function fcOpenMateria(matId) {
   _fcMatId = matId; _fcFolderIdState = undefined;
   const materias = (typeof State !== 'undefined' && Array.isArray(State.materias)) ? State.materias : [];
@@ -154,7 +152,7 @@ function renderFoldersGrid(matId) {
   }).join('') + newBtn;
 }
 
-/* ════════════════ VISTA 3 — TARJETAS ════════════════ */
+// VISTA 3 — TARJETAS
 function fcOpenFolder(folderId) {
   _fcFolderIdState = folderId;
   const cards   = fcGetCards();
@@ -215,7 +213,7 @@ function _renderCardsList(cards) {
   }).join('');
 }
 
-/* ════════════════ NAVEGACIÓN ════════════════ */
+// NAVEGACIÓN
 function fcNavTo(view) {
   ['fc-view-materias','fc-view-folders','fc-view-cards'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
@@ -238,7 +236,7 @@ function fcNavBack(to) {
   }
 }
 
-/* ════════════════ MODAL FLASHCARD ════════════════ */
+// MODAL FLASHCARD
 function openAddFlashcardModal() {
   _fcEditCardId = null; _fillFcModal(null);
   document.getElementById('modal-flashcard')?.classList.add('open');
@@ -308,7 +306,7 @@ function closeFlashcardModal() {
   document.getElementById('modal-flashcard')?.classList.remove('open'); _fcEditCardId = null;
 }
 
-/* ── Delete with confirmation popup ── */
+// Delete con popup de confirmación
 async function deleteFlashcard(cardId, btn) {
   const card = fcGetCards().find(c => c.id === cardId);
   if (!card) return;
@@ -369,7 +367,7 @@ function _fcRefresh() {
   else renderFcMateriasGrid();
 }
 
-/* ════════════════ MODAL CARPETA ════════════════ */
+// MODAL CARPETA
 function openCreateFolderModal() {
   _fcEditFolderId = null;
   const g = id => document.getElementById(id);
@@ -418,7 +416,7 @@ document.addEventListener('click', e => {
   opt.classList.add('selected');
 });
 
-/* ════════════════ MODO ESTUDIO ════════════════ */
+// MODO ESTUDIO
 function enterStudyMode() {
   document.getElementById('modal-study-select').classList.add('open');
   if (typeof _uiClick === 'function') _uiClick('open');
@@ -516,7 +514,7 @@ function rateCard(rating) {
   if (!c.interval) c.interval = 1;
   if (!c.repetitions) c.repetitions = 0;
   
-  // Algoritmo SM-2 mejorado - no tan agresivo
+  // Algoritmo SM-2 mejorado, no tan agresivo
   if (rating === 'facil') {
     // Fácil: aumentar intervalo moderadamente
     c.repetitions++;
@@ -591,14 +589,14 @@ document.addEventListener('keydown', e => {
 
 function _fcEsc(t) { const d = document.createElement('div'); d.textContent = t || ''; return d.innerHTML; }
 
-/* ── AI GENERATION STUB (lazy loads flashcards-ai.js) ── */
+// AI GENERATION STUB (lazy loads flashcards-ai.js)
 window.openAIGenerateModal = function() {
   if (!window._aiModuleLoaded) {
     const script = document.createElement('script');
     script.src = 'js/flashcards-ai.js';
     script.onload = () => {
       window._aiModuleLoaded = true;
-      // Wait a tick for the script to initialize, then call the real function
+      // Esperar un tick para que el script se inicialice, luego llamar la función real
       setTimeout(() => {
         if (typeof _openAIModalAfterLoad === 'function') {
           _openAIModalAfterLoad();
@@ -611,32 +609,30 @@ window.openAIGenerateModal = function() {
   }
 };
 
-// ══════════════════════════════════════════════════════════════
-// Flashcards Modals Event Delegation (replaces inline handlers)
-// ══════════════════════════════════════════════════════════════
+// Delegación de eventos de modales de flashcards (reemplaza handlers inline)
 document.addEventListener('click', (e) => {
   const action = e.target.closest('[data-action]');
   if (!action) return;
 
   const actionType = action.dataset.action;
 
-  // Close modal
+  // Cerrar modal
   if (actionType === 'close-modal') {
     const target = action.dataset.target;
     if (target && typeof closeModal === 'function') closeModal(target);
   }
 
-  // Flashcard modal - save
+  // Modal de flashcard, guardar
   if (actionType === 'save-flashcard') {
     if (typeof saveFlashcard === 'function') saveFlashcard();
   }
 
-  // Flashcard study - flip card
+  // Estudio de flashcard, voltear tarjeta
   if (actionType === 'flip-study-card') {
     if (typeof flipStudyCard === 'function') flipStudyCard();
   }
 
-  // Flashcard study - rate card
+  // Estudio de flashcard, calificar tarjeta
   if (actionType === 'fc-rate') {
     const rating = parseInt(action.dataset.rating);
     if (!isNaN(rating) && typeof fcRate === 'function') fcRate(rating);

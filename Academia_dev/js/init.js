@@ -47,10 +47,10 @@ function init() {
     window.location.href = 'auth-page.html';
   }
 
-  // ── Detectar modo invitado ────────────────────────────────────
+  // Detectar si el usuario está en modo invitado
   const isGuest = localStorage.getItem('academia_guest_mode') === '1';
 
-  // Overlay de loading
+  // Crear overlay de carga
   const loadingOverlay = document.createElement('div');
   loadingOverlay.id = 'auth-check-overlay';
   loadingOverlay.style.cssText = `
@@ -71,29 +71,22 @@ function init() {
     let auth = null;
     try {
 
-      // ════════════════════════════════════════════════════════
-      // MODO INVITADO — saltar Supabase completamente
-      // ════════════════════════════════════════════════════════
+      // MODO INVITADO: saltar verificación de Supabase
       if (isGuest) {
-
-        // Quitar overlay y continuar sin auth
         const overlay = document.getElementById('auth-check-overlay');
         if (overlay) overlay.remove();
-
-        continueInit(null); // auth = null en modo invitado
+        continueInit(null);
         return;
       }
 
-      // ════════════════════════════════════════════════════════
-      // MODO NORMAL — verificar autenticación con Supabase
-      // ════════════════════════════════════════════════════════
+      // MODO NORMAL: verificar autenticación con Supabase
       const hasOAuthCallback = window.location.hash.includes('access_token') ||
                                window.location.search.includes('code=');
 
       auth = await window.Auth.checkAuth();
 
       if (!auth && hasOAuthCallback) {
-        // Evita race condition del callback OAuth sin depender de un solo timeout fijo
+        // Reintentar verificación de auth para evitar race condition en callback OAuth
         for (let i = 0; i < 6 && !auth; i++) {
           await new Promise(r => setTimeout(r, 400));
           auth = await window.Auth.checkAuth();
@@ -122,7 +115,7 @@ function init() {
       }
 
 
-      // Si el usuario cambió, limpiar datos del anterior
+      // Si el usuario cambió, limpiar datos del usuario anterior
       const lastUser = localStorage.getItem('_academia_last_user');
       if (lastUser && lastUser !== auth.id) {
         localStorage.removeItem('academia_v4_semestres');
@@ -130,7 +123,7 @@ function init() {
       }
       localStorage.setItem('_academia_last_user', auth.id);
 
-      // Inicializar DB y cargar desde Supabase/Turso
+      // Inicializar base de datos y cargar datos desde Supabase/Turso
       const db = getAcademiaDB();
       if (db) {
         await db.init(auth.id);
@@ -143,9 +136,9 @@ function init() {
           const localModifiedAt = window._localModifiedAt || 0;
           const shouldUseRemote = remoteUpdatedAt > localModifiedAt;
 
-          // Solo sobrescribir si remoto es más reciente Y tiene datos válidos
+          // Solo sobrescribir si remoto es más reciente y tiene datos válidos
           if (shouldUseRemote) {
-            // 🔥 GUARD: Verificar que datos remotos no estén vacíos/corruptos antes de sobrescribir
+            // Verificar que datos remotos no estén vacíos/corruptos antes de sobrescribir
             const localSemestres = JSON.parse(localStorage.getItem('academia_v4_semestres') || '[]');
             const hasLocalData = localSemestres && localSemestres.length > 0 && localSemestres.some(s => s.materias && s.materias.length > 0);
             const hasRemoteData = dbData.semestres && dbData.semestres.length > 0 && dbData.semestres.some(s => s.materias && s.materias.length > 0);
@@ -622,8 +615,7 @@ function continueInit(auth) {
     window.addEventListener('pagehide', () => {
       if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
     });
-    // Deshabilitado sync al enfocar la ventana para reducir ancho de banda
-    // window.addEventListener('focus', () => _syncFromSupabase());
+    // Sync deshabilitado al enfocar la ventana para reducir ancho de banda
 
     // Sync periódico cada 6 horas (reducido de 1 hora para ahorrar ancho de banda)
     setInterval(() => {
@@ -633,33 +625,30 @@ function continueInit(auth) {
         _lastSync = 0;
         _syncFromSupabase();
       }
-    }, 21600000); // 6 horas en lugar de 1 hora (ahorro de ancho de banda)
+    }, 21600000);
   }
 
   _maybeShowOnboarding();
   initNotifications();
 
-} // FIN continueInit()
+}
 
 
-/* Typewriter greeting effect for #ov-greeting.
-   It observes text updates and animates the final greeting string. */
+// Efecto de máquina de escribir para el saludo en #ov-greeting
 
 (function () {
   'use strict';
 
-  /**
-   * Typewriter en un elemento dado.
-   * @param {HTMLElement} el    - Elemento a animar
-   * @param {string}      text  - Texto final a escribir
-   * @param {number}      speed - ms por carácter (default 38)
-   */
+  // Escribe texto carácter por carácter en un elemento
+  // el: elemento HTML a animar
+  // text: texto final a escribir
+  // speed: milisegundos por carácter (default 38)
   function typewrite(el, text, speed = 38) {
     // Limpiar contenido anterior
     el.textContent = '';
     el.classList.remove('tw-done');
 
-    // Cursor
+    // Crear cursor parpadeante
     const cursor = document.createElement('span');
     cursor.className = 'tw-cursor';
     el.appendChild(cursor);
@@ -667,12 +656,12 @@ function continueInit(auth) {
     let i = 0;
     const interval = setInterval(() => {
       if (i < text.length) {
-        // Insertar el carácter ANTES del cursor
+        // Insertar el carácter antes del cursor
         el.insertBefore(document.createTextNode(text[i]), cursor);
         i++;
       } else {
         clearInterval(interval);
-        // Remover cursor después de 2 s
+        // Remover cursor después de 2 segundos
         setTimeout(() => {
           cursor.remove();
           el.classList.add('tw-done');
@@ -681,15 +670,11 @@ function continueInit(auth) {
     }, speed);
   }
 
-  /**
-   * Observa #ov-greeting y ejecuta el efecto en cuanto
-   * el texto cambia a algo no vacío.
-   * Funciona tanto si init.js ya corrió como si corre después.
-   */
+  // Observa #ov-greeting y ejecuta el efecto cuando el texto cambia
   function watchGreeting() {
     const grEl = document.getElementById('ov-greeting');
     if (!grEl) {
-      // El elemento aún no existe en el DOM — reintentar
+      // El elemento aún no existe en el DOM, reintentar
       setTimeout(watchGreeting, 150);
       return;
     }
@@ -698,20 +683,20 @@ function continueInit(auth) {
 
     const applyTw = () => {
       const raw = grEl.textContent.trim();
-      // Ignorar si ya está vacío o es el mismo texto
+      // Ignorar si está vacío o es el mismo texto
       if (!raw || raw === lastText) return;
       lastText = raw;
       typewrite(grEl, raw, 36);
     };
 
-    // Si ya tiene texto al montar
+    // Si ya tiene texto al cargar
     if (grEl.textContent.trim()) {
       applyTw();
     }
 
-    // Observar cambios futuros (init.js puede setear el texto después)
+    // Observar cambios futuros en el elemento
     const obs = new MutationObserver(() => {
-      // Solo re-animar si el contenido cambió y NO hay cursor activo
+      // Solo re-animar si el contenido cambió y no hay cursor activo
       if (!grEl.querySelector('.tw-cursor')) {
         applyTw();
       }
@@ -720,30 +705,28 @@ function continueInit(auth) {
     obs.observe(grEl, { childList: true, subtree: true, characterData: true });
   }
 
-  // Arrancar cuando el DOM esté listo
+  // Iniciar cuando el DOM esté listo
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', watchGreeting);
   } else {
     watchGreeting();
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // BACK BUTTON HANDLER (Android/History API)
-  // ═══════════════════════════════════════════════════════════════
+  // Manejador del botón atrás (Android/History API)
   let _backButtonExitTs = 0;
   const _EXIT_DOUBLE_TAP_MS = 2000;
 
   window.addEventListener('popstate', (event) => {
-    // 1. Si hay un modal abierto, ciérralo
+    // Si hay un modal abierto, cerrarlo
     const openModals = document.querySelectorAll('.modal-overlay.open, [id^="modal-"].open');
     if (openModals.length > 0) {
       openModals.forEach(m => m.classList.remove('open'));
-      // Prevent default back navigation
+      // Prevenir navegación atrás por defecto
       event.preventDefault?.();
       return;
     }
 
-    // 2. Usar Navigation Stack para regresar jerárquicamente
+    // Usar Navigation Stack para regresar jerárquicamente
     if (typeof goBack === 'function') {
       const stackState = typeof getNavStackState === 'function' ? getNavStackState() : null;
       const depth = stackState ? stackState.depth : 0;
@@ -761,10 +744,10 @@ function continueInit(auth) {
       }
     }
 
-    // 3. Si ya está en Overview (o stack vacío), implementar "doble clic para salir"
+    // Si ya está en Overview (o stack vacío), implementar doble clic para salir
     const now = Date.now();
     if (now - _backButtonExitTs < _EXIT_DOUBLE_TAP_MS) {
-      // Segundo tap dentro del tiempo permitido - dejar que la app se cierre
+      // Segundo tap dentro del tiempo permitido, dejar que la app se cierre
       return;
     }
     // Primer tap - mostrar toast y prevenir cierre

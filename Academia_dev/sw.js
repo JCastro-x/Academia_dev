@@ -216,6 +216,28 @@ self.addEventListener('message', e => {
   if (e.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+
+  // 🔥 FIX: Manejar POM_KEEPALIVE para mantener el SW vivo mientras el pomodoro corre
+  if (e.data.type === 'POM_KEEPALIVE') {
+    const { endTime, isBreak } = e.data;
+    console.log('[SW] POM_KEEPALIVE received, endTime:', new Date(endTime), 'isBreak:', isBreak);
+
+    // Programar una notificación cuando el timer termine
+    if (endTime) {
+      const delay = endTime - Date.now();
+      if (delay > 0) {
+        setTimeout(() => {
+          self.registration.showNotification('Pomodoro completado', {
+            body: isBreak ? '¡Descanso terminado! Vuelve al trabajo.' : '¡Sesión completada! Tómate un descanso.',
+            icon: '/assets/icons/icon-192.png',
+            badge: '/assets/icons/icon-32.png',
+            tag: 'pomodoro-finish',
+            requireInteraction: true,
+          });
+        }, delay);
+      }
+    }
+  }
 });
 
 // ── BACKGROUND SYNC (futuro: guardar offline) ────────────────

@@ -11,7 +11,7 @@ function getMat(id) {
 getMat.bust = function() { getMat._cache = Object.create(null); };
 function getG(matId, key)       { return State._activeSem?.grades?.[matId]?.[key] ?? ''; }
 function setG(matId, key, val) {
-  // 🔥 Guard: Obtener semestre activo directamente (no usar getter)
+  // Guard: Obtener semestre activo directamente (no usar getter)
   const activeSem = State.semestres.find(s => s.activo) || State.semestres[0];
   if (!activeSem) {
     console.error('[setG] No semestre activo disponible');
@@ -28,7 +28,7 @@ function setG(matId, key, val) {
   if (typeof renderGeneralHub === 'function') renderGeneralHub();
 }
 
-// Live update % and pts columns in the grade row without full re-render
+// Actualización en vivo de columnas % y pts en fila de calificación sin re-render completo
 function _liveUpdateGradeRow(inp) {
   const pctVal = inp.value !== '' ? Math.min(parseFloat(inp.value) || 0, 100) : null;
   const maxPts = parseFloat(inp.dataset.maxpts) || 0;
@@ -209,12 +209,12 @@ function renderGrades() {
 }
 function _renderGrades() {
   _el('grades-grid')?.classList.remove('skeleton-loading');
-  // If in index mode (no mat selected), render card grid
+  // Si está en modo índice (sin materia seleccionada), renderizar grid de tarjetas
   if (!_gradesDetailMatId) {
     _renderGradeCards();
     return;
   }
-  // Detail mode: render only selected mat
+  // Modo detalle: renderizar solo materia seleccionada
   const min = parseFloat(document.getElementById('min-grade')?.value) || State.settings.minGrade;
   const container = _el('grades-container');
   if (!container) return;
@@ -240,7 +240,7 @@ function _renderGrades() {
     const sc    = t ? (isGanada ? '#22c55e' : zonaMinOk ? '#fbbf24' : '#ef4444') : '#5a5a72';
     const sl    = t ? (isGanada ? '🏆 GANADA' : zonaMinOk ? '⚠ En zona' : '✗ En riesgo') : 'Sin datos';
     const proj  = calcProjected(mat.id);
-    // 🔥 FIX: Para cálculo de "necesitas X% en lo que queda", usar USAC_GANADA (61) si estamos en zona mínima
+    // FIX: Para cálculo de "necesitas X% en lo que queda", usar USAC_GANADA (61) si estamos en zona mínima
     const targetForCalc = zonaMinOk ? USAC_GANADA : min;
     const minN  = calcMinNeeded(mat.id, targetForCalc);
 

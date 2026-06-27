@@ -1,6 +1,4 @@
-// ══════════════════════════════════════════════════════════════
-// XSS Protection - DOMPurify Helper
-// ══════════════════════════════════════════════════════════════
+// Protección XSS - Helper de DOMPurify
 function sanitizeHtml(dirty, isRteContent = false) {
   if (typeof DOMPurify === 'undefined') {
     console.warn('DOMPurify not loaded, returning unsanitized content');
@@ -26,7 +24,7 @@ function sanitizeHtml(dirty, isRteContent = false) {
   return DOMPurify.sanitize(dirty, config);
 }
 
-// ── Stepper para campos numéricos ────────────────────────────
+// Stepper para campos numéricos
 function _stepperChange(id, delta, min, max, step) {
   const el  = document.getElementById(id);
   if (!el) return;
@@ -285,7 +283,7 @@ function saveTask() {
     estHoursPerDay: parseFloat(document.getElementById('t-est-hrs')?.value) || 0,
   };
 
-  // Si tiene repetición y se está creando: generar las instancias
+  // Si tiene repetición y se está creando, generar las instancias
   if (!editTaskId && task.repeat !== 'none') {
     _generateRepeatTasks(task);
     saveState(['tasks']); closeModal('modal-task');
@@ -427,7 +425,7 @@ function toggleSubtask(taskId, idx) {
       // Efecto de celebración sutil
       _showSubtaskCompleteEffect(subtaskRow);
     } else {
-      // Desmarcar - limpiar estilos de completado
+      // Desmarcar, limpiar estilos de completado
       subtaskRow.classList.remove('done');
       subtaskRow.style.animation = '';
       if (checkBox) {
@@ -572,7 +570,7 @@ async function deleteTask(id) {
   renderCalendar();
   if (typeof refreshAllWidgets === 'function') refreshAllWidgets();
 
-  // Show undo toast
+  // Mostrar toast de deshacer
   if (typeof showUndoToast === 'function') {
     showUndoToast(`Tarea "${task.title}" eliminada`, () => {
       State.tasks.push(deletedTask);
@@ -585,7 +583,7 @@ async function deleteTask(id) {
     });
   }
 }
-// ── Tareas repetitivas ───────────────────────────────────────
+// Tareas repetitivas
 function _generateRepeatTasks(baseTask) {
   const repeat = baseTask.repeat;
   const until  = baseTask.repeatUntil;
@@ -637,7 +635,7 @@ function _dateFmt(d) {
   return d.toISOString().split('T')[0];
 }
 
-// ── Borrar tareas completadas (bulk) ─────────────────────────
+// Borrar tareas completadas (bulk)
 async function deleteCompletedTasks() {
   const count = State.tasks.filter(t => t.done).length;
   if (!count) { if (typeof _appNotify === 'function') _appNotify('No hay tareas completadas.', 'warning'); return; }
@@ -661,7 +659,7 @@ function updateBadge() {
   const b2 = document.getElementById('badge-tasks-m');
   if (b1) b1.textContent = count;
   if (b2) b2.textContent = count;
-  // Update hoy badge
+  // Actualizar badge hoy
   const today = new Date().toISOString().split('T')[0];
   const urgent = State.tasks.filter(t => !t.done && t.due && t.due <= today).length;
   const badge = document.getElementById('badge-hoy');
@@ -796,7 +794,7 @@ function _renderTasks() {
     </div>`;
   }).join('');
 
-  // Remove blink class after animation completes
+  // Remover clase blink después de que complete la animación
   setTimeout(() => {
     document.querySelectorAll('.due-today-blink').forEach(el => {
       el.classList.remove('due-today-blink');
@@ -804,9 +802,7 @@ function _renderTasks() {
   }, 3450); // 1.15s * 3 iterations = 3.45s
 }
 
-// ═══════════════════════════════════════════════════════
-// ATTACHMENT UPLOAD
-// ═══════════════════════════════════════════════════════
+// Carga de adjuntos
 function handleAttachmentUpload(input) {
   const file = input.files[0];
   if (!file) return;
@@ -851,9 +847,7 @@ function _openAttachmentPreview(a) {
   }
 }
 
-// ═══════════════════════════════════════════════════════
-// TASK DETAIL VIEW
-// ═══════════════════════════════════════════════════════
+// Vista de detalle de tarea
 function openTaskDetail(id) {
   const t = State.tasks.find(x => x.id === id);
   if (!t) return;
@@ -973,12 +967,10 @@ function closeTaskDetail() {
   if (m) m.style.display = 'none';
 }
 
-// ══════════════════════════════════════════════════════════════
-// Task Modal Event Delegation (replaces inline handlers)
-// ══════════════════════════════════════════════════════════════
-// Note: Placed in module scope (not DOMContentLoaded) because partials
-// are loaded dynamically via fetch(). Event delegation on document
-// will catch clicks on dynamically injected elements via bubbling.
+// Delegación de eventos del modal de tareas (reemplaza handlers inline)
+// Nota: Colocado en scope de módulo (no DOMContentLoaded) porque los partials
+// se cargan dinámicamente via fetch(). La delegación de eventos en document
+// capturará clicks en elementos inyectados dinámicamente via bubbling.
 
 document.addEventListener('click', (e) => {
   const action = e.target.closest('[data-action]');
@@ -986,19 +978,19 @@ document.addEventListener('click', (e) => {
 
   const actionType = action.dataset.action;
 
-  // Close modal
+  // Cerrar modal
   if (actionType === 'close-modal') {
     const target = action.dataset.target;
     if (target && typeof closeModal === 'function') closeModal(target);
   }
 
-  // Switch task tab
+  // Cambiar pestaña de tarea
   if (actionType === 'switch-task-tab') {
     const tab = action.dataset.tab;
     if (tab && typeof switchTaskTab === 'function') switchTaskTab(tab, action);
   }
 
-  // Stepper change
+  // Cambio de stepper
   if (actionType === 'stepper-change') {
     const id = action.dataset.id;
     const delta = parseFloat(action.dataset.delta);
@@ -1008,12 +1000,12 @@ document.addEventListener('click', (e) => {
     if (id && typeof _stepperChange === 'function') _stepperChange(id, delta, min, max, step);
   }
 
-  // Save task
+  // Guardar tarea
   if (actionType === 'save-task') {
     if (typeof saveTask === 'function') saveTask();
   }
 
-  // Edit task
+  // Editar tarea
   if (actionType === 'edit-task') {
     const id = action.dataset.id;
     const closeDetail = action.dataset.closeDetail;
@@ -1021,19 +1013,19 @@ document.addEventListener('click', (e) => {
     if (id && typeof openTaskModal === 'function') openTaskModal(id);
   }
 
-  // Delete task
+  // Eliminar tarea
   if (actionType === 'delete-task') {
     const id = action.dataset.id;
     if (id && typeof deleteTask === 'function') deleteTask(id);
   }
 
-  // View task (open detail)
+  // Ver tarea (abrir detalle)
   if (actionType === 'view-task') {
     const id = action.dataset.id;
     if (id && typeof openTaskDetail === 'function') openTaskDetail(id);
   }
 
-  // Toggle task
+  // Alternar tarea
   if (actionType === 'toggle-task') {
     const id = action.dataset.id;
     const closeDetail = action.dataset.closeDetail;
@@ -1041,82 +1033,80 @@ document.addEventListener('click', (e) => {
     if (closeDetail && typeof closeTaskDetail === 'function') closeTaskDetail();
   }
 
-  // Toggle subtask
+  // Alternar subtarea
   if (actionType === 'toggle-subtask') {
     const id = action.dataset.id;
     const index = action.dataset.index;
     if (id && typeof toggleSubtask === 'function') toggleSubtask(id, parseInt(index));
   }
 
-  // Preview task attachment
+  // Previsualizar adjunto de tarea
   if (actionType === 'preview-task-attachment') {
     const id = action.dataset.id;
     const index = action.dataset.index;
     if (id && typeof previewTaskAttachment === 'function') previewTaskAttachment(id, parseInt(index));
   }
 
-  // Close task detail
+  // Cerrar detalle de tarea
   if (actionType === 'close-task-detail') {
     if (typeof closeTaskDetail === 'function') closeTaskDetail();
   }
 
-  // Toggle description
+  // Alternar descripción
   if (actionType === 'toggle-desc') {
     const id = action.dataset.id;
     if (id && typeof toggleDesc === 'function') toggleDesc(id);
   }
 
-  // Subtask editor add
+  // Agregar subtarea en editor
   if (actionType === 'subtask-editor-add') {
     if (typeof subtaskEditorAdd === 'function') subtaskEditorAdd();
   }
 
-  // Subtask editor remove
+  // Eliminar subtarea en editor
   if (actionType === 'subtask-editor-remove') {
     const index = action.dataset.index;
     if (typeof subtaskEditorRemove === 'function') subtaskEditorRemove(parseInt(index));
   }
 
-  // Preview attachment
+  // Previsualizar adjunto
   if (actionType === 'preview-attachment') {
     const index = action.dataset.index;
     if (typeof previewAttachment === 'function') previewAttachment(parseInt(index));
   }
 
-  // Remove attachment
+  // Eliminar adjunto
   if (actionType === 'remove-attachment') {
     const index = action.dataset.index;
     if (typeof removeAttachment === 'function') removeAttachment(parseInt(index));
   }
 
-  // Add comment
+  // Agregar comentario
   if (actionType === 'add-comment') {
     if (typeof addComment === 'function') addComment();
   }
 
-  // Remove comment
+  // Eliminar comentario
   if (actionType === 'remove-comment') {
     const index = action.dataset.index;
     if (typeof removeComment === 'function') removeComment(parseInt(index));
   }
 });
 
-// Handle change events via delegation (for select elements)
+// Manejar eventos de cambio vía delegación (para elementos select)
 document.addEventListener('change', (e) => {
   const action = e.target.closest('[data-action]');
   if (!action) return;
 
   const actionType = action.dataset.action;
 
-  // Toggle repeat fields
+  // Alternar campos de repetición
   if (actionType === 'toggle-repeat-fields') {
     if (typeof _toggleRepeatFields === 'function') _toggleRepeatFields();
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// LISTENER ESPECÍFICO PARA CHECKBOXES DE TAREAS (Android/draggable fix)
-// ═══════════════════════════════════════════════════════════════
+// Listener específico para checkboxes de tareas (fix Android/draggable)
 function _handleTaskCheckClick(e) {
   // Buscar específicamente el .task-check que fue clickeado
   const checkEl = e.target.closest('.task-check');
@@ -1155,9 +1145,7 @@ document.addEventListener('touchstart', (e) => {
   }
 }, { capture: true, passive: false });
 
-// ═══════════════════════════════════════════════════════════════
-// LISTENER ESPECÍFICO PARA SUBTAREAS (Android fix)
-// ═══════════════════════════════════════════════════════════════
+// Listener específico para subtareas (fix Android)
 let _lastTouchSubtask = null;
 let _lastTouchTime = 0;
 
@@ -1205,12 +1193,10 @@ document.addEventListener('touchstart', (e) => {
   }
 }, { capture: true, passive: false });
 
-// ═══════════════════════════════════════════════════════════════
-// EXPOSICIÓN GLOBAL DE FUNCIONES CRÍTICAS
-// ═══════════════════════════════════════════════════════════════
+// Exposición global de funciones críticas
 window.toggleTask = toggleTask;
 
-// ── Pub/Sub Subscription for Reactivity ───────────────────────────────
+// Suscripción Pub/Sub para reactividad
 // Suscribirse a cambios en tareas para re-renderizado granular
 if (typeof window.subscribe === 'function') {
   const unsubscribeTasks = window.subscribe('tasks', (data) => {

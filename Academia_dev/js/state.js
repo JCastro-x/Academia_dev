@@ -1,20 +1,20 @@
-/* ─── DOM Cache: cache frequently-accessed nodes once at startup ─── */
+// Cache de DOM: almacena nodos frecuentemente accedidos al inicio
 const _DOM = {};
 function _el(id) {
   if (_DOM[id]) return _DOM[id];
   const el = document.getElementById(id);
-  if (el) _DOM[id] = el; // No cachear null: los partials pueden cargar luego
+  if (el) _DOM[id] = el; // No cachear null: los partials pueden cargar después
   return el;
 }
 function _clearDOMCache() { for (const k in _DOM) delete _DOM[k]; }
 function _getAcademiaDB() { return window.AcademiaDB || window.DB; }
 
-// Backwards-compatibility: expose `getAcademiaDB` expected by older files
+// Compatibilidad: exponer getAcademiaDB para archivos antiguos
 if (typeof window.getAcademiaDB !== 'function') {
   window.getAcademiaDB = function() { return _getAcademiaDB(); };
 }
 
-/* ─── rAF Render Scheduler: batch multiple render() calls into one frame ─── */
+// Planificador de renderizado rAF: agrupa múltiples llamadas render() en un frame
 const _pending = new Set();
 let   _rafId   = null;
 function _schedRender(fn) {
@@ -26,7 +26,7 @@ function _schedRender(fn) {
   });
 }
 
-/* ─── Deep Merge Utility ─────────────────────────────────────────── */
+// Utilidad de fusión profunda de objetos
 function deepMerge(target, source) {
   if (!source || typeof source !== 'object') return target;
   if (!target || typeof target !== 'object') return source;
@@ -46,7 +46,7 @@ function deepMerge(target, source) {
   return output;
 }
 
-/* ─── Pub/Sub System for Reactivity ─────────────────────────────── */
+// Sistema Pub/Sub para reactividad
 const _subscribers = {
   'semesters': new Set(),
   'materias': new Set(),
@@ -64,7 +64,7 @@ function subscribe(entityType, callback) {
   }
   _subscribers[entityType].add(callback);
   
-  // Return unsubscribe function
+  // Retornar función de desuscripción
   return () => {
     _subscribers[entityType].delete(callback);
   };
@@ -84,7 +84,7 @@ function notify(entityType, data) {
   });
 }
 
-/* ─── Network Quality Detection ──────────────────────────────────── */
+// Detección de calidad de red
 function getNetworkQuality() {
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (!conn) return 'unknown';
@@ -110,7 +110,7 @@ function getDynamicDebounceDelay() {
   }
 }
 
-/* ─── Hash Utility for Preflight Comparison ─────────────────────────── */
+// Utilidad de hash para comparación previa
 async function computeHash(data) {
   if (!data) return '';
   const str = typeof data === 'string' ? data : JSON.stringify(data);
@@ -122,7 +122,7 @@ async function computeHash(data) {
   return hashHex;
 }
 
-// Exponer hash utility globalmente
+// Exponer utilidad de hash globalmente
 window.computeHash = computeHash;
 
 const DB_KEYS = {
@@ -135,10 +135,10 @@ const DB_KEYS = {
   SETTINGS:  'academia_v3_settings',
 };
 
-// ─── IndexedDB for large image data ────────────────────────────
+// IndexedDB para datos de imágenes grandes
 let _idb = null;
 const IDB_VERSION = 2; // Incrementado para agregar object store 'deleted_images'
-const UNDO_PERIOD_MS = 5000; // 5 segundos para Undo
+const UNDO_PERIOD_MS = 5000; // 5 segundos para deshacer
 
 function _openIDB() {
   if (_idb) return Promise.resolve(_idb);
@@ -150,7 +150,7 @@ function _openIDB() {
       if (!db.objectStoreNames.contains('images')) {
         db.createObjectStore('images');
       }
-      // Crear object store para soft delete con timestamps
+      // Crear object store para eliminación suave con timestamps
       if (!db.objectStoreNames.contains('deleted_images')) {
         const deletedStore = db.createObjectStore('deleted_images');
         deletedStore.createIndex('expiresAt', 'expiresAt', { unique: false });
@@ -161,7 +161,7 @@ function _openIDB() {
   });
 }
 
-// ─── Image compression ───────────────────────────────────────────
+// Compresión de imágenes
 async function compressImage(dataUrl, maxWidth = 1920, quality = 0.5) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -170,7 +170,7 @@ async function compressImage(dataUrl, maxWidth = 1920, quality = 0.5) {
       let width = img.width;
       let height = img.height;
 
-      // Redimensionar si excede maxWidth
+      // Redimensionar si excede el ancho máximo
       if (width > maxWidth) {
         height = Math.round((height * maxWidth) / width);
         width = maxWidth;
@@ -202,7 +202,7 @@ async function idbSetImage(key, dataUrl) {
   _imageCache.delete(key);
 
   try {
-    // 🔥 VERIFICAR ESPACIO ANTES DE GUARDAR
+    // Verificar espacio antes de guardar
     if ('storage' in navigator && 'estimate' in navigator.storage) {
       const estimate = await navigator.storage.estimate();
       if (estimate.usage && estimate.quota) {
@@ -257,7 +257,7 @@ async function idbSetImage(key, dataUrl) {
     return false;
   }
 }
-// Placeholder image for missing assets (simple gray square with text)
+// Imagen placeholder para assets faltantes
 const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzJhMmEzOCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTA5MGE4IiBmb250LXNpemU9IjE0IiBmb250LWZhbWlseT0ibW9ub3NwYWNlIj5JbWFnZW4gbm8gZGlzcG9uaWJsZTwvdGV4dD48L3N2Zz4=';
 
 // Caché en memoria para imágenes cargadas de IndexedDB
@@ -300,13 +300,13 @@ async function idbGetImage(key) {
       };
       req.onerror = () => {
         console.error(`[IDB_MANAGER] Error al recuperar asset ${key}:`, tx.error);
-        // Fallback to placeholder on error instead of rejecting
+        // Fallback a placeholder en error en lugar de rechazar
         res(PLACEHOLDER_IMAGE);
       };
     });
   } catch(e) {
     console.error(`[IDB_MANAGER] Excepción al recuperar asset ${key}:`, e);
-    // Fallback to placeholder on exception
+    // Fallback a placeholder en excepción
     return PLACEHOLDER_IMAGE;
   }
 }
@@ -364,7 +364,7 @@ async function idbDeleteImage(key) {
   }
 }
 
-// Restaurar imagen desde deleted_images (para Undo)
+// Restaurar imagen desde deleted_images (para deshacer)
 async function idbRestoreImage(key) {
   try {
     const db = await _openIDB();
@@ -452,11 +452,11 @@ async function cleanupUnusedImages() {
       semestres.forEach(sem => {
         const notes = sem.notesArray || [];
         notes.forEach(note => {
-          // Check canvasData
+          // Verificar canvasData
           if (note.canvasData?.startsWith('IDB:')) {
             usedKeys.add(note.canvasData.replace('IDB:', ''));
           }
-          // Check images
+          // Verificar imágenes
           if (note.images) {
             Object.values(note.images).forEach(val => {
               if (val?.startsWith('IDB:')) {
@@ -464,7 +464,7 @@ async function cleanupUnusedImages() {
               }
             });
           }
-          // Check PDFs
+          // Verificar PDFs
           if (note.pdfAttachments) {
             note.pdfAttachments.forEach(pdf => {
               if (pdf.data?.startsWith('IDB:')) {
@@ -493,12 +493,12 @@ window.cleanupExpiredDeletedImages = cleanupExpiredDeletedImages;
 window.clearImageCache = clearImageCache;
 window.invalidateImageCache = invalidateImageCache;
 
-// Cleanup periódico de imágenes expiradas (cada 10 minutos)
+// Limpieza periódica de imágenes expiradas (cada 10 minutos)
 setInterval(() => {
   cleanupExpiredDeletedImages();
-}, 600000); // 10 minutos
+}, 600000);
 
-// ─── Modal de confirmación personalizado ─────────────────────────
+// Modal de confirmación personalizado
 let _confirmCallback = null;
 
 function showConfirmModal(options) {
@@ -568,7 +568,7 @@ function dbGet(key, fallback = null) {
     const r = localStorage.getItem(key);
     const val = r ? JSON.parse(r) : fallback;
     if (key === 'academia_settings') {
-      console.log('[dbGet] Loaded settings from localStorage:', val);
+      console.log('[dbGet] Configuración cargada desde localStorage:', val);
     }
     return val;
   } catch { return fallback; }
@@ -659,7 +659,7 @@ function dbSet(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
     if (key === 'academia_settings') {
-      console.log('[dbSet] Saved settings to localStorage:', value);
+      console.log('[dbSet] Configuración guardada en localStorage:', value);
     }
   } catch(e) {
     const isQuota = e?.name === 'QuotaExceededError' || e?.code === 22 || e?.code === 1014;
@@ -710,7 +710,7 @@ function _buildDefaultSemester(id, nombre) {
     topics:     [],
     notes:      {},
     notesArray: [],
-    flashcards: [],   // ← agregado
+    flashcards: []
   };
 }
 
@@ -732,10 +732,9 @@ if (!_rawSemestres || !Array.isArray(_rawSemestres) || !_rawSemestres.length) {
   dbSet(DB_KEYS.SEMESTRES, _rawSemestres);
 }
 
-// 🔥 FIX: Solo forzar primer semestre como activo si realmente no hay ninguno activo
-// y no estamos sobrescribiendo un semestre activo válido
+// Forzar primer semestre como activo solo si no hay ninguno activo
 if (!_rawSemestres.some(s => s.activo)) {
-  console.warn('⚠️ [STATE] No semestre activo found in localStorage, forcing first as active');
+  console.warn('⚠️ [STATE] No hay semestre activo en localStorage, forzando primero como activo');
   _rawSemestres[0].activo = true;
 }
 
@@ -746,7 +745,7 @@ const State = {
   get _activeSem() {
     const sem = this.semestres.find(s => s.activo) || this.semestres[0];
     if (!sem) {
-      console.warn('[State] No semestre activo disponible, creando semestre por defecto');
+      console.warn('[State] No hay semestre activo disponible, creando semestre por defecto');
       return _buildDefaultSemester('sem_' + Date.now(), '1er Año · 2do Sem');
     }
     return sem;
@@ -780,7 +779,7 @@ const State = {
   pomSnapshots: dbGet(DB_KEYS.POM_SNAPSHOTS, {}),
   settings: { ...DEFAULT_SETTINGS, ...dbGet(DB_KEYS.SETTINGS, {}) },
 };
-console.log('[State] Initial State.settings.minGrade:', State.settings.minGrade);
+console.log('[State] Configuración inicial minGrade:', State.settings.minGrade);
 
 if ((!State.pomSessions || !State.pomSessions.length) && State.settings?.pomData?.date === new Date().toDateString()) {
   State.pomSessions = Array.isArray(State.settings.pomData.today) ? State.settings.pomData.today : [];
@@ -796,13 +795,13 @@ if (!State.settings.pomDailyGoal || Number.isNaN(Number(State.settings.pomDailyG
   State.settings.pomDailyGoal = 4;
 }
 
-/* ─── Debounced save: batches rapid saveState calls into one write every 400ms ─── */
+// Guardado con debounce: agrupa llamadas rápidas saveState en una escritura cada 400ms
 let _saveTimer = null;
 let _pendingKeys = new Set();
 // Delta sync: rastrear campos específicos que cambiaron
 let _changedFields = new Set();
 
-// Guard para evitar que el sync de Supabase sobreescriba cambios locales recientes
+// Guard para evitar que el sync de Supabase sobrescriba cambios locales recientes
 window._localModifiedAt = 0;
 
 // Exponer utilidades globalmente para uso en otros módulos
@@ -813,7 +812,7 @@ window.getNetworkQuality = getNetworkQuality;
 window.getDynamicDebounceDelay = getDynamicDebounceDelay;
 
 function saveState(keys = ['all']) {
-  // 🔥 VALIDACIÓN CRÍTICA antes de guardar
+  // Validación crítica antes de guardar
   if (!State || !State.semestres || !Array.isArray(State.semestres)) {
     console.error('❌ Estado inválido en saveState - State o semestres corrupto');
     if (typeof _appNotify === 'function') {
@@ -852,9 +851,9 @@ function saveState(keys = ['all']) {
     } else if (k === 'materias' || k === 'grades' || k === 'topics') {
       _changedFields.add('semestres');
     } else if (k === 'tasks') {
-      _changedFields.add('tasks'); // 🔥 FIX: sync granular para tareas (no enviar notas)
+      _changedFields.add('tasks'); // Sync granular para tareas (no enviar notas)
     } else if (k === 'notes') {
-      _changedFields.add('notes'); // 🔥 FIX: sync granular para notas
+      _changedFields.add('notes'); // Sync granular para notas
     } else if (k === 'events') {
       _changedFields.add('semestres'); // events está en el semestre, no en settings
     }
@@ -891,8 +890,8 @@ function saveStateNow(keys = ['all']) {
     const changedFields = keys.includes('all') ? ['semestres', 'settings'] :
                           keys.includes('semestres') ? ['semestres'] :
                           keys.includes('settings') ? ['settings'] :
-                          keys.includes('tasks') ? ['tasks'] : // 🔥 FIX: sync granular para tareas
-                          keys.includes('notes') ? ['notes'] : // 🔥 FIX: sync granular para notas
+                          keys.includes('tasks') ? ['tasks'] : // Sync granular para tareas
+                          keys.includes('notes') ? ['notes'] : // Sync granular para notas
                           keys.includes('events') ? ['semestres'] :
                           keys.includes('materias') ? ['semestres'] :
                           keys.includes('grades') ? ['semestres'] :
@@ -930,10 +929,10 @@ function loadPomRunning() {
 }
 
 function getActiveSem() { return State._activeSem; }
-// ─── Migración única: mueve flashcards de la key vieja a State.flashcards ───
+// Migración única: mueve flashcards de la key vieja a State.flashcards
 (function _migrateFlashcards() {
   const MIGRATION_KEY = 'academia_fc_migrated_v1';
-  if (localStorage.getItem(MIGRATION_KEY)) return; // ya se hizo
+  if (localStorage.getItem(MIGRATION_KEY)) return; // Ya se hizo
  
   try {
     const old = localStorage.getItem('academia_flashcards');

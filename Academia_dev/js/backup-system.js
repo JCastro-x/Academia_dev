@@ -1,7 +1,5 @@
-/**
- * Sistema de Backup Automático Local
- * Previene pérdida de datos creando backups periódicos en localStorage
- */
+// Sistema de Backup Automático Local
+// Previene pérdida de datos creando backups periódicos en localStorage
 
 (function () {
   'use strict';
@@ -13,7 +11,7 @@
   let _backupTimer = null;
   let _isBackupInProgress = false;
 
-  // ── Crear backup del estado actual ───────────────────────────────
+// Crear backup del estado actual
   function createBackup(reason = 'manual') {
     if (_isBackupInProgress) {
       console.warn('⚠️ [BACKUP] Ya hay un backup en progreso, skipping...');
@@ -70,7 +68,7 @@
     }
   }
 
-  // ── Limpiar backups antiguos (mantener solo los más recientes) ───────
+// Limpiar backups antiguos (mantener solo los más recientes)
   function cleanupOldBackups() {
     try {
       const allKeys = Object.keys(localStorage);
@@ -97,7 +95,7 @@
     }
   }
 
-  // ── Listar todos los backups disponibles ───────────────────────────
+// Listar todos los backups disponibles
   function listBackups() {
     try {
       const allKeys = Object.keys(localStorage);
@@ -135,7 +133,7 @@
     }
   }
 
-  // ── Restaurar desde un backup específico ───────────────────────────
+// Restaurar desde un backup específico
   function restoreBackup(backupKey) {
     try {
       const backupString = localStorage.getItem(backupKey);
@@ -189,7 +187,7 @@
     }
   }
 
-  // ── Iniciar backups automáticos ───────────────────────────────────
+// Iniciar backups automáticos
   function startAutoBackup() {
     if (_backupTimer) {
       clearInterval(_backupTimer);
@@ -206,7 +204,7 @@
     console.log('🔄 [BACKUP] Backups automáticos iniciados (cada 30 minutos)');
   }
 
-  // ── Detener backups automáticos ───────────────────────────────────
+// Detener backups automáticos
   function stopAutoBackup() {
     if (_backupTimer) {
       clearInterval(_backupTimer);
@@ -215,12 +213,12 @@
     }
   }
 
-  // ── Crear backup antes de operaciones críticas ─────────────────────
+// Crear backup antes de operaciones críticas
   function backupBeforeCriticalOperation(operationName) {
     return createBackup(`pre-${operationName}`);
   }
 
-  // ── Exportar backup como JSON descargable ─────────────────────────
+// Exportar backup como JSON descargable
   function exportBackup() {
     try {
       const backup = {
@@ -251,7 +249,7 @@
     }
   }
 
-  // ── API pública ───────────────────────────────────────────────────
+// API pública
   const API = {
     createBackup,
     restoreBackup,

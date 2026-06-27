@@ -1,6 +1,4 @@
-// ══════════════════════════════════════════════════════════════
 // XSS Protection - DOMPurify Helper
-// ══════════════════════════════════════════════════════════════
 function sanitizeHtml(dirty, isRteContent = false) {
   if (typeof DOMPurify === 'undefined') {
     console.warn('DOMPurify not loaded, returning unsanitized content');
@@ -88,7 +86,7 @@ function applyUsacZones() {
   if (suma !== 100) { if (typeof _appNotify === 'function') _appNotify(`La suma debe ser exactamente 100 pts (actualmente ${suma}). Ajusta los valores.`, 'warning'); return; }
 
   // Si estamos editando una clase, NO borrar las zonas ya existentes — solo agregar las nuevas.
-  // Si estamos creando, limpiar y empezar de cero.
+  // Si estamos creando, limpiar y empezar de cero
   if (!window._editClassMatId) {
     document.getElementById('zones-builder').innerHTML = '';
     zoneRowCount = 0;
@@ -129,7 +127,7 @@ function updateZonaSuma() { updateUsacSuma(); }
 function applyZonaPreset() { applyUsacZones(); }
 
 function renderHorario() {
-  // 🔥 Guard: verificar que State.materias exista
+  // Guard: verificar que State.materias exista
   if (!State.materias || !Array.isArray(State.materias)) {
     console.warn('[renderHorario] State.materias no está disponible aún');
     return;
@@ -629,9 +627,7 @@ function openExamImagePopup(idx) {
   };
 }
 
-// ══════════════════════════════════════════════════════════════
 // NOTES V2 — Folders + Canvas + Big Images + Bug fixes
-// ══════════════════════════════════════════════════════════════
 
 function _getNotesArray() {
   const sem = State._activeSem;
@@ -649,7 +645,7 @@ let _currentFolderId = null; // null = "Todas"
 let _noteAutoSaveTimer = null;
 let _notesInHub = true; // true = mostrar grid de carpetas; false = mostrar editor
 
-// ── RENDER FULL PAGE ──────────────────────────────────────────
+// RENDER FULL PAGE
 function renderNotesProPage() {
   _populateEditorSelects();
   // Always start at hub level unless we're inside a folder
@@ -712,7 +708,7 @@ function _renderNotesHub() {
   const _countBadge = (n) => `<span style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">${n} nota${n!==1?'s':''}</span>`;
 
   //let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">`;
-let html = '<div class="smart-grid">';
+let html = '<div class="smart-grid">'
   // Todas las notas
   html += _notesHubCard('null', '📋', 'Todas las notas', allNotes.length, 'var(--accent)', null, false, null);
 
