@@ -156,19 +156,52 @@ function toggleUsacZone(zone) {
 }
 
 function applyUsacZones() {
-  const presets = {
-    lab:   { label: 'Laboratorios', pts: 20, subs: [{l:'Lab 1',p:5},{l:'Lab 2',p:5},{l:'Lab 3',p:5},{l:'Lab 4',p:5}] },
-    tar:   { label: 'Tareas', pts: 20, subs: [{l:'Tarea 1',p:4},{l:'Tarea 2',p:4},{l:'Tarea 3',p:4},{l:'Tarea 4',p:4},{l:'Tarea 5',p:4}] },
-    par:   { label: 'Parciales', pts: 30, subs: [{l:'Primer parcial',p:15},{l:'Segundo parcial',p:15}] },
-    fin:   { label: 'Final', pts: 30, subs: [{l:'Examen final',p:30}] },
-    extra: { label: 'Actividades', pts: 10, subs: [{l:'Actividad 1',p:5},{l:'Actividad 2',p:5}] }
+  const labels = {
+    lab: 'Laboratorios',
+    tar: 'Tareas',
+    par: 'Parciales',
+    fin: 'Examen Final',
+    extra: 'Zona extra'
   };
   let added = false;
   ['lab','tar','par','fin','extra'].forEach(key => {
     if (!document.getElementById('uz-'+key+'-on')?.checked) return;
-    const p = presets[key];
-    const subArr = p.subs.map(s => ({ label: s.l, pts: s.p }));
-    addZoneRow(p.label, p.pts, subArr, '');
+    
+    const ptsInput = document.getElementById('uz-'+key+'-pts');
+    const pts = parseFloat(ptsInput?.value) || 0;
+    
+    const label = key === 'extra' 
+      ? (document.getElementById('uz-extra-name')?.value || 'Zona extra')
+      : labels[key];
+    
+    let subArr = [];
+    
+    if (key === 'lab') {
+      const n = parseInt(document.getElementById('uz-lab-n')?.value) || 2;
+      const ptsPerSub = n > 0 ? pts / n : pts;
+      for (let i = 1; i <= n; i++) {
+        subArr.push({ label: `Lab ${i}`, pts: parseFloat(ptsPerSub.toFixed(1)) });
+      }
+    } else if (key === 'tar') {
+      const n = parseInt(document.getElementById('uz-tar-n')?.value) || 3;
+      const ptsPerSub = n > 0 ? pts / n : pts;
+      for (let i = 1; i <= n; i++) {
+        subArr.push({ label: `Tarea ${i}`, pts: parseFloat(ptsPerSub.toFixed(1)) });
+      }
+    } else if (key === 'par') {
+      const n = parseInt(document.getElementById('uz-par-n')?.value) || 2;
+      const ptsPerSub = n > 0 ? pts / n : pts;
+      const names = ['Primer parcial', 'Segundo parcial', 'Tercer parcial'];
+      for (let i = 0; i < n; i++) {
+        subArr.push({ label: names[i] || `Parcial ${i+1}`, pts: parseFloat(ptsPerSub.toFixed(1)) });
+      }
+    } else if (key === 'fin') {
+      subArr.push({ label: 'Examen final', pts: pts });
+    } else if (key === 'extra') {
+      subArr.push({ label: label, pts: pts });
+    }
+    
+    addZoneRow(label, pts, subArr, '');
     added = true;
   });
   if (!added) { if (typeof _appNotify === 'function') _appNotify('Selecciona al menos una zona para aplicar.', 'warning'); return; }
