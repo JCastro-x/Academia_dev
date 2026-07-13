@@ -47,6 +47,10 @@
                 <span style="font-size:12px;font-family:'Inter',sans-serif;color:var(--red);font-weight:600;" id="ov-pending-badge"></span>
               </div>
               <div style="display:flex;align-items:center;gap:10px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;">
+                  <input type="checkbox" id="ov-show-events" onchange="toggleEventsInTasks(this.checked)" style="accent-color:var(--accent);cursor:pointer;">
+                  <span>Mostrar eventos</span>
+                </label>
                 <button class="btn btn-ghost btn-sm" id="ov-clear-filter-btn" onclick="ovClearDayFilter()" style="display:none;font-size:12px;">✕ Quitar filtro</button>
                 <button class="btn btn-ghost btn-sm" onclick="goPage('tareas',document.querySelector('[onclick*=tareas]'))">Ver todas →</button>
               </div>

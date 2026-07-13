@@ -1600,8 +1600,108 @@ async function attachImagesToNote(files) {
       };
       
       reader.readAsDataURL(file);
-    }
   }
+}
+
+// ── PDF ATTACHMENTS ──────────────────────────────────────────────
+/* ── Adjuntar PDF desde el botón de la barra ── */
+async function loadPDFIntoNotes(file) {
+  if (!file) return;
+  if (!_currentNoteId) {
+    if (typeof _appNotify === 'function') {
+      _appNotify('Selecciona o crea una nota primero.', 'warning');
+    }
+    return;
+  }
+
+  const note = _getNotesArray().find(n => n.id === _currentNoteId);
+  if (!note) {
+    console.error('❌ [NOTES] Nota no encontrada:', _currentNoteId);
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error: Nota no encontrada. Intenta de nuevo.', 'error');
+    }
+    return;
+  }
+
+  // Verificar que sea un PDF
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    if (typeof _appNotify === 'function') {
+      _appNotify('El archivo debe ser un PDF.', 'warning');
+    }
+    return;
+  }
+
+  if (!note.pdfs) note.pdfs = {};
+  if (!note.attachments) note.attachments = {};
+  if (!note.attachments.pdfs) note.attachments.pdfs = {};
+
+  const reader = new FileReader();
+
+  reader.onload = async ev => {
+    const key = 'pdf_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+
+    try {
+      console.log(`📄 [NOTES] Cargando PDF: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
+
+      // Guardar PDF en IndexedDB
+      const saved = await idbSetImage(key, ev.target.result);
+
+      if (saved) {
+        note.pdfs[key] = {
+          name: file.name,
+          size: file.size,
+          data: 'IDB:' + key
+        };
+        note.attachments.pdfs[key] = {
+          name: file.name,
+          size: file.size,
+          data: 'IDB:' + key
+        };
+        note.updatedAt = Date.now();
+
+        // Guardar estado inmediatamente
+        if (typeof saveStateNow === 'function') {
+          saveStateNow(['all']);
+        } else {
+          saveState(['all']);
+        }
+
+        // Renderizar PDF strip
+        const freshNote = _getNotesArray().find(n => n.id === _currentNoteId);
+        if (freshNote) {
+          _renderPDFStrip(freshNote);
+          // Mostrar strip
+          const strip = document.getElementById('notes-pdf-strip');
+          if (strip) strip.style.display = 'flex';
+          // Scroll para mostrar PDFs
+          setTimeout(() => {
+            if (strip) strip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 100);
+
+          if (typeof _appNotify === 'function') {
+            _appNotify('PDF cargado correctamente', 'ok');
+          }
+        }
+      } else {
+        throw new Error('No se pudo guardar PDF en IndexedDB');
+      }
+    } catch (error) {
+      console.error(`❌ [NOTES] Error guardando PDF:`, error);
+      if (typeof _appNotify === 'function') {
+        _appNotify('Error al guardar PDF. Intenta de nuevo.', 'error');
+      }
+    }
+  };
+
+  reader.onerror = () => {
+    console.error(`❌ [NOTES] Error leyendo archivo: ${file.name}`);
+    if (typeof _appNotify === 'function') {
+      _appNotify('Error al leer el archivo PDF.', 'error');
+    }
+  };
+
+  reader.readAsDataURL(file);
+}
 
 function _renderImagesStrip(note) {
   const strip = document.getElementById('notes-images-strip');
@@ -1697,7 +1797,7 @@ function _renderPDFStrip(note) {
     const name = pdf.name || pdf.filename || 'PDF';
     const size = pdf.size ? `(${(pdf.size / 1024).toFixed(1)} KB)` : '';
     return `
-    <div class="notes-pdf-item" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">
+    <div class="notes-pdf-item" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="openNotePDF('${noteId}','${k}')">
       <span style="font-size:20px;">📄</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sanitizeHtml(name)}</div>
@@ -1706,6 +1806,39 @@ function _renderPDFStrip(note) {
       <button onclick="event.stopPropagation();deleteNotePDF('${noteId}','${k}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:4px;" title="Eliminar PDF">✕</button>
     </div>`;
   }).join('');
+}
+
+async function openNotePDF(noteId, pdfKey) {
+  const note = _getNotesArray().find(n => n.id === noteId);
+  if (!note) return;
+
+  const pdfs = note.pdfs || note.attachments?.pdfs || {};
+  const pdf = pdfs[pdfKey];
+  if (!pdf) return;
+
+  let pdfData = pdf.data;
+  
+  // Si está en IndexedDB, obtener los datos
+  if (pdfData && pdfData.startsWith('IDB:')) {
+    const idbKey = pdfData.slice(4);
+    try {
+      pdfData = await idbGetImage(idbKey);
+      if (!pdfData) {
+        if (typeof _appNotify === 'function') {
+          _appNotify('Error: PDF no encontrado en almacenamiento', 'error');
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('Error obteniendo PDF de IndexedDB:', error);
+      if (typeof _appNotify === 'function') {
+        _appNotify('Error al cargar PDF', 'error');
+      }
+      return;
+    }
+  }
+
+  openPDFModal(pdfData, pdf.name || 'PDF');
 }
 
 function openLightbox(noteId, imgKey) {
@@ -2909,6 +3042,7 @@ function saveFormula(matId, index, value) {
 // ══════════════════════════════════════════════════
 let _weekOffset   = 0;  // kept for legacy compat
 let ovFilterDay   = null; // null = sin filtro, 'YYYY-MM-DD' = filtrado
+let ovShowEvents  = localStorage.getItem('academia_ov_show_events') !== 'false'; // true = mostrar eventos, false = solo tareas
 
 function changeWeekOffset(delta, e) {
   if (e) e.stopPropagation();
@@ -2937,6 +3071,20 @@ function ovClearDayFilter() {
   renderOverview();
 }
 
+function toggleEventsInTasks(show) {
+  ovShowEvents = show;
+  localStorage.setItem('academia_ov_show_events', show ? 'true' : 'false');
+  renderOverview();
+}
+
+// Inicializar checkbox con el estado guardado
+function initEventsCheckbox() {
+  const checkbox = document.getElementById('ov-show-events');
+  if (checkbox) {
+    checkbox.checked = ovShowEvents;
+  }
+}
+
 // Listener para actualizar overview cuando cambian preferencias
 window.addEventListener('render:overview', () => {
   if (typeof renderOverview === 'function') renderOverview();
@@ -2947,6 +3095,9 @@ const _origRenderOverview = _renderOverview;
 function _renderOverview() {
   const pending = State.tasks.filter(t => !t.done);
   const overall = calcOverallGPA();
+
+  // Inicializar checkbox de eventos
+  initEventsCheckbox();
 
   // ── Stats legacy ──────────────────────────────────────────
   const ovMatsEl = _el('ov-mats');
@@ -3314,7 +3465,8 @@ function _renderOverview() {
   let html = '';
 
   // 1. EVENTOS primero — ordenados por fecha más próxima (mayor urgencia arriba)
-  if (allEvents.length) {
+  // Solo mostrar si el checkbox está seleccionado
+  if (allEvents.length && ovShowEvents) {
     const sortedEvs = [...allEvents].sort((a,b) => {
       const da = (a.date||a.start||'').slice(0,10);
       const db = (b.date||b.start||'').slice(0,10);
