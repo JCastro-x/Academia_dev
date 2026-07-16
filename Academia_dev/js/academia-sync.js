@@ -8,7 +8,7 @@
 
 (function () {
   'use strict';
-
+  let sadasdas= null;
   let _userId  = null;
   let _client  = null;
   let _ready   = false;
