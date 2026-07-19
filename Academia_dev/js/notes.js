@@ -3239,26 +3239,30 @@ function _renderOverview() {
     return `${_DAYS[d.getDay()]}. ${d.getDate()} ${_MONTHS[d.getMonth()]}.`;
   }
 
-  const sortByDue = arr => [...arr].sort((a,b) => {
-    const da = a.due||'9999-12-31', db = b.due||'9999-12-31';
-    return da < db ? -1 : da > db ? 1 : 0;
-  });
-
-  // Agrupar tareas por materia
-  const grouped    = {};
-  const noMatTasks = [];
+  // Combinar tareas y eventos en lista plana
+  const allItems = [];
+  
+  // Agregar tareas
   taskPool.forEach(t => {
-    const m = getMat(t.matId);
-    if (!m || !m.id) { noMatTasks.push(t); return; }
-    if (!grouped[m.id]) grouped[m.id] = { mat: m, tasks: [] };
-    grouped[m.id].tasks.push(t);
+    allItems.push({ type: 'task', item: t, date: t.due || '9999-12-31', done: !!t.done });
   });
-
-  // Ordenar grupos por su tarea más próxima a vencer
-  const sortedGroups = Object.values(grouped).sort((a, b) => {
-    const minA = a.tasks.reduce((m, t) => t.due && t.due < m ? t.due : m, '9999-12-31');
-    const minB = b.tasks.reduce((m, t) => t.due && t.due < m ? t.due : m, '9999-12-31');
-    return minA < minB ? -1 : minA > minB ? 1 : 0;
+  
+  // Agregar eventos si el checkbox está activo (tratados como pendientes)
+  if (ovShowEvents) {
+    allEvents.forEach(e => {
+      const eDate = (e.date || e.start || '').slice(0, 10);
+      allItems.push({ type: 'event', item: e, date: eDate || '9999-12-31', done: false });
+    });
+  }
+  
+  // Ordenar: 1) pendientes arriba, completadas abajo  2) por fecha dentro de cada grupo
+  allItems.sort((a, b) => {
+    // Nivel 1: estado (pendientes vs completadas)
+    if (a.done !== b.done) {
+      return a.done ? 1 : -1; // completadas van al final
+    }
+    // Nivel 2: fecha de vencimiento (ascendente)
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
   });
 
   // Inyectar CSS responsive una sola vez
@@ -3450,6 +3454,7 @@ function _renderOverview() {
       <div class="mc-task-info" onclick="openTaskDetail('${t.id}')" style="flex:1;min-width:0;">
         <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">${t.title}</div>
         <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+          <span class="task-subject" style="background:${m.color||'#7c6aff'}22;color:${m.color||'#7c6aff'};border:1px solid ${m.color||'#7c6aff'}44;">${m.icon||'📚'} ${sanitizeHtml(m.code||'?')}</span>
           <span class="ov-mat-chip" style="color:${tc.text};border:1px solid ${tc.border};padding:2px 8px;font-size:11px;font-weight:700;border-radius:5px;">${type}</span>
           ${planStr}
         </div>
@@ -3461,67 +3466,43 @@ function _renderOverview() {
       </div>
     </div>`;
   }
+  
+  function _eventHtml(e) {
+    const evMat    = e.matId ? getMat(e.matId) : null;
+    const evDate   = (e.date||e.start||'').slice(0,10);
+    const evDueD   = evDate ? new Date(evDate + 'T00:00:00') : null;
+    const evDLeft  = evDueD ? Math.ceil((evDueD - today2) / 86400000) : null;
+    const evBgStyle = 'background:rgba(96,165,250,.10);border-left:3px solid #60a5fa;';
+    const badgeBg   = 'rgba(59,130,246,.85)';
+    const badgeColor = '#fff';
+    const evIcon    = evDLeft !== null && evDLeft < 0 ? '❗' : evDLeft === 0 ? '🔴' : '📅';
+    const evDateBig = evDate
+      ? `<div style="font-size:12px;font-weight:700;color:#93c5fd;text-align:right;margin-bottom:4px;white-space:nowrap;line-height:1.2;">📅 ${_fmtReadable(evDate)}${e.time?' · ⏰ '+e.time:''}</div>`
+      : '';
+    return `<div class="mc-task-item ov-task-row" style="cursor:default;${evBgStyle}">
+      <div class="mc-task-info">
+        <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">📅 ${e.title||'Evento'}</div>
+        <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+          ${evMat?`<span class="ov-mat-chip" style="color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}55;">${evMat.code||evMat.name}</span>`:''}
+          ${e.type?`<span style="font-size:11px;color:#93c5fd;">${e.type}</span>`:''}
+        </div>
+      </div>
+      <div class="ov-badge-wrap" style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        ${evDateBig}
+        <span class="ov-badge" style="background:${badgeBg};color:${badgeColor};">${evIcon} ${evDLeft!==null?_badgeText(evDLeft):'Evento'}</span>
+      </div>
+    </div>`;
+  }
 
   let html = '';
 
-  // 1. EVENTOS primero — ordenados por fecha más próxima (mayor urgencia arriba)
-  // Solo mostrar si el checkbox está seleccionado
-  if (allEvents.length && ovShowEvents) {
-    const sortedEvs = [...allEvents].sort((a,b) => {
-      const da = (a.date||a.start||'').slice(0,10);
-      const db = (b.date||b.start||'').slice(0,10);
-      return da < db ? -1 : da > db ? 1 : 0;
-    });
-    html += `<div class="ov-mat-header" style="border-left:4px solid #60a5fa;background:rgba(96,165,250,.08);">
-      <span style="font-size:15px;">📅</span>
-      <span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">Eventos</span>
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;background:rgba(96,165,250,.15);padding:2px 8px;border-radius:10px;">${sortedEvs.length} próximo${sortedEvs.length!==1?'s':''}</span>
-    </div>`;
-    sortedEvs.forEach(ev => {
-      const evMat    = ev.matId ? getMat(ev.matId) : null;
-      const evDate   = (ev.date||ev.start||'').slice(0,10);
-      const evDueD   = evDate ? new Date(evDate + 'T00:00:00') : null;
-      const evDLeft  = evDueD ? Math.ceil((evDueD - today2) / 86400000) : null;
-      // Eventos siempre con fondo azul independientemente de los días que faltan
-      const evBgStyle = 'background:rgba(96,165,250,.10);border-left:3px solid #60a5fa;';
-      const badgeBg   = 'rgba(59,130,246,.85)';
-      const badgeColor = '#fff';
-      const evIcon    = evDLeft !== null && evDLeft < 0 ? '❗' : evDLeft === 0 ? '🔴' : '📅';
-      const evDateBig = evDate
-        ? `<div style="font-size:12px;font-weight:700;color:#93c5fd;text-align:right;margin-bottom:4px;white-space:nowrap;line-height:1.2;">📅 ${_fmtReadable(evDate)}${ev.time?' · ⏰ '+ev.time:''}</div>`
-        : '';
-      html += `<div class="mc-task-item ov-task-row" style="cursor:default;${evBgStyle}">
-        <div class="mc-task-info">
-          <div class="mc-task-title" style="font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.35;color:var(--text);">📅 ${ev.title||'Evento'}</div>
-          <div class="mc-task-meta" style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-            ${evMat?`<span class="ov-mat-chip" style="color:${evMat.color||'#60a5fa'};border:1px solid ${evMat.color||'#60a5fa'}55;">${evMat.code||evMat.name}</span>`:''}
-            ${ev.type?`<span style="font-size:11px;color:#93c5fd;">${ev.type}</span>`:''}
-          </div>
-        </div>
-        <div class="ov-badge-wrap" style="flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-          ${evDateBig}
-          <span class="ov-badge" style="background:${badgeBg};color:${badgeColor};">${evIcon} ${evDLeft!==null?_badgeText(evDLeft):'Evento'}</span>
-        </div>
-      </div>`;
-    });
-  }
-
-  // 2. Tareas sin materia (ordenadas por fecha)
-  if (noMatTasks.length) {
-    html += sortByDue(noMatTasks).map(_taskHtml).join('');
-  }
-
-  // 3. Grupos de tareas ordenados por fecha de vencimiento más próxima
-  sortedGroups.forEach(({ mat, tasks }) => {
-    const cnt = tasks.length;
-    const mc  = mat.color || 'var(--accent)';
-    html += `<div class="ov-mat-header" style="background:#000;">
-      <span style="font-size:15px;line-height:1;">${mat.icon||'📚'}</span>
-      <span style="font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.2px;">${mat.name}</span>
-      ${mat.code?`<span style="font-size:10px;color:var(--text3);background:var(--surface2);padding:1px 7px;border-radius:4px;font-family:'Space Mono',monospace;">${mat.code}</span>`:''}
-      <span style="font-size:10px;color:var(--text3);margin-left:auto;background:${mc}22;padding:2px 8px;border-radius:10px;">${cnt} pendiente${cnt!==1?'s':''}</span>
-    </div>`;
-    html += sortByDue(tasks).map(_taskHtml).join('');
+  // Renderizar lista plana combinada (tareas + eventos)
+  allItems.forEach(({ type, item }) => {
+    if (type === 'task') {
+      html += _taskHtml(item);
+    } else if (type === 'event') {
+      html += _eventHtml(item);
+    }
   });
 
   tl.innerHTML = html;

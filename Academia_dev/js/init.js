@@ -406,6 +406,7 @@ function continueInit(auth) {
     });
 
     fillMatSels(); fillPomSel(); fillTopicMatSel(); fillNotesSel(); fillExamSel();
+    if (typeof initTskEventsCheckbox === 'function') initTskEventsCheckbox();
     renderOverview(); renderMaterias(); updateBadge(); initCal();
     renderSemesterBadge();
 
@@ -607,13 +608,41 @@ function continueInit(auth) {
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
-        if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
+        if (typeof _saveTimer !== 'undefined' && _saveTimer) {
+          clearTimeout(_saveTimer);
+          _flushSave();
+          // Flush remoto solo si había cambio local pendiente
+          const db = getAcademiaDB();
+          if (db && db._ready) {
+            db.saveNow(State.semestres, State.settings);
+          }
+        }
       }
       // Deshabilitado sync al volver a la pestaña para reducir ancho de banda
       // if (document.visibilityState === 'visible') _syncFromSupabase();
     });
     window.addEventListener('pagehide', () => {
-      if (_saveTimer) { clearTimeout(_saveTimer); _flushSave(); }
+      if (typeof _saveTimer !== 'undefined' && _saveTimer) {
+        clearTimeout(_saveTimer);
+        _flushSave();
+        // Flush remoto solo si había cambio local pendiente
+        const db = getAcademiaDB();
+        if (db && db._ready) {
+          db.saveNow(State.semestres, State.settings);
+        }
+      }
+    });
+    // Flush adicional de respaldo en beforeunload (poco confiable en móvil)
+    window.addEventListener('beforeunload', () => {
+      if (typeof _saveTimer !== 'undefined' && _saveTimer) {
+        clearTimeout(_saveTimer);
+        _flushSave();
+        // Flush remoto solo si había cambio local pendiente
+        const db = getAcademiaDB();
+        if (db && db._ready) {
+          db.saveNow(State.semestres, State.settings);
+        }
+      }
     });
     // Sync deshabilitado al enfocar la ventana para reducir ancho de banda
 

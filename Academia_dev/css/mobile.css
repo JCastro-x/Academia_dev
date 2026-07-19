@@ -182,6 +182,24 @@
   .stats-row { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
   .grid-auto { grid-template-columns: 1fr !important; }
   .form-row  { grid-template-columns: 1fr !important; }
+  
+  /* Exception: keep 2-column layout in modals (tablets/small laptops) */
+  .modal-task .form-row,
+  .modal-event .form-row,
+  .modal-topic .form-row,
+  .modal-addclass .form-row,
+  .modal-editclass .form-row,
+  .modal-flashcard .form-row { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* Very small screens (< 480px) - force single column in modals */
+@media (max-width: 480px) {
+  .modal-task .form-row,
+  .modal-event .form-row,
+  .modal-topic .form-row,
+  .modal-addclass .form-row,
+  .modal-editclass .form-row,
+  .modal-flashcard .form-row { grid-template-columns: 1fr !important; }
 
   /* Cards */
   .card { padding: 14px !important; }

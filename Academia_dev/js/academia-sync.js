@@ -314,10 +314,10 @@
 // save(semestres, settings, changedFields, semesterId?) — debounced dinámico
   function save(semestres, settings, changedFields = ['semestres', 'settings'], semesterId = null) {
     clearTimeout(_saveTimer);
-    // Usar debounce dinámico basado en calidad de red
+    // Usar debounce dinámico basado en calidad de red (reducido de 10s a 3s)
     const delay = typeof window.getDynamicDebounceDelay === 'function' 
       ? window.getDynamicDebounceDelay() 
-      : 10000;
+      : 3000;  // Reducido de 10000 a 3000ms para reducir ventana de pérdida de datos
     _saveTimer = setTimeout(() => _doSave(semestres, settings, changedFields, semesterId), delay);
   }
 

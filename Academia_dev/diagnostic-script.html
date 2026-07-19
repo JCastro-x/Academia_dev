@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de Sync - Academia Dev</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #0a0a0f;
+            color: #e8e8f0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .section {
+            background: #1a1a25;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #1e1e2e;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #7c6aff;
+        }
+        .status-ok { color: #4ade80; }
+        .status-warn { color: #fbbf24; }
+        .status-error { color: #f87171; }
+        .code {
+            background: #0a0a0f;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #7c6aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: monospace;
+            margin: 5px;
+        }
+        button:hover { background: #a78bfa; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico de Sincronización - Academia Dev</h1>
+    <p>Ejecuta este script en AMBOS dispositivos (teléfono y compu) y compara los resultados.</p>
+
+    <button onclick="runDiagnostics()">▶ Ejecutar Diagnóstico Completo</button>
+    <button onclick="copyResults()">📋 Copiar Resultados</button>
+
+    <div id="results"></div>
+
+    <script>
+        const results = [];
+
+        function log(section, message, status = 'info') {
+            const statusClass = status === 'ok' ? 'status-ok' : 
+                               status === 'warn' ? 'status-warn' : 
+                               status === 'error' ? 'status-error' : '';
+            results.push({ section, message, status });
+        }
+
+        function renderResults() {
+            const container = document.getElementById('results');
+            const sections = {};
+            
+            results.forEach(r => {
+                if (!sections[r.section]) sections[r.section] = [];
+                sections[r.section].push(r);
+            });
+
+            let html = '';
+            for (const [section, items] of Object.entries(sections)) {
+                html += `<div class="section"><h3>${section}</h3>`;
+                items.forEach(item => {
+                    const statusClass = item.status === 'ok' ? 'status-ok' : 
+                                       item.status === 'warn' ? 'status-warn' : 
+                                       item.status === 'error' ? 'status-error' : '';
+                    html += `<div class="${statusClass}">• ${item.message}</div>`;
+                });
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        async function runDiagnostics() {
+            results.length = 0;
+            renderResults();
+
+            // 1. Verificar modo invitado
+            log('1. MODO INVITADO', 'Verificando localStorage...');
+            const guestMode = localStorage.getItem('academia_guest_mode');
+            if (guestMode === '1') {
+                log('1. MODO INVITADO', `❌ MODO INVITADO ACTIVADO - Esto explica por qué no hay sync`, 'error');
+            } else if (guestMode === null) {
+                log('1. MODO INVITADO', `✅ No está en modo invitado (clave no existe)`, 'ok');
+            } else {
+                log('1. MODO INVITADO', `✅ No está en modo invitado (valor: ${guestMode})`, 'ok');
+            }
+
+            // 2. Verificar configuración de Turso
+            log('2. CONFIGURACIÓN TURSO', 'Verificando...');
+            const tursoUrl = localStorage.getItem('turso_url');
+            const tursoToken = localStorage.getItem('turso_auth_token');
+            if (tursoUrl && tursoToken) {
+                log('2. CONFIGURACIÓN TURSO', `✅ Turso configurado`, 'ok');
+                log('2. CONFIGURACIÓN TURSO', `URL: ${tursoUrl.substring(0, 30)}...`, 'info');
+            } else {
+                log('2. CONFIGURACIÓN TURSO', `⚠️ Turso NO configurado - usará Supabase como fallback`, 'warn');
+            }
+
+            // 3. Verificar sesión de Supabase
+            log('3. AUTENTICACIÓN SUPABASE', 'Verificando...');
+            const authSession = localStorage.getItem('academia_auth_session');
+            if (authSession) {
+                try {
+                    const session = JSON.parse(authSession);
+                    if (session.user) {
+                        log('3. AUTENTICACIÓN SUPABASE', `✅ Sesión encontrada`, 'ok');
+                        log('3. AUTENTICACIÓN SUPABASE', `User ID: ${session.user.id}`, 'info');
+                        log('3. AUTENTICACIÓN SUPABASE', `Email: ${session.user.email}`, 'info');
+                        log('3. AUTENTICACIÓN SUPABASE', `⚠️ COPIA ESTE USER ID - Debe ser IGUAL en ambos dispositivos`, 'warn');
+                    } else {
+                        log('3. AUTENTICACIÓN SUPABASE', `❌ Sesión corrupta (no hay user)`, 'error');
+                    }
+                } catch (e) {
+                    log('3. AUTENTICACIÓN SUPABASE', `❌ Error parseando sesión: ${e.message}`, 'error');
+                }
+            } else {
+                log('3. AUTENTICACIÓN SUPABASE', `❌ No hay sesión de Supabase`, 'error');
+            }
+
+            // 4. Verificar último usuario
+            log('4. ÚLTIMO USUARIO', 'Verificando...');
+            const lastUser = localStorage.getItem('_academia_last_user');
+            if (lastUser) {
+                log('4. ÚLTIMO USUARIO', `✅ Último user_id: ${lastUser}`, 'info');
+                log('4. ÚLTIMO USUARIO', `⚠️ COPIA ESTE USER ID - Debe ser IGUAL en ambos dispositivos`, 'warn');
+            } else {
+                log('4. ÚLTIMO USUARIO', `⚠️ No hay último usuario registrado`, 'warn');
+            }
+
+            // 5. Verificar datos locales
+            log('5. DATOS LOCALES', 'Verificando...');
+            const semestres = localStorage.getItem('academia_v4_semestres');
+            const settings = localStorage.getItem('academia_v3_settings');
+            if (semestres) {
+                try {
+                    const sems = JSON.parse(semestres);
+                    log('5. DATOS LOCALES', `✅ Semestres: ${sems.length} semestre(s)`, 'ok');
+                    if (sems.length > 0) {
+                        log('5. DATOS LOCALES', `Semestre activo: ${sems.find(s => s.activo)?.nombre || 'Ninguno'}`, 'info');
+                    }
+                } catch (e) {
+                    log('5. DATOS LOCALES', `❌ Error parseando semestres: ${e.message}`, 'error');
+                }
+            } else {
+                log('5. DATOS LOCALES', `⚠️ No hay semestres en localStorage`, 'warn');
+            }
+            if (settings) {
+                log('5. DATOS LOCALES', `✅ Settings encontrados`, 'ok');
+            } else {
+                log('5. DATOS LOCALES', `⚠️ No hay settings en localStorage`, 'warn');
+            }
+
+            // 6. Intentar conectar a Supabase
+            log('6. CONEXIÓN SUPABASE', 'Intentando conectar...');
+            if (window.supabase) {
+                try {
+                    const SUPABASE_URL = 'https://mwzezekdxrutpzqbduvh.supabase.co';
+                    const SUPABASE_ANON_KEY = 'sb_publishable_O1RMAV7hbpvDwJj0ESgaCg_dd8lZur5';
+                    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    
+                    const { data: { session }, error } = await client.auth.getSession();
+                    
+                    if (error) {
+                        log('6. CONEXIÓN SUPABASE', `❌ Error de auth: ${error.message}`, 'error');
+                    } else if (session) {
+                        log('6. CONEXIÓN SUPABASE', `✅ Conexión exitosa`, 'ok');
+                        log('6. CONEXIÓN SUPABASE', `User ID verificado: ${session.user.id}`, 'info');
+                        
+                        // Intentar leer datos
+                        const { data: userData, error: dataError } = await client
+                            .from('user_data')
+                            .select('semestres, settings, updated_at')
+                            .eq('user_id', session.user.id)
+                            .maybeSingle();
+                        
+                        if (dataError) {
+                            log('6. CONEXIÓN SUPABASE', `❌ Error leyendo datos: ${dataError.message}`, 'error');
+                        } else if (userData) {
+                            log('6. CONEXIÓN SUPABASE', `✅ Datos remotos encontrados`, 'ok');
+                            log('6. CONEXIÓN SUPABASE', `Updated at: ${userData.updated_at}`, 'info');
+                            if (userData.semestres) {
+                                log('6. CONEXIÓN SUPABASE', `Semestres remotos: ${userData.semestres.length}`, 'info');
+                            }
+                        } else {
+                            log('6. CONEXIÓN SUPABASE', `⚠️ No hay datos remotos para este usuario`, 'warn');
+                        }
+                    } else {
+                        log('6. CONEXIÓN SUPABASE', `❌ No hay sesión activa en Supabase`, 'error');
+                    }
+                } catch (e) {
+                    log('6. CONEXIÓN SUPABASE', `❌ Excepción: ${e.message}`, 'error');
+                }
+            } else {
+                log('6. CONEXIÓN SUPABASE', `❌ Librería Supabase no cargada`, 'error');
+            }
+
+            // 7. Verificar timestamp de modificación local
+            log('7. TIMESTAMP LOCAL', 'Verificando...');
+            const localModifiedAt = window._localModifiedAt || 0;
+            if (localModifiedAt > 0) {
+                const date = new Date(localModifiedAt);
+                log('7. TIMESTAMP LOCAL', `Última modificación local: ${date.toLocaleString()}`, 'info');
+            } else {
+                log('7. TIMESTAMP LOCAL', `⚠️ No hay timestamp de modificación local`, 'warn');
+            }
+
+            renderResults();
+        }
+
+        function copyResults() {
+            const text = results.map(r => `[${r.section}] ${r.message}`).join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Resultados copiados al portapapeles');
+            });
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(runDiagnostics, 500);
+        });
+    </script>
+</body>
+</html>

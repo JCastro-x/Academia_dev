@@ -187,9 +187,9 @@ function openTaskModal(id) {
     document.getElementById('t-title').value = existing.title;
     document.getElementById('t-mat').value   = existing.matId;
     document.getElementById('t-prio').value  = existing.priority;
-    document.getElementById('t-date-planned').value = existing.datePlanned || '';
+    if (document.getElementById('t-date-planned')) document.getElementById('t-date-planned').value = existing.datePlanned || '';
     document.getElementById('t-due').value   = existing.due || '';
-    document.getElementById('t-type').value  = existing.type || 'Tarea';
+    if (document.getElementById('t-type')) document.getElementById('t-type').value = existing.type || 'Tarea';
     document.getElementById('t-notes').value = existing.notes || '';
     if (document.getElementById('t-time-est')) document.getElementById('t-time-est').value = existing.timeEst || '';
     if (document.getElementById('t-est-days')) document.getElementById('t-est-days').value = existing.estDays || '';
@@ -205,14 +205,14 @@ function openTaskModal(id) {
   } else {
     document.getElementById('task-modal-title').textContent = '✅ Nueva Tarea';
     document.getElementById('t-title').value = '';
-    document.getElementById('t-date-planned').value = '';
+    if (document.getElementById('t-date-planned')) document.getElementById('t-date-planned').value = '';
     document.getElementById('t-due').value   = '';
     document.getElementById('t-notes').value = '';
     document.getElementById('t-prio').value  = 'med';
-    document.getElementById('t-type').value  = 'Tarea';
+    if (document.getElementById('t-type')) document.getElementById('t-type').value = 'Tarea';
     if (document.getElementById('t-time-est')) document.getElementById('t-time-est').value = '';
     if (document.getElementById('t-est-days')) document.getElementById('t-est-days').value = '';
-    if (document.getElementById('t-est-hrs'))  document.getElementById('t-est-hrs').value  = '';
+    if (document.getElementById('t-est-hrs'))  document.getElementById('t-est-hrs').value = '';
     if (document.getElementById('t-tags')) document.getElementById('t-tags').value = '';
     if (document.getElementById('t-repeat'))       document.getElementById('t-repeat').value       = 'none';
     if (document.getElementById('t-repeat-until')) document.getElementById('t-repeat-until').value = '';
@@ -262,9 +262,9 @@ function saveTask() {
     title,
     matId:       document.getElementById('t-mat').value,
     priority:    document.getElementById('t-prio').value,
-    datePlanned: document.getElementById('t-date-planned').value,
+    datePlanned: document.getElementById('t-date-planned')?.value || '',
     due:         document.getElementById('t-due').value,
-    type:        document.getElementById('t-type').value,
+    type:        document.getElementById('t-type')?.value || 'Tarea',
     notes:       document.getElementById('t-notes').value,
     timeEst:     parseInt(document.getElementById('t-time-est')?.value) || 0,
     tags:        (document.getElementById('t-tags')?.value || '').split(',').map(t=>t.trim()).filter(Boolean),
@@ -695,8 +695,16 @@ function _renderTasks() {
     (!qf || t.title.toLowerCase().includes(qf) || (t.notes || '').toLowerCase().includes(qf))
   );
 
+  // Ordenar: 1) pendientes arriba, completadas abajo  2) por fecha ascendente  3) por prioridad
   filtered.sort((a, b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
+    // Nivel 1: estado (pendientes vs completadas)
+    if (a.done !== b.done) {
+      return a.done ? 1 : -1; // completadas van al final
+    }
+    // Nivel 2: fecha de vencimiento (ascendente - más próxima primero)
+    const da = a.due || '9999-12-31', db = b.due || '9999-12-31';
+    if (da !== db) return da < db ? -1 : 1;
+    // Nivel 3: prioridad (alta primero)
     const pd = { high:0, med:1, low:2 };
     return (pd[a.priority] ?? 1) - (pd[b.priority] ?? 1);
   });
