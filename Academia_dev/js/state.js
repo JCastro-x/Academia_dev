@@ -162,7 +162,7 @@ function _openIDB() {
 }
 
 // Compresión de imágenes
-async function compressImage(dataUrl, maxWidth = 1920, quality = 0.5) {
+async function compressImage(dataUrl, maxWidth = 800, quality = 0.4) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -190,6 +190,262 @@ async function compressImage(dataUrl, maxWidth = 1920, quality = 0.5) {
     img.onerror = () => resolve(dataUrl); // Fallback: usar original si falla
     img.src = dataUrl;
   });
+}
+
+// Generar thumbnail para preview (300px, calidad 0.6)
+async function generateThumbnail(dataUrl) {
+  return await compressImage(dataUrl, 300, 0.6);
+}
+
+// Obtener thumbnail con fallback a imagen completa y generación lazy
+async function idbGetThumbnail(key) {
+  const thumbKey = key + '_thumb';
+  
+  // Intentar obtener thumbnail existente localmente
+  let thumb = await idbGetImage(thumbKey);
+  
+  if (thumb && thumb !== PLACEHOLDER_IMAGE) {
+    return thumb;
+  }
+  
+  // No existe thumbnail localmente: intentar descargar de Supabase
+  // Solo si no hay un upload en progreso
+  if (!_uploadsInProgress.has(key)) {
+    console.log(`[IDB_MANAGER] Thumbnail no encontrado localmente, intentando descargar de Supabase: ${key}`);
+    const remoteThumb = await downloadImageFromSupabase(key, true);
+    
+    if (remoteThumb) {
+      return remoteThumb;
+    }
+  }
+  
+  // Fallback: si no existe thumbnail en ningún lado, obtener imagen completa
+  const fullImage = await idbGetImage(key);
+  
+  if (!fullImage || fullImage === PLACEHOLDER_IMAGE) {
+    return null; // No existe ni thumbnail ni imagen completa
+  }
+  
+  // Generar thumbnail a partir de la imagen completa y guardarlo
+  console.log(`[IDB_MANAGER] Generando thumbnail para ${key} (lazy)`);
+  const newThumb = await generateThumbnail(fullImage);
+  
+  const db = await _openIDB();
+  const tx = db.transaction('images', 'readwrite');
+  const store = tx.objectStore('images');
+  store.put(newThumb, thumbKey);
+  
+  return newThumb;
+}
+
+// Descargar imagen desde Supabase Storage y guardar en IndexedDB local
+async function downloadImageFromSupabase(imageKey, isThumbnail = false) {
+  const client = window.Auth?.getClient();
+  if (!client) {
+    console.warn('[IMAGE_SYNC] Cliente Supabase no disponible, skipping download');
+    return null;
+  }
+
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) {
+      console.warn('[IMAGE_SYNC] Usuario no autenticado, skipping download');
+      return null;
+    }
+
+    // Buscar manifest en image_manifests
+    const { data: manifest, error: manifestError } = await client
+      .from('image_manifests')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('image_key', imageKey)
+      .single();
+
+    if (manifestError || !manifest) {
+      console.log(`[IMAGE_SYNC] No se encontró manifest para ${imageKey}`);
+      return null;
+    }
+
+    // Determinar qué ruta usar (thumbnail o imagen completa)
+    const filePath = isThumbnail && manifest.thumbnail_path ? manifest.thumbnail_path : manifest.file_path;
+    if (!filePath) {
+      console.warn(`[IMAGE_SYNC] No hay ruta disponible para ${imageKey} (isThumbnail=${isThumbnail})`);
+      return null;
+    }
+
+    console.log(`[IMAGE_SYNC] Descargando ${imageKey} desde Storage: ${filePath}`);
+
+    // Descargar desde Storage
+    const { data: fileData, error: downloadError } = await client.storage
+      .from('academia_images')
+      .download(filePath);
+
+    if (downloadError) {
+      console.error('[IMAGE_SYNC] Error descargando de Storage:', downloadError);
+      return null;
+    }
+
+    // Convertir Blob a dataUrl
+    const reader = new FileReader();
+    const dataUrl = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(fileData);
+    });
+
+    // Guardar en IndexedDB local (cache)
+    const db = await _openIDB();
+    const keyToSave = isThumbnail ? imageKey + '_thumb' : imageKey;
+    
+    await new Promise((res, rej) => {
+      const tx = db.transaction('images', 'readwrite');
+      const store = tx.objectStore('images');
+      store.put(dataUrl, keyToSave);
+      tx.oncomplete = () => {
+        console.log(`[IMAGE_SYNC] ✅ Imagen cacheada en IndexedDB: ${keyToSave}`);
+        res();
+      };
+      tx.onerror = () => rej(tx.error);
+    });
+
+    return dataUrl;
+
+  } catch (error) {
+    console.error('[IMAGE_SYNC] Error en download desde Supabase:', error);
+    return null;
+  }
+}
+
+// Calcular hash SHA-256 de una imagen (para sync con Supabase Storage)
+async function calculateImageHash(dataUrl) {
+  try {
+    const base64Data = dataUrl.split(',')[1];
+    if (!base64Data) return null;
+
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    return hashHex;
+  } catch (error) {
+    console.error('[IMAGE_SYNC] Error calculando hash:', error);
+    return null;
+  }
+}
+
+// Subir imagen a Supabase Storage (background, no bloquea IndexedDB)
+async function uploadImageToSupabase(imageKey, dataUrl, thumbnailDataUrl, hash) {
+  const client = window.Auth?.getClient();
+  if (!client) {
+    console.warn('[IMAGE_SYNC] Cliente Supabase no disponible, skipping upload');
+    return null;
+  }
+
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) {
+      console.warn('[IMAGE_SYNC] Usuario no autenticado, skipping upload');
+      return null;
+    }
+
+    const userId = user.id;
+    const fileName = `${hash}.jpg`;
+    const thumbFileName = `${hash}_thumb.jpg`;
+    const filePath = `${userId}/${fileName}`;
+    const thumbPath = `${userId}/${thumbFileName}`;
+
+    console.log(`[IMAGE_SYNC] Subiendo ${imageKey} a Storage (imagen + thumbnail)...`);
+
+    // Convertir imagen completa a Blob
+    const base64Data = dataUrl.split(',')[1];
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: 'image/jpeg' });
+
+    // Convertir thumbnail a Blob
+    const thumbBase64 = thumbnailDataUrl.split(',')[1];
+    const thumbBinary = atob(thumbBase64);
+    const thumbBytes = new Uint8Array(thumbBinary.length);
+    for (let i = 0; i < thumbBinary.length; i++) {
+      thumbBytes[i] = thumbBinary.charCodeAt(i);
+    }
+    const thumbBlob = new Blob([thumbBytes], { type: 'image/jpeg' });
+
+    // Subir imagen completa a Storage
+    const { error: uploadError } = await client.storage
+      .from('academia_images')
+      .upload(filePath, blob, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('[IMAGE_SYNC] Error subiendo imagen a Storage:', uploadError);
+      return null;
+    }
+
+    console.log(`[IMAGE_SYNC] ✅ Imagen subida: ${filePath}`);
+
+    // Subir thumbnail a Storage
+    let finalThumbPath = null;
+    let finalThumbSize = null;
+    const { error: thumbUploadError } = await client.storage
+      .from('academia_images')
+      .upload(thumbPath, thumbBlob, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
+
+    if (thumbUploadError) {
+      console.error('[IMAGE_SYNC] Error subiendo thumbnail a Storage:', thumbUploadError);
+      // Continuar aunque el thumbnail falle (la imagen principal ya está subida)
+      // thumbnail_path será null en el manifest para indicar que no existe
+    } else {
+      console.log(`[IMAGE_SYNC] ✅ Thumbnail subido: ${thumbPath}`);
+      finalThumbPath = thumbPath;
+      finalThumbSize = thumbnailDataUrl.length;
+    }
+
+    // Guardar en manifest
+    const manifestData = {
+      user_id: userId,
+      image_key: imageKey,
+      hash: hash,
+      file_path: filePath,
+      file_size: dataUrl.length,
+      thumbnail_path: finalThumbPath,
+      thumbnail_size: finalThumbSize,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error: manifestError } = await client
+      .from('image_manifests')
+      .upsert(manifestData, {
+        onConflict: 'user_id,image_key'
+      });
+
+    if (manifestError) {
+      console.error('[IMAGE_SYNC] Error escribiendo manifest:', manifestError);
+      console.error('[IMAGE_SYNC] ⚠️ Archivos huérfanos en Storage:', filePath, thumbPath);
+      return null;
+    }
+
+    console.log(`[IMAGE_SYNC] ✅ Manifest actualizado`);
+    return { filePath, thumbPath, manifestData };
+
+  } catch (error) {
+    console.error('[IMAGE_SYNC] Error en upload:', error);
+    return null;
+  }
 }
 
 async function idbSetImage(key, dataUrl) {
@@ -226,6 +482,7 @@ async function idbSetImage(key, dataUrl) {
 
     // Comprimir imagen antes de guardar
     const compressed = await compressImage(dataUrl);
+    const thumbnail = await generateThumbnail(dataUrl);
     console.log(`📦 [IDB_MANAGER] Guardando imagen: ${key} (${(compressed.length/1024).toFixed(1)}KB)`);
     
     const db = await _openIDB();
@@ -233,9 +490,44 @@ async function idbSetImage(key, dataUrl) {
       const tx = db.transaction('images','readwrite');
       const store = tx.objectStore('images');
       store.put(compressed, key);
+      store.put(thumbnail, key + '_thumb');
       
       tx.oncomplete = () => {
         console.log(`✅ [IDB_MANAGER] Imagen guardada exitosamente: ${key}`);
+        
+        // Upload a Supabase en background (no bloquea)
+        // Solo para imágenes nuevas, no migrar las viejas automáticamente
+        calculateImageHash(compressed).then(hash => {
+          if (hash) {
+            // Evitar uploads duplicados de la misma key
+            if (_uploadsInProgress.has(key)) {
+              console.log(`[IMAGE_SYNC] Upload ya en progreso para ${key}, skipping duplicate`);
+              return;
+            }
+            
+            // Marcar upload en progreso
+            _uploadsInProgress.set(key, { deleted: false });
+            
+            uploadImageToSupabase(key, compressed, thumbnail, hash)
+              .then(result => {
+                // Verificar si la imagen fue borrada mientras se subía
+                const uploadInfo = _uploadsInProgress.get(key);
+                if (uploadInfo && uploadInfo.deleted) {
+                  // Imagen borrada durante upload: limpiar archivos huérfanos
+                  console.log(`[IMAGE_SYNC] Imagen ${key} borrada durante upload, limpiando archivos huérfanos...`);
+                  cleanupOrphanedUpload(key, result?.filePath, result?.thumbPath);
+                }
+                _uploadsInProgress.delete(key);
+              })
+              .catch(err => {
+                console.warn('[IMAGE_SYNC] Upload falló, imagen sigue en IndexedDB:', err);
+                _uploadsInProgress.delete(key);
+              });
+          }
+        }).catch(err => {
+          console.warn('[IMAGE_SYNC] Error calculando hash, skipping upload:', err);
+        });
+        
         res(true);
       };
       
@@ -264,6 +556,9 @@ const PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWl
 const _imageCache = new Map();
 const MAX_CACHE_SIZE = 50; // Máximo número de imágenes en caché
 
+// Tracking de uploads en progreso (para evitar race conditions con delete)
+const _uploadsInProgress = new Map(); // Map: imageKey -> { resolve, reject } para limpieza post-delete
+
 async function idbGetImage(key) {
   if (!key) {
     console.error('[IDB_MANAGER] Error: Key inválida (null/undefined)');
@@ -278,32 +573,55 @@ async function idbGetImage(key) {
 
   try {
     const db = await _openIDB();
-    return new Promise((res, rej) => {
+    const localResult = await new Promise((resolve, reject) => {
       const tx = db.transaction('images','readonly');
       const req = tx.objectStore('images').get(key);
-      req.onsuccess = () => {
-        const result = req.result;
-        if (!result) {
-          console.warn(`[IDB_MANAGER] Asset no encontrado: ${key} - usando placeholder`);
-          res(PLACEHOLDER_IMAGE);
-        } else {
-          console.log(`[IDB_MANAGER] Asset recuperado: ${key} (${(result.length / 1024).toFixed(2)} KB)`);
-          // Guardar en caché
-          if (_imageCache.size >= MAX_CACHE_SIZE) {
-            // Eliminar la entrada más antigua (FIFO)
-            const firstKey = _imageCache.keys().next().value;
-            _imageCache.delete(firstKey);
-          }
-          _imageCache.set(key, result);
-          res(result);
-        }
-      };
-      req.onerror = () => {
-        console.error(`[IDB_MANAGER] Error al recuperar asset ${key}:`, tx.error);
-        // Fallback a placeholder en error en lugar de rechazar
-        res(PLACEHOLDER_IMAGE);
-      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(tx.error);
     });
+
+    if (localResult) {
+      console.log(`[IDB_MANAGER] Asset recuperado de IndexedDB: ${key} (${(localResult.length / 1024).toFixed(2)} KB)`);
+      // Guardar en caché
+      if (_imageCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = _imageCache.keys().next().value;
+        _imageCache.delete(firstKey);
+      }
+      _imageCache.set(key, localResult);
+      return localResult;
+    }
+
+    // No está en IndexedDB local: intentar descargar de Supabase
+    // Solo si no hay un upload en progreso (evitar loop infinito)
+    if (_uploadsInProgress.has(key)) {
+      console.log(`[IDB_MANAGER] Imagen ${key} en upload, no descargar de Supabase`);
+      return PLACEHOLDER_IMAGE;
+    }
+
+    // Si la key termina en "_thumb", no buscar en Supabase (manifests usan key original)
+    // Dejar que idbGetThumbnail() maneje la lógica de descarga de thumbnails
+    if (key.endsWith('_thumb')) {
+      console.log(`[IDB_MANAGER] Key termina en _thumb, no buscar en Supabase (manifest usa key original)`);
+      return PLACEHOLDER_IMAGE;
+    }
+
+    console.log(`[IDB_MANAGER] Imagen no encontrada localmente, intentando descargar de Supabase: ${key}`);
+    const remoteResult = await downloadImageFromSupabase(key, false);
+    
+    if (remoteResult) {
+      // Guardar en caché
+      if (_imageCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = _imageCache.keys().next().value;
+        _imageCache.delete(firstKey);
+      }
+      _imageCache.set(key, remoteResult);
+      return remoteResult;
+    }
+
+    // Fallback a placeholder si no se encontró en ningún lado
+    console.warn(`[IDB_MANAGER] Asset no encontrado en IndexedDB ni Supabase: ${key} - usando placeholder`);
+    return PLACEHOLDER_IMAGE;
+
   } catch(e) {
     console.error(`[IDB_MANAGER] Excepción al recuperar asset ${key}:`, e);
     // Fallback a placeholder en excepción
@@ -324,9 +642,68 @@ function invalidateImageCache(key) {
   }
 }
 
+// Limpiar archivos huérfanos en Storage (cuando imagen se borra durante upload)
+async function cleanupOrphanedUpload(imageKey, filePath, thumbPath) {
+  const client = window.Auth?.getClient();
+  if (!client || !filePath) return;
+
+  try {
+    console.log(`[IMAGE_SYNC] Limpiando archivos huérfanos para ${imageKey}...`);
+    
+    // Borrar imagen completa de Storage
+    if (filePath) {
+      const { error: deleteError } = await client.storage
+        .from('academia_images')
+        .remove([filePath]);
+      
+      if (deleteError) {
+        console.error('[IMAGE_SYNC] Error borrando archivo huérfano:', filePath, deleteError);
+      } else {
+        console.log(`[IMAGE_SYNC] ✅ Archivo huérfano borrado: ${filePath}`);
+      }
+    }
+    
+    // Borrar thumbnail de Storage
+    if (thumbPath) {
+      const { error: thumbDeleteError } = await client.storage
+        .from('academia_images')
+        .remove([thumbPath]);
+      
+      if (thumbDeleteError) {
+        console.error('[IMAGE_SYNC] Error borrando thumbnail huérfano:', thumbPath, thumbDeleteError);
+      } else {
+        console.log(`[IMAGE_SYNC] ✅ Thumbnail huérfano borrado: ${thumbPath}`);
+      }
+    }
+    
+    // Borrar manifest
+    const { error: manifestError } = await client
+      .from('image_manifests')
+      .delete()
+      .eq('image_key', imageKey);
+    
+    if (manifestError) {
+      console.error('[IMAGE_SYNC] Error borrando manifest huérfano:', manifestError);
+    } else {
+      console.log(`[IMAGE_SYNC] ✅ Manifest huérfano borrado para ${imageKey}`);
+    }
+    
+  } catch (error) {
+    console.error('[IMAGE_SYNC] Error en limpieza de archivos huérfanos:', error);
+  }
+}
+
 async function idbDeleteImage(key) {
   // Invalidar caché cuando se elimina una imagen
   invalidateImageCache(key);
+  invalidateImageCache(key + '_thumb');
+
+  // Marcar como borrada si hay un upload en progreso
+  const uploadInfo = _uploadsInProgress.get(key);
+  if (uploadInfo) {
+    console.log(`[IMAGE_SYNC] Imagen ${key} tiene upload en progreso, marcando para limpieza post-upload`);
+    uploadInfo.deleted = true;
+  }
 
   try {
     const db = await _openIDB();
@@ -337,12 +714,14 @@ async function idbDeleteImage(key) {
       const imagesStore = tx.objectStore('images');
       const deletedStore = tx.objectStore('deleted_images');
       
+      // Declarar expiresAt afuera para que ambos callbacks tengan acceso
+      const expiresAt = Date.now() + UNDO_PERIOD_MS;
+      
       const getRequest = imagesStore.get(key);
       getRequest.onsuccess = () => {
         const imageData = getRequest.result;
         if (imageData) {
           // Guardar en deleted_images con timestamp de expiración
-          const expiresAt = Date.now() + UNDO_PERIOD_MS;
           deletedStore.put({
             key: key,
             data: imageData,
@@ -352,6 +731,21 @@ async function idbDeleteImage(key) {
           
           // Eliminar del store principal
           imagesStore.delete(key);
+        }
+      };
+      
+      // También eliminar/mover thumbnail
+      const getThumbRequest = imagesStore.get(key + '_thumb');
+      getThumbRequest.onsuccess = () => {
+        const thumbData = getThumbRequest.result;
+        if (thumbData) {
+          deletedStore.put({
+            key: key + '_thumb',
+            data: thumbData,
+            deletedAt: Date.now(),
+            expiresAt: expiresAt
+          }, key + '_thumb');
+          imagesStore.delete(key + '_thumb');
         }
       };
       
@@ -475,8 +869,16 @@ async function cleanupUnusedImages() {
         });
       });
       
-      // Eliminar claves no usadas
-      const unusedKeys = allKeys.filter(key => !usedKeys.has(key));
+      // Marcar thumbnails como usados si su clave principal está usada
+      const thumbKeysToKeep = new Set();
+      usedKeys.forEach(key => {
+        thumbKeysToKeep.add(key + '_thumb');
+      });
+      
+      // Eliminar claves no usadas (incluyendo thumbnails huérfanos)
+      const unusedKeys = allKeys.filter(key => 
+        !usedKeys.has(key) && !thumbKeysToKeep.has(key)
+      );
       if (unusedKeys.length > 0) {
         const deleteTx = db.transaction('images','readwrite');
         const deleteStore = deleteTx.objectStore('images');

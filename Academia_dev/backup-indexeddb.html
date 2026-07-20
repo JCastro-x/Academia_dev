@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backup IndexedDB - Academia Dev</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 { color: #7c6aff; }
+    .container {
+      background: #16162a;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid #2a2a4a;
+      margin-top: 20px;
+    }
+    .btn {
+      background: #7c6aff;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 16px;
+    }
+    .btn:hover { background: #6a5acd; }
+    .btn:disabled { background: #3a3a5a; cursor: not-allowed; }
+    .status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .status.success { background: #1a3a1a; color: #4ade80; }
+    .status.error { background: #3a1a1a; color: #f87171; }
+    .status.info { background: #1a2a3a; color: #60a5fa; }
+    .progress {
+      margin-top: 12px;
+      height: 8px;
+      background: #2a2a4a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #7c6aff;
+      transition: width 0.3s;
+    }
+    .stats {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #9090a8;
+      font-family: 'Space Mono', monospace;
+    }
+    .stats span {
+      display: block;
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>💾 Backup IndexedDB - Academia Dev</h1>
+  
+  <div class="container">
+    <p>Este script exporta todo el contenido de IndexedDB (imágenes, canvas, PDFs) a un archivo JSON para backup.</p>
+    
+    <p><strong>Base de datos:</strong> <code>academia_images</code></p>
+    <p><strong>Object stores:</strong> <code>images</code>, <code>deleted_images</code></p>
+    
+    <button id="backupBtn" class="btn" onclick="startBackup()">📥 Iniciar Backup</button>
+    
+    <div id="status" class="status info" style="display:none;"></div>
+    <div id="progress" class="progress" style="display:none;">
+      <div id="progressBar" class="progress-bar" style="width:0%"></div>
+    </div>
+    <div id="stats" class="stats" style="display:none;"></div>
+  </div>
+
+  <script>
+    const DB_NAME = 'academia_images';
+
+    async function startBackup() {
+      const btn = document.getElementById('backupBtn');
+      const status = document.getElementById('status');
+      const progress = document.getElementById('progress');
+      const progressBar = document.getElementById('progressBar');
+      const stats = document.getElementById('stats');
+
+      btn.disabled = true;
+      status.style.display = 'block';
+      progress.style.display = 'block';
+      stats.style.display = 'block';
+      
+      status.className = 'status info';
+      status.textContent = 'Conectando a IndexedDB...';
+      progressBar.style.width = '10%';
+
+      try {
+        const db = await openDB();
+        
+        status.textContent = 'Detectando object stores...';
+        progressBar.style.width = '20%';
+
+        // Detectar qué object stores existen
+        const storeNames = Array.from(db.objectStoreNames);
+        console.log('Object stores encontrados:', storeNames);
+
+        const backup = {
+          timestamp: new Date().toISOString(),
+          dbName: DB_NAME,
+          version: db.version,
+          stores: {}
+        };
+
+        let totalImages = 0;
+        let storeIndex = 0;
+
+        // Leer cada object store que exista
+        for (const storeName of storeNames) {
+          status.textContent = `Leyendo ${storeName}...`;
+          const progressPercent = 20 + ((storeIndex / storeNames.length) * 60);
+          progressBar.style.width = `${progressPercent}%`;
+
+          try {
+            const data = await readAllFromStore(db, storeName);
+            backup.stores[storeName] = data;
+            totalImages += data.length;
+            console.log(`Leídos ${data.length} registros de ${storeName}`);
+          } catch (storeError) {
+            console.error(`Error leyendo ${storeName}:`, storeError);
+            backup.stores[storeName] = { error: storeError.message };
+          }
+          
+          storeIndex++;
+        }
+
+        status.textContent = 'Generando archivo JSON...';
+        progressBar.style.width = '90%';
+
+        // Calcular stats
+        const totalSize = JSON.stringify(backup).length;
+        const sizeMB = (totalSize / 1024 / 1024).toFixed(2);
+
+        stats.innerHTML = `
+          <span>Object stores: ${storeNames.join(', ')}</span>
+          <span>Total registros: ${totalImages}</span>
+          <span>Versión DB: ${db.version}</span>
+          <span>Tamaño backup: ${sizeMB} MB</span>
+        `;
+
+        // Descargar JSON
+        const json = JSON.stringify(backup, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `academia-indexeddb-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        status.className = 'status success';
+        status.textContent = '✅ Backup completado exitosamente';
+        progressBar.style.width = '100%';
+
+        db.close();
+
+      } catch (error) {
+        console.error('Error en backup:', error);
+        status.className = 'status error';
+        status.textContent = `❌ Error: ${error.message}`;
+        progressBar.style.width = '0%';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        console.log(`[BACKUP] Abriendo DB: ${DB_NAME}`);
+        const request = indexedDB.open(DB_NAME);
+        
+        request.onerror = () => {
+          console.error('[BACKUP] Error abriendo DB:', request.error);
+          reject(request.error);
+        };
+        request.onsuccess = () => {
+          console.log('[BACKUP] DB abierta exitosamente');
+          console.log('[BACKUP] DB version:', request.result.version);
+          console.log('[BACKUP] Object stores:', Array.from(request.result.objectStoreNames));
+          resolve(request.result);
+        };
+        request.onblocked = () => {
+          console.warn('[BACKUP] DB abierta en otra pestaña, esperando...');
+        };
+      });
+    }
+
+    async function readAllFromStore(db, storeName) {
+      return new Promise((resolve, reject) => {
+        console.log(`[BACKUP] Leyendo store: ${storeName}`);
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.getAll();
+        
+        transaction.onerror = () => {
+          console.error(`[BACKUP] Error en transacción para ${storeName}:`, transaction.error);
+          reject(transaction.error);
+        };
+        
+        request.onerror = () => {
+          console.error(`[BACKUP] Error leyendo ${storeName}:`, request.error);
+          reject(request.error);
+        };
+        
+        request.onsuccess = () => {
+          console.log(`[BACKUP] Leídos ${request.result.length} registros de ${storeName}`);
+          resolve(request.result);
+        };
+      });
+    }
+  </script>
+</body>
+</html>

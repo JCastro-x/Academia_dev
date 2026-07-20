@@ -1724,7 +1724,7 @@ function _renderImagesStrip(note) {
     const val = imgs[k];
     if (val && val.startsWith('IDB:')) {
       const idbKey = val.slice(4);
-      const data = await idbGetImage(idbKey);
+      const data = await idbGetThumbnail(idbKey);
       if (data) {
         // Asignar data URL directamente al src (no necesita fetch, evita violación CSP)
         imgEl.src = data;
