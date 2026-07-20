@@ -475,19 +475,28 @@ function continueInit(auth) {
       setTimeout(() => _syncFromSupabase(true), 1000);
     });
 
-    async function _syncFromSupabase(force = false) {
+    async function _syncFromSupabase(force = false, isVisibilityChange = false) {
       const db = getAcademiaDB();
       if (!db || !db._ready) return;
       const now = Date.now();
-      if (!force && now - _lastSync < 5000) return;
-
-      // Si hay un guardado local pendiente, nunca hacer pull remoto todavía.
-      if (!force && typeof _saveTimer !== 'undefined' && _saveTimer) {
+      
+      // Throttle de 5s: saltar en visibilitychange para sync inmediato al volver a la pestaña
+      if (!force && !isVisibilityChange && now - _lastSync < 5000) {
+        console.log('🚫 [SYNC] Bloqueado por throttle 5s');
         return;
       }
 
+      // Si hay un guardado local pendiente, nunca hacer pull remoto todavía.
+      // Este guard es CRÍTICO para seguridad de datos, nunca se salta
+      if (typeof _saveTimer !== 'undefined' && _saveTimer) {
+        console.log('🚫 [SYNC] Bloqueado por _saveTimer pendiente');
+        return;
+      }
+
+      // Guard de 30s: saltar en visibilitychange y con force=true
       const msSinceLocalMod = now - (window._localModifiedAt || 0);
-      if (msSinceLocalMod < 30000) {
+      if (!force && !isVisibilityChange && msSinceLocalMod < 30000) {
+        console.log('🚫 [SYNC] Bloqueado por guard 30s (modificación local reciente)');
         return;
       }
       const localModifiedAt = window._localModifiedAt || 0;
@@ -495,6 +504,7 @@ function continueInit(auth) {
       // Preflight inteligente: comparar hashes para evitar descargas innecesarias
       let remoteUpdatedAt = 0;
       let shouldDownload = true;
+      let dbData = null; // 🔥 FIX: Declarar dbData antes del preflight para reusar
       
       if (!force && typeof db.getRemoteUpdatedAt === 'function') {
         // Throttle del preflight para evitar martillar en focus/visibility repetidos
@@ -507,6 +517,7 @@ function continueInit(auth) {
         }
 
         if (remoteUpdatedAt && remoteUpdatedAt <= localModifiedAt) {
+          console.log('📭 [SYNC] Preflight: no hay cambios remotos (timestamp)');
           _lastSync = now;
           return;
         }
@@ -518,13 +529,14 @@ function continueInit(auth) {
             const localSettingsHash = await window.computeHash(State.settings);
             
             // Descargar solo para comparar hashes remotos
-            const dbData = await db.load();
+            dbData = await db.load();
             if (!dbData) return;
             
             const remoteSemHash = await window.computeHash(dbData.semestres);
             const remoteSettingsHash = await window.computeHash(dbData.settings);
             
             if (localSemHash === remoteSemHash && localSettingsHash === remoteSettingsHash) {
+              console.log('📭 [SYNC] Preflight: no hay cambios remotos (hash igual)');
               _lastSync = now;
               return;
             }
@@ -538,10 +550,8 @@ function continueInit(auth) {
       _lastSync = now;
       
       // Si ya descargamos en el preflight, usar dbData existente
-      let dbData;
       if (!shouldDownload) {
-        // dbData ya fue cargado en el preflight
-        dbData = await db.load();
+        // dbData ya fue cargado en el preflight, reusarlo
       } else {
         dbData = await db.load();
       }
@@ -567,6 +577,7 @@ function continueInit(auth) {
         if (localJson !== dbJson) { localStorage.setItem('academia_v3_settings', dbJson); changed = true; }
       }
       if (changed) {
+        console.log('✅ [SYNC] Cambios remotos aplicados, State actualizado');
         if (Array.isArray(dbData.semestres)) {
           State.semestres.length = 0;
           dbData.semestres.forEach(s => State.semestres.push(s));
@@ -606,20 +617,65 @@ function continueInit(auth) {
       }
     }
 
+    // Polling adaptativo: cada 2 minutos cuando visible, pausado en background
+    let _pollingInterval = null;
+    let _isPollingActive = false;
+
+    function startAdaptivePolling() {
+      if (_isPollingActive) return;
+      _isPollingActive = true;
+      
+      // Polling inicial rápido (2 minutos)
+      scheduleNextPoll(2 * 60 * 1000);
+    }
+
+    function stopPolling() {
+      if (_pollingInterval) {
+        clearTimeout(_pollingInterval);
+        _pollingInterval = null;
+      }
+      _isPollingActive = false;
+    }
+
+    function scheduleNextPoll(delayMs) {
+      if (_pollingInterval) clearTimeout(_pollingInterval);
+      
+      _pollingInterval = setTimeout(() => {
+        const db = getAcademiaDB();
+        if (db && db._ready) {
+          _syncFromSupabase(false, false);
+        }
+        
+        // Si pestaña sigue visible, seguir polling
+        if (document.visibilityState === 'visible') {
+          scheduleNextPoll(2 * 60 * 1000); // 2 minutos
+        } else {
+          stopPolling(); // Pausar si está en background
+        }
+      }, delayMs);
+    }
+
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
+        // Flush al ocultar (mantener lógica existente)
         if (typeof _saveTimer !== 'undefined' && _saveTimer) {
           clearTimeout(_saveTimer);
           _flushSave();
-          // Flush remoto solo si había cambio local pendiente
           const db = getAcademiaDB();
           if (db && db._ready) {
             db.saveNow(State.semestres, State.settings);
           }
         }
+        // Pausar polling en background
+        stopPolling();
       }
-      // Deshabilitado sync al volver a la pestaña para reducir ancho de banda
-      // if (document.visibilityState === 'visible') _syncFromSupabase();
+      // 🔥 Sync al volver a la pestaña con preflight activo
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ [SYNC] visibilitychange: pestaña visible, iniciando sync...');
+        setTimeout(() => _syncFromSupabase(false, true), 500);
+        // Reanudar polling adaptativo
+        startAdaptivePolling();
+      }
     });
     window.addEventListener('pagehide', () => {
       if (typeof _saveTimer !== 'undefined' && _saveTimer) {
@@ -644,17 +700,10 @@ function continueInit(auth) {
         }
       }
     });
-    // Sync deshabilitado al enfocar la ventana para reducir ancho de banda
-
-    // Sync periódico cada 6 horas (reducido de 1 hora para ahorrar ancho de banda)
-    setInterval(() => {
-      const canSync = (Date.now() - (window._localModifiedAt || 0)) > 30000;
-      const db = getAcademiaDB();
-      if (canSync && db && db._ready) {
-        _lastSync = 0;
-        _syncFromSupabase();
-      }
-    }, 21600000);
+    // Iniciar polling adaptativo al cargar (si la pestaña está visible)
+    if (document.visibilityState === 'visible') {
+      startAdaptivePolling();
+    }
   }
 
   _maybeShowOnboarding();
