@@ -559,6 +559,95 @@ const MAX_CACHE_SIZE = 50; // Máximo número de imágenes en caché
 // Tracking de uploads en progreso (para evitar race conditions con delete)
 const _uploadsInProgress = new Map(); // Map: imageKey -> { resolve, reject } para limpieza post-delete
 
+// Flag para evitar syncImages() repetido en la misma sesión
+let _imagesSynced = false;
+
+// Sincronizar imágenes desde Supabase al inicio de la app (MVP)
+async function syncImages() {
+  if (_imagesSynced) {
+    console.log('[IMAGE_SYNC] Ya se ejecutó syncImages en esta sesión, skipping');
+    return;
+  }
+
+  const client = window.Auth?.getClient();
+  if (!client) {
+    console.warn('[IMAGE_SYNC] Cliente Supabase no disponible, skipping sync');
+    return;
+  }
+
+  try {
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) {
+      console.warn('[IMAGE_SYNC] Usuario no autenticado, skipping sync');
+      return;
+    }
+
+    console.log('[IMAGE_SYNC] Iniciando sync de imágenes...');
+
+    // 1. Obtener todos los manifests del usuario
+    const { data: manifests, error: manifestError } = await client
+      .from('image_manifests')
+      .select('image_key, updated_at, thumbnail_path')
+      .eq('user_id', user.id);
+
+    if (manifestError) {
+      console.warn('[IMAGE_SYNC] Error obteniendo manifests:', manifestError);
+      return;
+    }
+
+    if (!manifests || manifests.length === 0) {
+      console.log('[IMAGE_SYNC] No hay manifests para sincronizar');
+      _imagesSynced = true;
+      return;
+    }
+
+    // 2. Obtener todas las keys de IndexedDB local
+    const db = await _openIDB();
+    const localKeys = await new Promise((resolve, reject) => {
+      const tx = db.transaction('images', 'readonly');
+      const req = tx.objectStore('images').getAllKeys();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(tx.error);
+    });
+
+    const localKeysSet = new Set(localKeys);
+
+    // 3. Diff: manifests que NO están en local
+    const missingKeys = manifests
+      .filter(m => !localKeysSet.has(m.image_key) && !localKeysSet.has(m.image_key + '_thumb'))
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)); // Ordenar por updated_at DESC
+
+    if (missingKeys.length === 0) {
+      console.log('[IMAGE_SYNC] Todas las imágenes ya están sincronizadas localmente');
+      _imagesSynced = true;
+      return;
+    }
+
+    console.log(`[IMAGE_SYNC] ${missingKeys.length} imágenes faltan localmente`);
+
+    // 4. Prefetch de thumbnails de las últimas 20 (background, no bloqueante)
+    const toPrefetch = missingKeys.slice(0, 20);
+    console.log(`[IMAGE_SYNC] Prefetch de ${toPrefetch.length} thumbnails más recientes...`);
+
+    for (const manifest of toPrefetch) {
+      if (manifest.thumbnail_path) {
+        try {
+          await downloadImageFromSupabase(manifest.image_key, true);
+        } catch (err) {
+          console.warn(`[IMAGE_SYNC] Error prefetch thumbnail ${manifest.image_key}:`, err);
+        }
+      }
+    }
+
+    console.log('[IMAGE_SYNC] ✅ Sync de imágenes completado');
+    _imagesSynced = true;
+
+  } catch (error) {
+    console.error('[IMAGE_SYNC] Error en syncImages:', error);
+    // No marcar como synced para reintentar en la próxima sesión
+  }
+}
+
 async function idbGetImage(key) {
   if (!key) {
     console.error('[IDB_MANAGER] Error: Key inválida (null/undefined)');
@@ -894,6 +983,7 @@ window.cleanupUnusedImages = cleanupUnusedImages;
 window.cleanupExpiredDeletedImages = cleanupExpiredDeletedImages;
 window.clearImageCache = clearImageCache;
 window.invalidateImageCache = invalidateImageCache;
+window.syncImages = syncImages;
 
 // Limpieza periódica de imágenes expiradas (cada 10 minutos)
 setInterval(() => {

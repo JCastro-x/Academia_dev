@@ -56,6 +56,13 @@
         console.warn('⚠️ window.DB: cliente Supabase no disponible todavía');
       }
     }
+
+    // Sincronizar imágenes en background (no bloquea el arranque)
+    if (typeof window.syncImages === 'function') {
+      window.syncImages().catch(err => {
+        console.warn('[SYNC] Error en syncImages (no bloqueante):', err);
+      });
+    }
   }
 
 // load(localUpdatedAt?, options?) -> { semestres, settings, updatedAt } | null
