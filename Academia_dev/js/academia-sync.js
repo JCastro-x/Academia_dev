@@ -2,9 +2,7 @@
 // Expone `window.AcademiaDB` como la API de sincronización canónica
 // Alias legacy `window.DB` mantenido para compatibilidad hacia atrás
 // Estrategia de fuente de datos:
-// - Supabase: Usado solo para auth (Google Login)
-// - Turso: Usado para datos pesados (semestres, settings) - separado por user_id
-// - Fallback: Puede usar Supabase para datos si Turso no está configurado
+// - Supabase: Usado para auth (Google Login) y datos (semestres, settings)
 
 (function () {
   'use strict';
@@ -13,7 +11,6 @@
   let _client  = null;
   let _ready   = false;
   let _saveTimer = null;
-  let _useTurso = false; // Flag para usar Turso en lugar de Supabase
 
 // Obtener cliente Supabase (del módulo Auth)
   function _getClient() {
@@ -24,37 +21,16 @@
     return _client;
   }
 
-// Verificar si Turso está configurado
-  function _isTursoConfigured() {
-    return !!(localStorage.getItem('turso_url') && localStorage.getItem('turso_auth_token'));
-  }
 
 // init(userId)
   async function init(userId) {
     _userId = userId;
     _client = _getClient();
     
-    // Detectar si usar Turso
-    _useTurso = _isTursoConfigured();
-    
-    if (_useTurso) {
-      // Usar Turso para datos
-      if (window.TursoDB && typeof window.TursoDB.init === 'function') {
-        await window.TursoDB.init(userId);
-        _ready = window.TursoDB._ready;
-      } else {
-        console.warn('⚠️ Turso configurado pero turso-sync.js no cargado');
-        _useTurso = false; // Fallback a Supabase
-      }
-    }
-    
-    // Fallback a Supabase si Turso no está configurado
-    if (!_useTurso) {
-      if (_client && _userId) {
-        _ready = true;
-      } else {
-        console.warn('⚠️ window.DB: cliente Supabase no disponible todavía');
-      }
+    if (_client && _userId) {
+      _ready = true;
+    } else {
+      console.warn('⚠️ window.DB: cliente Supabase no disponible todavía');
     }
 
     // Sincronizar imágenes en background (no bloquea el arranque)
@@ -72,19 +48,6 @@
     if (!_ready) {
       console.warn('⚠️ [SYNC] DB no está ready, no se puede cargar');
       return null;
-    }
-
-    // Delegar a Turso si está configurado
-    if (_useTurso && window.TursoDB) {
-      try {
-        return await window.TursoDB.load(localUpdatedAt, options);
-      } catch (tursoError) {
-        console.error('❌ [SYNC] Error en Turso, fallback a Supabase:', tursoError);
-        if (typeof _appNotify === 'function') {
-          _appNotify('Error en Turso, usando Supabase...', 'warning');
-        }
-        _useTurso = false; // Desactivar Turso temporalmente
-      }
     }
 
     // Fallback a Supabase
@@ -172,11 +135,6 @@
   async function getRemoteUpdatedAt(semesterId = null) {
     if (!_ready) return 0;
 
-    // Delegar a Turso si está configurado
-    if (_useTurso && window.TursoDB) {
-      return await window.TursoDB.getRemoteUpdatedAt(semesterId);
-    }
-
     // Fallback a Supabase
     try {
       const { data, error } = await _getClient()
@@ -198,20 +156,6 @@
     if (!_ready) {
       console.warn('⚠️ [SYNC] DB no está ready, no se puede guardar');
       return;
-    }
-
-    // Delegar a Turso si está configurado
-    if (_useTurso && window.TursoDB) {
-      try {
-        return await window.TursoDB._doSave(semestres, settings, changedFields, semesterId);
-      } catch (tursoError) {
-        console.error('❌ [SYNC] Error en Turso, fallback a Supabase:', tursoError);
-        if (typeof _appNotify === 'function') {
-          _appNotify('Error en Turso, usando Supabase...', 'warning');
-        }
-        _useTurso = false; // Desactivar Turso temporalmente
-        // Continuar con Supabase
-      }
     }
 
     // Fallback a Supabase

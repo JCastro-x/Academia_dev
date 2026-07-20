@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 // NOTIFICACIONES: Revisa IndexedDB al activarse para disparar pendientes
 
-const CACHE_VERSION  = 'academia-v16';
+const CACHE_VERSION  = 'academia-v17';
 const CACHE_STATIC   = `${CACHE_VERSION}-static`;
 const CACHE_PAGES    = `${CACHE_VERSION}-pages`;
 const CACHE_ASSETS   = `${CACHE_VERSION}-assets`;
@@ -26,7 +26,6 @@ const STATIC_SHELL = [
 // JS de la app — se cachean en install
 const APP_SCRIPTS = [
   '/js/auth.js',
-  '/js/turso-sync.js',
   '/js/academia-sync.js',
   // ── Módulos de app.js (dividido) ──
   '/js/state.js',

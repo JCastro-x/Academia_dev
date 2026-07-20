@@ -216,7 +216,7 @@
   // Guardar hábitos
   function saveHabits() {
     try {
-      console.log('💾 [HABITS] Saving habits to State and Turso:', {
+      console.log('💾 [HABITS] Saving habits to State:', {
         habitsCount: State.settings.habits?.length || 0,
         habitsSample: State.settings.habits?.slice(0, 2) || []
       });

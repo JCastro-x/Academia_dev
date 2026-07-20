@@ -16,6 +16,10 @@ function init() {
   const getAcademiaDB = () => window.AcademiaDB || window.DB;
   const AUTH_REDIRECT_GUARD_KEY = 'academia_auth_redirect_ts';
 
+  // Limpieza defensiva: eliminar credenciales de Turso si existen
+  localStorage.removeItem('turso_url');
+  localStorage.removeItem('turso_auth_token');
+
   function redirectToAuthSafely(reason = 'unknown') {
     const now = Date.now();
     const lastTs = Number(sessionStorage.getItem(AUTH_REDIRECT_GUARD_KEY) || 0);
@@ -123,7 +127,7 @@ function init() {
       }
       localStorage.setItem('_academia_last_user', auth.id);
 
-      // Inicializar base de datos y cargar datos desde Supabase/Turso
+      // Inicializar base de datos y cargar datos desde Supabase
       const db = getAcademiaDB();
       if (db) {
         await db.init(auth.id);
@@ -147,7 +151,7 @@ function init() {
               console.warn('⚠️ [INIT] Datos remotos vacíos pero locales tienen datos - PRESERVANDO DATOS LOCALES');
               // No sobrescribir - mantener datos locales
             } else {
-              // Turso/Supabase es la fuente de verdad
+              // Supabase es la fuente de verdad
               if (dbData.semestres && dbData.semestres.length) {
                 localStorage.setItem('academia_v4_semestres', JSON.stringify(dbData.semestres));
                 State.semestres.length = 0;
